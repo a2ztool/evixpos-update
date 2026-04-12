@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
