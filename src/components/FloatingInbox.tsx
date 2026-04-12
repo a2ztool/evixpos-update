@@ -10,12 +10,9 @@ import {
   MessageSquare, Send, Volume2, VolumeX, Paperclip, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatFeatures } from "@/hooks/useChatFeatures";
+import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
-
-const notificationSound = typeof Audio !== "undefined"
-  ? new Audio("data:audio/wav;base64,UklGRl9vT19teleXhBVkUgT09PUABAAAABAAEARKwAAIhYAQACABAAZGF0YQoAAAD//wIA")
-  : null;
+import { toast } from "sonner";
 
 const FloatingInbox = () => {
   const { user } = useAuth();
@@ -102,7 +99,7 @@ const FloatingInbox = () => {
           }
         }
         if (msg.receiver_id === myId && msg.sender_id !== myId && soundEnabled) {
-          notificationSound?.play().catch(() => {});
+          playNotificationSound();
         }
         fetchUnreadCount();
       })
@@ -140,7 +137,11 @@ const FloatingInbox = () => {
     };
     if (replyTo) insertData.reply_to_id = replyTo.id;
     setReplyTo(null);
-    await supabase.from("staff_messages").insert(insertData);
+    const { error } = await supabase.from("staff_messages").insert(insertData);
+    if (error) {
+      console.error("Send failed:", error);
+      toast.error("Failed to send message");
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,16 +150,21 @@ const FloatingInbox = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `staff-messages/${storeId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("payment-assets").upload(path, file);
+      const path = `${storeId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("staff-chat").upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("payment-assets").getPublicUrl(path);
-      await supabase.from("staff_messages").insert({
+      const { data: urlData } = supabase.storage.from("staff-chat").getPublicUrl(path);
+      const { error } = await supabase.from("staff_messages").insert({
         store_id: storeId, sender_id: myId, receiver_id: ownerId,
         message: file.name, message_type: "file",
         file_url: urlData.publicUrl, file_name: file.name,
       });
-    } catch (err) { console.error("Upload failed:", err); }
+      if (error) throw error;
+      toast.success("File sent!");
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      toast.error("Upload failed: " + (err.message || "Unknown error"));
+    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };

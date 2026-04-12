@@ -10,11 +10,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X
+  MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X, ListTodo
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatFeatures } from "@/hooks/useChatFeatures";
+import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
+import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+} from "@/components/ui/dialog";
 
 interface StaffMember {
   id: string;
@@ -24,10 +28,6 @@ interface StaffMember {
   auth_user_id: string | null;
   is_active: boolean;
 }
-
-const notificationSound = typeof Audio !== "undefined"
-  ? new Audio("data:audio/wav;base64,UklGRl9vT19teleXhBVkUgT09PUABAAAABAAEARKwAAIhYAQACABAAZGF0YQoAAAD//wIA")
-  : null;
 
 const StaffInbox = () => {
   const { user } = useAuth();
@@ -44,6 +44,9 @@ const StaffInbox = () => {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskMessage, setTaskMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,7 +138,7 @@ const StaffInbox = () => {
           }
         }
         if (msg.receiver_id === myId && msg.sender_id !== myId && soundEnabled) {
-          notificationSound?.play().catch(() => {});
+          playNotificationSound();
         }
         fetchUnreadCounts();
       })
@@ -173,7 +176,30 @@ const StaffInbox = () => {
     };
     if (replyTo) insertData.reply_to_id = replyTo.id;
     setReplyTo(null);
-    await supabase.from("staff_messages").insert(insertData);
+    const { error } = await supabase.from("staff_messages").insert(insertData);
+    if (error) {
+      console.error("Send failed:", error);
+      toast.error("Failed to send message");
+    }
+  };
+
+  const sendTask = async () => {
+    if (!taskTitle.trim() || !activeChat || !storeId || !myId) return;
+    const { error } = await supabase.from("staff_messages").insert({
+      store_id: storeId, sender_id: myId, receiver_id: activeChat,
+      message: taskMessage.trim() || `Task assigned: ${taskTitle}`,
+      message_type: "task",
+      task_title: taskTitle.trim(),
+      task_status: "pending",
+    });
+    if (error) {
+      toast.error("Failed to send task");
+    } else {
+      toast.success("Task sent!");
+      setTaskTitle("");
+      setTaskMessage("");
+      setTaskDialogOpen(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,16 +208,21 @@ const StaffInbox = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `staff-messages/${storeId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("payment-assets").upload(path, file);
+      const path = `${storeId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("staff-chat").upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("payment-assets").getPublicUrl(path);
-      await supabase.from("staff_messages").insert({
+      const { data: urlData } = supabase.storage.from("staff-chat").getPublicUrl(path);
+      const { error } = await supabase.from("staff_messages").insert({
         store_id: storeId, sender_id: myId, receiver_id: activeChat,
         message: file.name, message_type: "file",
         file_url: urlData.publicUrl, file_name: file.name,
       });
-    } catch (err) { console.error("Upload failed:", err); }
+      if (error) throw error;
+      toast.success("File sent!");
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      toast.error("Upload failed: " + (err.message || "Unknown error"));
+    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -226,7 +257,7 @@ const StaffInbox = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-5rem)]">
+      <div className="h-[calc(100vh-5rem)] max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
           {showChat && (
@@ -245,7 +276,7 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        <div className="flex h-[calc(100%-2.5rem)] rounded-xl border border-border overflow-hidden bg-card">
+        <div className="flex h-[calc(100%-2.5rem)] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
           {/* Contact list */}
           <div className={cn(
             "w-full md:w-80 border-r border-border flex flex-col",
@@ -331,10 +362,10 @@ const StaffInbox = () => {
                   </Button>
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
-                      {activePerson ? getInitials(activePerson.name) : (ownerContact?.auth_user_id === activeChat ? "SO" : "?")}
+                      {activePerson ? getInitials(activePerson.name).charAt(0) : (ownerContact?.auth_user_id === activeChat ? "SO" : "?")}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-sm font-semibold text-foreground">
                       {activePerson?.name || (ownerContact?.auth_user_id === activeChat ? "Store Owner" : "Unknown")}
                     </h3>
@@ -342,6 +373,37 @@ const StaffInbox = () => {
                       {activePerson?.role || "owner"}
                     </p>
                   </div>
+                  {/* Task assign button (only for admin/owner) */}
+                  {!isStaff && (
+                    <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                          <ListTodo className="w-3.5 h-3.5" />
+                          Assign Task
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Assign Task to {activePerson?.name || "Staff"}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-3 mt-2">
+                          <Input
+                            placeholder="Task title *"
+                            value={taskTitle}
+                            onChange={(e) => setTaskTitle(e.target.value)}
+                          />
+                          <Input
+                            placeholder="Additional message (optional)"
+                            value={taskMessage}
+                            onChange={(e) => setTaskMessage(e.target.value)}
+                          />
+                          <Button onClick={sendTask} disabled={!taskTitle.trim()} className="w-full">
+                            <Send className="w-4 h-4 mr-2" /> Send Task
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
 
                 {/* Messages */}
