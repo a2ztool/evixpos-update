@@ -61,12 +61,16 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, string> = {
  */
 export const useStorePlan = () => {
   const { user } = useAuth();
+  const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string>("free");
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
 
+  // For staff, we need to check the store owner's plan, not the staff's own plan
+  const planUserId = isStaff && staffInfo ? staffInfo.owner_id : user?.id;
+
   const fetchPlan = useCallback(async (isRealtimeUpdate = false) => {
-    if (!user) {
+    if (!planUserId) {
       setPlan("free");
       setLoading(false);
       return;
