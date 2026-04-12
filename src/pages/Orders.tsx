@@ -624,6 +624,11 @@ const fetchProducts = async () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`${statusColors[o.status]} text-[10px]`}>{o.status}</Badge>
                   <Badge className={`${paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"} text-[10px]`}>{o.payment_status}</Badge>
+                  {o.source === "woocommerce" && (
+                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] gap-0.5">
+                      <Globe className="h-2.5 w-2.5" /> Website
+                    </Badge>
+                  )}
                   <span className="text-xs text-muted-foreground capitalize">{o.payment_method}</span>
                   <span className="text-xs text-muted-foreground ml-auto">{new Date(o.created_at).toLocaleDateString()}</span>
                 </div>
