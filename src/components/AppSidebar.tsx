@@ -234,7 +234,7 @@ const AppSidebar = () => {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
-                
+                {!isStaff && renderItem({ title: "Staff Inbox", icon: MessageSquare, path: "/staff-inbox" })}
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
                 {showSettings && renderItem({ title: t.settings, icon: Settings, path: "/settings" })}
