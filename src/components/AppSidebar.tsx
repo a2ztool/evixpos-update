@@ -59,6 +59,7 @@ const AppSidebar = () => {
     { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
     { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book" },
     { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs" },
+    { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs" },
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission" },
   ];
   const integrationSubItems: NavItem[] = [

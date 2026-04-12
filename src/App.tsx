@@ -34,6 +34,7 @@ import SalesProfit from "./pages/SalesProfit";
 import IncomeExpense from "./pages/IncomeExpense";
 import DueBook from "./pages/DueBook";
 import AdCosts from "./pages/AdCosts";
+import FacebookAds from "./pages/FacebookAds";
 import TaskMission from "./pages/TaskMission";
 import Reports from "./pages/Reports";
 import Referral from "./pages/Referral";
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/finance/income-expense" element={<P perm="reports.view" feature="reports"><IncomeExpense /></P>} />
             <Route path="/finance/due-book" element={<P perm="reports.view" feature="due_book"><DueBook /></P>} />
             <Route path="/finance/ad-costs" element={<P perm="reports.view" feature="ad_costs"><AdCosts /></P>} />
+            <Route path="/finance/facebook-ads" element={<P perm="reports.view" feature="ad_costs"><FacebookAds /></P>} />
             <Route path="/finance/tasks" element={<P perm="orders.view" feature="task_mission"><TaskMission /></P>} />
             <Route path="/reports" element={<P perm="reports.view" feature="reports"><Reports /></P>} />
             <Route path="/referral" element={<P ownerOnly feature="referral"><Referral /></P>} />
