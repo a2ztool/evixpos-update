@@ -159,6 +159,38 @@ const Orders = () => {
   const [refunds, setRefunds] = useState<any[]>([]);
   const [showRefundHistory, setShowRefundHistory] = useState(false);
 
+  // Delete confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = (order: Order) => {
+    setOrderToDelete(order);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setDeleting(true);
+    try {
+      // Delete order_items first (FK constraint)
+      await supabase.from("order_items").delete().eq("order_id", orderToDelete.id);
+      // Delete refunds linked to this order
+      await supabase.from("refunds").delete().eq("order_id", orderToDelete.id);
+      // Delete the order
+      const { error } = await supabase.from("orders").delete().eq("id", orderToDelete.id);
+      if (error) throw error;
+      setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+      toast.success("Order deleted successfully");
+    } catch (err: any) {
+      toast.error("Failed to delete order: " + (err.message || "Unknown error"));
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      setOrderToDelete(null);
+    }
+  };
+
   const fetchOrders = async () => {
     if (!activeStore) return;
     const { data } = await supabase
