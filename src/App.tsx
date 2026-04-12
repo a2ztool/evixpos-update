@@ -39,6 +39,7 @@ import Reports from "./pages/Reports";
 import Referral from "./pages/Referral";
 import MyPlan from "./pages/MyPlan";
 import SupportPage from "./pages/SupportPage";
+import StaffInbox from "./pages/StaffInbox";
 
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
