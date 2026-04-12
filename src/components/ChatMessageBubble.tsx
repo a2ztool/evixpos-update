@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { REACTION_EMOJIS } from "@/hooks/useChatFeatures";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Popover, PopoverContent, PopoverTrigger
