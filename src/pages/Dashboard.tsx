@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -13,7 +14,7 @@ import {
   CreditCard, RefreshCw, AlertTriangle,
   Megaphone, Plus, Eye, ShoppingBag, Monitor, Repeat,
   ChevronRight, Sparkles, CalendarDays, Users, Package,
-  MessageCircle, RotateCcw, Bell
+  MessageCircle, RotateCcw, Bell, Shield
 } from "lucide-react";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { format, differenceInDays, addDays } from "date-fns";
@@ -33,6 +34,7 @@ interface Subscription {
 const Dashboard = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { isStaff, staffInfo } = useStaff();
   const { plan } = useSubscription();
   const navigate = useNavigate();
   const [profileName, setProfileName] = useState("");
@@ -51,12 +53,14 @@ const Dashboard = () => {
 
   const announcements = useMemo(() => {
     const msgs: string[] = [];
-    if (plan === "free") msgs.push("🚀 Upgrade to Pro for unlimited products, 3 stores & priority support!");
-    if (plan === "pro") msgs.push("⭐ Upgrade to Business for 10 stores & advanced analytics!");
-    msgs.push("🎉 Invite friends & earn 20% commission with our Referral Program!");
+    if (!isStaff) {
+      if (plan === "free") msgs.push("🚀 Upgrade to Pro for unlimited products, 3 stores & priority support!");
+      if (plan === "pro") msgs.push("⭐ Upgrade to Business for 10 stores & advanced analytics!");
+      msgs.push("🎉 Invite friends & earn 20% commission with our Referral Program!");
+    }
     msgs.push("💡 Tip: Use the POS Terminal for faster in-store sales");
     return msgs;
-  }, [plan]);
+  }, [plan, isStaff]);
 
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   useEffect(() => {
@@ -144,13 +148,26 @@ const Dashboard = () => {
                 <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                   <span className="text-2xl">👋</span> {greeting}, <span className="text-primary-foreground/90">{profileName || "there"}</span>
                 </h1>
-                <p className="text-primary-foreground/60 mt-1.5 text-xs sm:text-sm">Ready to crush today's goals? 🚀</p>
+                <p className="text-primary-foreground/60 mt-1.5 text-xs sm:text-sm">
+                  {isStaff ? "Ready to assist customers and manage your tasks! 💼" : "Ready to crush today's goals? 🚀"}
+                </p>
+                {isStaff && staffInfo && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-400/30 px-2.5 py-1 backdrop-blur-sm">
+                      <Shield className="h-3 w-3 mr-1" />
+                      {staffInfo.role === "admin" ? "Admin" : "Staff"}
+                    </Badge>
+                    <span className="text-xs text-primary-foreground/60">{activeStore?.name}</span>
+                  </div>
+                )}
               </div>
               <div className="hidden sm:flex items-center gap-2">
-                <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-                  <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                  {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
-                </Badge>
+                {!isStaff && (
+                  <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
+                    <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                    {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
+                  </Badge>
+                )}
                 <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
                   <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
                   {format(new Date(), "dd MMM yyyy")}
@@ -158,10 +175,12 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 mt-3 sm:hidden">
-              <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-2 py-0.5 text-[10px]">
-                <CreditCard className="h-3 w-3 mr-1" />
-                {plan.charAt(0).toUpperCase() + plan.slice(1)}
-              </Badge>
+              {!isStaff && (
+                <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-2 py-0.5 text-[10px]">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  {plan.charAt(0).toUpperCase() + plan.slice(1)}
+                </Badge>
+              )}
               <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-2 py-0.5 text-[10px]">
                 <CalendarDays className="h-3 w-3 mr-1" />
                 {format(new Date(), "dd MMM")}
@@ -170,32 +189,34 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Announcement Bar */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/30 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <Megaphone className="h-4 w-4 text-amber-600" />
+        {/* Announcement Bar - Hidden for Staff */}
+        {!isStaff && (
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/30 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <Megaphone className="h-4 w-4 text-amber-600" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p key={announcementIndex} className="text-sm font-medium text-amber-800 dark:text-amber-300 animate-fade-in truncate">
+                  {announcements[announcementIndex]}
+                </p>
+              </div>
+              {plan === "free" && (
+                <Button size="sm" variant="outline" className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 text-xs" onClick={() => navigate("/my-plan")}>
+                  Upgrade <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              )}
             </div>
-            <div className="flex-1 overflow-hidden">
-              <p key={announcementIndex} className="text-sm font-medium text-amber-800 dark:text-amber-300 animate-fade-in truncate">
-                {announcements[announcementIndex]}
-              </p>
+            <div className="flex justify-center gap-1 mt-2">
+              {announcements.map((_, i) => (
+                <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === announcementIndex ? "w-4 bg-amber-500" : "w-1 bg-amber-300/50"}`} />
+              ))}
             </div>
-            {plan === "free" && (
-              <Button size="sm" variant="outline" className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 text-xs" onClick={() => navigate("/my-plan")}>
-                Upgrade <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
-            )}
           </div>
-          <div className="flex justify-center gap-1 mt-2">
-            {announcements.map((_, i) => (
-              <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === announcementIndex ? "w-4 bg-amber-500" : "w-1 bg-amber-300/50"}`} />
-            ))}
-          </div>
-        </div>
+        )}
 
-        {/* Profile Completion */}
-        {(!profileName || productCount === 0) && (
+        {/* Profile Completion - Hidden for Staff */}
+        {!isStaff && (!profileName || productCount === 0) && (
           <div className="rounded-xl bg-primary/5 border border-primary/10 px-5 py-4 flex items-center gap-4">
             <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-primary" />
@@ -210,14 +231,14 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Quick Shortcuts */}
+        {/* Quick Shortcuts - Staff Only See Staff-Allowed Actions */}
         <div>
           <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 mb-3">
             <span className="w-1 h-5 bg-primary rounded-full inline-block" />
             Quick Actions
           </h3>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
-            {shortcuts.map((s) => (
+            {getShortcuts(isStaff).map((s) => (
               <button
                 key={s.label}
                 onClick={() => navigate(s.path)}
@@ -282,32 +303,56 @@ const Dashboard = () => {
         )}
 
         {/* ========== REAL-TIME ANALYTICS (Single Source of Truth) ========== */}
-        <DashboardAnalytics />
+        {!isStaff && <DashboardAnalytics />}
 
-        {/* Product Limit */}
-        <Card className="border-border/40 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">Product Limit</span>
+        {/* Product Limit - Owner Only */}
+        {!isStaff && (
+          <Card className="border-border/40 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Product Limit</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{productCount} of {productLimit} used</span>
               </div>
-              <span className="text-xs text-muted-foreground">{productCount} of {productLimit} used</span>
-            </div>
-            <Progress value={productUsagePercent} className="h-2" />
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-xs text-muted-foreground">{productUsagePercent}% used</span>
-              {plan === "free" && (
-                <Button variant="default" size="sm" className="text-xs h-7 px-3" onClick={() => navigate("/my-plan")}>
-                  Upgrade <ChevronRight className="h-3 w-3 ml-1" />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              <Progress value={productUsagePercent} className="h-2" />
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-muted-foreground">{productUsagePercent}% used</span>
+                {plan === "free" && (
+                  <Button variant="default" size="sm" className="text-xs h-7 px-3" onClick={() => navigate("/my-plan")}>
+                    Upgrade <ChevronRight className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
+};
+
+// Helper function to get shortcuts based on user type
+const getShortcuts = (isStaff: boolean) => {
+  const allShortcuts = [
+    { label: "New Sale", icon: Plus, path: "/pos", color: "bg-primary/10 text-primary" },
+    { label: "Create Order", icon: ShoppingBag, path: "/orders", color: "bg-blue-500/10 text-blue-600" },
+    { label: "Add Customer", icon: Users, path: "/customers", color: "bg-amber-500/10 text-amber-600" },
+    { label: "View Orders", icon: Eye, path: "/orders", color: "bg-violet-500/10 text-violet-600" },
+    { label: "Products", icon: Package, path: "/products", color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "POS Terminal", icon: Monitor, path: "/pos", color: "bg-rose-500/10 text-rose-600" },
+    { label: "Subscriptions", icon: Repeat, path: "/subscriptions", color: "bg-cyan-500/10 text-cyan-600" },
+  ];
+
+  if (isStaff) {
+    // Staff only sees operational shortcuts, not owner-only ones
+    return allShortcuts.filter(s => 
+      !["Products", "Subscriptions"].includes(s.label)
+    );
+  }
+  
+  return allShortcuts;
 };
 
 export default Dashboard;
