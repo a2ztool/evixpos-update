@@ -153,7 +153,7 @@ const Dashboard = () => {
                 </p>
                 {isStaff && staffInfo && (
                   <div className="mt-3 flex items-center gap-2">
-                    <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-400/30 px-2.5 py-1 backdrop-blur-sm">
+                    <Badge variant="secondary" className="px-2.5 py-1 backdrop-blur-sm">
                       <Shield className="h-3 w-3 mr-1" />
                       {staffInfo.role === "admin" ? "Admin" : "Staff"}
                     </Badge>
