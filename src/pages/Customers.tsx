@@ -47,6 +47,7 @@ const statusColors: Record<string, string> = {
 const Customers = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);

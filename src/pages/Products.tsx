@@ -65,6 +65,7 @@ const emptyForm = {
 const Products = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);

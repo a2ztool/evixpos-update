@@ -40,6 +40,7 @@ const emptyForm = { type: "income" as "income" | "expense", amount: "", category
 const Transactions = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
