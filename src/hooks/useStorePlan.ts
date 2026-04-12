@@ -108,7 +108,7 @@ export const useStorePlan = () => {
     
     initialLoadDone.current = true;
     setLoading(false);
-  }, [user?.id]);
+  }, [planUserId]);
 
   useEffect(() => {
     fetchPlan();
