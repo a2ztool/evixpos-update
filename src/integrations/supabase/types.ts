@@ -719,6 +719,53 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_ad_accounts: {
+        Row: {
+          access_token: string
+          account_name: string | null
+          ad_account_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          store_id: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          account_name?: string | null
+          ad_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          store_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          account_name?: string | null
+          ad_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          store_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_ad_accounts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           channel: string
