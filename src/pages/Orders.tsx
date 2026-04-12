@@ -187,6 +187,44 @@ const fetchProducts = async () => {
     }
   }, [user, activeStore]);
 
+  // Real-time subscription for new orders with notification sound
+  useEffect(() => {
+    if (!activeStore) return;
+
+    const channelName = `orders-realtime-${activeStore.id}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: `store_id=eq.${activeStore.id}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as any;
+          // Add to state
+          setOrders((prev) => [{ ...newOrder, customers: null } as Order, ...prev]);
+
+          // Show toast with sound for website orders
+          if (newOrder.source === "woocommerce" || newOrder.source === "order_form") {
+            const sourceLabel = newOrder.source === "woocommerce" ? "Website" : "Order Form";
+            toast.success(`🛒 New ${sourceLabel} order received! ${newOrder.payment_currency} ${Number(newOrder.total_amount).toFixed(2)}`, {
+              duration: 8000,
+            });
+            // Play 5-second notification sound
+            playOrderNotificationSound();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeStore]);
+
   useEffect(() => {
     if (tabParam === "create") setCreateOpen(true);
     if (tabParam === "pending") setStatusFilter("pending");
