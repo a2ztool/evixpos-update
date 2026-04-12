@@ -116,7 +116,7 @@ export const useStorePlan = () => {
 
   // Realtime subscription for instant plan changes (user-level)
   useEffect(() => {
-    if (!user) return;
+    if (!planUserId) return;
 
     const channelName = `user-plan-${user.id}-${Date.now()}`;
     const channel = supabase
