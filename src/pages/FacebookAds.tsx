@@ -150,8 +150,7 @@ const FacebookAds = () => {
     }
     setConnectingOAuth(true);
     try {
-      // Use /api/facebook/callback as the OAuth redirect URI
-      const redirectUri = `${window.location.origin}/api/facebook/callback`;
+      const redirectUri = "https://identical-copy.lovable.app/api/facebook/callback";
       const redirectAfterAuth = `${window.location.origin}/finance/facebook-ads`;
       
       const { data, error } = await supabase.functions.invoke("meta-oauth-callback?action=get_auth_url", {
