@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     } = await callerClient.auth.getUser();
     if (!caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Name, email and password are required" }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -54,11 +54,9 @@ Deno.serve(async (req) => {
 
     if (password.length < 6) {
       return new Response(
-        JSON.stringify({
-          error: "Password must be at least 6 characters",
-        }),
+        JSON.stringify({ error: "Password must be at least 6 characters" }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -76,14 +74,33 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ error: "You don't own this store" }),
           {
-            status: 403,
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
     }
 
-    // Create auth user for staff
+    // Check if this email already exists as staff for this store
+    const { data: existingStaff } = await supabaseAdmin
+      .from("staff_members")
+      .select("id")
+      .eq("email", email)
+      .eq("user_id", caller.id)
+      .maybeSingle();
+
+    if (existingStaff) {
+      return new Response(
+        JSON.stringify({ error: "This email is already added as staff" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Try to create auth user for staff
+    let authUserId: string;
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
@@ -93,13 +110,33 @@ Deno.serve(async (req) => {
       });
 
     if (authError) {
-      return new Response(JSON.stringify({ error: authError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // If email already exists, look up the existing user
+      if (authError.message?.includes("already been registered")) {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = listData?.users?.find(
+          (u: any) => u.email === email
+        );
+        if (!existingUser) {
+          return new Response(
+            JSON.stringify({
+              error: "Email exists but user not found. Contact support.",
+            }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        authUserId = existingUser.id;
+      } else {
+        return new Response(JSON.stringify({ error: authError.message }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      authUserId = authData.user.id;
     }
-
-    const authUserId = authData.user.id;
 
     // Insert staff member record
     const { data: staffData, error: staffError } = await supabaseAdmin
@@ -119,10 +156,12 @@ Deno.serve(async (req) => {
       .single();
 
     if (staffError) {
-      // Cleanup: delete the auth user if staff record fails
-      await supabaseAdmin.auth.admin.deleteUser(authUserId);
+      // Don't cleanup auth user if it already existed
+      if (!authError) {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId);
+      }
       return new Response(JSON.stringify({ error: staffError.message }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -133,7 +172,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
