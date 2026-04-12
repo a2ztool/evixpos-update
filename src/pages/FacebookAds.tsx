@@ -58,12 +58,65 @@ const FacebookAds = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState("14");
   const [activeTab, setActiveTab] = useState("overview");
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
+  const [accountName, setAccountName] = useState<string>("");
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const { campaigns, dailyData } = useMemo(() => generateDemoData(), []);
 
+  // Check existing connection on load
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const checkConnection = async () => {
+      if (!user || !activeStore) { setLoading(false); return; }
+      const { data } = await supabase
+        .from("meta_ad_accounts")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("store_id", activeStore.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data) {
+        setIsConnected(true);
+        setAccountName(data.account_name || "Facebook Ads");
+        setIsDemoMode(false);
+      }
+      setLoading(false);
+    };
+    checkConnection();
+  }, [user, activeStore]);
+
+  // Handle OAuth callback (code in URL)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code || !state) return;
+
+    const exchangeToken = async () => {
+      setConnectingOAuth(true);
+      try {
+        const redirectUri = `${window.location.origin}/finance/facebook-ads`;
+        const { data, error } = await supabase.functions.invoke("meta-oauth-callback", {
+          body: { code, state, redirect_uri: redirectUri },
+          headers: {},
+        });
+        // Remove query params from URL
+        window.history.replaceState({}, "", window.location.pathname);
+        if (error || !data?.success) {
+          toast.error(data?.error || "OAuth token exchange failed");
+        } else {
+          setIsConnected(true);
+          setAccountName(data.account_name || "Facebook Ads");
+          setIsDemoMode(false);
+          toast.success(`✅ ${data.account_name || "Facebook Ads"} connected successfully!`);
+        }
+      } catch (err: any) {
+        toast.error("Connection failed: " + err.message);
+      } finally {
+        setConnectingOAuth(false);
+      }
+    };
+    exchangeToken();
   }, []);
 
   // Auto-refresh timer
