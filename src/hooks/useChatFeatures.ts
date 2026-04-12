@@ -43,7 +43,6 @@ export const useChatFeatures = (myId: string | undefined) => {
   }, [myId]);
 
   const isVisible = useCallback((msg: { deleted_for: string[] | null; is_deleted_for_everyone: boolean | null }) => {
-    if (msg.is_deleted_for_everyone) return false;
     if (msg.deleted_for && myId && msg.deleted_for.includes(myId)) return false;
     return true;
   }, [myId]);
