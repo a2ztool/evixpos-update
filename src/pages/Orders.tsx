@@ -953,12 +953,20 @@ const fetchProducts = async () => {
 
       {/* Order Details Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Order Details
+              {selectedOrder?.source === "woocommerce" && (
+                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                  <Globe className="h-3 w-3" /> From Website
+                </Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-4">
+          {selectedOrder && (() => {
+            const meta = selectedOrder.meta as Record<string, any> | null;
+            return (
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground">Order ID</span>
