@@ -182,20 +182,28 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user?.email}</p>
-                        <p className="text-xs leading-none text-muted-foreground">Free Plan</p>
+                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {isStaff ? `Staff • ${staffInfo?.role}` : "Free Plan"}
+                        </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <User className="h-4 w-4 mr-2" /> Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="h-4 w-4 mr-2" /> Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/my-plan")}>
-                      <Crown className="h-4 w-4 mr-2" /> My Plan
-                    </DropdownMenuItem>
+                    {!isStaff && (
+                      <DropdownMenuItem onClick={() => navigate("/settings")}>
+                        <User className="h-4 w-4 mr-2" /> Profile
+                      </DropdownMenuItem>
+                    )}
+                    {!isStaff && (
+                      <DropdownMenuItem onClick={() => navigate("/settings")}>
+                        <Settings className="h-4 w-4 mr-2" /> Settings
+                      </DropdownMenuItem>
+                    )}
+                    {!isStaff && (
+                      <DropdownMenuItem onClick={() => navigate("/my-plan")}>
+                        <Crown className="h-4 w-4 mr-2" /> My Plan
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                       <LogOut className="h-4 w-4 mr-2" /> Log out
