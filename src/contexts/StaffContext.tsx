@@ -1,0 +1,98 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface StaffInfo {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  permissions: string[];
+  store_id: string | null;
+  owner_id: string; // the user_id of the store owner
+  is_active: boolean;
+}
+
+interface StaffContextType {
+  isStaff: boolean;
+  staffInfo: StaffInfo | null;
+  loading: boolean;
+  hasPermission: (perm: string) => boolean;
+  hasAnyPermission: (...perms: string[]) => boolean;
+}
+
+const StaffContext = createContext<StaffContextType>({
+  isStaff: false,
+  staffInfo: null,
+  loading: true,
+  hasPermission: () => false,
+  hasAnyPermission: () => false,
+});
+
+export const useStaff = () => useContext(StaffContext);
+
+export const StaffProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
+  const [staffInfo, setStaffInfo] = useState<StaffInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkStaff = async () => {
+      if (!user) {
+        setStaffInfo(null);
+        setLoading(false);
+        return;
+      }
+
+      // Check if this auth user is a staff member
+      const { data, error } = await supabase
+        .from("staff_members")
+        .select("*")
+        .eq("auth_user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (data && !error) {
+        setStaffInfo({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          permissions: (data.permissions as string[]) ?? [],
+          store_id: (data as any).store_id ?? null,
+          owner_id: data.user_id,
+          is_active: data.is_active,
+        });
+      } else {
+        setStaffInfo(null);
+      }
+      setLoading(false);
+    };
+
+    checkStaff();
+  }, [user]);
+
+  const hasPermission = (perm: string): boolean => {
+    if (!staffInfo) return true; // not staff = owner = full access
+    if (staffInfo.role === "admin") return true;
+    return staffInfo.permissions.includes(perm);
+  };
+
+  const hasAnyPermission = (...perms: string[]): boolean => {
+    if (!staffInfo) return true;
+    if (staffInfo.role === "admin") return true;
+    return perms.some(p => staffInfo.permissions.includes(p));
+  };
+
+  return (
+    <StaffContext.Provider value={{
+      isStaff: !!staffInfo,
+      staffInfo,
+      loading,
+      hasPermission,
+      hasAnyPermission,
+    }}>
+      {children}
+    </StaffContext.Provider>
+  );
+};
