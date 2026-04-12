@@ -222,7 +222,17 @@ Deno.serve(async (req) => {
 
       const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-      const { error: upsertError } = await supabaseAdmin
+      // Save to ads_accounts table
+      const { error: insertError } = await supabaseAdmin
+        .from("ads_accounts")
+        .insert({
+          user_id: stateData.user_id,
+          store_id: stateData.store_id,
+          access_token: accessToken,
+        });
+
+      // Also upsert to meta_ad_accounts for backward compatibility
+      await supabaseAdmin
         .from("meta_ad_accounts")
         .upsert(
           {
@@ -238,8 +248,8 @@ Deno.serve(async (req) => {
           { onConflict: "user_id,store_id" }
         );
 
-      if (upsertError) {
-        return new Response(JSON.stringify({ error: "Failed to save token: " + upsertError.message }), {
+      if (insertError) {
+        return new Response(JSON.stringify({ error: "Failed to save token: " + insertError.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
