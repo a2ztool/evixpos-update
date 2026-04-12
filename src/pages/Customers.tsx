@@ -407,6 +407,17 @@ const Customers = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Customer DNA Profile */}
+      {dnaCustomer && activeStore && (
+        <CustomerDNAProfile
+          open={dnaOpen}
+          onOpenChange={setDnaOpen}
+          customerId={dnaCustomer.id}
+          customerName={dnaCustomer.name}
+          storeId={activeStore.id}
+        />
+      )}
     </DashboardLayout>
   );
 };
