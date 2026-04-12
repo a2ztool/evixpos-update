@@ -266,7 +266,7 @@ const POS = () => {
     setCreatingCust(true);
     const { data, error } = await supabase
       .from("customers")
-      .insert({ user_id: user.id, store_id: activeStore?.id, name: newCustName.trim(), email: newCustEmail, phone: newCustPhone })
+      .insert({ user_id: effectiveUserId!, store_id: activeStore?.id, name: newCustName.trim(), email: newCustEmail, phone: newCustPhone })
       .select("id, name, phone")
       .single();
     if (error) {
@@ -333,7 +333,7 @@ const POS = () => {
       const { data: order, error: orderErr } = await supabase
         .from("orders")
         .insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: customerId || null,
           total_amount: total,
@@ -373,7 +373,7 @@ const POS = () => {
 
       if (!isDue) {
         await supabase.from("transactions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
           amount: total,
@@ -383,7 +383,7 @@ const POS = () => {
         });
       } else {
         await supabase.from("transactions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
           amount: total,
@@ -402,7 +402,7 @@ const POS = () => {
         endDate.setDate(endDate.getDate() + (item.variation!.duration_days));
 
         await supabase.from("subscriptions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: customerId,
           product_name: item.product.name,

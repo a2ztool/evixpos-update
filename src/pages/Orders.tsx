@@ -267,7 +267,7 @@ const fetchProducts = async () => {
         const discount = parseFloat(row.discount) || 0;
 
         const { error } = await supabase.from("orders").insert({
-          user_id: user.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: customerIdMatch,
           total_amount: amount,
@@ -339,7 +339,7 @@ const fetchProducts = async () => {
     const { data, error } = await supabase
       .from("orders")
       .insert({
-        user_id: user.id,
+        user_id: effectiveUserId!,
         store_id: activeStore?.id,
         customer_id: formCustomerId || null,
         total_amount: amount - discountVal,
@@ -372,7 +372,7 @@ const fetchProducts = async () => {
           price: amount,
         });
         // Decrement stock
-        await supabase.rpc("has_role", { _user_id: user.id, _role: "user" }); // no-op, just to keep TS happy
+        await supabase.rpc("has_role", { _user_id: effectiveUserId!, _role: "user" }); // no-op, just to keep TS happy
         await supabase
           .from("products")
           .update({ stock: matchedProduct.stock !== undefined ? matchedProduct.stock : 0 })
@@ -388,7 +388,7 @@ const fetchProducts = async () => {
         const startDate = format(new Date(), "yyyy-MM-dd");
         const endDate = format(addDays(new Date(), VARIATIONS[formSubVariation] || 30), "yyyy-MM-dd");
         await supabase.from("subscriptions").insert({
-          user_id: user.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: formCustomerId,
           product_name: formProductName || "Order Subscription",
