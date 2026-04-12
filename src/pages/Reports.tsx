@@ -27,7 +27,7 @@ const CHART_COLORS = [
 const Reports = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
-  const { formatPrice } = useCurrency();
+  const { format: formatPrice } = useCurrency();
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
