@@ -226,10 +226,9 @@ const FloatingInbox = () => {
     return format(d, "MMM d, h:mm a");
   };
 
-  // Don't render if no store or no staff context available
+  // Only show floating button for staff users, not owners
+  if (!isStaff) return null;
   if (!hasStoreContext) return null;
-  // Owner with no staff — don't show
-  if (!isStaff && staffList.length === 0 && !loading) return null;
 
   return (
     <>
