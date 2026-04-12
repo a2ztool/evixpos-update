@@ -214,7 +214,7 @@ const FloatingInbox = () => {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-muted/30">
               {loading ? (
                 <div className="text-center text-muted-foreground text-sm py-10">Loading...</div>
               ) : visibleMessages.length === 0 ? (
@@ -238,7 +238,16 @@ const FloatingInbox = () => {
                       onDeleteForMe={deleteForMe}
                       onDeleteForEveryone={deleteForEveryone}
                       onScrollToMessage={scrollToMessage}
+                      onTaskStatusUpdate={async (msgId, status) => {
+                        const { error } = await supabase
+                          .from("staff_messages")
+                          .update({ task_status: status })
+                          .eq("id", msgId);
+                        if (error) toast.error("Failed to update task status");
+                        else toast.success(`Task marked as ${status}`);
+                      }}
                       myId={myId!}
+                      isStaff={true}
                     />
                   );
                 })

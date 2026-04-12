@@ -7,10 +7,12 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X, ListTodo
+  MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X, ListTodo,
+  Calendar, Flag, Package, FileText as FileTextIcon, AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
@@ -19,6 +21,9 @@ import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 
 interface StaffMember {
   id: string;
@@ -28,6 +33,13 @@ interface StaffMember {
   auth_user_id: string | null;
   is_active: boolean;
 }
+
+const PRIORITY_OPTIONS = [
+  { value: "low", label: "Low", color: "bg-blue-500/20 text-blue-400" },
+  { value: "medium", label: "Medium", color: "bg-yellow-500/20 text-yellow-400" },
+  { value: "high", label: "High", color: "bg-orange-500/20 text-orange-400" },
+  { value: "urgent", label: "Urgent", color: "bg-red-500/20 text-red-400" },
+];
 
 const StaffInbox = () => {
   const { user } = useAuth();
@@ -47,6 +59,10 @@ const StaffInbox = () => {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskMessage, setTaskMessage] = useState("");
+  const [taskPriority, setTaskPriority] = useState("medium");
+  const [taskDeadline, setTaskDeadline] = useState("");
+  const [taskProduct, setTaskProduct] = useState("");
+  const [taskInstructions, setTaskInstructions] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -185,9 +201,18 @@ const StaffInbox = () => {
 
   const sendTask = async () => {
     if (!taskTitle.trim() || !activeChat || !storeId || !myId) return;
+    
+    // Build rich task message
+    let fullMessage = `📋 **Task Assigned**\n\n**Title:** ${taskTitle.trim()}`;
+    if (taskPriority) fullMessage += `\n**Priority:** ${taskPriority.toUpperCase()}`;
+    if (taskProduct) fullMessage += `\n**Product:** ${taskProduct}`;
+    if (taskDeadline) fullMessage += `\n**Deadline:** ${taskDeadline}`;
+    if (taskInstructions) fullMessage += `\n\n**Instructions:**\n${taskInstructions}`;
+    if (taskMessage) fullMessage += `\n\n**Note:** ${taskMessage}`;
+
     const { error } = await supabase.from("staff_messages").insert({
       store_id: storeId, sender_id: myId, receiver_id: activeChat,
-      message: taskMessage.trim() || `Task assigned: ${taskTitle}`,
+      message: fullMessage,
       message_type: "task",
       task_title: taskTitle.trim(),
       task_status: "pending",
@@ -195,9 +220,13 @@ const StaffInbox = () => {
     if (error) {
       toast.error("Failed to send task");
     } else {
-      toast.success("Task sent!");
+      toast.success("Task assigned successfully!");
       setTaskTitle("");
       setTaskMessage("");
+      setTaskPriority("medium");
+      setTaskDeadline("");
+      setTaskProduct("");
+      setTaskInstructions("");
       setTaskDialogOpen(false);
     }
   };
@@ -257,7 +286,7 @@ const StaffInbox = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-5rem)] max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto px-2 md:px-4 py-3">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
           {showChat && (
@@ -276,7 +305,7 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        <div className="flex h-[calc(100%-2.5rem)] rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+        <div className="flex rounded-xl border border-border overflow-hidden bg-card shadow-sm" style={{ height: "calc(100vh - 12rem)" }}>
           {/* Contact list */}
           <div className={cn(
             "w-full md:w-80 border-r border-border flex flex-col",
@@ -377,28 +406,107 @@ const StaffInbox = () => {
                   {!isStaff && (
                     <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-primary/30 hover:bg-primary/10">
                           <ListTodo className="w-3.5 h-3.5" />
                           Assign Task
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
-                          <DialogTitle>Assign Task to {activePerson?.name || "Staff"}</DialogTitle>
+                          <DialogTitle className="flex items-center gap-2">
+                            <ListTodo className="w-5 h-5 text-primary" />
+                            Assign Task to {activePerson?.name || "Staff"}
+                          </DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-3 mt-2">
-                          <Input
-                            placeholder="Task title *"
-                            value={taskTitle}
-                            onChange={(e) => setTaskTitle(e.target.value)}
-                          />
-                          <Input
-                            placeholder="Additional message (optional)"
-                            value={taskMessage}
-                            onChange={(e) => setTaskMessage(e.target.value)}
-                          />
-                          <Button onClick={sendTask} disabled={!taskTitle.trim()} className="w-full">
-                            <Send className="w-4 h-4 mr-2" /> Send Task
+                        <div className="space-y-4 mt-2">
+                          {/* Task Title */}
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> Task Title *
+                            </label>
+                            <Input
+                              placeholder="e.g., Update product images, Process refund..."
+                              value={taskTitle}
+                              onChange={(e) => setTaskTitle(e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+
+                          {/* Priority & Deadline row */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                                <Flag className="w-3 h-3" /> Priority
+                              </label>
+                              <Select value={taskPriority} onValueChange={setTaskPriority}>
+                                <SelectTrigger className="h-10">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PRIORITY_OPTIONS.map(p => (
+                                    <SelectItem key={p.value} value={p.value}>
+                                      <span className="flex items-center gap-2">
+                                        <span className={cn("w-2 h-2 rounded-full", p.color.split(" ")[0])} />
+                                        {p.label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" /> Deadline
+                              </label>
+                              <Input
+                                type="date"
+                                value={taskDeadline}
+                                onChange={(e) => setTaskDeadline(e.target.value)}
+                                className="h-10"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Product Reference */}
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                              <Package className="w-3 h-3" /> Product Reference
+                            </label>
+                            <Input
+                              placeholder="Product name or SKU (optional)"
+                              value={taskProduct}
+                              onChange={(e) => setTaskProduct(e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+
+                          {/* Instructions */}
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                              <FileTextIcon className="w-3 h-3" /> Instructions
+                            </label>
+                            <Textarea
+                              placeholder="Detailed instructions for the staff..."
+                              value={taskInstructions}
+                              onChange={(e) => setTaskInstructions(e.target.value)}
+                              rows={3}
+                              className="resize-none"
+                            />
+                          </div>
+
+                          {/* Additional Note */}
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5">Additional Note</label>
+                            <Input
+                              placeholder="Any extra note (optional)"
+                              value={taskMessage}
+                              onChange={(e) => setTaskMessage(e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+
+                          <Button onClick={sendTask} disabled={!taskTitle.trim()} className="w-full h-11 gap-2">
+                            <Send className="w-4 h-4" /> Assign Task
                           </Button>
                         </div>
                       </DialogContent>
@@ -407,7 +515,7 @@ const StaffInbox = () => {
                 </div>
 
                 {/* Messages */}
-                <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-muted/30">
                   {visibleMessages.length === 0 && (
                     <div className="text-center text-muted-foreground text-sm py-10">
                       No messages yet. Start the conversation!
@@ -429,7 +537,16 @@ const StaffInbox = () => {
                         onDeleteForMe={deleteForMe}
                         onDeleteForEveryone={deleteForEveryone}
                         onScrollToMessage={scrollToMessage}
+                        onTaskStatusUpdate={async (msgId, status) => {
+                          const { error } = await supabase
+                            .from("staff_messages")
+                            .update({ task_status: status })
+                            .eq("id", msgId);
+                          if (error) toast.error("Failed to update task status");
+                          else toast.success(`Task marked as ${status}`);
+                        }}
                         myId={myId!}
+                        isStaff={isStaff}
                       />
                     );
                   })}
