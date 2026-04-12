@@ -54,11 +54,15 @@ const routeTitles: Record<string, string> = {
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut, user } = useAuth();
   const { lang, setLang } = useLanguage();
+  const { isStaff, staffInfo } = useStaff();
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
 
-  const initials = user?.email?.slice(0, 2).toUpperCase() ?? "U";
+  const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
+  const initials = isStaff && staffInfo
+    ? staffInfo.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+    : (user?.email?.slice(0, 2).toUpperCase() ?? "U");
   const pageTitle = routeTitles[location.pathname] || "Dashboard";
 
   useEffect(() => {
