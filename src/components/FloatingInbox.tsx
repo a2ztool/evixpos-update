@@ -18,6 +18,13 @@ const FloatingInbox = () => {
   const { isStaff, staffInfo } = useStaff();
 
   const [open, setOpen] = useState(false);
+
+  // Listen for toggle event from bottom nav
+  useEffect(() => {
+    const handler = () => setOpen(prev => !prev);
+    window.addEventListener("toggle-floating-inbox", handler);
+    return () => window.removeEventListener("toggle-floating-inbox", handler);
+  }, []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -174,14 +181,15 @@ const FloatingInbox = () => {
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button - hidden on mobile since it's in bottom nav */}
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-6 right-4 md:bottom-8 md:right-8 z-50",
+          "fixed z-50 hidden md:flex",
+          "bottom-8 right-8",
           "h-14 w-14 rounded-full",
           "bg-primary text-primary-foreground",
-          "flex items-center justify-center",
+          "items-center justify-center",
           "hover:scale-105 active:scale-95 transition-all duration-200",
           "shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
           "ring-2 ring-primary/20 hover:ring-primary/40",
