@@ -7,26 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
-  MessageSquare, Send, Check, CheckCheck,
-  Volume2, VolumeX
+  MessageSquare, Send, Volume2, VolumeX, Paperclip, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isToday, isYesterday } from "date-fns";
-
-interface StaffMessage {
-  id: string;
-  store_id: string;
-  sender_id: string;
-  receiver_id: string;
-  message: string;
-  message_type: string;
-  file_url: string | null;
-  file_name: string | null;
-  task_title: string | null;
-  task_status: string | null;
-  is_read: boolean;
-  created_at: string;
-}
+import { useChatFeatures } from "@/hooks/useChatFeatures";
+import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 
 const notificationSound = typeof Audio !== "undefined"
   ? new Audio("data:audio/wav;base64,UklGRl9vT19teleXhBVkUgT09PUABAAAABAAEARKwAAIhYAQACABAAZGF0YQoAAAD//wIA")
@@ -37,18 +22,22 @@ const FloatingInbox = () => {
   const { isStaff, staffInfo } = useStaff();
 
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<StaffMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const storeId = staffInfo?.store_id;
   const myId = user?.id;
   const ownerId = staffInfo?.owner_id ?? null;
-
   const hasStoreContext = !!storeId && !!myId && !!ownerId;
+
+  const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!storeId || !myId || !ownerId) return;
@@ -69,7 +58,6 @@ const FloatingInbox = () => {
     }
   }, [hasStoreContext, fetchUnreadCount]);
 
-  // Load messages when opened
   useEffect(() => {
     if (!open || !storeId || !myId || !ownerId) { setMessages([]); return; }
     const load = async () => {
@@ -79,7 +67,7 @@ const FloatingInbox = () => {
         .eq("store_id", storeId)
         .or(`and(sender_id.eq.${myId},receiver_id.eq.${ownerId}),and(sender_id.eq.${ownerId},receiver_id.eq.${myId})`)
         .order("created_at", { ascending: true });
-      if (data) setMessages(data as StaffMessage[]);
+      if (data) setMessages(data as ChatMessage[]);
       scrollToBottom();
       await supabase
         .from("staff_messages")
@@ -93,23 +81,19 @@ const FloatingInbox = () => {
     load();
   }, [open, storeId, myId, ownerId, fetchUnreadCount]);
 
-  // Real-time subscription
   useEffect(() => {
     if (!storeId || !myId || !ownerId) return;
     const channel = supabase
       .channel(`floating-inbox-${storeId}`)
       .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "staff_messages",
+        event: "INSERT", schema: "public", table: "staff_messages",
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
-        const msg = payload.new as StaffMessage;
+        const msg = payload.new as ChatMessage;
         const isRelevant =
           (msg.sender_id === ownerId && msg.receiver_id === myId) ||
           (msg.sender_id === myId && msg.receiver_id === ownerId);
         if (!isRelevant) return;
-
         if (open) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           scrollToBottom();
@@ -123,16 +107,13 @@ const FloatingInbox = () => {
         fetchUnreadCount();
       })
       .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "staff_messages",
+        event: "UPDATE", schema: "public", table: "staff_messages",
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
-        const updated = payload.new as StaffMessage;
+        const updated = payload.new as ChatMessage;
         setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, ownerId, open, soundEnabled, fetchUnreadCount]);
 
@@ -140,33 +121,54 @@ const FloatingInbox = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
   };
 
+  const scrollToMessage = (msgId: string) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary/50", "rounded-xl");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary/50", "rounded-xl"), 2000);
+    }
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !storeId || !myId || !ownerId) return;
     const msg = newMessage.trim();
     setNewMessage("");
-    await supabase.from("staff_messages").insert({
-      store_id: storeId,
-      sender_id: myId,
-      receiver_id: ownerId,
-      message: msg,
-      message_type: "text",
-    });
+    const insertData: any = {
+      store_id: storeId, sender_id: myId, receiver_id: ownerId,
+      message: msg, message_type: "text",
+    };
+    if (replyTo) insertData.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    await supabase.from("staff_messages").insert(insertData);
   };
 
-  const formatMsgTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    if (isToday(d)) return format(d, "h:mm a");
-    if (isYesterday(d)) return "Yesterday " + format(d, "h:mm a");
-    return format(d, "MMM d, h:mm a");
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storeId || !myId || !ownerId) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `staff-messages/${storeId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("payment-assets").upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("payment-assets").getPublicUrl(path);
+      await supabase.from("staff_messages").insert({
+        store_id: storeId, sender_id: myId, receiver_id: ownerId,
+        message: file.name, message_type: "file",
+        file_url: urlData.publicUrl, file_name: file.name,
+      });
+    } catch (err) { console.error("Upload failed:", err); }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Only show for staff users
-  if (!isStaff) return null;
-  if (!hasStoreContext) return null;
+  const visibleMessages = messages.filter(m => isVisible(m));
+
+  if (!isStaff || !hasStoreContext) return null;
 
   return (
     <>
-      {/* Floating button — bottom-right */}
       <button
         onClick={() => setOpen(true)}
         className={cn(
@@ -186,87 +188,84 @@ const FloatingInbox = () => {
         )}
       </button>
 
-      {/* Chat Sheet */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:w-[420px] p-0 flex flex-col"
-        >
+        <SheetContent side="right" className="w-full sm:w-[420px] p-0 flex flex-col">
           <SheetTitle className="sr-only">Chat with Admin</SheetTitle>
-
           <div className="flex flex-col h-full">
-            {/* Chat Header */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
-                  A
-                </AvatarFallback>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-card">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">A</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground truncate">
-                  Store Admin
-                </h3>
+                <h3 className="text-sm font-semibold text-foreground truncate">Store Admin</h3>
                 <p className="text-[11px] text-muted-foreground">Owner</p>
               </div>
-              <Button
-                variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"
+                onClick={() => setSoundEnabled(!soundEnabled)}>
                 {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
               {loading ? (
                 <div className="text-center text-muted-foreground text-sm py-10">Loading...</div>
-              ) : messages.length === 0 ? (
+              ) : visibleMessages.length === 0 ? (
                 <div className="text-center text-muted-foreground text-sm py-10">
                   No messages yet. Start the conversation!
                 </div>
               ) : (
-                messages.map((msg) => {
-                  const isMine = msg.sender_id === myId;
+                visibleMessages.map((msg) => {
+                  const replyMsg = msg.reply_to_id
+                    ? messages.find(m => m.id === msg.reply_to_id) || null
+                    : null;
                   return (
-                    <div key={msg.id} className={cn("flex gap-2", isMine ? "justify-end" : "")}>
-                      {!isMine && (
-                        <Avatar className="h-6 w-6 shrink-0 mt-1">
-                          <AvatarFallback className="bg-accent text-accent-foreground text-[10px]">
-                            A
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div className={cn(
-                        "rounded-2xl px-3 py-2 text-sm max-w-[80%]",
-                        isMine
-                          ? "bg-primary text-primary-foreground rounded-tr-md"
-                          : "bg-accent text-accent-foreground rounded-tl-md"
-                      )}>
-                        <p className="whitespace-pre-wrap break-words">{msg.message}</p>
-                        <div className={cn(
-                          "text-[10px] mt-1 flex items-center gap-1",
-                          isMine ? "text-primary-foreground/70" : "text-muted-foreground"
-                        )}>
-                          {formatMsgTime(msg.created_at)}
-                          {isMine && (msg.is_read ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />)}
-                        </div>
-                      </div>
-                    </div>
+                    <ChatMessageBubble
+                      key={msg.id}
+                      msg={msg}
+                      isMine={msg.sender_id === myId}
+                      senderInitial="A"
+                      replyToMessage={replyMsg}
+                      onReply={setReplyTo}
+                      onReaction={addReaction}
+                      onDeleteForMe={deleteForMe}
+                      onDeleteForEveryone={deleteForEveryone}
+                      onScrollToMessage={scrollToMessage}
+                      myId={myId!}
+                    />
                   );
                 })
               )}
             </div>
 
+            {/* Reply preview */}
+            {replyTo && (
+              <div className="px-3 py-2 border-t border-border bg-muted/50 flex items-center gap-2">
+                <div className="flex-1 text-xs text-muted-foreground truncate">
+                  Replying to: <span className="font-medium">{replyTo.message.slice(0, 50)}</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+
             {/* Input */}
-            <div className="px-3 py-3 border-t border-border">
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+            <div className="px-3 py-3 border-t border-border bg-card">
+              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-end">
+                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+                <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-muted-foreground"
+                  onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  <Paperclip className="w-4 h-4" />
+                </Button>
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
                   className="text-sm rounded-xl h-10 flex-1"
                 />
-                <Button type="submit" disabled={!newMessage.trim()} size="icon" className="h-10 w-10 rounded-xl">
+                <Button type="submit" disabled={!newMessage.trim() || uploading} size="icon" className="h-10 w-10 rounded-xl shrink-0">
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
