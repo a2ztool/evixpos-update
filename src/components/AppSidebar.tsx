@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, Users, ShoppingCart, CreditCard,
   Settings, Plug, LogOut, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
   TrendingUp, ArrowUpDown, BookOpen, Megaphone, ListTodo, BarChart3, RefreshCw, Crown,
-  Bell, ShoppingBag, Bot, MessageCircle, Gift, Headphones, Zap, ExternalLink, Sheet, Lock
+  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, ExternalLink, Sheet, Lock
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
@@ -234,6 +234,7 @@ const AppSidebar = () => {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
+                {renderItem({ title: "Staff Inbox", icon: MessageSquare, path: "/staff-inbox" })}
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
                 {showSettings && renderItem({ title: t.settings, icon: Settings, path: "/settings" })}

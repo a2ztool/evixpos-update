@@ -1587,6 +1587,59 @@ export type Database = {
           },
         ]
       }
+      staff_messages: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          is_read: boolean
+          message: string
+          message_type: string
+          receiver_id: string
+          sender_id: string
+          store_id: string
+          task_status: string | null
+          task_title: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          message_type?: string
+          receiver_id: string
+          sender_id: string
+          store_id: string
+          task_status?: string | null
+          task_title?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          message_type?: string
+          receiver_id?: string
+          sender_id?: string
+          store_id?: string
+          task_status?: string | null
+          task_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_messages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address: string
