@@ -61,13 +61,38 @@ const playNotificationSound = (type: string = "info") => {
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.stop(ctx.currentTime + 0.35);
         break;
-      default: // info / order / new_customer etc
+      default: // info / new_customer etc
         osc.frequency.value = 800;
         osc.type = "sine";
         gain.gain.value = 0.3;
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
         osc.stop(ctx.currentTime + 0.3);
+        break;
+      case "order":
+        // Multi-tone 5-second alert for new orders
+        osc.frequency.value = 880;
+        osc.type = "sine";
+        gain.gain.value = 0.3;
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.stop(ctx.currentTime + 0.45);
+        // Chain additional tones
+        [1100, 880, 1100, 880, 1320, 880, 1100, 880].forEach((freq, i) => {
+          try {
+            const ctxN = new AudioContext();
+            const oscN = ctxN.createOscillator();
+            const gainN = ctxN.createGain();
+            oscN.connect(gainN);
+            gainN.connect(ctxN.destination);
+            oscN.frequency.value = freq;
+            oscN.type = "sine";
+            const t = ctxN.currentTime;
+            gainN.gain.setValueAtTime(0.25, t);
+            gainN.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            setTimeout(() => { oscN.start(); oscN.stop(ctxN.currentTime + 0.4); }, (i + 1) * 500);
+          } catch {}
+        });
         break;
     }
   } catch {
