@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
