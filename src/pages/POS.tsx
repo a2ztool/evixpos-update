@@ -78,6 +78,7 @@ type PaymentMode = "none" | "discount" | "extra" | "due";
 const POS = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);

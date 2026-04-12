@@ -78,6 +78,7 @@ const paymentColors: Record<string, string> = {
 const Orders = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
 
