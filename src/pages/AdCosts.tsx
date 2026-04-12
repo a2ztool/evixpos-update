@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,7 @@ type DatePreset = "today" | "week" | "month" | "last30" | "last90" | "year" | "a
 const AdCosts = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [ads, setAds] = useState<AdCost[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -214,7 +216,7 @@ const AdCosts = () => {
       const { error } = await supabase.from("ad_costs").update(payload).eq("id", editId);
       if (error) toast.error(error.message); else toast.success("Ad cost updated!");
     } else {
-      const { error } = await supabase.from("ad_costs").insert({ ...payload, user_id: user!.id, store_id: activeStore?.id });
+      const { error } = await supabase.from("ad_costs").insert({ ...payload, user_id: effectiveUserId!, store_id: activeStore?.id });
       if (error) toast.error(error.message); else toast.success("Ad cost added!");
     }
     setSheetOpen(false);

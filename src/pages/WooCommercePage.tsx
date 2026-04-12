@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const WooCommercePage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [wc, setWc] = useState<any>(null);
   const [storeUrl, setStoreUrl] = useState("");
   const [consumerKey, setConsumerKey] = useState("");
@@ -104,7 +106,7 @@ const WooCommercePage = () => {
     } else {
       const { error } = await supabase.from("integrations").insert({
         ...payload,
-        user_id: user.id,
+        user_id: effectiveUserId!,
         store_id: activeStore.id,
         type: "woocommerce" as const,
       });

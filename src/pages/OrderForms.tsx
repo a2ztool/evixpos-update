@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const generateSlug = (name: string) =>
 const OrderForms = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [forms, setForms] = useState<OrderForm[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -132,7 +134,7 @@ const OrderForms = () => {
       }
     } else {
       const { error } = await supabase.from("order_forms").insert({
-        user_id: user.id,
+        user_id: effectiveUserId!,
         store_id: activeStore.id,
         ...payload,
       });

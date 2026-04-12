@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ const getMissions = (stats: { total: number; done: number; streak: number; highD
 const TaskMission = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -195,7 +197,7 @@ const TaskMission = () => {
       const { error } = await supabase.from("tasks").update(payload).eq("id", editId);
       if (error) toast.error(error.message); else toast.success("Task updated ✓");
     } else {
-      const { error } = await supabase.from("tasks").insert({ ...payload, user_id: user!.id, store_id: activeStore?.id });
+      const { error } = await supabase.from("tasks").insert({ ...payload, user_id: effectiveUserId!, store_id: activeStore?.id });
       if (error) toast.error(error.message); else toast.success("Task created! 🎉");
     }
     setSheetOpen(false);

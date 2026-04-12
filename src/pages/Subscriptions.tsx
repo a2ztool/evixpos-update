@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ const emptyForm = {
 const Subscriptions = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { format: formatCurrency, symbol } = useCurrency();
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -251,7 +253,7 @@ const Subscriptions = () => {
       const { error } = await supabase.from("subscriptions").update(payload).eq("id", editId);
       if (error) toast.error(error.message); else toast.success("Subscription updated ✓");
     } else {
-      const { error } = await supabase.from("subscriptions").insert({ ...payload, user_id: user!.id, store_id: activeStore?.id });
+      const { error } = await supabase.from("subscriptions").insert({ ...payload, user_id: effectiveUserId!, store_id: activeStore?.id });
       if (error) toast.error(error.message); else toast.success("Subscription created! 🎉");
     }
     setSheetOpen(false);

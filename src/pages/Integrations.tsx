@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ interface Integration {
 const Integrations = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [waForm, setWaForm] = useState({ api_key: "", phone_number: "" });
   const [wcForm, setWcForm] = useState({ api_key: "" });
@@ -57,7 +59,7 @@ const Integrations = () => {
       else toast.success("WooCommerce updated");
     } else {
       const { error } = await supabase.from("integrations").insert({
-        user_id: user!.id, store_id: activeStore?.id, type: "woocommerce" as const, api_key: wcForm.api_key, status: "active",
+        user_id: effectiveUserId!, store_id: activeStore?.id, type: "woocommerce" as const, api_key: wcForm.api_key, status: "active",
       });
       if (error) toast.error(error.message);
       else toast.success("WooCommerce connected");
@@ -72,7 +74,7 @@ const Integrations = () => {
       else toast.success("WhatsApp updated");
     } else {
       const { error } = await supabase.from("integrations").insert({
-        user_id: user!.id, store_id: activeStore?.id, type: "whatsapp" as const, api_key: waForm.api_key, phone_number: waForm.phone_number, status: "active",
+        user_id: effectiveUserId!, store_id: activeStore?.id, type: "whatsapp" as const, api_key: waForm.api_key, phone_number: waForm.phone_number, status: "active",
       });
       if (error) toast.error(error.message);
       else toast.success("WhatsApp connected");
