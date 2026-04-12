@@ -19,6 +19,8 @@ interface StaffContextType {
   loading: boolean;
   hasPermission: (perm: string) => boolean;
   hasAnyPermission: (...perms: string[]) => boolean;
+  /** Returns the store owner's user_id for staff, or the current user's id for owners */
+  effectiveUserId: string | null;
 }
 
 const StaffContext = createContext<StaffContextType>({
@@ -27,6 +29,7 @@ const StaffContext = createContext<StaffContextType>({
   loading: true,
   hasPermission: () => false,
   hasAnyPermission: () => false,
+  effectiveUserId: null,
 });
 
 export const useStaff = () => useContext(StaffContext);
