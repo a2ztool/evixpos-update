@@ -674,7 +674,10 @@ const fetchProducts = async () => {
                     <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
                     </Button>
-                  )}
+                   )}
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); confirmDelete(o); }}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -1338,6 +1341,28 @@ const fetchProducts = async () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete order <span className="font-mono font-semibold">{orderToDelete?.id.slice(0, 8)}...</span>? 
+              This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteOrder}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
