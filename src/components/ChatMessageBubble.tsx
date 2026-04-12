@@ -1,17 +1,17 @@
-import { useState, forwardRef } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Check, CheckCheck, FileText, ListTodo, Reply, Trash2, Smile,
-  MoreVertical, Download
+  MoreVertical, Download, Clock, ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { REACTION_EMOJIS } from "@/hooks/useChatFeatures";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
   Popover, PopoverContent, PopoverTrigger
@@ -46,7 +46,9 @@ interface Props {
   onDeleteForMe: (msgId: string) => void;
   onDeleteForEveryone: (msgId: string, senderId: string) => void;
   onScrollToMessage?: (msgId: string) => void;
+  onTaskStatusUpdate?: (msgId: string, status: string) => void;
   myId: string;
+  isStaff?: boolean;
 }
 
 const formatMsgTime = (dateStr: string) => {
@@ -56,10 +58,16 @@ const formatMsgTime = (dateStr: string) => {
   return format(d, "MMM d, h:mm a");
 };
 
+const TASK_STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
+  "in-progress": "bg-blue-500/20 text-blue-600 border-blue-500/30",
+  completed: "bg-green-500/20 text-green-600 border-green-500/30",
+};
+
 const ChatMessageBubble = ({
   msg, isMine, senderInitial, replyToMessage,
   onReply, onReaction, onDeleteForMe, onDeleteForEveryone,
-  onScrollToMessage, myId
+  onScrollToMessage, onTaskStatusUpdate, myId, isStaff
 }: Props) => {
   const [showActions, setShowActions] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -72,6 +80,8 @@ const ChatMessageBubble = ({
   });
 
   const isDeleted = msg.is_deleted_for_everyone;
+  const isTask = msg.message_type === "task" && msg.task_title;
+  const canUpdateTask = isStaff && !isMine && isTask && !isDeleted;
 
   return (
     <div
@@ -111,9 +121,11 @@ const ChatMessageBubble = ({
 
         <div className={cn(
           "rounded-2xl px-3.5 py-2.5 text-sm relative",
-          isMine
-            ? "bg-primary text-primary-foreground rounded-tr-md"
-            : "bg-accent text-accent-foreground rounded-tl-md",
+          isTask && !isDeleted
+            ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 text-foreground rounded-xl"
+            : isMine
+              ? "bg-primary text-primary-foreground rounded-tr-md"
+              : "bg-card border border-border text-foreground rounded-tl-md shadow-sm",
           isDeleted && "italic opacity-60"
         )}>
           {/* Action buttons */}
@@ -155,7 +167,7 @@ const ChatMessageBubble = ({
                     <MoreVertical className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align={isMine ? "end" : "start"} className="w-44">
+                <DropdownMenuContent align={isMine ? "end" : "start"} className="w-48">
                   <DropdownMenuItem onClick={() => { onDeleteForMe(msg.id); setMenuOpen(false); }}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete for me
                   </DropdownMenuItem>
@@ -170,12 +182,47 @@ const ChatMessageBubble = ({
             </div>
           )}
 
-          {/* Task message */}
-          {msg.message_type === "task" && msg.task_title && !isDeleted && (
-            <div className="flex items-center gap-1.5 mb-1.5 text-xs opacity-80">
-              <ListTodo className="w-3 h-3" />
-              <span className="font-medium">Task: {msg.task_title}</span>
-              <Badge variant="outline" className="text-[9px] h-4 capitalize">{msg.task_status}</Badge>
+          {/* Task message - premium card */}
+          {isTask && !isDeleted && (
+            <div className="mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <ListTodo className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">Task Assignment</span>
+              </div>
+              <div className="bg-background/60 rounded-lg p-2.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">{msg.task_title}</span>
+                  <Badge variant="outline" className={cn(
+                    "text-[10px] h-5 capitalize border",
+                    TASK_STATUS_COLORS[msg.task_status || "pending"] || TASK_STATUS_COLORS.pending
+                  )}>
+                    <Clock className="w-2.5 h-2.5 mr-1" />
+                    {msg.task_status || "pending"}
+                  </Badge>
+                </div>
+              </div>
+              {/* Staff can update task status */}
+              {canUpdateTask && onTaskStatusUpdate && (
+                <div className="flex gap-1.5 mt-2">
+                  {["pending", "in-progress", "completed"].map(status => (
+                    <Button
+                      key={status}
+                      variant={msg.task_status === status ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "text-[10px] h-6 px-2 capitalize",
+                        msg.task_status === status && "pointer-events-none"
+                      )}
+                      onClick={() => onTaskStatusUpdate(msg.id, status)}
+                    >
+                      {status === "completed" && <Check className="w-3 h-3 mr-1" />}
+                      {status === "in-progress" && <ArrowRight className="w-3 h-3 mr-1" />}
+                      {status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                      {status}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -195,13 +242,23 @@ const ChatMessageBubble = ({
             </div>
           )}
 
-          <p className="whitespace-pre-wrap break-words">
-            {isDeleted ? "🚫 This message was deleted" : msg.message}
-          </p>
+          {/* Message text - for tasks show after task card */}
+          {(!isTask || isDeleted) && (
+            <p className="whitespace-pre-wrap break-words">
+              {isDeleted ? "🚫 This message was deleted" : msg.message}
+            </p>
+          )}
+          {isTask && !isDeleted && msg.message && (
+            <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1">
+              {msg.message}
+            </p>
+          )}
 
           <div className={cn(
             "text-[10px] mt-1 flex items-center gap-1",
-            isMine ? "text-primary-foreground/70" : "text-muted-foreground"
+            isTask && !isDeleted
+              ? "text-muted-foreground"
+              : isMine ? "text-primary-foreground/70" : "text-muted-foreground"
           )}>
             {formatMsgTime(msg.created_at)}
             {isMine && (msg.is_read
