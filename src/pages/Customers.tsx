@@ -58,6 +58,8 @@ const Customers = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyCustomer, setHistoryCustomer] = useState("");
   const [orders, setOrders] = useState<OrderHistory[]>([]);
+  const [dnaOpen, setDnaOpen] = useState(false);
+  const [dnaCustomer, setDnaCustomer] = useState<Customer | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [isDragging, setIsDragging] = useState(false);
