@@ -20,7 +20,7 @@ const FacebookCallback = () => {
       }
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("meta-oauth-callback", {
+        const { data, error: fnError } = await supabase.functions.invoke("meta-oauth-callback?action=exchange_token", {
           body: {
             code,
             state,
