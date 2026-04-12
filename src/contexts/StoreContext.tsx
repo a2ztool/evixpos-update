@@ -21,6 +21,8 @@ interface StoreContextType {
   refreshStores: () => Promise<void>;
   storeLimit: number;
   canCreateStore: boolean;
+  /** True when the current user is a staff member (store loaded from staff assignment) */
+  isStaffStore: boolean;
 }
 
 const StoreContext = createContext<StoreContextType>({
@@ -32,6 +34,7 @@ const StoreContext = createContext<StoreContextType>({
   refreshStores: async () => {},
   storeLimit: 1,
   canCreateStore: false,
+  isStaffStore: false,
 });
 
 export const useStore = () => useContext(StoreContext);
@@ -48,13 +51,42 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState("free");
+  const [isStaffStore, setIsStaffStore] = useState(false);
 
   const storeLimit = PLAN_STORE_LIMITS[plan] ?? 1;
-  const canCreateStore = stores.length < storeLimit;
+  const canCreateStore = !isStaffStore && stores.length < storeLimit;
 
   const fetchStores = useCallback(async () => {
     if (!user) { setLoading(false); return; }
 
+    // First check if user is a staff member
+    const { data: staffData } = await supabase
+      .from("staff_members")
+      .select("store_id, user_id")
+      .eq("auth_user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (staffData?.store_id) {
+      // Staff user: load only their assigned store
+      const { data: storeData } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("id", staffData.store_id)
+        .single();
+
+      if (storeData) {
+        const store = storeData as Store;
+        setStores([store]);
+        setActiveStore(store);
+        setIsStaffStore(true);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Owner: load all their stores
+    setIsStaffStore(false);
     const { data } = await supabase
       .from("stores")
       .select("*")
@@ -95,6 +127,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchStores]);
 
   const switchStore = (storeId: string) => {
+    if (isStaffStore) return; // Staff can't switch stores
     const store = stores.find(s => s.id === storeId);
     if (store && user) {
       setActiveStore(store);
@@ -103,7 +136,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const createStore = async (name: string, address = "", phone = ""): Promise<Store | null> => {
-    if (!user) return null;
+    if (!user || isStaffStore) return null;
     if (!canCreateStore) return null;
     const isFirst = stores.length === 0;
     const { data, error } = await supabase
@@ -121,7 +154,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
     if (error || !data) {
       if (error?.message?.includes("Store limit reached")) {
-        return null; // caller will handle toast
+        return null;
       }
       return null;
     }
@@ -136,7 +169,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     <StoreContext.Provider value={{
       stores, activeStore, loading,
       switchStore, createStore, refreshStores: fetchStores,
-      storeLimit, canCreateStore,
+      storeLimit, canCreateStore, isStaffStore,
     }}>
       {children}
     </StoreContext.Provider>

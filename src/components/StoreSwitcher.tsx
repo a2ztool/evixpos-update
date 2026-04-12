@@ -15,11 +15,21 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 const StoreSwitcher = () => {
-  const { stores, activeStore, switchStore, createStore, canCreateStore, storeLimit } = useStore();
+  const { stores, activeStore, switchStore, createStore, canCreateStore, storeLimit, isStaffStore } = useStore();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Staff users: show store name only, no switching
+  if (isStaffStore) {
+    return (
+      <Button variant="ghost" size="sm" className="h-8 gap-2 px-2.5 text-muted-foreground max-w-[180px] cursor-default pointer-events-none">
+        <Store className="h-3.5 w-3.5 shrink-0 text-primary" />
+        <span className="truncate text-xs font-medium">{activeStore?.name || "Store"}</span>
+      </Button>
+    );
+  }
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
