@@ -139,7 +139,7 @@ export const useStorePlan = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchPlan]);
+  }, [planUserId, fetchPlan]);
 
   const hasFeature = useCallback(
     (feature: FeatureKey): boolean => {
