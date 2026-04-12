@@ -686,7 +686,19 @@ const fetchProducts = async () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
-                    <TableCell className="capitalize text-sm">{o.source}</TableCell>
+                    <TableCell className="capitalize text-sm">
+                      {o.source === "woocommerce" ? (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                          <Globe className="h-3 w-3" /> Website
+                        </Badge>
+                      ) : o.source === "order_form" ? (
+                        <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 gap-1">
+                          <FileText className="h-3 w-3" /> Form
+                        </Badge>
+                      ) : (
+                        o.source
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(o.created_at).toLocaleDateString()}
                     </TableCell>
