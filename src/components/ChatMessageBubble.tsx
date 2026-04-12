@@ -203,21 +203,21 @@ const ChatMessageBubble = ({
               </div>
               {/* Staff can update task status */}
               {canUpdateTask && onTaskStatusUpdate && (
-                <div className="flex gap-1.5 mt-2">
+                <div className="flex flex-wrap gap-1 mt-2">
                   {["pending", "in-progress", "completed"].map(status => (
                     <Button
                       key={status}
                       variant={msg.task_status === status ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        "text-[10px] h-6 px-2 capitalize",
+                        "text-[9px] h-5 px-1.5 capitalize whitespace-nowrap",
                         msg.task_status === status && "pointer-events-none"
                       )}
                       onClick={() => onTaskStatusUpdate(msg.id, status)}
                     >
-                      {status === "completed" && <Check className="w-3 h-3 mr-1" />}
-                      {status === "in-progress" && <ArrowRight className="w-3 h-3 mr-1" />}
-                      {status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                      {status === "completed" && <Check className="w-2.5 h-2.5 mr-0.5" />}
+                      {status === "in-progress" && <ArrowRight className="w-2.5 h-2.5 mr-0.5" />}
+                      {status === "pending" && <Clock className="w-2.5 h-2.5 mr-0.5" />}
                       {status}
                     </Button>
                   ))}
