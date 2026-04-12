@@ -250,7 +250,6 @@ const ownerMoreMenuItems = [
 ];
 
 const staffMoreMenuItems = [
-  { icon: ShoppingCart, path: "/orders", label: "Orders" },
   { icon: UsersIcon, path: "/customers", label: "Customers" },
   { icon: SupportIcon, path: "/support", label: "Support" },
 ];
