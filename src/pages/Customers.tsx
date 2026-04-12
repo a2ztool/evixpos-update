@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const statusColors: Record<string, string> = {
 const Customers = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -79,7 +81,7 @@ const Customers = () => {
     const { count } = await supabase
       .from("customers")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user!.id);
+      .eq("user_id", effectiveUserId!);
     if ((count ?? 0) >= limits.maxCustomers) {
       toast.error(`Your plan allows up to ${limits.maxCustomers} customers across all stores. Please upgrade.`);
       return;
@@ -102,7 +104,7 @@ const Customers = () => {
       if (error) toast.error(error.message);
       else toast.success("Customer updated");
     } else {
-      const { error } = await supabase.from("customers").insert({ ...form, user_id: user!.id, store_id: activeStore?.id });
+      const { error } = await supabase.from("customers").insert({ ...form, user_id: effectiveUserId!, store_id: activeStore?.id });
       if (error) toast.error(error.message);
       else toast.success("Customer added");
     }
@@ -172,7 +174,7 @@ const Customers = () => {
       address: row["address"] || "",
       tags: row["tags"] || "",
       notes: row["notes"] || "",
-      user_id: user!.id,
+      user_id: effectiveUserId!,
     }));
     const { error } = await supabase.from("customers").insert(rows);
     if (error) toast.error(error.message);

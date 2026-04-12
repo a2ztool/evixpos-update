@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ const emptyForm = {
 const Products = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -114,7 +116,7 @@ const Products = () => {
     const { count } = await supabase
       .from("products")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user!.id);
+      .eq("user_id", effectiveUserId!);
     if ((count ?? 0) >= limits.maxProducts) {
       toast.error(`Your plan allows up to ${limits.maxProducts} products across all stores. Please upgrade.`);
       return;
@@ -173,7 +175,7 @@ const Products = () => {
       const { error } = await supabase.from("products").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); setSaving(false); return; }
     } else {
-      const { data, error } = await supabase.from("products").insert({ ...payload, user_id: user!.id, store_id: activeStore?.id }).select("id").single();
+      const { data, error } = await supabase.from("products").insert({ ...payload, user_id: effectiveUserId!, store_id: activeStore?.id }).select("id").single();
       if (error) { toast.error(error.message); setSaving(false); return; }
       productId = data.id;
     }
@@ -271,7 +273,7 @@ const Products = () => {
     let success = 0, fail = 0;
     for (const row of importData) {
       const { error } = await supabase.from("products").insert({
-        user_id: user.id,
+        user_id: effectiveUserId!,
         name: row.name || "Unnamed",
         sku: row.sku || "",
         category: row.category || "",

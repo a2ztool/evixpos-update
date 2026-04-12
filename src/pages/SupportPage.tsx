@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -107,6 +108,7 @@ const CATEGORY_OPTIONS = [
 const SupportPage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [lang, setLang] = useState<Lang>("bn");
   const [activeTab, setActiveTab] = useState("tickets");
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -167,7 +169,7 @@ const SupportPage = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket || !user) return;
     setSendingMsg(true);
-    const { error } = await supabase.from("support_messages").insert({ ticket_id: selectedTicket.id, user_id: user.id, message: newMessage.trim(), sender_type: "user" } as any);
+    const { error } = await supabase.from("support_messages").insert({ ticket_id: selectedTicket.id, user_id: effectiveUserId!, message: newMessage.trim(), sender_type: "user" } as any);
     if (!error) {
       setNewMessage("");
       fetchMessages(selectedTicket.id);
@@ -178,7 +180,7 @@ const SupportPage = () => {
 
   const handleCreateTicket = async () => {
     if (!user || !form.subject.trim()) { toast.error("Subject is required"); return; }
-    const payload: any = { user_id: user.id, store_id: activeStore?.id || null, ...form };
+    const payload: any = { user_id: effectiveUserId!, store_id: activeStore?.id || null, ...form };
     if (editingTicket) {
       const { error } = await supabase.from("support_tickets").update(payload).eq("id", editingTicket.id);
       if (!error) { toast.success("Ticket updated"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Update failed");

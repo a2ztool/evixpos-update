@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { Lang } from "@/contexts/LanguageContext";
@@ -167,6 +168,7 @@ const defaultSettings: BusinessSettings = {
 const SettingsPage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { t, lang, setLang } = useLanguage();
   const { plan } = useSubscription();
   const navigate = useNavigate();
@@ -234,7 +236,7 @@ const SettingsPage = () => {
     if (!user || !activeStore) return;
     setLoading(true);
     const payload = {
-      user_id: user.id, store_id: activeStore.id, business_name: settings.business_name, business_email: settings.business_email,
+      user_id: effectiveUserId!, store_id: activeStore.id, business_name: settings.business_name, business_email: settings.business_email,
       store_slug: settings.store_slug, shop_url: settings.shop_url, business_phone: settings.business_phone,
       logo_url: settings.logo_url, show_payment_in_pos: settings.show_payment_in_pos,
       default_currency: settings.default_currency, timezone: settings.timezone, tax_rate: settings.tax_rate,
@@ -377,7 +379,7 @@ const SettingsPage = () => {
       return;
     }
     const { data, error } = await supabase.from("stores").insert({
-      user_id: user.id, name: newStore.name, address: newStore.address, phone: newStore.phone,
+      user_id: effectiveUserId!, name: newStore.name, address: newStore.address, phone: newStore.phone,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     if (data) { setStores(prev => [...prev, data]); setNewStore({ name: "", address: "", phone: "" }); setStoreDialog(false); toast.success("Store added!"); }

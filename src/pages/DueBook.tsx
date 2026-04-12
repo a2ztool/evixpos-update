@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ const DATE_PRESETS = [
 const DueBook = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { format: formatCurrency, symbol } = useCurrency();
   const [dues, setDues] = useState<Due[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,7 +293,7 @@ const DueBook = () => {
     } else {
       const { error } = await supabase.from("transactions").insert({
         ...payload,
-        user_id: user!.id,
+        user_id: effectiveUserId!,
         store_id: activeStore?.id,
       });
       if (error) toast.error(error.message);

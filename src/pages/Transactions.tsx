@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ const emptyForm = { type: "income" as "income" | "expense", amount: "", category
 const Transactions = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -60,7 +62,7 @@ const Transactions = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("transactions").insert({
-      user_id: user!.id,
+      user_id: effectiveUserId!,
       store_id: activeStore?.id,
       type: form.type,
       amount: parseFloat(form.amount),

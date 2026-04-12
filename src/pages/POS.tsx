@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ type PaymentMode = "none" | "discount" | "extra" | "due";
 const POS = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -264,7 +266,7 @@ const POS = () => {
     setCreatingCust(true);
     const { data, error } = await supabase
       .from("customers")
-      .insert({ user_id: user.id, store_id: activeStore?.id, name: newCustName.trim(), email: newCustEmail, phone: newCustPhone })
+      .insert({ user_id: effectiveUserId!, store_id: activeStore?.id, name: newCustName.trim(), email: newCustEmail, phone: newCustPhone })
       .select("id, name, phone")
       .single();
     if (error) {
@@ -331,7 +333,7 @@ const POS = () => {
       const { data: order, error: orderErr } = await supabase
         .from("orders")
         .insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: customerId || null,
           total_amount: total,
@@ -371,7 +373,7 @@ const POS = () => {
 
       if (!isDue) {
         await supabase.from("transactions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
           amount: total,
@@ -381,7 +383,7 @@ const POS = () => {
         });
       } else {
         await supabase.from("transactions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
           amount: total,
@@ -400,7 +402,7 @@ const POS = () => {
         endDate.setDate(endDate.getDate() + (item.variation!.duration_days));
 
         await supabase.from("subscriptions").insert({
-          user_id: user!.id,
+          user_id: effectiveUserId!,
           store_id: activeStore?.id,
           customer_id: customerId,
           product_name: item.product.name,

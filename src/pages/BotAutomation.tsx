@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,6 +142,7 @@ const providerDefaults: Record<string, { host: string; port: number }> = {
 const BotAutomation = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { effectiveUserId } = useStaff();
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Email Config
@@ -255,7 +257,7 @@ const BotAutomation = () => {
     const payload = {
       ...emailForm,
       store_id: activeStore.id,
-      user_id: user.id,
+      user_id: effectiveUserId!,
     };
 
     if (emailConfig?.id) {
@@ -297,7 +299,7 @@ const BotAutomation = () => {
     } else {
       await supabase.from("renewal_automation_config").insert({
         store_id: activeStore.id,
-        user_id: user.id,
+        user_id: effectiveUserId!,
         is_auto_mode: newMode,
         is_active: newMode,
       });
@@ -313,7 +315,7 @@ const BotAutomation = () => {
     } else {
       await supabase.from("renewal_automation_config").insert({
         store_id: activeStore.id,
-        user_id: user.id,
+        user_id: effectiveUserId!,
         schedule_time: time,
       });
     }
@@ -325,7 +327,7 @@ const BotAutomation = () => {
     if (!user || !activeStore || !editingTemplate) return;
     const payload = {
       store_id: activeStore.id,
-      user_id: user.id,
+      user_id: effectiveUserId!,
       template_type: editingTemplate.template_type,
       subject: editingTemplate.subject,
       body: editingTemplate.body,
@@ -416,7 +418,7 @@ const BotAutomation = () => {
       const { data, error } = await supabase.functions.invoke("send-renewal-reminders", {
         body: {
           store_id: activeStore.id,
-          user_id: user.id,
+          user_id: effectiveUserId!,
           mode,
           customer_ids: mode === "campaign" ? selectedCustomers : undefined,
           template_id: selectedTemplateId || undefined,
