@@ -62,7 +62,7 @@ const Transactions = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("transactions").insert({
-      user_id: user!.id,
+      user_id: effectiveUserId!,
       store_id: activeStore?.id,
       type: form.type,
       amount: parseFloat(form.amount),

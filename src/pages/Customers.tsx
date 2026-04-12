@@ -81,7 +81,7 @@ const Customers = () => {
     const { count } = await supabase
       .from("customers")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user!.id);
+      .eq("user_id", effectiveUserId!);
     if ((count ?? 0) >= limits.maxCustomers) {
       toast.error(`Your plan allows up to ${limits.maxCustomers} customers across all stores. Please upgrade.`);
       return;
@@ -104,7 +104,7 @@ const Customers = () => {
       if (error) toast.error(error.message);
       else toast.success("Customer updated");
     } else {
-      const { error } = await supabase.from("customers").insert({ ...form, user_id: user!.id, store_id: activeStore?.id });
+      const { error } = await supabase.from("customers").insert({ ...form, user_id: effectiveUserId!, store_id: activeStore?.id });
       if (error) toast.error(error.message);
       else toast.success("Customer added");
     }
