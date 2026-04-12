@@ -1891,6 +1891,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_staff_owner_id: { Args: never; Returns: string }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -1899,6 +1900,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_store_member: { Args: { _store_id: string }; Returns: boolean }
       store_has_min_plan: {
         Args: { _min_plan: string; _store_id: string }
         Returns: boolean
