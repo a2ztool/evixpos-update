@@ -118,7 +118,7 @@ export const useStorePlan = () => {
   useEffect(() => {
     if (!planUserId) return;
 
-    const channelName = `user-plan-${user.id}-${Date.now()}`;
+    const channelName = `user-plan-${planUserId}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -127,7 +127,7 @@ export const useStorePlan = () => {
           event: "*",
           schema: "public",
           table: "subscriptions",
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${planUserId}`,
         },
         () => {
           fetchPlan(true);
