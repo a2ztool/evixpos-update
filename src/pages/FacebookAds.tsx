@@ -58,12 +58,65 @@ const FacebookAds = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState("14");
   const [activeTab, setActiveTab] = useState("overview");
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
+  const [accountName, setAccountName] = useState<string>("");
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const { campaigns, dailyData } = useMemo(() => generateDemoData(), []);
 
+  // Check existing connection on load
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const checkConnection = async () => {
+      if (!user || !activeStore) { setLoading(false); return; }
+      const { data } = await supabase
+        .from("meta_ad_accounts")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("store_id", activeStore.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data) {
+        setIsConnected(true);
+        setAccountName(data.account_name || "Facebook Ads");
+        setIsDemoMode(false);
+      }
+      setLoading(false);
+    };
+    checkConnection();
+  }, [user, activeStore]);
+
+  // Handle OAuth callback (code in URL)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code || !state) return;
+
+    const exchangeToken = async () => {
+      setConnectingOAuth(true);
+      try {
+        const redirectUri = `${window.location.origin}/finance/facebook-ads`;
+        const { data, error } = await supabase.functions.invoke("meta-oauth-callback", {
+          body: { code, state, redirect_uri: redirectUri },
+          headers: {},
+        });
+        // Remove query params from URL
+        window.history.replaceState({}, "", window.location.pathname);
+        if (error || !data?.success) {
+          toast.error(data?.error || "OAuth token exchange failed");
+        } else {
+          setIsConnected(true);
+          setAccountName(data.account_name || "Facebook Ads");
+          setIsDemoMode(false);
+          toast.success(`✅ ${data.account_name || "Facebook Ads"} connected successfully!`);
+        }
+      } catch (err: any) {
+        toast.error("Connection failed: " + err.message);
+      } finally {
+        setConnectingOAuth(false);
+      }
+    };
+    exchangeToken();
   }, []);
 
   // Auto-refresh timer
@@ -104,13 +157,42 @@ const FacebookAds = () => {
     ];
   }, [campaigns]);
 
-  const handleConnect = () => {
-    toast.info("Facebook Ads OAuth integration আসছে শীঘ্রই! আপনার Meta App ID & Secret প্রয়োজন হবে।");
+  const handleConnect = async () => {
+    if (!user || !activeStore) {
+      toast.error("Please select a store first");
+      return;
+    }
+    setConnectingOAuth(true);
+    try {
+      const redirectUri = `${window.location.origin}/finance/facebook-ads`;
+      const { data, error } = await supabase.functions.invoke("meta-oauth-callback?action=get_auth_url", {
+        body: { store_id: activeStore.id, redirect_uri: redirectUri },
+      });
+      if (error || !data?.auth_url) {
+        toast.error(data?.error || "Failed to get OAuth URL");
+        return;
+      }
+      window.location.href = data.auth_url;
+    } catch (err: any) {
+      toast.error("Failed: " + err.message);
+    } finally {
+      setConnectingOAuth(false);
+    }
   };
 
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    toast.success("Facebook Ads disconnected");
+  const handleDisconnect = async () => {
+    if (!user || !activeStore) return;
+    try {
+      await supabase.functions.invoke("meta-oauth-callback?action=disconnect", {
+        body: { store_id: activeStore.id },
+      });
+      setIsConnected(false);
+      setAccountName("");
+      setIsDemoMode(false);
+      toast.success("Facebook Ads disconnected");
+    } catch {
+      toast.error("Failed to disconnect");
+    }
   };
 
   // Not connected state
@@ -144,11 +226,11 @@ const FacebookAds = () => {
           </Badge>
         </div>
         <div className="flex gap-3 mt-2">
-          <Button size="lg" className="gap-2 bg-[#1877F2] hover:bg-[#1664d9] text-white shadow-lg" onClick={handleConnect}>
-            <Facebook className="h-5 w-5" />
-            Connect Facebook Ads
+          <Button size="lg" className="gap-2 bg-[#1877F2] hover:bg-[#1664d9] text-white shadow-lg" onClick={handleConnect} disabled={connectingOAuth}>
+            {connectingOAuth ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Facebook className="h-5 w-5" />}
+            {connectingOAuth ? "Connecting..." : "Connect Facebook Ads"}
           </Button>
-          <Button size="lg" variant="outline" className="gap-2" onClick={() => { setIsConnected(true); toast.success("Demo mode activated!"); }}>
+          <Button size="lg" variant="outline" className="gap-2" onClick={() => { setIsConnected(true); setIsDemoMode(true); toast.success("Demo mode activated!"); }}>
             <Sparkles className="h-5 w-5" />
             Preview Demo
           </Button>
