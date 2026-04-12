@@ -87,6 +87,8 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     return perms.some(p => staffInfo.permissions.includes(p));
   };
 
+  const effectiveUserId = staffInfo ? staffInfo.owner_id : (user?.id ?? null);
+
   return (
     <StaffContext.Provider value={{
       isStaff: !!staffInfo,
@@ -94,6 +96,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
       loading,
       hasPermission,
       hasAnyPermission,
+      effectiveUserId,
     }}>
       {children}
     </StaffContext.Provider>
