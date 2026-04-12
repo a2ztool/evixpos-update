@@ -59,9 +59,9 @@ const formatMsgTime = (dateStr: string) => {
 };
 
 const TASK_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-600 border-yellow-500/30",
-  "in-progress": "bg-blue-500/20 text-blue-600 border-blue-500/30",
-  completed: "bg-green-500/20 text-green-600 border-green-500/30",
+  pending: "bg-amber-500/20 text-amber-700 border-amber-500/30 dark:text-amber-400",
+  "in-progress": "bg-sky-500/20 text-sky-700 border-sky-500/30 dark:text-sky-400",
+  completed: "bg-emerald-500/20 text-emerald-700 border-emerald-500/30 dark:text-emerald-400",
 };
 
 const ChatMessageBubble = ({
