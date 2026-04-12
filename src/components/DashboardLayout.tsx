@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import StoreSwitcher from "./StoreSwitcher";
 import NotificationBell from "./NotificationBell";
+import FloatingInbox from "./FloatingInbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -225,6 +226,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Mobile bottom navigation */}
       <MobileNav />
+
+      {/* Floating Staff Inbox */}
+      <FloatingInbox />
     </SidebarProvider>
   );
 };
