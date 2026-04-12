@@ -14,8 +14,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
+import CustomerDNAProfile from "@/components/CustomerDNAProfile";
 
 interface Customer {
   id: string;
