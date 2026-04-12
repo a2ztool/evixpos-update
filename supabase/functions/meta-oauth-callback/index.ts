@@ -71,15 +71,14 @@ Deno.serve(async (req) => {
     }
 
     // OAuth Callback Handler: exchange code for token and redirect
-    const url = new URL(req.url);
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
+    const callbackCode = url.searchParams.get("code");
+    const callbackState = url.searchParams.get("state");
     
     // If code and state are in query params, this is the OAuth callback
-    if (code && state) {
+    if (callbackCode && callbackState) {
       let stateData: { user_id: string; store_id: string; redirect_uri: string; redirect_after_auth: string };
       try {
-        stateData = JSON.parse(atob(state));
+        stateData = JSON.parse(atob(callbackState));
       } catch {
         return new Response(null, {
           status: 302,
