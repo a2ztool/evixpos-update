@@ -234,18 +234,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Mobile bottom nav
-import { LayoutDashboard, Monitor, ShoppingCart, CreditCard, Package, MoreHorizontal, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon } from "lucide-react";
+import { LayoutDashboard, Monitor, ShoppingCart, CreditCard, Package, MoreHorizontal, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon, MessageSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
-const mobileItems = [
-  { icon: LayoutDashboard, path: "/dashboard", label: "Home" },
-  { icon: Monitor, path: "/pos", label: "POS" },
-  { icon: ShoppingCart, path: "/orders", label: "Orders" },
-  { icon: Package, path: "/products", label: "Products" },
-];
-
-const moreMenuItems = [
+const ownerMoreMenuItems = [
   { icon: CreditCard, path: "/transactions", label: "Finance" },
   { icon: UsersIcon, path: "/customers", label: "Customers" },
   { icon: RefreshIcon, path: "/subscriptions", label: "Subscriptions" },
@@ -256,18 +249,20 @@ const moreMenuItems = [
   { icon: Settings, path: "/settings", label: "Settings" },
 ];
 
+const staffMoreMenuItems = [
+  { icon: ShoppingCart, path: "/orders", label: "Orders" },
+  { icon: UsersIcon, path: "/customers", label: "Customers" },
+  { icon: SupportIcon, path: "/support", label: "Support" },
+];
+
 const MobileNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const isMoreActive = moreMenuItems.some(i => location.pathname.startsWith(i.path));
+  const { isStaff } = useStaff();
 
-  const allItems = [
-    ...mobileItems.slice(0, 2),
-    { icon: ShoppingCart, path: "/orders", label: "Orders", isCenter: true },
-    ...mobileItems.slice(3),
-    { icon: MoreHorizontal, path: "__more__", label: "More" },
-  ];
+  const moreMenuItems = isStaff ? staffMoreMenuItems : ownerMoreMenuItems;
+  const isMoreActive = moreMenuItems.some(i => location.pathname.startsWith(i.path));
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
@@ -307,54 +302,44 @@ const MobileNav = () => {
                 location={location}
               />
 
-              {/* CENTER — Orders (raised button) */}
-              <div className="relative flex flex-col items-center -mt-5">
-                <motion.button
+              {/* CENTER — Staff: Messaging / Owner: Orders */}
+              {isStaff ? (
+                <CenterNavButton
+                  icon={MessageSquare}
+                  label="Chat"
+                  isActive={false}
+                  onClick={() => {
+                    // Dispatch custom event to toggle floating inbox
+                    window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
+                  }}
+                />
+              ) : (
+                <CenterNavButton
+                  icon={ShoppingCart}
+                  label="Orders"
+                  isActive={location.pathname.startsWith("/orders")}
                   onClick={() => navigate("/orders")}
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="relative"
-                >
-                  {/* Outer glow ring */}
-                  <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
-                    location.pathname.startsWith("/orders")
-                      ? "bg-primary/20 scale-[1.35] blur-md"
-                      : "bg-transparent scale-100"
-                  }`} />
+                />
+              )}
 
-                  {/* Main circle */}
-                  <motion.div
-                    animate={location.pathname.startsWith("/orders") ? { y: -4 } : { y: 0 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-                      location.pathname.startsWith("/orders")
-                        ? "bg-primary shadow-[0_6px_24px_hsl(var(--primary)/0.45)]"
-                        : "bg-gradient-to-br from-primary/90 to-primary shadow-[0_4px_16px_hsl(var(--primary)/0.3)]"
-                    }`}
-                  >
-                    {/* Inner shine */}
-                    <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/25 to-transparent" />
-                    <ShoppingCart className="h-6 w-6 text-primary-foreground relative z-10" strokeWidth={2} />
-                  </motion.div>
-                </motion.button>
-                <motion.span
-                  animate={location.pathname.startsWith("/orders") ? { opacity: 1 } : { opacity: 0.6 }}
-                  className={`text-[10px] mt-1.5 font-semibold tracking-wide ${
-                    location.pathname.startsWith("/orders") ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  Orders
-                </motion.span>
-              </div>
-
-              {/* Products */}
-              <NavItem
-                icon={Package}
-                label="Products"
-                path="/products"
-                navigate={navigate}
-                location={location}
-              />
+              {/* Staff: Orders / Owner: Products */}
+              {isStaff ? (
+                <NavItem
+                  icon={ShoppingCart}
+                  label="Orders"
+                  path="/orders"
+                  navigate={navigate}
+                  location={location}
+                />
+              ) : (
+                <NavItem
+                  icon={Package}
+                  label="Products"
+                  path="/products"
+                  navigate={navigate}
+                  location={location}
+                />
+              )}
 
               {/* More */}
               <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
