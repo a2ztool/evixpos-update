@@ -50,93 +50,67 @@ const FloatingInbox = () => {
   const { activeStore } = useStore();
 
   const [open, setOpen] = useState(false);
-  const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<StaffMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [unreadCount, setUnreadCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const storeId = isStaff ? staffInfo?.store_id : activeStore?.id;
   const myId = user?.id;
+  // Staff always chats with store owner only
+  const ownerId = staffInfo?.owner_id ?? null;
 
-  // Don't render if no store context
-  const hasStoreContext = !!storeId && !!myId;
+  const hasStoreContext = !!storeId && !!myId && !!ownerId;
 
-  const fetchContacts = useCallback(async () => {
-    if (!storeId || !myId) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from("staff_members")
-      .select("id, name, email, role, auth_user_id, is_active")
-      .eq("store_id", storeId)
-      .eq("is_active", true);
-
-    if (data) {
-      if (isStaff) {
-        setStaffList(data.filter(s => s.auth_user_id !== myId) as StaffMember[]);
-      } else {
-        setStaffList(data as StaffMember[]);
-      }
-    }
-    setLoading(false);
-  }, [storeId, myId, isStaff]);
-
-  const fetchUnreadCounts = useCallback(async () => {
-    if (!storeId || !myId) return;
+  const fetchUnreadCount = useCallback(async () => {
+    if (!storeId || !myId || !ownerId) return;
     const { data } = await supabase
       .from("staff_messages")
-      .select("sender_id")
+      .select("id")
       .eq("store_id", storeId)
+      .eq("sender_id", ownerId)
       .eq("receiver_id", myId)
       .eq("is_read", false);
-
-    if (data) {
-      const counts: Record<string, number> = {};
-      data.forEach((m: any) => {
-        counts[m.sender_id] = (counts[m.sender_id] || 0) + 1;
-      });
-      setUnreadCounts(counts);
-    }
-  }, [storeId, myId]);
+    setUnreadCount(data?.length ?? 0);
+  }, [storeId, myId, ownerId]);
 
   useEffect(() => {
     if (hasStoreContext) {
-      fetchContacts();
-      fetchUnreadCounts();
+      fetchUnreadCount();
+      setLoading(false);
     }
-  }, [hasStoreContext, fetchContacts, fetchUnreadCounts]);
+  }, [hasStoreContext, fetchUnreadCount]);
 
-  // Load messages for active chat
+  // Load messages when opened
   useEffect(() => {
-    if (!activeChat || !storeId || !myId) { setMessages([]); return; }
+    if (!open || !storeId || !myId || !ownerId) { setMessages([]); return; }
     const load = async () => {
       const { data } = await supabase
         .from("staff_messages")
         .select("*")
         .eq("store_id", storeId)
-        .or(`and(sender_id.eq.${myId},receiver_id.eq.${activeChat}),and(sender_id.eq.${activeChat},receiver_id.eq.${myId})`)
+        .or(`and(sender_id.eq.${myId},receiver_id.eq.${ownerId}),and(sender_id.eq.${ownerId},receiver_id.eq.${myId})`)
         .order("created_at", { ascending: true });
       if (data) setMessages(data as StaffMessage[]);
       scrollToBottom();
+      // Mark as read
       await supabase
         .from("staff_messages")
         .update({ is_read: true })
         .eq("store_id", storeId)
-        .eq("sender_id", activeChat)
+        .eq("sender_id", ownerId)
         .eq("receiver_id", myId)
         .eq("is_read", false);
-      fetchUnreadCounts();
+      fetchUnreadCount();
     };
     load();
-  }, [activeChat, storeId, myId, fetchUnreadCounts]);
+  }, [open, storeId, myId, ownerId, fetchUnreadCount]);
 
   // Real-time subscription
   useEffect(() => {
-    if (!storeId || !myId) return;
+    if (!storeId || !myId || !ownerId) return;
     const channel = supabase
       .channel(`floating-inbox-${storeId}`)
       .on("postgres_changes", {
@@ -146,10 +120,13 @@ const FloatingInbox = () => {
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const msg = payload.new as StaffMessage;
-        if (
-          (msg.sender_id === activeChat && msg.receiver_id === myId) ||
-          (msg.sender_id === myId && msg.receiver_id === activeChat)
-        ) {
+        // Only handle messages between me and owner
+        const isRelevant =
+          (msg.sender_id === ownerId && msg.receiver_id === myId) ||
+          (msg.sender_id === myId && msg.receiver_id === ownerId);
+        if (!isRelevant) return;
+
+        if (open) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           scrollToBottom();
           if (msg.receiver_id === myId) {
@@ -159,7 +136,7 @@ const FloatingInbox = () => {
         if (msg.receiver_id === myId && msg.sender_id !== myId && soundEnabled) {
           notificationSound?.play().catch(() => {});
         }
-        fetchUnreadCounts();
+        fetchUnreadCount();
       })
       .on("postgres_changes", {
         event: "UPDATE",
@@ -173,50 +150,24 @@ const FloatingInbox = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, myId, activeChat, soundEnabled, fetchUnreadCounts]);
+  }, [storeId, myId, ownerId, open, soundEnabled, fetchUnreadCount]);
 
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeChat || !storeId || !myId) return;
+    if (!newMessage.trim() || !storeId || !myId || !ownerId) return;
     const msg = newMessage.trim();
     setNewMessage("");
     await supabase.from("staff_messages").insert({
       store_id: storeId,
       sender_id: myId,
-      receiver_id: activeChat,
+      receiver_id: ownerId,
       message: msg,
       message_type: "text",
     });
   };
-
-  const filteredContacts = useMemo(() => {
-    if (!search) return staffList;
-    const s = search.toLowerCase();
-    return staffList.filter(c => c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s));
-  }, [staffList, search]);
-
-  const ownerContact = isStaff ? {
-    id: "owner",
-    name: "Store Owner",
-    email: "",
-    role: "owner",
-    auth_user_id: staffInfo?.owner_id ?? null,
-    is_active: true,
-  } : null;
-
-  const allContacts = useMemo(() => {
-    const contacts = [...filteredContacts];
-    if (ownerContact && !contacts.find(c => c.auth_user_id === ownerContact.auth_user_id)) {
-      contacts.unshift(ownerContact as StaffMember);
-    }
-    return contacts;
-  }, [filteredContacts, ownerContact]);
-
-  const activePerson = allContacts.find(s => s.auth_user_id === activeChat);
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   const getInitials = (name: string) => name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   const formatMsgTime = (dateStr: string) => {
@@ -226,7 +177,7 @@ const FloatingInbox = () => {
     return format(d, "MMM d, h:mm a");
   };
 
-  // Only show floating button for staff users, not owners
+  // Only show for staff users
   if (!isStaff) return null;
   if (!hasStoreContext) return null;
 
