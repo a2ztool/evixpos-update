@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -157,6 +158,38 @@ const Orders = () => {
   const [refundOrderItems, setRefundOrderItems] = useState<any[]>([]);
   const [refunds, setRefunds] = useState<any[]>([]);
   const [showRefundHistory, setShowRefundHistory] = useState(false);
+
+  // Delete confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = (order: Order) => {
+    setOrderToDelete(order);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setDeleting(true);
+    try {
+      // Delete order_items first (FK constraint)
+      await supabase.from("order_items").delete().eq("order_id", orderToDelete.id);
+      // Delete refunds linked to this order
+      await supabase.from("refunds").delete().eq("order_id", orderToDelete.id);
+      // Delete the order
+      const { error } = await supabase.from("orders").delete().eq("id", orderToDelete.id);
+      if (error) throw error;
+      setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+      toast.success("Order deleted successfully");
+    } catch (err: any) {
+      toast.error("Failed to delete order: " + (err.message || "Unknown error"));
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      setOrderToDelete(null);
+    }
+  };
 
   const fetchOrders = async () => {
     if (!activeStore) return;
@@ -641,7 +674,10 @@ const fetchProducts = async () => {
                     <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
                     </Button>
-                  )}
+                   )}
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); confirmDelete(o); }}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -720,6 +756,9 @@ const fetchProducts = async () => {
                         )}
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetails(o)} title="Details">
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => confirmDelete(o)} title="Delete">
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -1302,6 +1341,28 @@ const fetchProducts = async () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete order <span className="font-mono font-semibold">{orderToDelete?.id.slice(0, 8)}...</span>? 
+              This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteOrder}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
