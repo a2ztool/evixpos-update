@@ -70,6 +70,30 @@ export type Database = {
           },
         ]
       }
+      ads_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string | null
+          id: string
+          store_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string | null
+          id?: string
+          store_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string | null
+          id?: string
+          store_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bot_automations: {
         Row: {
           channel: string
