@@ -115,7 +115,7 @@ const App = () => (
             <Route path="/referral" element={<P ownerOnly feature="referral"><Referral /></P>} />
             <Route path="/my-plan" element={<P ownerOnly><MyPlan /></P>} />
             <Route path="/support" element={<P><SupportPage /></P>} />
-            
+            <Route path="/staff-inbox" element={<P ownerOnly><StaffInbox /></P>} />
             <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
             <Route path="/notification-center" element={<P><NotificationCenter /></P>} />
 
