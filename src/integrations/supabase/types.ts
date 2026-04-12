@@ -1590,13 +1590,17 @@ export type Database = {
       staff_messages: {
         Row: {
           created_at: string
+          deleted_for: string[] | null
           file_name: string | null
           file_url: string | null
           id: string
+          is_deleted_for_everyone: boolean | null
           is_read: boolean
           message: string
           message_type: string
+          reactions: Json | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
           store_id: string
           task_status: string | null
@@ -1604,13 +1608,17 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_for?: string[] | null
           file_name?: string | null
           file_url?: string | null
           id?: string
+          is_deleted_for_everyone?: boolean | null
           is_read?: boolean
           message?: string
           message_type?: string
+          reactions?: Json | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
           store_id: string
           task_status?: string | null
@@ -1618,19 +1626,30 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_for?: string[] | null
           file_name?: string | null
           file_url?: string | null
           id?: string
+          is_deleted_for_everyone?: boolean | null
           is_read?: boolean
           message?: string
           message_type?: string
+          reactions?: Json | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
           store_id?: string
           task_status?: string | null
           task_title?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "staff_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "staff_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "staff_messages_store_id_fkey"
             columns: ["store_id"]
