@@ -79,7 +79,7 @@ export const useStorePlan = () => {
     const { data } = await supabase
       .from("subscriptions")
       .select("plan, status")
-      .eq("user_id", user.id)
+      .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
       .order("start_date", { ascending: false })
