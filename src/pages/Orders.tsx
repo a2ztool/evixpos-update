@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
