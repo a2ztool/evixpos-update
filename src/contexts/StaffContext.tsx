@@ -73,6 +73,36 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkStaff();
+
+    // Real-time subscription: auto-update permissions when owner edits staff record
+    if (!user) return;
+    const channel = supabase
+      .channel(`staff-perms-${user.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "staff_members",
+        filter: `auth_user_id=eq.${user.id}`,
+      }, (payload) => {
+        const d = payload.new as any;
+        if (d.is_active) {
+          setStaffInfo({
+            id: d.id,
+            name: d.name,
+            email: d.email,
+            role: d.role,
+            permissions: (d.permissions as string[]) ?? [],
+            store_id: d.store_id ?? null,
+            owner_id: d.user_id,
+            is_active: d.is_active,
+          });
+        } else {
+          setStaffInfo(null);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const hasPermission = (perm: string): boolean => {
