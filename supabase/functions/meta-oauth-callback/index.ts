@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       }
 
       const body = await req.json();
-      const { store_id, redirect_uri } = body;
+      const { store_id, redirect_uri, redirect_after_auth } = body;
 
       if (!store_id || !redirect_uri) {
         return new Response(JSON.stringify({ error: "store_id and redirect_uri required" }), {
@@ -48,11 +48,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // State encodes user_id + store_id for the callback
+      // State encodes user_id + store_id + redirect_after_auth for the callback
       const state = btoa(JSON.stringify({
         user_id: claimsData.claims.sub,
         store_id,
         redirect_uri,
+        redirect_after_auth: redirect_after_auth || `${new URL(redirect_uri).origin}/finance/facebook-ads`,
       }));
 
       const scopes = [
@@ -69,7 +70,100 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Action: exchange code for token
+    // OAuth Callback Handler: exchange code for token and redirect
+    const url = new URL(req.url);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    
+    // If code and state are in query params, this is the OAuth callback
+    if (code && state) {
+      let stateData: { user_id: string; store_id: string; redirect_uri: string; redirect_after_auth: string };
+      try {
+        stateData = JSON.parse(atob(state));
+      } catch {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            "Location": `${stateData?.redirect_after_auth || "/finance/facebook-ads"}?error=invalid_state`,
+          },
+        });
+      }
+
+      // Exchange code for short-lived token
+      const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(stateData.redirect_uri)}&client_secret=${metaAppSecret}&code=${code}`;
+
+      const tokenRes = await fetch(tokenUrl);
+      const tokenData = await tokenRes.json();
+
+      if (tokenData.error) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            "Location": `${stateData.redirect_after_auth}?error=${encodeURIComponent(tokenData.error.message || "Token exchange failed")}`,
+          },
+        });
+      }
+
+      // Exchange for long-lived token
+      const longTokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
+
+      const longTokenRes = await fetch(longTokenUrl);
+      const longTokenData = await longTokenRes.json();
+
+      const accessToken = longTokenData.access_token || tokenData.access_token;
+      const expiresIn = longTokenData.expires_in || tokenData.expires_in || 5184000;
+
+      // Fetch ad accounts
+      const accountsRes = await fetch(
+        `https://graph.facebook.com/v21.0/me/adaccounts?fields=name,account_id,account_status&access_token=${accessToken}`
+      );
+      const accountsData = await accountsRes.json();
+
+      const firstAccount = accountsData.data?.[0];
+
+      // Store in Supabase using service role
+      const supabaseAdmin = createClient(
+        supabaseUrl,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+      const { error: upsertError } = await supabaseAdmin
+        .from("meta_ad_accounts")
+        .upsert(
+          {
+            user_id: stateData.user_id,
+            store_id: stateData.store_id,
+            access_token: accessToken,
+            ad_account_id: firstAccount?.id || null,
+            account_name: firstAccount?.name || "Facebook Ads",
+            token_expires_at: expiresAt,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,store_id" }
+        );
+
+      if (upsertError) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            "Location": `${stateData.redirect_after_auth}?error=${encodeURIComponent("Failed to save token: " + upsertError.message)}`,
+          },
+        });
+      }
+
+      // Success - redirect back to the app
+      return new Response(null, {
+        status: 302,
+        headers: {
+          "Location": `${stateData.redirect_after_auth}?connected=true&account=${encodeURIComponent(firstAccount?.name || "Facebook Ads")}`,
+        },
+      });
+    }
+
+    // API Action: exchange code for token (for manual/API usage)
     if (action === "exchange_token") {
       const body = await req.json();
       const { code, state, redirect_uri } = body;
