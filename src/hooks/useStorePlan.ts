@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
 
 export type FeatureKey =
@@ -60,12 +61,16 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, string> = {
  */
 export const useStorePlan = () => {
   const { user } = useAuth();
+  const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string>("free");
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
 
+  // For staff, we need to check the store owner's plan, not the staff's own plan
+  const planUserId = isStaff && staffInfo ? staffInfo.owner_id : user?.id;
+
   const fetchPlan = useCallback(async (isRealtimeUpdate = false) => {
-    if (!user) {
+    if (!planUserId) {
       setPlan("free");
       setLoading(false);
       return;
@@ -74,7 +79,7 @@ export const useStorePlan = () => {
     const { data } = await supabase
       .from("subscriptions")
       .select("plan, status")
-      .eq("user_id", user.id)
+      .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
       .order("start_date", { ascending: false })
@@ -103,7 +108,7 @@ export const useStorePlan = () => {
     
     initialLoadDone.current = true;
     setLoading(false);
-  }, [user?.id]);
+  }, [planUserId]);
 
   useEffect(() => {
     fetchPlan();
@@ -111,9 +116,9 @@ export const useStorePlan = () => {
 
   // Realtime subscription for instant plan changes (user-level)
   useEffect(() => {
-    if (!user) return;
+    if (!planUserId) return;
 
-    const channelName = `user-plan-${user.id}-${Date.now()}`;
+    const channelName = `user-plan-${planUserId}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -122,7 +127,7 @@ export const useStorePlan = () => {
           event: "*",
           schema: "public",
           table: "subscriptions",
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${planUserId}`,
         },
         () => {
           fetchPlan(true);
@@ -134,7 +139,7 @@ export const useStorePlan = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchPlan]);
+  }, [planUserId, fetchPlan]);
 
   const hasFeature = useCallback(
     (feature: FeatureKey): boolean => {

@@ -1,18 +1,20 @@
 import { useStore } from "@/contexts/StoreContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Returns helpers for store-scoped Supabase queries.
- * Use `storeFilter` to add `.eq("store_id", activeStoreId)` to any query.
- * Use `storeInsertData` to get `{ user_id, store_id }` for inserts.
+ * For staff users, `userId` returns the store owner's ID (for inserts).
  */
 export const useStoreQuery = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
+  const { isStaff, staffInfo } = useStaff();
 
   const storeId = activeStore?.id ?? null;
-  const userId = user?.id ?? null;
+  // For staff, use the owner's user_id for data inserts so RLS passes
+  const userId = isStaff && staffInfo ? staffInfo.owner_id : (user?.id ?? null);
 
   /** Apply store_id filter to a Supabase query builder */
   const withStore = <T extends { eq: (col: string, val: string) => T }>(query: T): T => {
