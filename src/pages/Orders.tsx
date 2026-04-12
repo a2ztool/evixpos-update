@@ -45,6 +45,7 @@ interface Order {
   created_at: string;
   customers: { name: string } | null;
   customer_id: string | null;
+  meta?: Record<string, any> | null;
 }
 
 interface Customer {
