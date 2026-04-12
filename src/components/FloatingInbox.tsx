@@ -223,7 +223,7 @@ const FloatingInbox = () => {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-foreground truncate">Store Admin</h3>
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Online
               </p>
             </div>
