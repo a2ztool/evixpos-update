@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +45,7 @@ interface Order {
   created_at: string;
   customers: { name: string } | null;
   customer_id: string | null;
+  meta?: Record<string, any> | null;
 }
 
 interface Customer {
@@ -60,6 +61,27 @@ interface Product {
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = { BDT: "৳", INR: "₹", USD: "$" };
+
+// Play a multi-tone notification sound for ~5 seconds
+const playOrderNotificationSound = () => {
+  try {
+    const ctx = new AudioContext();
+    const frequencies = [880, 1100, 880, 1100, 880, 1320, 880, 1100, 880, 1320];
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      const startTime = ctx.currentTime + i * 0.5;
+      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+      osc.start(startTime);
+      osc.stop(startTime + 0.45);
+    });
+  } catch {}
+};
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
@@ -186,6 +208,44 @@ const fetchProducts = async () => {
       fetchRefunds();
     }
   }, [user, activeStore]);
+
+  // Real-time subscription for new orders with notification sound
+  useEffect(() => {
+    if (!activeStore) return;
+
+    const channelName = `orders-realtime-${activeStore.id}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+          filter: `store_id=eq.${activeStore.id}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as any;
+          // Add to state
+          setOrders((prev) => [{ ...newOrder, customers: null } as Order, ...prev]);
+
+          // Show toast with sound for website orders
+          if (newOrder.source === "woocommerce" || newOrder.source === "order_form") {
+            const sourceLabel = newOrder.source === "woocommerce" ? "Website" : "Order Form";
+            toast.success(`🛒 New ${sourceLabel} order received! ${newOrder.payment_currency} ${Number(newOrder.total_amount).toFixed(2)}`, {
+              duration: 8000,
+            });
+            // Play 5-second notification sound
+            playOrderNotificationSound();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeStore]);
 
   useEffect(() => {
     if (tabParam === "create") setCreateOpen(true);
@@ -565,6 +625,11 @@ const fetchProducts = async () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`${statusColors[o.status]} text-[10px]`}>{o.status}</Badge>
                   <Badge className={`${paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"} text-[10px]`}>{o.payment_status}</Badge>
+                  {o.source === "woocommerce" && (
+                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] gap-0.5">
+                      <Globe className="h-2.5 w-2.5" /> Website
+                    </Badge>
+                  )}
                   <span className="text-xs text-muted-foreground capitalize">{o.payment_method}</span>
                   <span className="text-xs text-muted-foreground ml-auto">{new Date(o.created_at).toLocaleDateString()}</span>
                 </div>
@@ -627,7 +692,19 @@ const fetchProducts = async () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
-                    <TableCell className="capitalize text-sm">{o.source}</TableCell>
+                    <TableCell className="capitalize text-sm">
+                      {o.source === "woocommerce" ? (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                          <Globe className="h-3 w-3" /> Website
+                        </Badge>
+                      ) : o.source === "order_form" ? (
+                        <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 gap-1">
+                          <FileText className="h-3 w-3" /> Form
+                        </Badge>
+                      ) : (
+                        o.source
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(o.created_at).toLocaleDateString()}
                     </TableCell>
@@ -876,9 +953,16 @@ const fetchProducts = async () => {
 
       {/* Order Details Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Order Details
+              {selectedOrder?.source === "woocommerce" && (
+                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                  <Globe className="h-3 w-3" /> From Website
+                </Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
@@ -905,7 +989,9 @@ const fetchProducts = async () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Source</span>
-                  <p className="capitalize">{selectedOrder.source}</p>
+                  <p className="capitalize">
+                    {selectedOrder.source === "woocommerce" ? "Website (WooCommerce)" : selectedOrder.source}
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Currency</span>
@@ -927,12 +1013,107 @@ const fetchProducts = async () => {
                 </div>
               </div>
 
+              {/* WooCommerce Meta: Billing Info */}
+              {selectedOrder.meta && (selectedOrder.meta as any)?.billing?.email && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="font-semibold mb-2 text-sm flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5 text-blue-600" /> Website Order Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 rounded-lg p-3">
+                      {(selectedOrder.meta as any)?.wc_order_number && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">WC Order #</span>
+                          <p className="font-medium">{(selectedOrder.meta as any).wc_order_number}</p>
+                        </div>
+                      )}
+                      {(selectedOrder.meta as any)?.billing?.email && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">Email</span>
+                          <p className="font-medium text-xs break-all">{(selectedOrder.meta as any).billing.email}</p>
+                        </div>
+                      )}
+                      {(selectedOrder.meta as any)?.billing?.phone && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">Phone</span>
+                          <p className="font-medium">{(selectedOrder.meta as any).billing.phone}</p>
+                        </div>
+                      )}
+                      {(selectedOrder.meta as any)?.payment_method_title && (
+                        <div>
+                          <span className="text-muted-foreground text-xs">Payment Gateway</span>
+                          <p className="font-medium">{(selectedOrder.meta as any).payment_method_title}</p>
+                        </div>
+                      )}
+                      {(selectedOrder.meta as any)?.transaction_id && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground text-xs">Transaction ID</span>
+                          <p className="font-mono text-xs">{(selectedOrder.meta as any).transaction_id}</p>
+                        </div>
+                      )}
+                      {(selectedOrder.meta as any)?.customer_note && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground text-xs">Customer Note</span>
+                          <p className="text-sm">{(selectedOrder.meta as any).customer_note}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Billing Address */}
+                  {(selectedOrder.meta as any)?.billing?.address_1 && (
+                    <div>
+                      <h4 className="font-semibold mb-1 text-xs text-muted-foreground">Billing Address</h4>
+                      <p className="text-sm">
+                        {[(selectedOrder.meta as any).billing.address_1, (selectedOrder.meta as any).billing.address_2, (selectedOrder.meta as any).billing.city, (selectedOrder.meta as any).billing.state, (selectedOrder.meta as any).billing.postcode, (selectedOrder.meta as any).billing.country].filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Shipping Address */}
+                  {(selectedOrder.meta as any)?.shipping?.address_1 && (
+                    <div>
+                      <h4 className="font-semibold mb-1 text-xs text-muted-foreground">Shipping Address</h4>
+                      <p className="text-sm">
+                        {[(selectedOrder.meta as any).shipping.address_1, (selectedOrder.meta as any).shipping.address_2, (selectedOrder.meta as any).shipping.city, (selectedOrder.meta as any).shipping.state, (selectedOrder.meta as any).shipping.postcode, (selectedOrder.meta as any).shipping.country].filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* WC Line Items */}
+                  {(selectedOrder.meta as any)?.line_items?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-1 text-xs text-muted-foreground">Website Products</h4>
+                      <div className="space-y-1.5">
+                        {((selectedOrder.meta as any).line_items as any[]).map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm bg-muted/20 rounded px-2 py-1.5">
+                            <div>
+                              <span className="font-medium">{item.name}</span>
+                              {item.sku && <span className="text-xs text-muted-foreground ml-1">(SKU: {item.sku})</span>}
+                              {item.meta_data?.length > 0 && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {item.meta_data.filter((m: any) => !m.key?.startsWith("_")).map((m: any, mi: number) => (
+                                    <span key={mi} className="mr-2">{m.display_key || m.key}: {m.display_value || m.value}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs whitespace-nowrap">×{item.quantity} = {item.total}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               {selectedOrder.notes && (
                 <>
                   <Separator />
                   <div>
                     <h3 className="font-semibold mb-1 text-sm">Notes</h3>
-                    <p className="text-sm text-muted-foreground">{selectedOrder.notes}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedOrder.notes}</p>
                   </div>
                 </>
               )}
@@ -973,7 +1154,7 @@ const fetchProducts = async () => {
                   <FileText className="h-4 w-4" /> Invoice
                 </Button>
                 {selectedOrder?.status === "completed" && !["refunded"].includes(selectedOrder?.payment_status) && (
-                  <Button className="flex-1 gap-2 text-red-600 hover:text-red-700" variant="outline" onClick={() => { setDetailOpen(false); if (selectedOrder) openRefund(selectedOrder); }}>
+                  <Button className="flex-1 gap-2 text-destructive hover:text-destructive" variant="outline" onClick={() => { setDetailOpen(false); if (selectedOrder) openRefund(selectedOrder); }}>
                     <RotateCcw className="h-4 w-4" /> Refund
                   </Button>
                 )}

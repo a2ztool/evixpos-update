@@ -885,6 +885,7 @@ export type Database = {
           discount: number
           discount_type: string
           id: string
+          meta: Json | null
           notes: string | null
           payment_currency: string
           payment_method: string
@@ -902,6 +903,7 @@ export type Database = {
           discount?: number
           discount_type?: string
           id?: string
+          meta?: Json | null
           notes?: string | null
           payment_currency?: string
           payment_method?: string
@@ -919,6 +921,7 @@ export type Database = {
           discount?: number
           discount_type?: string
           id?: string
+          meta?: Json | null
           notes?: string | null
           payment_currency?: string
           payment_method?: string
