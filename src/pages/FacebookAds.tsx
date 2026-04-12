@@ -226,11 +226,11 @@ const FacebookAds = () => {
           </Badge>
         </div>
         <div className="flex gap-3 mt-2">
-          <Button size="lg" className="gap-2 bg-[#1877F2] hover:bg-[#1664d9] text-white shadow-lg" onClick={handleConnect}>
-            <Facebook className="h-5 w-5" />
-            Connect Facebook Ads
+          <Button size="lg" className="gap-2 bg-[#1877F2] hover:bg-[#1664d9] text-white shadow-lg" onClick={handleConnect} disabled={connectingOAuth}>
+            {connectingOAuth ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Facebook className="h-5 w-5" />}
+            {connectingOAuth ? "Connecting..." : "Connect Facebook Ads"}
           </Button>
-          <Button size="lg" variant="outline" className="gap-2" onClick={() => { setIsConnected(true); toast.success("Demo mode activated!"); }}>
+          <Button size="lg" variant="outline" className="gap-2" onClick={() => { setIsConnected(true); setIsDemoMode(true); toast.success("Demo mode activated!"); }}>
             <Sparkles className="h-5 w-5" />
             Preview Demo
           </Button>
