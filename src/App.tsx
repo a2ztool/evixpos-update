@@ -91,6 +91,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/f/:slug" element={<PublicOrderForm />} />
+            <Route path="/api/facebook/callback" element={<FacebookCallback />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/dashboard" element={<P><Dashboard /></P>} />
             <Route path="/products" element={<P perm="products.view"><Products /></P>} />
