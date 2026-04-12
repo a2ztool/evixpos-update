@@ -63,6 +63,7 @@ import AdminLandingEditor from "./pages/admin/AdminLandingEditor";
 import AdminInbox from "./pages/admin/AdminInbox";
 import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
 import PublicOrderForm from "./pages/PublicOrderForm";
+import FacebookCallback from "./pages/FacebookCallback";
 
 const queryClient = new QueryClient();
 
