@@ -200,19 +200,17 @@ const FloatingInbox = () => {
       {open && (
         <div
           className={cn(
-            "fixed z-50 overflow-hidden",
-            // Desktop: Floating card style
-            "hidden md:block md:bottom-6 md:right-6",
+            "fixed z-50 overflow-hidden bg-background",
+            // Mobile: Bottom sheet style
+            "bottom-0 left-0 right-0 w-full h-[80vh] rounded-t-[20px]",
+            "shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.2)]",
+            // Desktop: Floating card bottom-right
+            "md:bottom-8 md:right-8 md:left-auto md:top-auto",
             "md:w-[360px] md:h-[70vh] md:max-h-[600px]",
             "md:rounded-[20px]",
             "md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
-            "md:border md:border-border/50",
-            "bg-background",
-            // Mobile: Bottom sheet style
-            "md:inset-auto",
-            "bottom-0 left-0 right-0",
-            "w-full h-[80vh] rounded-t-[20px]",
-            "shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.2)]"
+            "md:border md:border-border/50"
+          )}
           )}
         >
           {/* Header - Fixed */}
