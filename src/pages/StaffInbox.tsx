@@ -35,10 +35,10 @@ interface StaffMember {
 }
 
 const PRIORITY_OPTIONS = [
-  { value: "low", label: "Low", color: "bg-blue-500/20 text-blue-400" },
-  { value: "medium", label: "Medium", color: "bg-yellow-500/20 text-yellow-400" },
-  { value: "high", label: "High", color: "bg-orange-500/20 text-orange-400" },
-  { value: "urgent", label: "Urgent", color: "bg-red-500/20 text-red-400" },
+  { value: "low", label: "Low", color: "bg-sky-500/20 text-sky-600 dark:text-sky-400" },
+  { value: "medium", label: "Medium", color: "bg-amber-500/20 text-amber-600 dark:text-amber-400" },
+  { value: "high", label: "High", color: "bg-orange-500/20 text-orange-600 dark:text-orange-400" },
+  { value: "urgent", label: "Urgent", color: "bg-rose-500/20 text-rose-600 dark:text-rose-400" },
 ];
 
 const StaffInbox = () => {
