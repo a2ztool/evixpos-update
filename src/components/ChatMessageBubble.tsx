@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,8 @@ const ChatMessageBubble = ({
   onScrollToMessage, myId
 }: Props) => {
   const [showActions, setShowActions] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const reactions = msg.reactions || {};
   const reactionEntries = Object.entries(reactions);
   const reactionCounts: Record<string, number> = {};
@@ -76,7 +78,9 @@ const ChatMessageBubble = ({
       id={`msg-${msg.id}`}
       className={cn("flex gap-2 group relative", isMine ? "justify-end" : "")}
       onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseLeave={() => {
+        if (!emojiOpen && !menuOpen) setShowActions(false);
+      }}
     >
       {!isMine && (
         <Avatar className="h-7 w-7 shrink-0 mt-1">
@@ -113,12 +117,12 @@ const ChatMessageBubble = ({
           isDeleted && "italic opacity-60"
         )}>
           {/* Action buttons */}
-          {showActions && !isDeleted && (
+          {(showActions || emojiOpen || menuOpen) && !isDeleted && (
             <div className={cn(
               "absolute top-0 flex items-center gap-0.5 z-10",
               isMine ? "-left-20" : "-right-20"
             )}>
-              <Popover>
+              <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
                     <Smile className="w-3.5 h-3.5" />
@@ -128,7 +132,7 @@ const ChatMessageBubble = ({
                   {REACTION_EMOJIS.map(emoji => (
                     <button
                       key={emoji}
-                      onClick={() => onReaction(msg.id, emoji)}
+                      onClick={() => { onReaction(msg.id, emoji); setEmojiOpen(false); }}
                       className={cn(
                         "text-lg hover:scale-125 transition-transform px-1 rounded",
                         reactions[myId] === emoji && "bg-primary/20"
@@ -145,18 +149,18 @@ const ChatMessageBubble = ({
                 <Reply className="w-3.5 h-3.5" />
               </Button>
 
-              <DropdownMenu>
+              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
                     <MoreVertical className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isMine ? "end" : "start"} className="w-44">
-                  <DropdownMenuItem onClick={() => onDeleteForMe(msg.id)}>
+                  <DropdownMenuItem onClick={() => { onDeleteForMe(msg.id); setMenuOpen(false); }}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete for me
                   </DropdownMenuItem>
                   {isMine && (
-                    <DropdownMenuItem onClick={() => onDeleteForEveryone(msg.id, msg.sender_id)}
+                    <DropdownMenuItem onClick={() => { onDeleteForEveryone(msg.id, msg.sender_id); setMenuOpen(false); }}
                       className="text-destructive">
                       <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete for everyone
                     </DropdownMenuItem>
@@ -201,7 +205,7 @@ const ChatMessageBubble = ({
           )}>
             {formatMsgTime(msg.created_at)}
             {isMine && (msg.is_read
-              ? <CheckCheck className="w-3 h-3" />
+              ? <CheckCheck className="w-3 h-3 text-blue-400" />
               : <Check className="w-3 h-3" />
             )}
           </div>
