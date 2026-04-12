@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
       }
 
       // Exchange code for short-lived token
-      const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirect_uri || stateData.redirect_uri)}&client_secret=${metaAppSecret}&code=${code}`;
+      const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirect_uri || "https://identical-copy.lovable.app/api/facebook/callback")}&client_secret=${metaAppSecret}&code=${code}`;
 
       const tokenRes = await fetch(tokenUrl);
       const tokenData = await tokenRes.json();
