@@ -143,29 +143,26 @@ const FacebookAds = () => {
     ];
   }, [campaigns]);
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     if (!user || !activeStore) {
       toast.error("Please select a store first");
       return;
     }
     setConnectingOAuth(true);
-    try {
-      const redirectUri = "https://identical-copy.lovable.app/api/facebook/callback";
-      const redirectAfterAuth = `${window.location.origin}/finance/facebook-ads`;
-      
-      const { data, error } = await supabase.functions.invoke("meta-oauth-callback?action=get_auth_url", {
-        body: { store_id: activeStore.id, redirect_uri: redirectUri, redirect_after_auth: redirectAfterAuth },
-      });
-      if (error || !data?.auth_url) {
-        toast.error(data?.error || "Failed to get OAuth URL");
-        return;
-      }
-      window.location.href = data.auth_url;
-    } catch (err: any) {
-      toast.error("Failed: " + err.message);
-    } finally {
-      setConnectingOAuth(false);
-    }
+
+    const META_APP_ID = "1304633021527034";
+    const redirectUri = "https://identical-copy.lovable.app/api/facebook/callback";
+    const state = btoa(JSON.stringify({ user_id: user.id, store_id: activeStore.id }));
+
+    const authUrl =
+      `https://www.facebook.com/v19.0/dialog/oauth` +
+      `?client_id=${META_APP_ID}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=ads_read,ads_management` +
+      `&response_type=code` +
+      `&state=${encodeURIComponent(state)}`;
+
+    window.location.href = authUrl;
   };
 
   const handleDisconnect = async () => {
