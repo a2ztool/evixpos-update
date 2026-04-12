@@ -18,6 +18,13 @@ const FloatingInbox = () => {
   const { isStaff, staffInfo } = useStaff();
 
   const [open, setOpen] = useState(false);
+
+  // Listen for toggle event from bottom nav
+  useEffect(() => {
+    const handler = () => setOpen(prev => !prev);
+    window.addEventListener("toggle-floating-inbox", handler);
+    return () => window.removeEventListener("toggle-floating-inbox", handler);
+  }, []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);

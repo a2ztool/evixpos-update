@@ -462,4 +462,44 @@ const NavItem = ({
   );
 };
 
+/** Center raised nav button */
+const CenterNavButton = ({
+  icon: Icon, label, isActive, onClick
+}: {
+  icon: any; label: string; isActive: boolean; onClick: () => void;
+}) => (
+  <div className="relative flex flex-col items-center -mt-5">
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.05 }}
+      className="relative"
+    >
+      <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
+        isActive ? "bg-primary/20 scale-[1.35] blur-md" : "bg-transparent scale-100"
+      }`} />
+      <motion.div
+        animate={isActive ? { y: -4 } : { y: 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+          isActive
+            ? "bg-primary shadow-[0_6px_24px_hsl(var(--primary)/0.45)]"
+            : "bg-gradient-to-br from-primary/90 to-primary shadow-[0_4px_16px_hsl(var(--primary)/0.3)]"
+        }`}
+      >
+        <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/25 to-transparent" />
+        <Icon className="h-6 w-6 text-primary-foreground relative z-10" strokeWidth={2} />
+      </motion.div>
+    </motion.button>
+    <motion.span
+      animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
+      className={`text-[10px] mt-1.5 font-semibold tracking-wide ${
+        isActive ? "text-primary" : "text-muted-foreground"
+      }`}
+    >
+      {label}
+    </motion.span>
+  </div>
+);
+
 export default DashboardLayout;
