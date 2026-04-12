@@ -262,8 +262,8 @@ const ChatMessageBubble = ({
           )}>
             {formatMsgTime(msg.created_at)}
             {isMine && (msg.is_read
-              ? <CheckCheck className="w-3 h-3 text-blue-400" />
-              : <Check className="w-3 h-3" />
+              ? <CheckCheck className="w-3 h-3 text-primary" />
+              : <Check className="w-3 h-3 opacity-70" />
             )}
           </div>
         </div>
