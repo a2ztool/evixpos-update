@@ -73,6 +73,7 @@ export type Database = {
       ads_accounts: {
         Row: {
           access_token: string | null
+          ad_account_id: string | null
           created_at: string | null
           id: string
           store_id: string | null
@@ -80,6 +81,7 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          ad_account_id?: string | null
           created_at?: string | null
           id?: string
           store_id?: string | null
@@ -87,10 +89,53 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          ad_account_id?: string | null
           created_at?: string | null
           id?: string
           store_id?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      ads_metrics: {
+        Row: {
+          ad_account_id: string
+          clicks: number
+          created_at: string
+          date_start: string
+          date_stop: string
+          fetched_at: string
+          id: string
+          impressions: number
+          spend: number
+          store_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ad_account_id: string
+          clicks?: number
+          created_at?: string
+          date_start: string
+          date_stop: string
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          spend?: number
+          store_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ad_account_id?: string
+          clicks?: number
+          created_at?: string
+          date_start?: string
+          date_stop?: string
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          spend?: number
+          store_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
