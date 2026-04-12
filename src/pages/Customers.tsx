@@ -174,7 +174,7 @@ const Customers = () => {
       address: row["address"] || "",
       tags: row["tags"] || "",
       notes: row["notes"] || "",
-      user_id: user!.id,
+      user_id: effectiveUserId!,
     }));
     const { error } = await supabase.from("customers").insert(rows);
     if (error) toast.error(error.message);
