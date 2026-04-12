@@ -61,6 +61,27 @@ interface Product {
 
 const CURRENCY_SYMBOLS: Record<string, string> = { BDT: "৳", INR: "₹", USD: "$" };
 
+// Play a multi-tone notification sound for ~5 seconds
+const playOrderNotificationSound = () => {
+  try {
+    const ctx = new AudioContext();
+    const frequencies = [880, 1100, 880, 1100, 880, 1320, 880, 1100, 880, 1320];
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      const startTime = ctx.currentTime + i * 0.5;
+      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+      osc.start(startTime);
+      osc.stop(startTime + 0.45);
+    });
+  } catch {}
+};
+
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
