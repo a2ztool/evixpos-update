@@ -64,6 +64,26 @@ const FacebookAds = () => {
 
   const { campaigns, dailyData } = useMemo(() => generateDemoData(), []);
 
+  // Handle OAuth callback from URL (if redirected back with connected status)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
+    const error = params.get("error");
+    const account = params.get("account");
+    
+    if (connected === "true") {
+      setIsConnected(true);
+      setAccountName(account || "Facebook Ads");
+      setIsDemoMode(false);
+      toast.success(`✅ ${account || "Facebook Ads"} connected successfully!`);
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error) {
+      toast.error("Connection failed: " + error);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   // Check existing connection on load
   useEffect(() => {
     const checkConnection = async () => {
@@ -84,40 +104,6 @@ const FacebookAds = () => {
     };
     checkConnection();
   }, [user, activeStore]);
-
-  // Handle OAuth callback (code in URL)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
-    if (!code || !state) return;
-
-    const exchangeToken = async () => {
-      setConnectingOAuth(true);
-      try {
-        const redirectUri = `${window.location.origin}/finance/facebook-ads`;
-        const { data, error } = await supabase.functions.invoke("meta-oauth-callback", {
-          body: { code, state, redirect_uri: redirectUri },
-          headers: {},
-        });
-        // Remove query params from URL
-        window.history.replaceState({}, "", window.location.pathname);
-        if (error || !data?.success) {
-          toast.error(data?.error || "OAuth token exchange failed");
-        } else {
-          setIsConnected(true);
-          setAccountName(data.account_name || "Facebook Ads");
-          setIsDemoMode(false);
-          toast.success(`✅ ${data.account_name || "Facebook Ads"} connected successfully!`);
-        }
-      } catch (err: any) {
-        toast.error("Connection failed: " + err.message);
-      } finally {
-        setConnectingOAuth(false);
-      }
-    };
-    exchangeToken();
-  }, []);
 
   // Auto-refresh timer
   useEffect(() => {
@@ -164,9 +150,12 @@ const FacebookAds = () => {
     }
     setConnectingOAuth(true);
     try {
-      const redirectUri = `${window.location.origin}/finance/facebook-ads`;
+      // Use /api/facebook/callback as the OAuth redirect URI
+      const redirectUri = `${window.location.origin}/api/facebook/callback`;
+      const redirectAfterAuth = `${window.location.origin}/finance/facebook-ads`;
+      
       const { data, error } = await supabase.functions.invoke("meta-oauth-callback?action=get_auth_url", {
-        body: { store_id: activeStore.id, redirect_uri: redirectUri },
+        body: { store_id: activeStore.id, redirect_uri: redirectUri, redirect_after_auth: redirectAfterAuth },
       });
       if (error || !data?.auth_url) {
         toast.error(data?.error || "Failed to get OAuth URL");
