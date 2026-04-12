@@ -211,7 +211,6 @@ const FloatingInbox = () => {
             "md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
             "md:border md:border-border/50"
           )}
-          )}
         >
           {/* Header - Fixed */}
           <div className="absolute top-0 left-0 right-0 z-10 px-4 py-3 border-b border-border/60 flex items-center gap-3 bg-card/95 backdrop-blur-sm">
