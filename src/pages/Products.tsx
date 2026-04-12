@@ -1,0 +1,677 @@
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useStore } from "@/contexts/StoreContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
+import UsageWarningBanner from "@/components/UsageWarningBanner";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  base_cost: number;
+  type: "digital" | "physical";
+  stock: number;
+  sku: string;
+  category: string;
+  description: string;
+  image_url: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface ProductVariation {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  duration_days: number;
+  stock: number;
+  is_subscription: boolean;
+  sort_order: number;
+}
+
+interface Variation {
+  id?: string;
+  name: string;
+  days: string;
+  price: string;
+  stock: string;
+  is_subscription: boolean;
+  _deleted?: boolean;
+}
+
+const emptyForm = {
+  name: "", sku: "", category: "", image_url: "", description: "",
+  base_cost: "0", price: "0", stock: "", type: "physical" as "digital" | "physical",
+  is_subscription: false, is_active: true,
+};
+
+const Products = () => {
+  const { user } = useAuth();
+  const { activeStore } = useStore();
+  const { limits } = useSubscription();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [saving, setSaving] = useState(false);
+
+  // Track which products have variations (for badge)
+  const [variationCounts, setVariationCounts] = useState<Record<string, number>>({});
+
+  // Import
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importData, setImportData] = useState<Record<string, string>[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchProducts = async () => {
+    if (!activeStore) return;
+    const { data } = await supabase.from("products").select("*").eq("store_id", activeStore.id).order("created_at", { ascending: false });
+    if (data) {
+      setProducts(data as unknown as Product[]);
+      // Fetch variation counts
+      const prodIds = data.map((p: any) => p.id);
+      if (prodIds.length > 0) {
+        (supabase.from("product_variations" as any).select("product_id").in("product_id", prodIds) as any).then(({ data: vars }: any) => {
+          const counts: Record<string, number> = {};
+          (vars ?? []).forEach((v: any) => {
+            counts[v.product_id] = (counts[v.product_id] || 0) + 1;
+          });
+          setVariationCounts(counts);
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (user && activeStore) fetchProducts();
+  }, [user, activeStore]);
+
+  const openAdd = async () => {
+    // Check GLOBAL product count (across all stores)
+    const { count } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user!.id);
+    if ((count ?? 0) >= limits.maxProducts) {
+      toast.error(`Your plan allows up to ${limits.maxProducts} products across all stores. Please upgrade.`);
+      return;
+    }
+    setEditId(null);
+    setForm(emptyForm);
+    setVariations([]);
+    setSheetOpen(true);
+  };
+
+  const openEdit = async (p: Product) => {
+    setEditId(p.id);
+    setForm({
+      name: p.name, sku: p.sku || "", category: p.category || "",
+      image_url: p.image_url || "", description: p.description || "",
+      base_cost: String(p.base_cost), price: String(p.price),
+      stock: String(p.stock), type: p.type,
+      is_subscription: false, is_active: p.is_active,
+    });
+    // Load existing variations from DB
+    const { data: dbVars } = await (supabase.from("product_variations" as any).select("*").eq("product_id", p.id).order("sort_order") as any);
+    if (dbVars && dbVars.length > 0) {
+      setVariations(dbVars.map((v: ProductVariation) => ({
+        id: v.id,
+        name: v.name,
+        days: String(v.duration_days),
+        price: String(v.price),
+        stock: String(v.stock),
+        is_subscription: v.is_subscription,
+      })));
+    } else {
+      setVariations([]);
+    }
+    setSheetOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) { toast.error("Product name is required"); return; }
+    setSaving(true);
+    const payload = {
+      name: form.name,
+      sku: form.sku,
+      category: form.category,
+      description: form.description,
+      image_url: form.image_url,
+      base_cost: parseFloat(form.base_cost) || 0,
+      price: parseFloat(form.price) || 0,
+      stock: form.stock ? parseInt(form.stock) : 0,
+      type: form.type,
+      is_active: form.is_active,
+    };
+
+    let productId = editId;
+
+    if (editId) {
+      const { error } = await supabase.from("products").update(payload).eq("id", editId);
+      if (error) { toast.error(error.message); setSaving(false); return; }
+    } else {
+      const { data, error } = await supabase.from("products").insert({ ...payload, user_id: user!.id, store_id: activeStore?.id }).select("id").single();
+      if (error) { toast.error(error.message); setSaving(false); return; }
+      productId = data.id;
+    }
+
+    // Save variations to product_variations table
+    if (productId) {
+      // Delete existing variations for this product, then re-insert
+      await (supabase.from("product_variations" as any).delete().eq("product_id", productId) as any);
+
+      const activeVariations = variations.filter(v => !v._deleted && v.name.trim());
+      if (activeVariations.length > 0) {
+        const variationPayloads = activeVariations.map((v, i) => ({
+          product_id: productId,
+          name: v.name,
+          price: parseFloat(v.price) || 0,
+          duration_days: parseInt(v.days) || 30,
+          stock: parseInt(v.stock) || 0,
+          is_subscription: v.is_subscription,
+          sort_order: i,
+        }));
+        await (supabase.from("product_variations" as any).insert(variationPayloads) as any);
+      }
+    }
+
+    toast.success(editId ? "Product updated" : "Product added");
+    setSaving(false);
+    setSheetOpen(false);
+    fetchProducts();
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Product deleted"); fetchProducts(); }
+  };
+
+  const addVariation = () => {
+    setVariations([...variations, { name: "1 Month", days: "30", price: "0", stock: "0", is_subscription: true }]);
+  };
+
+  const removeVariation = (index: number) => {
+    setVariations(variations.filter((_, i) => i !== index));
+  };
+
+  const updateVariation = (index: number, field: keyof Variation, value: any) => {
+    setVariations(variations.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  };
+
+  // Margin calculation
+  const margin = useMemo(() => {
+    const cost = parseFloat(form.base_cost) || 0;
+    const sell = parseFloat(form.price) || 0;
+    if (sell === 0) return 0;
+    return ((sell - cost) / sell) * 100;
+  }, [form.base_cost, form.price]);
+
+  // Import CSV
+  const parseCSV = useCallback((text: string) => {
+    const lines = text.trim().split("\n");
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+    return lines.slice(1).map((line) => {
+      const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => { row[h] = values[i] || ""; });
+      return row;
+    });
+  }, []);
+
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.name.endsWith(".csv")) { toast.error("Only CSV files are supported"); return; }
+    setImportFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const parsed = parseCSV(e.target?.result as string);
+      setImportData(parsed);
+      if (parsed.length > 0) toast.success(`${parsed.length} products found`);
+      else toast.error("No valid records found");
+    };
+    reader.readAsText(file);
+  }, [parseCSV]);
+
+  const downloadTemplate = () => {
+    const csv = "name,sku,category,description,base_cost,price,stock,type\nSample Product,SKU001,Electronics,A sample product,50,100,20,physical";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "products_import_template.csv";
+    a.click();
+  };
+
+  const handleBulkImport = async () => {
+    if (!user || importData.length === 0) return;
+    setImporting(true);
+    let success = 0, fail = 0;
+    for (const row of importData) {
+      const { error } = await supabase.from("products").insert({
+        user_id: user.id,
+        name: row.name || "Unnamed",
+        sku: row.sku || "",
+        category: row.category || "",
+        description: row.description || "",
+        base_cost: parseFloat(row.base_cost) || 0,
+        price: parseFloat(row.price) || 0,
+        stock: parseInt(row.stock) || 0,
+        type: (row.type === "digital" ? "digital" : "physical") as "digital" | "physical",
+      });
+      if (error) fail++; else success++;
+    }
+    if (success) toast.success(`${success} products imported!`);
+    if (fail) toast.error(`${fail} products failed`);
+    setImportOpen(false); setImportFile(null); setImportData([]);
+    setImporting(false);
+    fetchProducts();
+  };
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      if (typeFilter !== "all" && p.type !== typeFilter) return false;
+      if (statusFilter !== "all") {
+        if (statusFilter === "active" && !p.is_active) return false;
+        if (statusFilter === "inactive" && p.is_active) return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        if (!p.name.toLowerCase().includes(q) && !(p.sku || "").toLowerCase().includes(q) && !(p.category || "").toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [products, typeFilter, statusFilter, search]);
+
+  return (
+    <DashboardLayout>
+      <UsageWarningBanner type="products" />
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Products</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-2 hidden sm:inline-flex">
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
+          <Button size="sm" className="gap-2 h-9" onClick={openAdd}>
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[120px]">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="physical">Physical</SelectItem>
+            <SelectItem value="digital">Digital</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Product Table or Empty State */}
+      {filtered.length === 0 ? (
+        <div className="premium-card flex flex-col items-center justify-center py-20">
+          <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+            <Package className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-1">No products yet</h3>
+          <p className="text-sm text-muted-foreground mb-4">Add your first product with pricing and variations.</p>
+          <Button onClick={openAdd} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filtered.map((p) => (
+              <div key={p.id} className="mobile-card">
+                <div className="flex items-start gap-3">
+                  {p.image_url ? (
+                    <img src={p.image_url} alt={p.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-semibold text-sm truncate">{p.name}</p>
+                      {(variationCounts[p.id] || 0) > 0 && (
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5 flex-shrink-0">
+                          <Layers className="h-2.5 w-2.5" /> {variationCounts[p.id]}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{p.type}</span>
+                      {p.category && <><span>·</span><span>{p.category}</span></>}
+                      {p.sku && <><span>·</span><span>{p.sku}</span></>}
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-sm">৳{Number(p.price).toFixed(0)}</span>
+                        <span className="text-xs text-muted-foreground">Cost: ৳{Number(p.base_cost).toFixed(0)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {p.type === "digital" ? (
+                          <Badge variant="secondary" className="text-[10px]">∞</Badge>
+                        ) : (
+                          <span className={`text-xs font-medium ${p.stock <= 0 ? "text-destructive" : ""}`}>Stock: {p.stock}</span>
+                        )}
+                        <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px]">
+                          {p.is_active ? "Active" : "Off"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => openEdit(p)}>
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="premium-card overflow-hidden hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((p) => (
+                  <TableRow key={p.id} className="hover:bg-muted/50 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.name} className="h-9 w-9 rounded-lg object-cover" />
+                        ) : (
+                          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-sm">{p.name}</p>
+                            {(variationCounts[p.id] || 0) > 0 && (
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
+                                <Layers className="h-2.5 w-2.5" /> {variationCounts[p.id]}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground capitalize">{p.type}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.sku || "—"}</TableCell>
+                    <TableCell className="text-sm">{p.category || "—"}</TableCell>
+                    <TableCell className="text-sm">৳{Number(p.base_cost).toFixed(2)}</TableCell>
+                    <TableCell className="font-semibold text-sm">৳{Number(p.price).toFixed(2)}</TableCell>
+                    <TableCell>
+                      {p.type === "digital" ? (
+                        <Badge variant="secondary" className="text-xs">Unlimited</Badge>
+                      ) : (
+                        <span className={`text-sm font-medium ${p.stock <= 0 ? "text-destructive" : ""}`}>{p.stock}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={p.is_active ? "default" : "secondary"} className="text-xs">
+                        {p.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+
+      {/* Add/Edit Product Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto pb-safe">
+          <SheetHeader>
+            <SheetTitle>{editId ? "Edit Product" : "Add Product"}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-5 mt-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label>Product Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" />
+            </div>
+
+            {/* SKU & Category */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>SKU</Label>
+                <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="" />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="" />
+              </div>
+            </div>
+
+            {/* Image URL */}
+            <div className="space-y-2">
+              <Label>Image URL</Label>
+              <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+            </div>
+
+            {/* Base Cost & Base Selling */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Base Cost (৳)</Label>
+                <Input type="number" value={form.base_cost} onChange={(e) => setForm({ ...form, base_cost: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Base Selling (৳)</Label>
+                <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              </div>
+            </div>
+
+            {/* Margin */}
+            <div className="text-right text-sm">
+              <span className="text-muted-foreground">Margin: </span>
+              <span className={`font-medium ${margin >= 0 ? "text-green-600" : "text-red-600"}`}>{margin.toFixed(1)}%</span>
+            </div>
+
+            {/* Stock Quantity */}
+            <div className="space-y-2">
+              <Label>Stock Quantity</Label>
+              <Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Leave empty for unlimited" />
+              <p className="text-xs text-muted-foreground">Leave empty for unlimited stock</p>
+            </div>
+
+            {/* Toggles */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Active</Label>
+                <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+              </div>
+            </div>
+
+            {/* Variations Section */}
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <Label className="text-base font-semibold">Variations</Label>
+                  {variations.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px]">{variations.length}</Badge>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" className="text-primary gap-1" onClick={addVariation}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              </div>
+
+              {variations.length === 0 && (
+                <div className="text-center py-4 border border-dashed rounded-lg">
+                  <Layers className="h-6 w-6 text-muted-foreground/40 mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">No variations yet. Add variations like "1 Month", "6 Months", etc.</p>
+                </div>
+              )}
+
+              {variations.map((v, i) => (
+                <div key={i} className="rounded-lg border p-3 space-y-3 bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <Input
+                      value={v.name}
+                      onChange={(e) => updateVariation(i, "name", e.target.value)}
+                      className="w-40 h-8 text-sm font-medium"
+                      placeholder="Variation name"
+                    />
+                    <Button variant="ghost" size="sm" className="text-destructive text-xs h-7 px-2" onClick={() => removeVariation(i)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Duration (days)</Label>
+                      <Input type="number" value={v.days} onChange={(e) => updateVariation(i, "days", e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Price (৳)</Label>
+                      <Input type="number" value={v.price} onChange={(e) => updateVariation(i, "price", e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Stock</Label>
+                      <Input type="number" value={v.stock} onChange={(e) => updateVariation(i, "stock", e.target.value)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={v.is_subscription}
+                        onCheckedChange={(checked) => updateVariation(i, "is_subscription", checked)}
+                        className="scale-90"
+                      />
+                      <span className="text-xs text-muted-foreground">Subscription</span>
+                    </div>
+                    {v.is_subscription && (
+                      <Badge variant="secondary" className="text-[9px]">Auto-creates subscription on order</Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button className="w-full" onClick={handleSubmit} disabled={saving}>
+              {saving ? "Saving..." : "Save Product"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Import Dialog */}
+      <Dialog open={importOpen} onOpenChange={(open) => { setImportOpen(open); if (!open) { setImportFile(null); setImportData([]); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Products</DialogTitle>
+            <p className="text-sm text-muted-foreground">Upload a CSV file to bulk import products. Download the template to see the required format.</p>
+          </DialogHeader>
+          <div
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${dragOver ? "border-primary bg-primary/5" : "border-border"}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFileSelect(f); }}
+          >
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }} />
+            <CloudUpload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="font-medium text-sm">Click or drag file to upload</p>
+            <p className="text-xs text-muted-foreground mt-1">Only CSV files are supported</p>
+            {importFile && <p className="text-xs text-primary mt-2 font-medium">{importFile.name} ({importData.length} records)</p>}
+          </div>
+          <Button variant="outline" className="gap-2 w-fit mx-auto" onClick={downloadTemplate}>
+            <Download className="h-4 w-4" />
+            Download Template
+          </Button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => { setImportOpen(false); setImportFile(null); setImportData([]); }}>Cancel</Button>
+            <Button onClick={handleBulkImport} disabled={importData.length === 0 || importing}>
+              {importing ? "Importing..." : `Import ${importData.length} Records`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
+  );
+};
+
+export default Products;
