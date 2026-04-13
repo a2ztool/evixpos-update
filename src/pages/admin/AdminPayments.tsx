@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2, Timer, AlertTriangle } from "lucide-react";
 
 interface PlanPayment {
   id: string; user_id: string; store_id: string | null; plan: string; amount: number; currency: string;
