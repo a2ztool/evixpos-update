@@ -169,7 +169,16 @@ const AdminPayments = () => {
                 <div><p className="text-slate-400 text-xs">Amount</p><p className="font-medium text-emerald-400">{currencySymbol(selectedPayment.currency)}{selectedPayment.amount}</p></div>
                 <div><p className="text-slate-400 text-xs">Gateway</p><p className="font-medium text-white">{selectedPayment.gateway_name || "N/A"}</p></div>
                 <div><p className="text-slate-400 text-xs">Txn ID</p><p className="font-medium font-mono text-[11px] text-white">{selectedPayment.transaction_id || "N/A"}</p></div>
+                <div><p className="text-slate-400 text-xs">Expires</p><p className="font-medium text-[11px] text-white">{selectedPayment.expires_at ? (new Date(selectedPayment.expires_at) < new Date() ? <span className="text-red-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Expired</span> : new Date(selectedPayment.expires_at).toLocaleString()) : "N/A"}</p></div>
               </div>
+
+              {/* Duplicate Transaction Warning */}
+              {selectedPayment.transaction_id && (
+                <div className="flex items-center gap-2 text-xs bg-slate-700/50 rounded-lg px-3 py-2">
+                  <Timer className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-slate-300">Txn ID: <code className="font-mono bg-slate-600 px-1 rounded">{selectedPayment.transaction_id}</code></span>
+                </div>
+              )}
 
               {selectedPayment.proof_url && (
                 <div>
