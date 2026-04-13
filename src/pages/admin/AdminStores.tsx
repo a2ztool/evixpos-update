@@ -101,9 +101,14 @@ const AdminStores = () => {
                     <p className="text-sm font-semibold text-white truncate">{s.name}</p>
                     <p className="text-xs text-slate-400 truncate mt-0.5">{s.owner.name || "—"} · {s.owner.email}</p>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] shrink-0 ${s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}>
-                    {s.is_active ? "Active" : "Off"}
-                  </Badge>
+                   <div className="flex items-center gap-1.5">
+                     <Badge variant="outline" className={`text-[10px] shrink-0 ${s.store_mode === "offline" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-sky-500/20 text-sky-400 border-sky-500/30"}`}>
+                       {s.store_mode === "offline" ? <><MapPin className="h-2.5 w-2.5 mr-0.5" />Offline</> : <><Globe className="h-2.5 w-2.5 mr-0.5" />Online</>}
+                     </Badge>
+                     <Badge variant="outline" className={`text-[10px] shrink-0 ${s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}>
+                       {s.is_active ? "Active" : "Off"}
+                     </Badge>
+                   </div>
                 </div>
                 {s.phone && <p className="text-xs text-slate-500 mt-1.5">{s.phone}</p>}
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
@@ -127,8 +132,9 @@ const AdminStores = () => {
                   <TableRow className="border-slate-700 hover:bg-transparent">
                     <TableHead className="text-slate-400">Store Name</TableHead>
                     <TableHead className="text-slate-400">Owner</TableHead>
-                    <TableHead className="text-slate-400">Phone</TableHead>
-                    <TableHead className="text-slate-400">Status</TableHead>
+                     <TableHead className="text-slate-400">Phone</TableHead>
+                     <TableHead className="text-slate-400">Mode</TableHead>
+                     <TableHead className="text-slate-400">Status</TableHead>
                     <TableHead className="text-slate-400">Created</TableHead>
                     <TableHead className="text-slate-400">Actions</TableHead>
                   </TableRow>
@@ -140,8 +146,13 @@ const AdminStores = () => {
                       <TableCell>
                         <div><p className="text-slate-300 text-sm">{s.owner.name || "—"}</p><p className="text-slate-500 text-xs">{s.owner.email}</p></div>
                       </TableCell>
-                      <TableCell className="text-slate-300">{s.phone || "—"}</TableCell>
-                      <TableCell><Badge variant="outline" className={s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>{s.is_active ? "Active" : "Disabled"}</Badge></TableCell>
+                       <TableCell className="text-slate-300">{s.phone || "—"}</TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className={s.store_mode === "offline" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-sky-500/20 text-sky-400 border-sky-500/30"}>
+                           {s.store_mode === "offline" ? "Offline" : "Online"}
+                         </Badge>
+                       </TableCell>
+                       <TableCell><Badge variant="outline" className={s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>{s.is_active ? "Active" : "Disabled"}</Badge></TableCell>
                       <TableCell className="text-slate-400 text-sm">{new Date(s.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
