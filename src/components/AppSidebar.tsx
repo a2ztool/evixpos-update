@@ -3,7 +3,7 @@ import {
   Settings, Plug, LogOut, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
   TrendingUp, ArrowUpDown, BookOpen, Megaphone, ListTodo, BarChart3, RefreshCw, Crown,
   Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, ExternalLink, Sheet, Lock,
-  Truck, Wallet, Star, AlertTriangle, Receipt
+  Truck, Wallet, Star, AlertTriangle, Receipt, CalendarDays
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
@@ -73,7 +73,7 @@ const AppSidebar = () => {
     { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
     { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission" },
-    { title: "Daily Report", icon: Calendar, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
+    { title: "Daily Report", icon: CalendarDays, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
     { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", perm: "reports.view", offlineOnly: true },
     { title: "Staff Performance", icon: Users, path: "/offline/staff-performance", perm: "reports.view", offlineOnly: true },
   ];
