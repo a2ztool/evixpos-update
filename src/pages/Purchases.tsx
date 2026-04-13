@@ -99,8 +99,9 @@ const Purchases = () => {
               { title: "Record Purchase", description: "Click 'New Purchase' to log goods received from suppliers." },
               { title: "Track Payments", description: "Set paid amount — unpaid balance auto-calculates as due." },
               { title: "Stock Auto-Update", description: "Product stock automatically increases when purchase is saved." },
-            ]} />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            />
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> New Purchase</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Record Purchase</DialogTitle></DialogHeader>
