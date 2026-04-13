@@ -41,6 +41,12 @@ import Referral from "./pages/Referral";
 import MyPlan from "./pages/MyPlan";
 import SupportPage from "./pages/SupportPage";
 import StaffInbox from "./pages/StaffInbox";
+import Suppliers from "./pages/Suppliers";
+import Purchases from "./pages/Purchases";
+import CashRegister from "./pages/CashRegister";
+import CustomerCredits from "./pages/CustomerCredits";
+import LoyaltyPoints from "./pages/LoyaltyPoints";
+import StockAlerts from "./pages/StockAlerts";
 
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -123,6 +129,12 @@ const App = () => (
             <Route path="/staff-inbox" element={<P ownerOnly><StaffInbox /></P>} />
             <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
             <Route path="/notification-center" element={<P><NotificationCenter /></P>} />
+            <Route path="/offline/suppliers" element={<P perm="products.view"><Suppliers /></P>} />
+            <Route path="/offline/purchases" element={<P perm="products.edit"><Purchases /></P>} />
+            <Route path="/offline/cash-register" element={<P perm="pos.access"><CashRegister /></P>} />
+            <Route path="/offline/customer-credits" element={<P perm="customers.view"><CustomerCredits /></P>} />
+            <Route path="/offline/loyalty" element={<P perm="customers.view"><LoyaltyPoints /></P>} />
+            <Route path="/offline/stock-alerts" element={<P perm="products.view"><StockAlerts /></P>} />
 
             {/* Admin Panel — completely separate */}
             <Route path="/admin" element={<AdminLayout />}>
