@@ -692,22 +692,30 @@ const SettingsPage = () => {
             </TabsList>
 
             <TabsContent value="personal" className="space-y-4 mt-4">
-              <p className="text-xs text-muted-foreground">{lang === "bn" ? "পার্সোনাল অ্যাকাউন্ট নম্বর দিন — কাস্টমার এটি দেখে পেমেন্ট পাঠাবে" : "Enter your personal account number — customers will see this to send payment"}</p>
-              <div className="space-y-1.5">
-                <Label>{lang === "bn" ? "অ্যাকাউন্ট নম্বর" : "Account Number"}</Label>
-                <Input value={configTemp.personal_number ?? ""} onChange={e => setConfigTemp(p => ({ ...p, personal_number: e.target.value }))} placeholder="e.g. 01XXXXXXXXX" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{lang === "bn" ? "অ্যাকাউন্ট টাইপ" : "Account Type"}</Label>
-                <Select value={configTemp.account_type ?? "personal"} onValueChange={v => setConfigTemp(p => ({ ...p, account_type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">{lang === "bn" ? "পার্সোনাল" : "Personal"}</SelectItem>
-                    <SelectItem value="agent">{lang === "bn" ? "এজেন্ট" : "Agent"}</SelectItem>
-                    <SelectItem value="merchant">{lang === "bn" ? "মার্চেন্ট" : "Merchant"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="text-xs text-muted-foreground">{lang === "bn" ? "পার্সোনাল অ্যাকাউন্ট তথ্য দিন — কাস্টমার এটি দেখে পেমেন্ট পাঠাবে" : "Enter your personal account details — customers will see this to send payment"}</p>
+              {(() => {
+                const catalog = GATEWAY_CATALOG.find(g => g.id === configDialog);
+                const personalFields = catalog?.personalFields || [
+                  { key: "personal_number", label: lang === "bn" ? "অ্যাকাউন্ট নম্বর" : "Account Number", placeholder: "e.g. 01XXXXXXXXX" },
+                ];
+                return personalFields.map(field => (
+                  <div key={field.key} className="space-y-1.5">
+                    <Label>{field.label}</Label>
+                    {field.key === "account_type" ? (
+                      <Select value={configTemp[field.key] ?? "personal"} onValueChange={v => setConfigTemp(p => ({ ...p, [field.key]: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="personal">{lang === "bn" ? "পার্সোনাল" : "Personal"}</SelectItem>
+                          <SelectItem value="agent">{lang === "bn" ? "এজেন্ট" : "Agent"}</SelectItem>
+                          <SelectItem value="merchant">{lang === "bn" ? "মার্চেন্ট" : "Merchant"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input value={configTemp[field.key] ?? ""} onChange={e => setConfigTemp(p => ({ ...p, [field.key]: e.target.value }))} placeholder={field.placeholder} />
+                    )}
+                  </div>
+                ));
+              })()}
             </TabsContent>
 
             <TabsContent value="merchant" className="space-y-4 mt-4">
@@ -732,8 +740,19 @@ const SettingsPage = () => {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {lang === "bn" ? "কাস্টম নির্দেশনা" : "Custom Instructions"}</Label>
-                <Textarea value={configTemp.instructions ?? ""} onChange={e => setConfigTemp(p => ({ ...p, instructions: e.target.value }))} placeholder={lang === "bn" ? "যেমন: পেমেন্ট স্ক্রিনশট পাঠান..." : "e.g. Send payment screenshot..."} rows={3} />
+                <Label className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {lang === "bn" ? "পেমেন্ট গাইড / নির্দেশনা" : "Payment Guide / Instructions"}</Label>
+                <Textarea value={configTemp.instructions ?? ""} onChange={e => setConfigTemp(p => ({ ...p, instructions: e.target.value }))} placeholder={lang === "bn" ? "কাস্টমারকে কী করতে হবে সেই নির্দেশনা..." : "Instructions for customers on how to pay..."} rows={3} />
+                {(() => {
+                  const catalog = GATEWAY_CATALOG.find(g => g.id === configDialog);
+                  if (catalog?.defaultInstruction && !configTemp.instructions) {
+                    return (
+                      <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setConfigTemp(p => ({ ...p, instructions: catalog.defaultInstruction! }))}>
+                        <MessageSquare className="h-3 w-3" /> {lang === "bn" ? "ডিফল্ট নির্দেশনা ব্যবহার করুন" : "Use default instruction"}
+                      </Button>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </TabsContent>
           </Tabs>
