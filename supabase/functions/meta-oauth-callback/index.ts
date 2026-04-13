@@ -1,5 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-action",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,10 +33,8 @@ Deno.serve(async (req) => {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(
-        authHeader.replace("Bearer ", "")
-      );
-      if (claimsErr || !claimsData?.claims) {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,121 +51,23 @@ Deno.serve(async (req) => {
         });
       }
 
-      // State encodes user_id + store_id + redirect_after_auth for the callback
       const state = btoa(JSON.stringify({
-        user_id: claimsData.claims.sub,
+        user_id: user.id,
         store_id,
         redirect_uri,
         redirect_after_auth: redirect_after_auth || `${new URL(redirect_uri).origin}/finance/facebook-ads`,
       }));
 
-      const scopes = [
-        "ads_read",
-        "ads_management",
-        "read_insights",
-        "business_management",
-      ].join(",");
+      const scopes = ["ads_read", "ads_management"].join(",");
 
-      const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${encodeURIComponent(state)}&scope=${scopes}&response_type=code`;
+      const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${encodeURIComponent(state)}&scope=${scopes}&response_type=code`;
 
       return new Response(JSON.stringify({ auth_url: authUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // OAuth Callback Handler: exchange code for token and redirect
-    const callbackCode = url.searchParams.get("code");
-    const callbackState = url.searchParams.get("state");
-    
-    // If code and state are in query params, this is the OAuth callback
-    if (callbackCode && callbackState) {
-      let stateData: { user_id: string; store_id: string; redirect_uri: string; redirect_after_auth: string };
-      try {
-        stateData = JSON.parse(atob(callbackState));
-      } catch {
-        return new Response(null, {
-          status: 302,
-          headers: {
-            "Location": `${stateData?.redirect_after_auth || "/finance/facebook-ads"}?error=invalid_state`,
-          },
-        });
-      }
-
-      // Exchange code for short-lived token
-      const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(stateData.redirect_uri)}&client_secret=${metaAppSecret}&code=${callbackCode}`;
-
-      const tokenRes = await fetch(tokenUrl);
-      const tokenData = await tokenRes.json();
-
-      if (tokenData.error) {
-        return new Response(null, {
-          status: 302,
-          headers: {
-            "Location": `${stateData.redirect_after_auth}?error=${encodeURIComponent(tokenData.error.message || "Token exchange failed")}`,
-          },
-        });
-      }
-
-      // Exchange for long-lived token
-      const longTokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
-
-      const longTokenRes = await fetch(longTokenUrl);
-      const longTokenData = await longTokenRes.json();
-
-      const accessToken = longTokenData.access_token || tokenData.access_token;
-      const expiresIn = longTokenData.expires_in || tokenData.expires_in || 5184000;
-
-      // Fetch ad accounts
-      const accountsRes = await fetch(
-        `https://graph.facebook.com/v21.0/me/adaccounts?fields=name,account_id,account_status&access_token=${accessToken}`
-      );
-      const accountsData = await accountsRes.json();
-
-      const firstAccount = accountsData.data?.[0];
-
-      // Store in Supabase using service role
-      const supabaseAdmin = createClient(
-        supabaseUrl,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
-      const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
-
-      const { error: upsertError } = await supabaseAdmin
-        .from("meta_ad_accounts")
-        .upsert(
-          {
-            user_id: stateData.user_id,
-            store_id: stateData.store_id,
-            access_token: accessToken,
-            ad_account_id: firstAccount?.id || null,
-            account_name: firstAccount?.name || "Facebook Ads",
-            token_expires_at: expiresAt,
-            is_active: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,store_id" }
-        );
-
-      if (upsertError) {
-        return new Response(null, {
-          status: 302,
-          headers: {
-            "Location": `${stateData.redirect_after_auth}?error=${encodeURIComponent("Failed to save token: " + upsertError.message)}`,
-          },
-        });
-      }
-
-      // Success - redirect back to the app
-      return new Response(null, {
-        status: 302,
-        headers: {
-          "Location": `${stateData.redirect_after_auth}?connected=true&account=${encodeURIComponent(firstAccount?.name || "Facebook Ads")}`,
-        },
-      });
-    }
-
-    // API Action: exchange code for token (for manual/API usage)
+    // API Action: exchange code for token
     if (action === "exchange_token") {
       const body = await req.json();
       const { code, state, redirect_uri } = body;
@@ -174,7 +79,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      let stateData: { user_id: string; store_id: string; redirect_uri: string };
+      let stateData: { user_id: string; store_id: string; redirect_uri?: string };
       try {
         stateData = JSON.parse(atob(state));
       } catch {
@@ -184,13 +89,16 @@ Deno.serve(async (req) => {
         });
       }
 
+      const callbackUri = redirect_uri || stateData.redirect_uri || "https://identical-copy.lovable.app/api/facebook/callback";
+
       // Exchange code for short-lived token
-      const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirect_uri || "https://identical-copy.lovable.app/api/facebook/callback")}&client_secret=${metaAppSecret}&code=${code}`;
+      const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(callbackUri)}&client_secret=${metaAppSecret}&code=${code}`;
 
       const tokenRes = await fetch(tokenUrl);
       const tokenData = await tokenRes.json();
 
       if (tokenData.error) {
+        console.error("Token exchange error:", tokenData.error);
         return new Response(JSON.stringify({ error: tokenData.error.message || "Token exchange failed" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -198,7 +106,7 @@ Deno.serve(async (req) => {
       }
 
       // Exchange for long-lived token
-      const longTokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
+      const longTokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
 
       const longTokenRes = await fetch(longTokenUrl);
       const longTokenData = await longTokenRes.json();
@@ -208,47 +116,42 @@ Deno.serve(async (req) => {
 
       // Fetch ad accounts
       const accountsRes = await fetch(
-        `https://graph.facebook.com/v21.0/me/adaccounts?fields=name,account_id,account_status&access_token=${accessToken}`
+        `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,account_id,account_status&access_token=${accessToken}`
       );
       const accountsData = await accountsRes.json();
-
       const firstAccount = accountsData.data?.[0];
 
       // Store in Supabase using service role
-      const supabaseAdmin = createClient(
-        supabaseUrl,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+      const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
       const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
       // Save to ads_accounts table
       const { error: insertError } = await supabaseAdmin
         .from("ads_accounts")
-        .insert({
+        .upsert({
           user_id: stateData.user_id,
           store_id: stateData.store_id,
           access_token: accessToken,
-        });
+          ad_account_id: firstAccount?.id || null,
+        }, { onConflict: "user_id,store_id" });
 
-      // Also upsert to meta_ad_accounts for backward compatibility
+      // Also upsert to meta_ad_accounts
       await supabaseAdmin
         .from("meta_ad_accounts")
-        .upsert(
-          {
-            user_id: stateData.user_id,
-            store_id: stateData.store_id,
-            access_token: accessToken,
-            ad_account_id: firstAccount?.id || null,
-            account_name: firstAccount?.name || "Facebook Ads",
-            token_expires_at: expiresAt,
-            is_active: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,store_id" }
-        );
+        .upsert({
+          user_id: stateData.user_id,
+          store_id: stateData.store_id,
+          access_token: accessToken,
+          ad_account_id: firstAccount?.id || null,
+          account_name: firstAccount?.name || "Facebook Ads",
+          token_expires_at: expiresAt,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,store_id" });
 
       if (insertError) {
+        console.error("DB insert error:", insertError);
         return new Response(JSON.stringify({ error: "Failed to save token: " + insertError.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -279,10 +182,8 @@ Deno.serve(async (req) => {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(
-        authHeader.replace("Bearer ", "")
-      );
-      if (claimsErr || !claimsData?.claims) {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -293,11 +194,11 @@ Deno.serve(async (req) => {
       const { store_id } = body;
 
       const supabaseAdmin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      await supabaseAdmin
-        .from("meta_ad_accounts")
-        .delete()
-        .eq("user_id", claimsData.claims.sub)
-        .eq("store_id", store_id);
+      
+      await Promise.all([
+        supabaseAdmin.from("meta_ad_accounts").delete().eq("user_id", user.id).eq("store_id", store_id),
+        supabaseAdmin.from("ads_accounts").delete().eq("user_id", user.id).eq("store_id", store_id),
+      ]);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -309,6 +210,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("Edge function error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
