@@ -50,25 +50,25 @@ const AppSidebar = () => {
   ];
   const productSubItems: NavItem[] = [
     { title: t.products, icon: Package, path: "/products", perm: "products.view" },
-    { title: t.orderForms, icon: FileText, path: "/order-forms", perm: "products.view", feature: "order_forms" },
+    { title: t.orderForms, icon: FileText, path: "/order-forms", perm: "products.view", feature: "order_forms", onlineOnly: true },
     { title: t.coupons, icon: Tag, path: "/coupons", perm: "products.edit", feature: "coupons" },
   ];
   const crmItems: NavItem[] = [
     { title: t.customers, icon: Users, path: "/customers", perm: "customers.view" },
-    { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", perm: "customers.view", feature: "subscriptions" },
+    { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", perm: "customers.view", feature: "subscriptions", onlineOnly: true },
   ];
   const financeSubItems: NavItem[] = [
     { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", perm: "reports.view", feature: "reports" },
     { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
     { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book" },
-    { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs" },
-    { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs" },
+    { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
+    { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission" },
   ];
   const integrationSubItems: NavItem[] = [
     { title: t.notifications, icon: Bell, path: "/integrations/notifications" },
-    { title: t.woocommerce, icon: ShoppingBag, path: "/integrations/woocommerce", perm: "settings.edit", feature: "woocommerce" },
-    { title: t.botAutomation, icon: Bot, path: "/integrations/bot-automation", perm: "settings.edit", feature: "bot_automation" },
+    { title: t.woocommerce, icon: ShoppingBag, path: "/integrations/woocommerce", perm: "settings.edit", feature: "woocommerce", onlineOnly: true },
+    { title: t.botAutomation, icon: Bot, path: "/integrations/bot-automation", perm: "settings.edit", feature: "bot_automation", onlineOnly: true },
     { title: t.whatsapp, icon: MessageCircle, path: "/integrations/whatsapp", perm: "settings.edit", feature: "whatsapp" },
     { title: t.googleSheets, icon: Sheet, path: "/integrations/google-sheets", perm: "settings.edit", feature: "google_sheets" },
   ];
