@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Eye, Search, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Eye, Search, Download, ChevronLeft, ChevronRight, Globe, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreRow {
