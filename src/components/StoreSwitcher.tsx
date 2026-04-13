@@ -1,4 +1,5 @@
 import { useStore } from "@/contexts/StoreContext";
+import type { StoreMode } from "@/contexts/StoreContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ const StoreSwitcher = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [newStoreMode, setNewStoreMode] = useState<StoreMode>("online");
 
   // Staff users: show store name only, no switching
   if (isStaffStore) {
