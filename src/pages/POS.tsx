@@ -24,6 +24,7 @@ import {
   Printer, Zap, Layers,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
+import { getGatewayIcon } from "@/lib/gatewayBrands";
 
 interface Product {
   id: string;
@@ -790,7 +791,7 @@ const POS = () => {
                       : "border-border text-muted-foreground hover:border-primary/50"
                   }`}
                 >
-                  <CreditCard className="h-4 w-4" />
+                  <img src={getGatewayIcon(m.id)} alt={m.name} className="h-5 w-5 rounded object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   <span className="font-medium">{m.name}</span>
                 </button>
               ))}

@@ -21,8 +21,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Settings as SettingsIcon, CreditCard, DollarSign, Languages, UsersRound,
   Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
-  Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown
+  Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
+  QrCode, MessageSquare, Key, User as UserIcon
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
 import { toast } from "sonner";
 
 // ─── Payment Gateway Catalog ───
@@ -537,7 +540,7 @@ const SettingsPage = () => {
                       return (
                         <button key={gw.id} onClick={() => addGateway(gw)}
                           className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left">
-                          <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center"><Icon className="h-4 w-4 text-muted-foreground" /></div>
+                          <img src={getGatewayIcon(gw.id)} alt={gw.name} className="h-8 w-8 rounded-lg object-contain bg-white p-1 border" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/6963/6963703.png"; }} />
                           <div className="flex-1"><p className="text-sm font-medium">{gw.name}</p><p className="text-xs text-muted-foreground">{gw.desc}</p></div>
                           <Plus className="h-4 w-4 text-primary" />
                         </button>
@@ -557,27 +560,28 @@ const SettingsPage = () => {
         <div className="text-center py-12"><CreditCard className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground text-sm">{lang === "bn" ? "কোনো পেমেন্ট পদ্ধতি নেই" : "No payment methods"}</p></div>
       ) : (
         <div className="space-y-2">
-          {settings.payment_methods.map(pm => {
+      {settings.payment_methods.map(pm => {
             const catalog = GATEWAY_CATALOG.find(g => g.id === pm.id);
-            const Icon = catalog?.icon ?? Wallet;
             const region = catalog?.region ?? "intl";
+            const iconUrl = getGatewayIcon(pm.id);
+            const hasConfig = (catalog?.fields?.length ?? 0) > 0 || true; // all gateways can have personal/QR config
             return (
               <div key={pm.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${pm.enabled ? "border-primary/20 bg-primary/5" : "border-border"}`}>
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-muted/50 flex items-center justify-center"><Icon className="h-4 w-4" /></div>
+                  <img src={iconUrl} alt={pm.name} className="h-9 w-9 rounded-lg object-contain bg-white p-1 border" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/6963/6963703.png"; }} />
                   <div>
                     <p className="text-sm font-medium flex items-center gap-2">{pm.name}
                       <Badge variant="outline" className="text-[10px]">{REGION_LABELS[region]?.[lang]}</Badge>
                     </p>
                     <p className="text-xs text-muted-foreground">{catalog?.desc}</p>
+                    {pm.config?.personal_number && <p className="text-[10px] text-muted-foreground">📱 {pm.config.personal_number}</p>}
+                    {pm.config?.qr_code_url && <p className="text-[10px] text-primary">📷 QR Code added</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {(catalog?.fields?.length ?? 0) > 0 && (
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => openConfig(pm.id)}>
-                      {lang === "bn" ? "কনফিগ" : "Config"}
-                    </Button>
-                  )}
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => openConfig(pm.id)}>
+                    {lang === "bn" ? "কনফিগ" : "Config"}
+                  </Button>
                   <Switch checked={pm.enabled} onCheckedChange={() => toggleGateway(pm.id)} />
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeGateway(pm.id)}>
                     <Trash2 className="h-4 w-4" />
@@ -589,19 +593,69 @@ const SettingsPage = () => {
         </div>
       )}
 
-      {/* Config Dialog */}
+      {/* Config Dialog - Enhanced Long Form */}
       <Dialog open={!!configDialog} onOpenChange={() => setConfigDialog(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{lang === "bn" ? "গেটওয়ে কনফিগারেশন" : "Gateway Configuration"}</DialogTitle></DialogHeader>
-          <div className="space-y-4 mt-2">
-            {GATEWAY_CATALOG.find(g => g.id === configDialog)?.fields.map(field => (
-              <div key={field} className="space-y-1.5">
-                <Label className="capitalize">{field.replace(/_/g, " ")}</Label>
-                <Input value={configTemp[field] ?? ""} onChange={e => setConfigTemp(p => ({ ...p, [field]: e.target.value }))} placeholder={`Enter ${field.replace(/_/g, " ")}`} />
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {configDialog && <img src={getGatewayIcon(configDialog)} alt="" className="h-6 w-6 rounded object-contain" />}
+              {lang === "bn" ? "গেটওয়ে কনফিগারেশন" : "Gateway Configuration"}
+            </DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="personal" className="mt-2">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="personal" className="text-xs gap-1"><UserIcon className="h-3 w-3" /> {lang === "bn" ? "ব্যক্তিগত" : "Personal"}</TabsTrigger>
+              <TabsTrigger value="merchant" className="text-xs gap-1"><Key className="h-3 w-3" /> {lang === "bn" ? "মার্চেন্ট" : "Merchant"}</TabsTrigger>
+              <TabsTrigger value="extra" className="text-xs gap-1"><QrCode className="h-3 w-3" /> {lang === "bn" ? "QR/নোট" : "QR/Notes"}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="personal" className="space-y-4 mt-4">
+              <p className="text-xs text-muted-foreground">{lang === "bn" ? "পার্সোনাল অ্যাকাউন্ট নম্বর দিন — কাস্টমার এটি দেখে পেমেন্ট পাঠাবে" : "Enter your personal account number — customers will see this to send payment"}</p>
+              <div className="space-y-1.5">
+                <Label>{lang === "bn" ? "অ্যাকাউন্ট নম্বর" : "Account Number"}</Label>
+                <Input value={configTemp.personal_number ?? ""} onChange={e => setConfigTemp(p => ({ ...p, personal_number: e.target.value }))} placeholder="e.g. 01XXXXXXXXX" />
               </div>
-            ))}
-            <Button onClick={saveConfig} className="w-full gap-2"><Save className="h-4 w-4" /> {t.save}</Button>
-          </div>
+              <div className="space-y-1.5">
+                <Label>{lang === "bn" ? "অ্যাকাউন্ট টাইপ" : "Account Type"}</Label>
+                <Select value={configTemp.account_type ?? "personal"} onValueChange={v => setConfigTemp(p => ({ ...p, account_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">{lang === "bn" ? "পার্সোনাল" : "Personal"}</SelectItem>
+                    <SelectItem value="agent">{lang === "bn" ? "এজেন্ট" : "Agent"}</SelectItem>
+                    <SelectItem value="merchant">{lang === "bn" ? "মার্চেন্ট" : "Merchant"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="merchant" className="space-y-4 mt-4">
+              <p className="text-xs text-muted-foreground">{lang === "bn" ? "মার্চেন্ট API credentials দিন — অটোমেটিক পেমেন্ট ভেরিফিকেশনের জন্য" : "Enter merchant API credentials for automatic payment verification"}</p>
+              {GATEWAY_CATALOG.find(g => g.id === configDialog)?.fields.map(field => (
+                <div key={field} className="space-y-1.5">
+                  <Label className="capitalize">{field.replace(/_/g, " ")}</Label>
+                  <Input value={configTemp[field] ?? ""} onChange={e => setConfigTemp(p => ({ ...p, [field]: e.target.value }))} placeholder={`Enter ${field.replace(/_/g, " ")}`} />
+                </div>
+              ))}
+              {(!GATEWAY_CATALOG.find(g => g.id === configDialog)?.fields?.length) && (
+                <p className="text-sm text-muted-foreground text-center py-4">{lang === "bn" ? "এই গেটওয়ের জন্য কোনো API ফিল্ড নেই" : "No API fields for this gateway"}</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="extra" className="space-y-4 mt-4">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1"><QrCode className="h-3.5 w-3.5" /> {lang === "bn" ? "QR কোড URL" : "QR Code URL"}</Label>
+                <Input value={configTemp.qr_code_url ?? ""} onChange={e => setConfigTemp(p => ({ ...p, qr_code_url: e.target.value }))} placeholder="https://... or upload URL" />
+                {configTemp.qr_code_url && (
+                  <img src={configTemp.qr_code_url} alt="QR Preview" className="w-32 h-32 rounded-lg border object-contain mx-auto mt-2" />
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {lang === "bn" ? "কাস্টম নির্দেশনা" : "Custom Instructions"}</Label>
+                <Textarea value={configTemp.instructions ?? ""} onChange={e => setConfigTemp(p => ({ ...p, instructions: e.target.value }))} placeholder={lang === "bn" ? "যেমন: পেমেন্ট স্ক্রিনশট পাঠান..." : "e.g. Send payment screenshot..."} rows={3} />
+              </div>
+            </TabsContent>
+          </Tabs>
+          <Button onClick={saveConfig} className="w-full gap-2 mt-4"><Save className="h-4 w-4" /> {t.save}</Button>
         </DialogContent>
       </Dialog>
 
