@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { toast } from "sonner";
-import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer } from "lucide-react";
 
 interface PaymentGateway {
   id: string;
@@ -31,6 +31,31 @@ interface PaymentModalProps {
   currencySymbol: string;
 }
 
+// Expiry countdown hook
+const useExpiryTimer = (expiresAt: string | null) => {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const interval = setInterval(() => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setIsExpired(true);
+        setTimeLeft("Expired");
+        clearInterval(interval);
+      } else {
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${mins}m ${secs}s`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return { timeLeft, isExpired };
+};
+
 const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency, currencySymbol }: PaymentModalProps) => {
   const { user } = useAuth();
   const { activeStore } = useStore();
@@ -40,8 +65,11 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [existingPayment, setExistingPayment] = useState<{ status: string } | null>(null);
+  const [existingPayment, setExistingPayment] = useState<{ status: string; expires_at?: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+
+  const { timeLeft, isExpired } = useExpiryTimer(existingPayment?.expires_at || null);
 
   useEffect(() => {
     if (!open) return;
@@ -51,9 +79,9 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     setSubmitted(false);
     setExistingPayment(null);
     setLoading(true);
+    setDuplicateWarning(false);
 
     const fetchData = async () => {
-      // Fetch gateways for this currency
       const { data: gw } = await supabase
         .from("payment_gateways")
         .select("*")
@@ -62,11 +90,10 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         .order("sort_order");
       setGateways((gw || []) as unknown as PaymentGateway[]);
 
-      // Check for existing pending payment
       if (user) {
         const { data: existing } = await supabase
           .from("plan_payments")
-          .select("status")
+          .select("status, expires_at")
           .eq("user_id", user.id)
           .eq("plan", planKey)
           .eq("status", "pending")
@@ -78,8 +105,32 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     fetchData();
   }, [open, currency, user, planKey]);
 
+  // Duplicate transaction ID check
+  const checkDuplicate = useCallback(async (txnId: string) => {
+    if (!txnId || txnId.length < 3) {
+      setDuplicateWarning(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("plan_payments")
+      .select("id")
+      .eq("transaction_id", txnId)
+      .in("status", ["pending", "approved"])
+      .maybeSingle();
+    setDuplicateWarning(!!data);
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => checkDuplicate(transactionId), 500);
+    return () => clearTimeout(timeout);
+  }, [transactionId, checkDuplicate]);
+
   const handleSubmit = async () => {
     if (!user || !selectedGateway) return;
+    if (duplicateWarning) {
+      toast.error("এই Transaction ID আগে ব্যবহার করা হয়েছে!");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -107,9 +158,16 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         status: "pending",
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("idx_plan_payments_unique_txn")) {
+          toast.error("এই Transaction ID ইতিমধ্যে ব্যবহৃত হয়েছে!");
+        } else {
+          throw error;
+        }
+        return;
+      }
       setSubmitted(true);
-      toast.success("Payment submitted! We'll review and activate your plan shortly.");
+      toast.success("Payment submitted! Admin-কে notify করা হয়েছে। শীঘ্রই আপনার plan activate হবে।");
     } catch (err: any) {
       toast.error(err.message || "Failed to submit payment");
     } finally {
@@ -140,9 +198,24 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
             </div>
             <h3 className="text-xl font-bold">Payment Under Review</h3>
             <p className="text-sm text-muted-foreground">
-              Your payment for the <strong>{planName}</strong> plan is pending admin verification. 
+              Your payment for the <strong>{planName}</strong> plan is pending admin verification.
               You'll be notified once approved.
             </p>
+
+            {/* Expiry Timer */}
+            {existingPayment?.expires_at && !isExpired && (
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <Timer className="h-4 w-4 text-amber-500" />
+                <span className="text-amber-600 font-medium">Expires in: {timeLeft}</span>
+              </div>
+            )}
+            {isExpired && (
+              <div className="flex items-center justify-center gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Payment expired. Please submit again.</span>
+              </div>
+            )}
+
             <Badge variant="outline" className="text-amber-600 border-amber-300">
               <Clock className="h-3 w-3 mr-1" /> Pending Verification
             </Badge>
@@ -180,6 +253,12 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
             </div>
           </CardContent>
         </Card>
+
+        {/* Expiry Info */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+          <Timer className="h-3.5 w-3.5" />
+          <span>Payment submit করার পর ১ ঘন্টার মধ্যে Admin verify করবে। সময় পার হলে আবার submit করতে হবে।</span>
+        </div>
 
         {gateways.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -253,7 +332,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                   </Card>
                 )}
 
-                {/* Transaction ID */}
+                {/* Transaction ID with duplicate warning */}
                 <div className="space-y-2">
                   <Label htmlFor="txn-id" className="text-sm">Transaction ID (optional)</Label>
                   <Input
@@ -261,7 +340,14 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                     placeholder="Enter your transaction/reference ID"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
+                    className={duplicateWarning ? "border-destructive" : ""}
                   />
+                  {duplicateWarning && (
+                    <div className="flex items-center gap-1.5 text-xs text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>এই Transaction ID আগে ব্যবহার করা হয়েছে! ভিন্ন ID দিন।</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Proof Upload */}
@@ -298,7 +384,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                 <Button
                   className="w-full"
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || duplicateWarning}
                 >
                   {submitting ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>

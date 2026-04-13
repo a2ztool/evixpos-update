@@ -8,18 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2, Timer, AlertTriangle } from "lucide-react";
 
 interface PlanPayment {
   id: string; user_id: string; store_id: string | null; plan: string; amount: number; currency: string;
   gateway_name: string; transaction_id: string; proof_url: string; status: string; admin_notes: string;
-  user_email: string; user_name: string; store_name: string; created_at: string;
+  user_email: string; user_name: string; store_name: string; created_at: string; expires_at: string | null;
 }
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   approved: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   rejected: "bg-red-500/10 text-red-500 border-red-500/20",
+  expired: "bg-slate-500/10 text-slate-400 border-slate-500/20",
 };
 
 const AdminPayments = () => {
@@ -76,7 +77,7 @@ const AdminPayments = () => {
           <Input className="pl-9 h-10 bg-slate-800 border-slate-700 text-white rounded-xl" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {["all", "pending", "approved", "rejected"].map(s => (
+          {["all", "pending", "approved", "rejected", "expired"].map(s => (
             <Button key={s} size="sm" variant={filterStatus === s ? "default" : "outline"} onClick={() => setFilterStatus(s)}
               className={`text-xs capitalize shrink-0 rounded-xl h-10 px-3 ${filterStatus === s ? "bg-emerald-600 hover:bg-emerald-700 border-0" : "border-slate-700 text-slate-300"}`}>
               {s}
@@ -168,7 +169,16 @@ const AdminPayments = () => {
                 <div><p className="text-slate-400 text-xs">Amount</p><p className="font-medium text-emerald-400">{currencySymbol(selectedPayment.currency)}{selectedPayment.amount}</p></div>
                 <div><p className="text-slate-400 text-xs">Gateway</p><p className="font-medium text-white">{selectedPayment.gateway_name || "N/A"}</p></div>
                 <div><p className="text-slate-400 text-xs">Txn ID</p><p className="font-medium font-mono text-[11px] text-white">{selectedPayment.transaction_id || "N/A"}</p></div>
+                <div><p className="text-slate-400 text-xs">Expires</p><p className="font-medium text-[11px] text-white">{selectedPayment.expires_at ? (new Date(selectedPayment.expires_at) < new Date() ? <span className="text-red-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Expired</span> : new Date(selectedPayment.expires_at).toLocaleString()) : "N/A"}</p></div>
               </div>
+
+              {/* Duplicate Transaction Warning */}
+              {selectedPayment.transaction_id && (
+                <div className="flex items-center gap-2 text-xs bg-slate-700/50 rounded-lg px-3 py-2">
+                  <Timer className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-slate-300">Txn ID: <code className="font-mono bg-slate-600 px-1 rounded">{selectedPayment.transaction_id}</code></span>
+                </div>
+              )}
 
               {selectedPayment.proof_url && (
                 <div>
