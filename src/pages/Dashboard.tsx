@@ -265,7 +265,7 @@ const Dashboard = () => {
             Quick Actions
           </h3>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
-            {getShortcuts(isStaff).map((s) => (
+            {(isStaff ? shortcuts.filter(s => !["Products", "Subscriptions"].includes(s.label)) : shortcuts).map((s) => (
               <button
                 key={s.label}
                 onClick={() => navigate(s.path)}
