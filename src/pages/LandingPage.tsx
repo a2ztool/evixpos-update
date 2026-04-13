@@ -1072,9 +1072,9 @@ const LandingPage = () => {
               <a href={get("footer_powered_url", "https://www.lifeaimit.in")} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{get("footer_powered_by", "LifeAim IT")}</a>
             </p>
             <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <button onClick={() => setPolicyModal("privacy")} className="hover:text-primary transition-colors">Privacy Policy</button>
-              <button onClick={() => setPolicyModal("terms")} className="hover:text-primary transition-colors">Terms of Service</button>
-              <button onClick={() => setPolicyModal("refund")} className="hover:text-primary transition-colors">Refund Policy</button>
+              <button onClick={() => setPolicyModal("privacy")} className="hover:text-primary transition-colors">{get("footer_privacy_label", "Privacy Policy")}</button>
+              <button onClick={() => setPolicyModal("terms")} className="hover:text-primary transition-colors">{get("footer_terms_label", "Terms of Service")}</button>
+              <button onClick={() => setPolicyModal("refund")} className="hover:text-primary transition-colors">{get("footer_refund_label", "Refund Policy")}</button>
             </div>
           </div>
         </div>
