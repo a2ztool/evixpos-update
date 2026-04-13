@@ -1,4 +1,5 @@
 import { useStore } from "@/contexts/StoreContext";
+import type { StoreMode } from "@/contexts/StoreContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, ChevronDown, Plus, Check, Crown } from "lucide-react";
+import { Store, ChevronDown, Plus, Check, Crown, Globe, MapPin } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ const StoreSwitcher = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [newStoreMode, setNewStoreMode] = useState<StoreMode>("online");
 
   // Staff users: show store name only, no switching
   if (isStaffStore) {
@@ -34,11 +36,12 @@ const StoreSwitcher = () => {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const store = await createStore(newName.trim());
+    const store = await createStore(newName.trim(), "", "", newStoreMode);
     if (store) {
       toast.success(`Store "${newName}" created!`);
       setShowCreate(false);
       setNewName("");
+      setNewStoreMode("online");
     } else {
       toast.error("Failed to create store");
     }
@@ -77,6 +80,11 @@ const StoreSwitcher = () => {
             >
               <Store className="h-3.5 w-3.5" />
               <span className="flex-1 truncate text-sm">{store.name}</span>
+              {store.store_mode === "offline" ? (
+                <MapPin className="h-3 w-3 text-orange-500" />
+              ) : (
+                <Globe className="h-3 w-3 text-green-500" />
+              )}
               {store.id === activeStore?.id && <Check className="h-3.5 w-3.5 text-primary" />}
             </DropdownMenuItem>
           ))}
@@ -106,6 +114,29 @@ const StoreSwitcher = () => {
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleCreate()}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Store Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewStoreMode("online")}
+                  className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm ${
+                    newStoreMode === "online" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  <Globe className="h-4 w-4" /> Online
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewStoreMode("offline")}
+                  className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm ${
+                    newStoreMode === "offline" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  <MapPin className="h-4 w-4" /> Offline
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter>

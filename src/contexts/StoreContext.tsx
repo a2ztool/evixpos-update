@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+export type StoreMode = "online" | "offline";
+
 export interface Store {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface Store {
   phone: string;
   is_active: boolean;
   is_default: boolean;
+  store_mode: StoreMode;
   created_at: string;
 }
 
@@ -17,7 +20,7 @@ interface StoreContextType {
   activeStore: Store | null;
   loading: boolean;
   switchStore: (storeId: string) => void;
-  createStore: (name: string, address?: string, phone?: string) => Promise<Store | null>;
+  createStore: (name: string, address?: string, phone?: string, storeMode?: StoreMode) => Promise<Store | null>;
   refreshStores: () => Promise<void>;
   storeLimit: number;
   canCreateStore: boolean;
@@ -135,7 +138,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createStore = async (name: string, address = "", phone = ""): Promise<Store | null> => {
+  const createStore = async (name: string, address = "", phone = "", storeMode: StoreMode = "online"): Promise<Store | null> => {
     if (!user || isStaffStore) return null;
     if (!canCreateStore) return null;
     const isFirst = stores.length === 0;
@@ -148,6 +151,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         phone,
         is_default: isFirst,
         is_active: true,
+        store_mode: storeMode,
       })
       .select()
       .single();

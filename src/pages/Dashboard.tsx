@@ -14,7 +14,7 @@ import {
   CreditCard, RefreshCw, AlertTriangle,
   Megaphone, Plus, Eye, ShoppingBag, Monitor, Repeat,
   ChevronRight, Sparkles, CalendarDays, Users, Package,
-  MessageCircle, RotateCcw, Bell, Shield
+  MessageCircle, RotateCcw, Bell, Shield, Globe, MapPin
 } from "lucide-react";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { format, differenceInDays, addDays } from "date-fns";
@@ -158,6 +158,18 @@ const Dashboard = () => {
                       {staffInfo.role === "admin" ? "Admin" : "Staff"}
                     </Badge>
                     <span className="text-xs text-primary-foreground/60">{activeStore?.name}</span>
+                  </div>
+                )}
+                {/* Store Mode Badge */}
+                {activeStore && (
+                  <div className={`mt-2 flex items-center gap-1.5 ${isStaff && staffInfo ? '' : 'mt-3'}`}>
+                    <Badge variant="outline" className="backdrop-blur-sm border-primary-foreground/20 text-primary-foreground/80 text-[10px] px-2 py-0.5">
+                      {activeStore.store_mode === "offline" ? (
+                        <><MapPin className="h-3 w-3 mr-1" /> Offline Store</>
+                      ) : (
+                        <><Globe className="h-3 w-3 mr-1" /> Online Store</>
+                      )}
+                    </Badge>
                   </div>
                 )}
               </div>

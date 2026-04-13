@@ -1865,6 +1865,7 @@ export type Database = {
           is_default: boolean
           name: string
           phone: string
+          store_mode: string
           user_id: string
         }
         Insert: {
@@ -1875,6 +1876,7 @@ export type Database = {
           is_default?: boolean
           name?: string
           phone?: string
+          store_mode?: string
           user_id: string
         }
         Update: {
@@ -1885,6 +1887,7 @@ export type Database = {
           is_default?: boolean
           name?: string
           phone?: string
+          store_mode?: string
           user_id?: string
         }
         Relationships: []
