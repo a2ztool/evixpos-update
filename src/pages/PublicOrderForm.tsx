@@ -586,6 +586,29 @@ const PublicOrderForm = () => {
                 {gateways.map((gw) => {
                   const iconUrl = getGatewayIcon(gw.id);
                   const isSelected = selectedGateway === gw.id;
+                  const config = gw.config || {};
+                  // Collect all displayable details
+                  const detailEntries: { label: string; value: string }[] = [];
+                  if (config.personal_number) detailEntries.push({ label: "📱 Number", value: config.personal_number });
+                  if (config.upi_id) detailEntries.push({ label: "💳 UPI ID", value: config.upi_id });
+                  if (config.paypal_email) detailEntries.push({ label: "📧 PayPal", value: config.paypal_email });
+                  if (config.payoneer_email) detailEntries.push({ label: "📧 Payoneer", value: config.payoneer_email });
+                  if (config.wise_email) detailEntries.push({ label: "📧 Wise", value: config.wise_email });
+                  if (config.skrill_email) detailEntries.push({ label: "📧 Skrill", value: config.skrill_email });
+                  if (config.binance_id) detailEntries.push({ label: "🔗 Binance ID", value: config.binance_id });
+                  if (config.wallet_address) detailEntries.push({ label: "🔗 Wallet", value: config.wallet_address });
+                  if (config.network) detailEntries.push({ label: "🌐 Network", value: config.network });
+                  if (config.coin_type) detailEntries.push({ label: "🪙 Coin", value: config.coin_type });
+                  if (config.bank_name) detailEntries.push({ label: "🏦 Bank", value: config.bank_name });
+                  if (config.account_name) detailEntries.push({ label: "👤 Name", value: config.account_name });
+                  if (config.account_number) detailEntries.push({ label: "🔢 Account", value: config.account_number });
+                  if (config.branch_name) detailEntries.push({ label: "📍 Branch", value: config.branch_name });
+                  if (config.ifsc_code) detailEntries.push({ label: "🏛 IFSC", value: config.ifsc_code });
+                  if (config.swift_code) detailEntries.push({ label: "🌍 SWIFT", value: config.swift_code });
+                  if (config.routing_number) detailEntries.push({ label: "#️⃣ Routing", value: config.routing_number });
+                  if (config.account_type && config.account_type !== "personal") detailEntries.push({ label: "Type", value: config.account_type });
+                  if (config.account_details) detailEntries.push({ label: "ℹ️ Details", value: config.account_details });
+
                   return (
                     <div
                       key={gw.id}
@@ -596,23 +619,38 @@ const PublicOrderForm = () => {
                     >
                       <div className="flex items-center gap-3">
                         <img src={iconUrl} alt={gw.name} className="h-8 w-8 rounded object-contain bg-white p-0.5" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/6963/6963703.png"; }} />
-                        <div>
+                        <div className="flex-1">
                           <p className="font-semibold text-sm">{gw.name}</p>
-                          {gw.config?.personal_number && (
-                            <p className="text-xs text-muted-foreground">📱 {gw.config.personal_number}</p>
-                          )}
-                          {gw.config?.account_type && gw.config.account_type !== "personal" && (
-                            <p className="text-[10px] text-muted-foreground capitalize">{gw.config.account_type} account</p>
+                          {!isSelected && detailEntries.length > 0 && (
+                            <p className="text-xs text-muted-foreground truncate">{detailEntries[0].label}: {detailEntries[0].value}</p>
                           )}
                         </div>
+                        {isSelected && <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />}
                       </div>
-                      {isSelected && gw.config?.qr_code_url && (
-                        <img src={gw.config.qr_code_url} alt="QR Code" className="w-36 h-36 mx-auto mt-3 rounded border" />
+
+                      {/* Show full details when selected */}
+                      {isSelected && detailEntries.length > 0 && (
+                        <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-1.5">
+                          {detailEntries.map((entry, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground text-xs">{entry.label}</span>
+                              <span className="font-medium text-xs select-all">{entry.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      {isSelected && gw.config?.instructions && (
-                        <div className="mt-3 p-2 rounded bg-muted/50 text-xs text-muted-foreground flex gap-1.5">
-                          <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                          <span>{gw.config.instructions}</span>
+
+                      {isSelected && config.qr_code_url && (
+                        <div className="mt-3 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Scan QR to pay:</p>
+                          <img src={config.qr_code_url} alt="QR Code" className="w-40 h-40 mx-auto rounded-lg border p-1" />
+                        </div>
+                      )}
+
+                      {isSelected && config.instructions && (
+                        <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20 text-xs flex gap-2">
+                          <MessageSquare className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
+                          <span className="whitespace-pre-wrap">{config.instructions}</span>
                         </div>
                       )}
                     </div>
