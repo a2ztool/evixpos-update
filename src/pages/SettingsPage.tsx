@@ -365,7 +365,13 @@ const SettingsPage = () => {
 
   const openConfig = (id: string) => {
     const gw = settings.payment_methods.find(p => p.id === id);
-    setConfigTemp(gw?.config ?? {});
+    const catalog = GATEWAY_CATALOG.find(g => g.id === id);
+    const existingConfig = gw?.config ?? {};
+    // Auto-populate default instruction if empty
+    if (!existingConfig.instructions && catalog?.defaultInstruction) {
+      existingConfig.instructions = catalog.defaultInstruction;
+    }
+    setConfigTemp(existingConfig);
     setConfigDialog(id);
   };
 
