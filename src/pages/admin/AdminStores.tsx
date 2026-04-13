@@ -8,19 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Eye, Search, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Eye, Search, Download, ChevronLeft, ChevronRight, Globe, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreRow {
-  id: string; name: string; phone: string; address: string; is_active: boolean; created_at: string;
+  id: string; name: string; phone: string; address: string; is_active: boolean; created_at: string; store_mode: string;
   owner: { name: string; email: string };
 }
 
 const ITEMS_PER_PAGE = 15;
 
 const exportCSV = (stores: StoreRow[]) => {
-  const headers = ["Store Name", "Owner Name", "Owner Email", "Phone", "Status", "Created"];
-  const rows = stores.map((s) => [s.name, s.owner.name || "", s.owner.email, s.phone || "", s.is_active ? "Active" : "Disabled", new Date(s.created_at).toLocaleDateString()]);
+  const headers = ["Store Name", "Owner Name", "Owner Email", "Phone", "Mode", "Status", "Created"];
+  const rows = stores.map((s) => [s.name, s.owner.name || "", s.owner.email, s.phone || "", s.store_mode || "online", s.is_active ? "Active" : "Disabled", new Date(s.created_at).toLocaleDateString()]);
   const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `stores_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(url);
@@ -101,9 +101,14 @@ const AdminStores = () => {
                     <p className="text-sm font-semibold text-white truncate">{s.name}</p>
                     <p className="text-xs text-slate-400 truncate mt-0.5">{s.owner.name || "—"} · {s.owner.email}</p>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] shrink-0 ${s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}>
-                    {s.is_active ? "Active" : "Off"}
-                  </Badge>
+                   <div className="flex items-center gap-1.5">
+                     <Badge variant="outline" className={`text-[10px] shrink-0 ${s.store_mode === "offline" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-sky-500/20 text-sky-400 border-sky-500/30"}`}>
+                       {s.store_mode === "offline" ? <><MapPin className="h-2.5 w-2.5 mr-0.5" />Offline</> : <><Globe className="h-2.5 w-2.5 mr-0.5" />Online</>}
+                     </Badge>
+                     <Badge variant="outline" className={`text-[10px] shrink-0 ${s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}>
+                       {s.is_active ? "Active" : "Off"}
+                     </Badge>
+                   </div>
                 </div>
                 {s.phone && <p className="text-xs text-slate-500 mt-1.5">{s.phone}</p>}
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
@@ -127,8 +132,9 @@ const AdminStores = () => {
                   <TableRow className="border-slate-700 hover:bg-transparent">
                     <TableHead className="text-slate-400">Store Name</TableHead>
                     <TableHead className="text-slate-400">Owner</TableHead>
-                    <TableHead className="text-slate-400">Phone</TableHead>
-                    <TableHead className="text-slate-400">Status</TableHead>
+                     <TableHead className="text-slate-400">Phone</TableHead>
+                     <TableHead className="text-slate-400">Mode</TableHead>
+                     <TableHead className="text-slate-400">Status</TableHead>
                     <TableHead className="text-slate-400">Created</TableHead>
                     <TableHead className="text-slate-400">Actions</TableHead>
                   </TableRow>
@@ -140,8 +146,13 @@ const AdminStores = () => {
                       <TableCell>
                         <div><p className="text-slate-300 text-sm">{s.owner.name || "—"}</p><p className="text-slate-500 text-xs">{s.owner.email}</p></div>
                       </TableCell>
-                      <TableCell className="text-slate-300">{s.phone || "—"}</TableCell>
-                      <TableCell><Badge variant="outline" className={s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>{s.is_active ? "Active" : "Disabled"}</Badge></TableCell>
+                       <TableCell className="text-slate-300">{s.phone || "—"}</TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className={s.store_mode === "offline" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-sky-500/20 text-sky-400 border-sky-500/30"}>
+                           {s.store_mode === "offline" ? "Offline" : "Online"}
+                         </Badge>
+                       </TableCell>
+                       <TableCell><Badge variant="outline" className={s.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>{s.is_active ? "Active" : "Disabled"}</Badge></TableCell>
                       <TableCell className="text-slate-400 text-sm">{new Date(s.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -152,7 +163,7 @@ const AdminStores = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-8">No stores found.</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-slate-500 py-8">No stores found.</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>

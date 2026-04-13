@@ -197,7 +197,7 @@ interface StaffMember {
 
 interface StoreItem {
   id: string; name: string; address: string; phone: string;
-  is_default: boolean; is_active: boolean;
+  is_default: boolean; is_active: boolean; store_mode: string;
 }
 
 type Tab = "general" | "payment" | "currencies" | "language" | "staff" | "stores" | "profile" | "backup";
@@ -1030,20 +1030,51 @@ const SettingsPage = () => {
         <div className="text-center py-12"><Store className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground text-sm">{lang === "bn" ? "কোনো স্টোর নেই" : "No stores"}</p></div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {stores.map(s => (
+          {stores.map(s => {
+            const modeLabel = s.store_mode === "offline" ? "Offline" : "Online";
+            const modeColor = s.store_mode === "offline" ? "bg-orange-500/10 text-orange-600 border-orange-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+            return (
             <Card key={s.id} className={`border-border/50 ${s.is_default ? "ring-2 ring-primary" : ""}`}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between">
-                  <div><p className="font-semibold text-sm flex items-center gap-2">{s.name}{s.is_default && <Badge className="bg-primary text-primary-foreground text-[10px]">Default</Badge>}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{s.address || "—"}</p><p className="text-xs text-muted-foreground">{s.phone || "—"}</p></div>
-                  <div className="flex gap-1">
+                  <div>
+                    <p className="font-semibold text-sm flex items-center gap-2 flex-wrap">
+                      {s.name}
+                      {s.is_default && <Badge className="bg-primary text-primary-foreground text-[10px]">Default</Badge>}
+                      <Badge variant="outline" className={`text-[10px] ${modeColor}`}>{modeLabel}</Badge>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{s.address || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{s.phone || "—"}</p>
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    <Button
+                      variant="ghost" size="sm" className="text-xs"
+                      onClick={async () => {
+                        const newMode = s.store_mode === "online" ? "offline" : "online";
+                        const confirmed = confirm(
+                          `⚠️ Switch "${s.name}" to ${newMode.toUpperCase()} mode?\n\n` +
+                          (newMode === "offline"
+                            ? "Online-only features (WooCommerce, Bot Automation, Order Forms, Subscriptions, Ad Costs) will be hidden for this store."
+                            : "All online features will become available for this store.") +
+                          "\n\nYour data will NOT be deleted."
+                        );
+                        if (!confirmed) return;
+                        const { error } = await supabase.from("stores").update({ store_mode: newMode }).eq("id", s.id);
+                        if (error) { toast.error(error.message); return; }
+                        setStores(prev => prev.map(st => st.id === s.id ? { ...st, store_mode: newMode } : st));
+                        toast.success(`Store switched to ${newMode} mode`);
+                      }}
+                    >
+                      {s.store_mode === "online" ? "→ Offline" : "→ Online"}
+                    </Button>
                     {!s.is_default && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setDefaultStore(s.id)}>Set Default</Button>}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeStore(s.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
