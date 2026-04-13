@@ -14,7 +14,8 @@ import {
   CreditCard, RefreshCw, AlertTriangle,
   Megaphone, Plus, Eye, ShoppingBag, Monitor, Repeat,
   ChevronRight, Sparkles, CalendarDays, Users, Package,
-  MessageCircle, RotateCcw, Bell, Shield, Globe, MapPin
+  MessageCircle, RotateCcw, Bell, Shield, Globe, MapPin,
+  Receipt, Wallet, AlertCircle, BarChart3
 } from "lucide-react";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { format, differenceInDays, addDays } from "date-fns";
@@ -124,7 +125,9 @@ const Dashboard = () => {
     else toast.success("Subscription renewed!");
   };
 
-  const shortcuts = [
+  const isOffline = activeStore?.store_mode === "offline";
+
+  const onlineShortcuts = [
     { label: "New Sale", icon: Plus, path: "/pos", color: "bg-primary/10 text-primary" },
     { label: "Create Order", icon: ShoppingBag, path: "/orders", color: "bg-blue-500/10 text-blue-600" },
     { label: "Add Customer", icon: Users, path: "/customers", color: "bg-amber-500/10 text-amber-600" },
@@ -133,6 +136,18 @@ const Dashboard = () => {
     { label: "POS Terminal", icon: Monitor, path: "/pos", color: "bg-rose-500/10 text-rose-600" },
     { label: "Subscriptions", icon: Repeat, path: "/subscriptions", color: "bg-cyan-500/10 text-cyan-600" },
   ];
+
+  const offlineShortcuts = [
+    { label: "POS Billing", icon: Monitor, path: "/pos", color: "bg-primary/10 text-primary" },
+    { label: "Walk-in Sale", icon: Plus, path: "/pos", color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "View Orders", icon: Eye, path: "/orders", color: "bg-violet-500/10 text-violet-600" },
+    { label: "Products", icon: Package, path: "/products", color: "bg-amber-500/10 text-amber-600" },
+    { label: "Customers", icon: Users, path: "/customers", color: "bg-blue-500/10 text-blue-600" },
+    { label: "Expenses", icon: Wallet, path: "/finance/income-expense", color: "bg-rose-500/10 text-rose-600" },
+    { label: "Daily Sales", icon: BarChart3, path: "/finance/sales-profit", color: "bg-cyan-500/10 text-cyan-600" },
+  ];
+
+  const shortcuts = isOffline ? offlineShortcuts : onlineShortcuts;
 
   return (
     <DashboardLayout>
@@ -250,7 +265,7 @@ const Dashboard = () => {
             Quick Actions
           </h3>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
-            {getShortcuts(isStaff).map((s) => (
+            {(isStaff ? shortcuts.filter(s => !["Products", "Subscriptions"].includes(s.label)) : shortcuts).map((s) => (
               <button
                 key={s.label}
                 onClick={() => navigate(s.path)}
@@ -343,28 +358,6 @@ const Dashboard = () => {
       </div>
     </DashboardLayout>
   );
-};
-
-// Helper function to get shortcuts based on user type
-const getShortcuts = (isStaff: boolean) => {
-  const allShortcuts = [
-    { label: "New Sale", icon: Plus, path: "/pos", color: "bg-primary/10 text-primary" },
-    { label: "Create Order", icon: ShoppingBag, path: "/orders", color: "bg-blue-500/10 text-blue-600" },
-    { label: "Add Customer", icon: Users, path: "/customers", color: "bg-amber-500/10 text-amber-600" },
-    { label: "View Orders", icon: Eye, path: "/orders", color: "bg-violet-500/10 text-violet-600" },
-    { label: "Products", icon: Package, path: "/products", color: "bg-emerald-500/10 text-emerald-600" },
-    { label: "POS Terminal", icon: Monitor, path: "/pos", color: "bg-rose-500/10 text-rose-600" },
-    { label: "Subscriptions", icon: Repeat, path: "/subscriptions", color: "bg-cyan-500/10 text-cyan-600" },
-  ];
-
-  if (isStaff) {
-    // Staff only sees operational shortcuts, not owner-only ones
-    return allShortcuts.filter(s => 
-      !["Products", "Subscriptions"].includes(s.label)
-    );
-  }
-  
-  return allShortcuts;
 };
 
 export default Dashboard;
