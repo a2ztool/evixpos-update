@@ -250,7 +250,7 @@ const PublicOrderForm = () => {
           customer_id: customerId,
           total_amount: totalAmount,
           cost_price: costPrice,
-          payment_method: gw?.gateway_name || "pending",
+          payment_method: gw?.name || "pending",
           payment_status: form.take_payment ? "unpaid" : "unpaid",
           status: "pending" as any,
           source: "order_form",
@@ -583,21 +583,41 @@ const PublicOrderForm = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {gateways.map((gw) => (
-                  <div
-                    key={gw.id}
-                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                      selectedGateway === gw.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setSelectedGateway(gw.id)}
-                  >
-                    <p className="font-semibold text-sm">{gw.gateway_name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{gw.gateway_type}</p>
-                    {gw.qr_code_url && selectedGateway === gw.id && (
-                      <img src={gw.qr_code_url} alt="QR Code" className="w-32 h-32 mx-auto mt-3 rounded" />
-                    )}
-                  </div>
-                ))}
+                {gateways.map((gw) => {
+                  const iconUrl = getGatewayIcon(gw.id);
+                  const isSelected = selectedGateway === gw.id;
+                  return (
+                    <div
+                      key={gw.id}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                        isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => setSelectedGateway(gw.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <img src={iconUrl} alt={gw.name} className="h-8 w-8 rounded object-contain bg-white p-0.5" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/6963/6963703.png"; }} />
+                        <div>
+                          <p className="font-semibold text-sm">{gw.name}</p>
+                          {gw.config?.personal_number && (
+                            <p className="text-xs text-muted-foreground">📱 {gw.config.personal_number}</p>
+                          )}
+                          {gw.config?.account_type && gw.config.account_type !== "personal" && (
+                            <p className="text-[10px] text-muted-foreground capitalize">{gw.config.account_type} account</p>
+                          )}
+                        </div>
+                      </div>
+                      {isSelected && gw.config?.qr_code_url && (
+                        <img src={gw.config.qr_code_url} alt="QR Code" className="w-36 h-36 mx-auto mt-3 rounded border" />
+                      )}
+                      {isSelected && gw.config?.instructions && (
+                        <div className="mt-3 p-2 rounded bg-muted/50 text-xs text-muted-foreground flex gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                          <span>{gw.config.instructions}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {selectedGateway && (
