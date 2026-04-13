@@ -73,9 +73,14 @@ const AppSidebar = () => {
     { title: t.googleSheets, icon: Sheet, path: "/integrations/google-sheets", perm: "settings.edit", feature: "google_sheets" },
   ];
 
-  /** Filter items based on staff permissions */
+  /** Filter items based on staff permissions and store mode */
   const filterByPerm = (items: NavItem[]) =>
-    items.filter(item => !item.perm || hasPermission(item.perm));
+    items.filter(item => {
+      if (item.perm && !hasPermission(item.perm)) return false;
+      if (item.onlineOnly && isOffline) return false;
+      if (item.offlineOnly && !isOffline) return false;
+      return true;
+    });
 
   const filteredOverview = filterByPerm(overviewItems);
   const filteredOrders = filterByPerm(orderSubItems);
