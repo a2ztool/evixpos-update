@@ -59,6 +59,7 @@ import AdminStoreDetails from "./pages/admin/AdminStoreDetails";
 import AdminUserDetails from "./pages/admin/AdminUserDetails";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminPaymentGateways from "./pages/admin/AdminPaymentGateways";
+import AdminAutoPayments from "./pages/admin/AdminAutoPayments";
 import AdminLandingEditor from "./pages/admin/AdminLandingEditor";
 import AdminInbox from "./pages/admin/AdminInbox";
 import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
@@ -133,6 +134,7 @@ const App = () => (
               <Route path="users/:userId" element={<AdminUserDetails />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="gateways" element={<AdminPaymentGateways />} />
+              <Route path="auto-payments" element={<AdminAutoPayments />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="settings" element={<AdminSettings />} />
