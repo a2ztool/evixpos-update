@@ -558,14 +558,23 @@ const LandingPage = () => {
                       )}
                     </div>
 
-                    {/* Screenshot */}
-                    <div className={`${isReversed ? "lg:order-1" : ""}`}>
+                    {/* Screenshot - 3D Perspective */}
+                    <div className={`${isReversed ? "lg:order-1" : ""}`} style={{ perspective: '1200px' }}>
                       {img ? (
-                        <div className="relative group">
-                          {/* Glow effect */}
-                          <div className="absolute -inset-6 bg-gradient-to-tr from-primary/8 via-primary/4 to-transparent rounded-[2rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
+                        <div 
+                          className="relative group transition-transform duration-700 ease-out"
+                          style={{ 
+                            transform: `rotateY(${isReversed ? '6deg' : '-6deg'}) rotateX(2deg)`,
+                            transformStyle: 'preserve-3d'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1.02)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = `rotateY(${isReversed ? '6deg' : '-6deg'}) rotateX(2deg)`; }}
+                        >
+                          {/* 3D Shadow layer */}
+                          <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 via-primary/5 to-transparent rounded-[2rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
+                          <div className={`absolute inset-0 rounded-2xl bg-foreground/5 translate-y-4 ${isReversed ? '-translate-x-2' : 'translate-x-2'} blur-xl`} />
                           {/* Browser chrome frame */}
-                          <div className="relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/5 bg-card">
+                          <div className="relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/10 bg-card">
                             {/* Browser dots */}
                             <div className="flex items-center gap-2 px-4 py-3 bg-muted/60 border-b border-border/40">
                               <div className="flex gap-1.5">
@@ -583,12 +592,12 @@ const LandingPage = () => {
                             <img
                               src={img}
                               alt={title || ""}
-                              className="w-full group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+                              className="w-full"
                               loading="lazy"
                             />
                           </div>
                           {/* Floating accent decoration */}
-                          <div className={`absolute -z-10 ${isReversed ? '-left-3 -bottom-3' : '-right-3 -bottom-3'} w-24 h-24 bg-primary/5 rounded-2xl`} />
+                          <div className={`absolute -z-10 ${isReversed ? '-left-4 -bottom-4' : '-right-4 -bottom-4'} w-28 h-28 bg-primary/8 rounded-2xl blur-sm`} />
                         </div>
                       ) : (
                         <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl border border-border/50 p-16 flex items-center justify-center">
