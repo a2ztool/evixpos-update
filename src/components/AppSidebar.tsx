@@ -10,6 +10,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
+import { useStore } from "@/contexts/StoreContext";
 import { useStorePlan, FeatureKey } from "@/hooks/useStorePlan";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -23,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 
-type NavItem = { title: string; icon: any; path: string; perm?: string; feature?: FeatureKey };
+type NavItem = { title: string; icon: any; path: string; perm?: string; feature?: FeatureKey; onlineOnly?: boolean; offlineOnly?: boolean };
 
 /** Maps each nav item to the permission required to see it */
 const AppSidebar = () => {
@@ -33,8 +34,10 @@ const AppSidebar = () => {
   const { state } = useSidebar();
   const { t } = useLanguage();
   const { isStaff, staffInfo, hasPermission, hasAnyPermission } = useStaff();
+  const { activeStore } = useStore();
   const { plan, hasFeature } = useStorePlan();
   const collapsed = state === "collapsed";
+  const isOffline = activeStore?.store_mode === "offline";
 
   const overviewItems: NavItem[] = [
     { title: t.dashboard, icon: LayoutDashboard, path: "/dashboard" },
