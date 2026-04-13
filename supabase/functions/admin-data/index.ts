@@ -351,6 +351,53 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── GET PAYMENT GATEWAYS ───
+    if (action === "get_payment_gateways") {
+      const { data } = await supabase
+        .from("payment_gateways")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      return json(data || []);
+    }
+
+    // ─── CREATE PAYMENT GATEWAY ───
+    if (action === "create_payment_gateway") {
+      const { currency, gateway_name, gateway_type, qr_code_url, payment_details, is_active, sort_order, mode, api_config, icon_url } = params;
+      const { error } = await supabase.from("payment_gateways").insert({
+        currency, gateway_name, gateway_type, qr_code_url: qr_code_url || "",
+        payment_details: payment_details || {}, is_active: is_active ?? true,
+        sort_order: sort_order || 0, mode: mode || "manual",
+        api_config: api_config || {}, icon_url: icon_url || "",
+      });
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ─── UPDATE PAYMENT GATEWAY ───
+    if (action === "update_payment_gateway") {
+      const { gateway_id, ...updates } = params;
+      const { error } = await supabase.from("payment_gateways").update(updates).eq("id", gateway_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ─── DELETE PAYMENT GATEWAY ───
+    if (action === "delete_payment_gateway") {
+      const { error } = await supabase.from("payment_gateways").delete().eq("id", params.gateway_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ─── GET AUTO PAYMENT LOGS ───
+    if (action === "get_auto_payment_logs") {
+      const { data } = await supabase
+        .from("auto_payment_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      return json(data || []);
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
