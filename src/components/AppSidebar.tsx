@@ -67,12 +67,15 @@ const AppSidebar = () => {
     { title: "Stock Alerts", icon: AlertTriangle, path: "/offline/stock-alerts", perm: "products.view", offlineOnly: true },
   ];
   const financeSubItems: NavItem[] = [
-    { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", perm: "reports.view", feature: "reports" },
+    { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", perm: "reports.view", feature: "reports", onlineOnly: true },
     { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
     { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book" },
     { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
     { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission" },
+    { title: "Daily Report", icon: Calendar, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
+    { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", perm: "reports.view", offlineOnly: true },
+    { title: "Staff Performance", icon: Users, path: "/offline/staff-performance", perm: "reports.view", offlineOnly: true },
   ];
   const integrationSubItems: NavItem[] = [
     { title: t.notifications, icon: Bell, path: "/integrations/notifications" },
