@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, ShoppingBag } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -93,6 +94,12 @@ const Purchases = () => {
             <h1 className="text-2xl font-bold">Purchases</h1>
             <p className="text-sm text-muted-foreground">Track purchases and supplier payments</p>
           </div>
+          <div className="flex items-center gap-2">
+            <PageGuide title="How Purchases Work" steps={[
+              { title: "Record Purchase", description: "Click 'New Purchase' to log goods received from suppliers." },
+              { title: "Track Payments", description: "Set paid amount — unpaid balance auto-calculates as due." },
+              { title: "Stock Auto-Update", description: "Product stock automatically increases when purchase is saved." },
+            ]} />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> New Purchase</Button></DialogTrigger>
             <DialogContent>

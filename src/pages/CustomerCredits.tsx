@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, DollarSign, Users, Receipt } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -92,9 +93,16 @@ const CustomerCredits = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Customer Credits</h1>
-          <p className="text-sm text-muted-foreground">Track customer dues and collect payments</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Customer Credits</h1>
+            <p className="text-sm text-muted-foreground">Track customer dues and collect payments</p>
+          </div>
+          <PageGuide title="How Customer Credits Work" steps={[
+            { title: "Set Credit Limit", description: "Assign a credit limit to allow customers to buy on credit." },
+            { title: "Track Dues", description: "Outstanding balances update automatically with each order." },
+            { title: "Collect Payment", description: "Click 'Pay' to record partial or full payment from customer." },
+          ]} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
