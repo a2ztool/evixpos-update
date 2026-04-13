@@ -172,6 +172,8 @@ const POS = () => {
     return allVariations.filter(v => v.product_id === productId);
   }, [allVariations]);
 
+  // Clean WC tags from variation display name: "3 Months [wc:123]" → "3 Months"
+  const cleanVarName = useCallback((name: string) => name.replace(/\s*\[wc:\d+\]\s*$/, ""), []);
   // Derive categories from products
   const categories = useMemo(() => {
     const cats = new Set<string>();
