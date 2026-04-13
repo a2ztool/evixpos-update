@@ -1085,7 +1085,7 @@ const LandingPage = () => {
         {scrolled && (
           <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-card/90 backdrop-blur-xl border-t border-border/50 px-4 py-3 safe-area-pb">
             <Button className="w-full h-11 gap-2 shadow-lg shadow-primary/20" onClick={() => navigate("/auth")}>
-              Start Free <ArrowRight className="h-4 w-4" />
+              {get("nav_start_free", "Start Free")} <ArrowRight className="h-4 w-4" />
             </Button>
           </motion.div>
         )}
