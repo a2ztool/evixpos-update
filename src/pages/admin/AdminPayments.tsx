@@ -77,7 +77,7 @@ const AdminPayments = () => {
           <Input className="pl-9 h-10 bg-slate-800 border-slate-700 text-white rounded-xl" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {["all", "pending", "approved", "rejected"].map(s => (
+          {["all", "pending", "approved", "rejected", "expired"].map(s => (
             <Button key={s} size="sm" variant={filterStatus === s ? "default" : "outline"} onClick={() => setFilterStatus(s)}
               className={`text-xs capitalize shrink-0 rounded-xl h-10 px-3 ${filterStatus === s ? "bg-emerald-600 hover:bg-emerald-700 border-0" : "border-slate-700 text-slate-300"}`}>
               {s}
