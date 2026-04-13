@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { getGatewayIcon } from "@/lib/gatewayBrands";
+import { normalizePaymentMethods, getPublicPaymentDetails, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 
 interface Product {
   id: string;
@@ -102,7 +103,7 @@ const POS = () => {
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
 
   // Payment methods from settings
-  const [paymentMethods, setPaymentMethods] = useState<Array<{ id: string; name: string; enabled: boolean }>>([]);
+  const [paymentMethods, setPaymentMethods] = useState<NormalizedPaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   const [orderNotes, setOrderNotes] = useState("");
 
@@ -136,9 +137,9 @@ const POS = () => {
       if (data) setCustomers(data as Customer[]);
     });
     supabase.from("business_settings").select("payment_methods").eq("user_id", user.id).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
-      if (data?.payment_methods && Array.isArray(data.payment_methods)) {
-        const methods = (data.payment_methods as unknown as Array<{ id: string; name: string; enabled: boolean }>).filter(m => m.enabled);
-        setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true }]);
+      if (data?.payment_methods) {
+        const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
+        setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
       }
     });
     // Fetch all variations for products in this store
@@ -781,7 +782,7 @@ const POS = () => {
           <div className="space-y-4">
             <h3 className="text-base font-semibold">Payment Method</h3>
             <div className="grid grid-cols-2 gap-2">
-              {(paymentMethods.length > 0 ? paymentMethods : [{ id: "cash", name: "Cash", enabled: true }]).map(m => (
+              {(paymentMethods.length > 0 ? paymentMethods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]).map(m => (
                 <button
                   key={m.id}
                   onClick={() => setSelectedPaymentMethod(m.id)}
@@ -796,6 +797,31 @@ const POS = () => {
                 </button>
               ))}
             </div>
+            {/* Show selected payment method details */}
+            {(() => {
+              const selected = paymentMethods.find(m => m.id === selectedPaymentMethod);
+              if (!selected?.config) return null;
+              const details = getPublicPaymentDetails(selected.config);
+              if (details.length === 0 && !selected.config.qr_code_url && !selected.config.instructions) return null;
+              return (
+                <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                  {details.length > 0 && details.map((d, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{d.label}</span>
+                      <span className="font-medium select-all">{d.value}</span>
+                    </div>
+                  ))}
+                  {selected.config.qr_code_url && (
+                    <div className="text-center pt-1">
+                      <img src={selected.config.qr_code_url} alt="QR" className="w-28 h-28 mx-auto rounded border p-0.5" />
+                    </div>
+                  )}
+                  {selected.config.instructions && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap border-t pt-2 mt-1">{selected.config.instructions}</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         );
 

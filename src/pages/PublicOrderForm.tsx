@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ShoppingBag, CreditCard, CheckCircle2, Loader2, QrCode, MessageSquare } from "lucide-react";
 import { getGatewayIcon } from "@/lib/gatewayBrands";
+import { normalizePaymentMethods, getPublicPaymentDetails, isCustomerFacingPaymentMethod, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 
 interface CustomField {
   id: string;
@@ -41,12 +42,7 @@ interface ProductVariation {
   duration_days: number;
 }
 
-interface ConfiguredPaymentMethod {
-  id: string;
-  name: string;
-  enabled: boolean;
-  config: Record<string, string>;
-}
+// Using NormalizedPaymentMethod from paymentMethods.ts
 
 interface FormData {
   id: string;
@@ -66,7 +62,7 @@ const PublicOrderForm = () => {
   const [form, setForm] = useState<FormData | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [variations, setVariations] = useState<ProductVariation[]>([]);
-  const [gateways, setGateways] = useState<ConfiguredPaymentMethod[]>([]);
+  const [gateways, setGateways] = useState<NormalizedPaymentMethod[]>([]);
   const [businessSettings, setBusinessSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -139,9 +135,11 @@ const PublicOrderForm = () => {
     setBusinessSettings(bsRes.data);
 
     // Load payment methods from business_settings (user's configured gateways)
-    if (bsRes.data?.payment_methods && Array.isArray(bsRes.data.payment_methods)) {
-      const methods = (bsRes.data.payment_methods as unknown as ConfiguredPaymentMethod[]).filter(m => m.enabled);
-      setGateways(methods);
+    // Handles both legacy string arrays ["cash","bkash"] and new object arrays
+    if (bsRes.data?.payment_methods) {
+      const allMethods = normalizePaymentMethods(bsRes.data.payment_methods);
+      const customerFacing = allMethods.filter(isCustomerFacingPaymentMethod);
+      setGateways(customerFacing);
     }
 
     // Pre-select first product with quantity 1
@@ -587,27 +585,7 @@ const PublicOrderForm = () => {
                   const iconUrl = getGatewayIcon(gw.id);
                   const isSelected = selectedGateway === gw.id;
                   const config = gw.config || {};
-                  // Collect all displayable details
-                  const detailEntries: { label: string; value: string }[] = [];
-                  if (config.personal_number) detailEntries.push({ label: "📱 Number", value: config.personal_number });
-                  if (config.upi_id) detailEntries.push({ label: "💳 UPI ID", value: config.upi_id });
-                  if (config.paypal_email) detailEntries.push({ label: "📧 PayPal", value: config.paypal_email });
-                  if (config.payoneer_email) detailEntries.push({ label: "📧 Payoneer", value: config.payoneer_email });
-                  if (config.wise_email) detailEntries.push({ label: "📧 Wise", value: config.wise_email });
-                  if (config.skrill_email) detailEntries.push({ label: "📧 Skrill", value: config.skrill_email });
-                  if (config.binance_id) detailEntries.push({ label: "🔗 Binance ID", value: config.binance_id });
-                  if (config.wallet_address) detailEntries.push({ label: "🔗 Wallet", value: config.wallet_address });
-                  if (config.network) detailEntries.push({ label: "🌐 Network", value: config.network });
-                  if (config.coin_type) detailEntries.push({ label: "🪙 Coin", value: config.coin_type });
-                  if (config.bank_name) detailEntries.push({ label: "🏦 Bank", value: config.bank_name });
-                  if (config.account_name) detailEntries.push({ label: "👤 Name", value: config.account_name });
-                  if (config.account_number) detailEntries.push({ label: "🔢 Account", value: config.account_number });
-                  if (config.branch_name) detailEntries.push({ label: "📍 Branch", value: config.branch_name });
-                  if (config.ifsc_code) detailEntries.push({ label: "🏛 IFSC", value: config.ifsc_code });
-                  if (config.swift_code) detailEntries.push({ label: "🌍 SWIFT", value: config.swift_code });
-                  if (config.routing_number) detailEntries.push({ label: "#️⃣ Routing", value: config.routing_number });
-                  if (config.account_type && config.account_type !== "personal") detailEntries.push({ label: "Type", value: config.account_type });
-                  if (config.account_details) detailEntries.push({ label: "ℹ️ Details", value: config.account_details });
+                  const detailEntries = getPublicPaymentDetails(config);
 
                   return (
                     <div
@@ -624,6 +602,9 @@ const PublicOrderForm = () => {
                           {!isSelected && detailEntries.length > 0 && (
                             <p className="text-xs text-muted-foreground truncate">{detailEntries[0].label}: {detailEntries[0].value}</p>
                           )}
+                          {!isSelected && detailEntries.length === 0 && !config.instructions && !config.qr_code_url && (
+                            <p className="text-xs text-muted-foreground">Select to pay</p>
+                          )}
                         </div>
                         {isSelected && <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />}
                       </div>
@@ -637,6 +618,12 @@ const PublicOrderForm = () => {
                               <span className="font-medium text-xs select-all">{entry.value}</span>
                             </div>
                           ))}
+                        </div>
+                      )}
+
+                      {isSelected && detailEntries.length === 0 && !config.qr_code_url && !config.instructions && (
+                        <div className="mt-3 p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground text-center">
+                          No payment details configured. Contact the seller for payment info.
                         </div>
                       )}
 

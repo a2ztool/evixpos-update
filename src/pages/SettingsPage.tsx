@@ -375,14 +375,25 @@ const SettingsPage = () => {
     setConfigDialog(id);
   };
 
-  const saveConfig = () => {
+  const saveConfig = async () => {
     if (!configDialog) return;
-    setSettings(prev => ({
-      ...prev,
-      payment_methods: prev.payment_methods.map(p => p.id === configDialog ? { ...p, config: configTemp } : p),
-    }));
+    const updatedMethods = settings.payment_methods.map(p => p.id === configDialog ? { ...p, config: configTemp } : p);
+    setSettings(prev => ({ ...prev, payment_methods: updatedMethods }));
     setConfigDialog(null);
-    toast.success("Configuration saved");
+    
+    // Auto-save to database immediately so Order Form & POS get the latest config
+    if (user && activeStore) {
+      const payload = { payment_methods: updatedMethods as any, updated_at: new Date().toISOString() };
+      if (settings.id) {
+        await supabase.from("business_settings").update(payload).eq("id", settings.id);
+      } else {
+        const { data } = await supabase.from("business_settings").insert({
+          user_id: effectiveUserId!, store_id: activeStore.id, ...payload,
+        }).select().single();
+        if (data) setSettings(prev => ({ ...prev, id: data.id }));
+      }
+    }
+    toast.success("Configuration saved & synced!");
   };
 
   const filteredGateways = GATEWAY_CATALOG.filter(gw => {
