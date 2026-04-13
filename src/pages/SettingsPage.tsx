@@ -663,7 +663,15 @@ const SettingsPage = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">{catalog?.desc}</p>
                     {pm.config?.personal_number && <p className="text-[10px] text-muted-foreground">📱 {pm.config.personal_number}</p>}
+                    {pm.config?.upi_id && <p className="text-[10px] text-muted-foreground">💳 UPI: {pm.config.upi_id}</p>}
+                    {pm.config?.bank_name && <p className="text-[10px] text-muted-foreground">🏦 {pm.config.bank_name} - {pm.config.account_number || ""}</p>}
+                    {pm.config?.paypal_email && <p className="text-[10px] text-muted-foreground">📧 {pm.config.paypal_email}</p>}
+                    {pm.config?.wallet_address && <p className="text-[10px] text-muted-foreground">🔗 {pm.config.wallet_address?.substring(0, 20)}...</p>}
                     {pm.config?.qr_code_url && <p className="text-[10px] text-primary">📷 QR Code added</p>}
+                    {pm.config?.instructions && <p className="text-[10px] text-primary">📝 Instructions set</p>}
+                    {!pm.config?.personal_number && !pm.config?.upi_id && !pm.config?.bank_name && !pm.config?.qr_code_url && !pm.config?.instructions && !pm.config?.paypal_email && !pm.config?.wallet_address && Object.keys(pm.config || {}).length === 0 && (
+                      <p className="text-[10px] text-amber-500">⚠️ {lang === "bn" ? "কনফিগ করুন" : "Not configured"}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
