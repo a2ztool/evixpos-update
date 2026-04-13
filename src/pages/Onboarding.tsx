@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import brandLogo from "@/assets/evixPos.png";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/contexts/StoreContext";
+import type { StoreMode } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Store, ArrowRight, Shield, Zap, Sparkles, Link2, User, Languages, Coins } from "lucide-react";
+import { Store, ArrowRight, Shield, Zap, Sparkles, Link2, User, Languages, Coins, Globe, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 const LANGUAGES = [
@@ -37,6 +38,7 @@ const Onboarding = () => {
   const [language, setLanguage] = useState("en");
   const [currency, setCurrency] = useState("INR");
   const [creating, setCreating] = useState(false);
+  const [storeMode, setStoreMode] = useState<StoreMode>("online");
 
   // Redirect returning users (who already have stores) to dashboard
   useEffect(() => {
@@ -72,7 +74,7 @@ const Onboarding = () => {
       await supabase.from("profiles").update({ name: fullName.trim() }).eq("id", user.id);
     }
 
-    const store = await createStore(storeName.trim(), "", "");
+    const store = await createStore(storeName.trim(), "", "", storeMode);
     if (store && user) {
       // Save business settings with selected language & currency
       await supabase.from("business_settings").insert({
