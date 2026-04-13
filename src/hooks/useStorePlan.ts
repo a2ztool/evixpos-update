@@ -132,9 +132,8 @@ export const useStorePlan = () => {
         () => {
           fetchPlan(true);
         }
-      );
-
-    channel.subscribe();
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
