@@ -360,26 +360,4 @@ const Dashboard = () => {
   );
 };
 
-// Helper function to get shortcuts based on user type
-const getShortcuts = (isStaff: boolean) => {
-  const allShortcuts = [
-    { label: "New Sale", icon: Plus, path: "/pos", color: "bg-primary/10 text-primary" },
-    { label: "Create Order", icon: ShoppingBag, path: "/orders", color: "bg-blue-500/10 text-blue-600" },
-    { label: "Add Customer", icon: Users, path: "/customers", color: "bg-amber-500/10 text-amber-600" },
-    { label: "View Orders", icon: Eye, path: "/orders", color: "bg-violet-500/10 text-violet-600" },
-    { label: "Products", icon: Package, path: "/products", color: "bg-emerald-500/10 text-emerald-600" },
-    { label: "POS Terminal", icon: Monitor, path: "/pos", color: "bg-rose-500/10 text-rose-600" },
-    { label: "Subscriptions", icon: Repeat, path: "/subscriptions", color: "bg-cyan-500/10 text-cyan-600" },
-  ];
-
-  if (isStaff) {
-    // Staff only sees operational shortcuts, not owner-only ones
-    return allShortcuts.filter(s => 
-      !["Products", "Subscriptions"].includes(s.label)
-    );
-  }
-  
-  return allShortcuts;
-};
-
 export default Dashboard;
