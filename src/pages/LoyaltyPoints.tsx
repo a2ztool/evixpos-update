@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Star, Gift, TrendingUp } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -45,9 +46,16 @@ const LoyaltyPoints = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Loyalty Points</h1>
-          <p className="text-sm text-muted-foreground">Track customer loyalty and reward repeat purchases</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Loyalty Points</h1>
+            <p className="text-sm text-muted-foreground">Track customer loyalty and reward repeat purchases</p>
+          </div>
+          <PageGuide title="How Loyalty Points Work" steps={[
+            { title: "Earn Points", description: "Customers earn points automatically on each completed order." },
+            { title: "Track Balance", description: "View total points, redeemed points, and available balance per customer." },
+            { title: "Redeem Rewards", description: "Apply earned points as discount on future purchases." },
+          ]} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
