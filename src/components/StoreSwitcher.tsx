@@ -36,11 +36,12 @@ const StoreSwitcher = () => {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const store = await createStore(newName.trim());
+    const store = await createStore(newName.trim(), "", "", newStoreMode);
     if (store) {
       toast.success(`Store "${newName}" created!`);
       setShowCreate(false);
       setNewName("");
+      setNewStoreMode("online");
     } else {
       toast.error("Failed to create store");
     }
