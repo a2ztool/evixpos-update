@@ -29,16 +29,15 @@ export const useLandingContent = () => {
     fetchContent();
 
     // Realtime subscription for instant admin updates
-    const channel = supabase
-      .channel("landing_content_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "landing_content" },
-        () => {
-          fetchContent();
-        }
-      )
-      .subscribe();
+    const channel = supabase.channel("landing_content_realtime");
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "landing_content" },
+      () => {
+        fetchContent();
+      }
+    );
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
