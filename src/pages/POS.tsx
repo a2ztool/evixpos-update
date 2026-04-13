@@ -128,11 +128,21 @@ const POS = () => {
   const [newCustPhone, setNewCustPhone] = useState("");
   const [creatingCust, setCreatingCust] = useState(false);
 
+  const fetchProductsAndVariations = useCallback(async () => {
+    if (!user || !activeStore) return;
+    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).eq("is_active", true).order("name");
+    if (data) setProducts(data as Product[]);
+    // Fetch variations
+    if (data && data.length > 0) {
+      const prodIds = data.map(p => p.id);
+      const { data: vars } = await (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any);
+      if (vars) setAllVariations(vars as ProductVariation[]);
+    }
+  }, [user, activeStore]);
+
   useEffect(() => {
     if (!user || !activeStore) return;
-    supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).order("name").then(({ data }) => {
-      if (data) setProducts(data as Product[]);
-    });
+    fetchProductsAndVariations();
     supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
       if (data) setCustomers(data as Customer[]);
     });
@@ -142,22 +152,28 @@ const POS = () => {
         setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
       }
     });
-    // Fetch all variations for products in this store
-    supabase.from("products").select("id").eq("store_id", activeStore.id).then(({ data: prods }) => {
-      if (prods && prods.length > 0) {
-        const prodIds = prods.map(p => p.id);
-        (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any).then(({ data: vars }: any) => {
-          if (vars) setAllVariations(vars as ProductVariation[]);
-        });
-      }
-    });
-  }, [user, activeStore]);
+
+    // Realtime: auto-refresh products when WooCommerce sync updates them
+    const channel = supabase
+      .channel(`pos-products-${activeStore.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `store_id=eq.${activeStore.id}` }, () => {
+        fetchProductsAndVariations();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_variations" }, () => {
+        fetchProductsAndVariations();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, activeStore, fetchProductsAndVariations]);
 
   // Get variations for a specific product
   const getVariations = useCallback((productId: string) => {
     return allVariations.filter(v => v.product_id === productId);
   }, [allVariations]);
 
+  // Clean WC tags from variation display name: "3 Months [wc:123]" → "3 Months"
+  const cleanVarName = useCallback((name: string) => name.replace(/\s*\[wc:\d+\]\s*$/, ""), []);
   // Derive categories from products
   const categories = useMemo(() => {
     const cats = new Set<string>();
@@ -564,7 +580,7 @@ const POS = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{item.product.name}</p>
                   {item.variation && (
-                    <p className="text-[10px] text-primary font-medium">{item.variation.name}</p>
+                    <p className="text-[10px] text-primary font-medium">{cleanVarName(item.variation.name)}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     {format(getItemPrice(item), 2)} × {item.quantity}
@@ -760,7 +776,7 @@ const POS = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.product.name}</p>
                       {item.variation && (
-                        <p className="text-[10px] text-primary font-medium">{item.variation.name} {item.variation.is_subscription && "• Subscription"}</p>
+                        <p className="text-[10px] text-primary font-medium">{cleanVarName(item.variation.name)} {item.variation.is_subscription && "• Subscription"}</p>
                       )}
                       <p className="text-xs text-muted-foreground">{format(getItemPrice(item))} × {item.quantity}</p>
                     </div>
@@ -1053,7 +1069,7 @@ const POS = () => {
                 }`}
               >
                 <div>
-                  <p className="font-medium text-sm">{v.name}</p>
+                  <p className="font-medium text-sm">{cleanVarName(v.name)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">
                       {v.duration_days} days
@@ -1179,7 +1195,7 @@ const POS = () => {
                             <span className="font-medium ml-2">{receiptSymbol}{(getItemPrice(item) * item.quantity).toFixed(2)}</span>
                           </div>
                           {item.variation && (
-                            <span className="text-[10px] text-muted-foreground ml-2">↳ {item.variation.name}</span>
+                            <span className="text-[10px] text-muted-foreground ml-2">↳ {cleanVarName(item.variation.name)}</span>
                           )}
                         </div>
                       );
