@@ -163,7 +163,7 @@ const AdminStores = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-8">No stores found.</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-slate-500 py-8">No stores found.</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
