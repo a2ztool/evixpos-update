@@ -218,6 +218,8 @@ const AppSidebar = () => {
 
         {filteredCrm.length > 0 && renderGroup(t.crmBilling, filteredCrm)}
 
+        {filteredOfflineOps.length > 0 && renderGroup("Store Operations", filteredOfflineOps)}
+
         {(filteredFinance.length > 0 || hasPermission("reports.view")) && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
