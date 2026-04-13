@@ -138,6 +138,9 @@ const App = () => (
             <Route path="/offline/customer-credits" element={<P perm="customers.view"><CustomerCredits /></P>} />
             <Route path="/offline/loyalty" element={<P perm="customers.view"><LoyaltyPoints /></P>} />
             <Route path="/offline/stock-alerts" element={<P perm="products.view"><StockAlerts /></P>} />
+            <Route path="/offline/daily-report" element={<P perm="reports.view"><DailySalesReport /></P>} />
+            <Route path="/offline/profit-loss" element={<P perm="reports.view"><OfflineProfitLoss /></P>} />
+            <Route path="/offline/staff-performance" element={<P perm="reports.view"><StaffPerformance /></P>} />
 
             {/* Admin Panel — completely separate */}
             <Route path="/admin" element={<AdminLayout />}>
