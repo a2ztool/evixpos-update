@@ -36,46 +36,128 @@ interface GatewayDef {
   icon: any;
   desc: string;
   fields: string[];
+  personalFields?: { key: string; label: string; placeholder: string }[];
+  defaultInstruction?: string;
 }
 
 const GATEWAY_CATALOG: GatewayDef[] = [
   // Bangladesh
-  { id: "cash", name: "Cash", region: "bd", icon: Wallet, desc: "Accept cash payments", fields: [] },
-  { id: "bkash", name: "bKash", region: "bd", icon: Smartphone, desc: "bKash mobile banking", fields: ["merchant_number", "api_key"] },
-  { id: "nagad", name: "Nagad", region: "bd", icon: Smartphone, desc: "Nagad mobile banking", fields: ["merchant_number", "api_key"] },
-  { id: "rocket", name: "Rocket", region: "bd", icon: Smartphone, desc: "Rocket (DBBL)", fields: ["merchant_number"] },
-  { id: "upay", name: "Upay", region: "bd", icon: Smartphone, desc: "Upay mobile banking", fields: ["merchant_number"] },
-  { id: "tap", name: "Tap", region: "bd", icon: Smartphone, desc: "Tap mobile payment", fields: ["merchant_number"] },
-  { id: "cellfin", name: "CellFin", region: "bd", icon: Smartphone, desc: "CellFin digital wallet", fields: ["merchant_id"] },
+  { id: "cash", name: "Cash", region: "bd", icon: Wallet, desc: "Accept cash payments", fields: [], defaultInstruction: "Pay cash on delivery or at store." },
+  { id: "bkash", name: "bKash", region: "bd", icon: Smartphone, desc: "bKash mobile banking", fields: ["merchant_number", "api_key"],
+    personalFields: [
+      { key: "personal_number", label: "bKash Number", placeholder: "01XXXXXXXXX" },
+      { key: "account_type", label: "Account Type", placeholder: "personal" },
+    ],
+    defaultInstruction: "এই নম্বরে bKash Send Money করুন এবং Transaction ID দিন।" },
+  { id: "nagad", name: "Nagad", region: "bd", icon: Smartphone, desc: "Nagad mobile banking", fields: ["merchant_number", "api_key"],
+    personalFields: [
+      { key: "personal_number", label: "Nagad Number", placeholder: "01XXXXXXXXX" },
+      { key: "account_type", label: "Account Type", placeholder: "personal" },
+    ],
+    defaultInstruction: "এই নম্বরে Nagad Send Money করুন এবং Transaction ID দিন।" },
+  { id: "rocket", name: "Rocket", region: "bd", icon: Smartphone, desc: "Rocket (DBBL)", fields: ["merchant_number"],
+    personalFields: [
+      { key: "personal_number", label: "Rocket Number", placeholder: "01XXXXXXXXX" },
+    ],
+    defaultInstruction: "এই নম্বরে Rocket Send Money করুন এবং Transaction ID দিন।" },
+  { id: "upay", name: "Upay", region: "bd", icon: Smartphone, desc: "Upay mobile banking", fields: ["merchant_number"],
+    personalFields: [{ key: "personal_number", label: "Upay Number", placeholder: "01XXXXXXXXX" }],
+    defaultInstruction: "এই নম্বরে Upay Send Money করুন।" },
+  { id: "tap", name: "Tap", region: "bd", icon: Smartphone, desc: "Tap mobile payment", fields: ["merchant_number"],
+    personalFields: [{ key: "personal_number", label: "Tap Number", placeholder: "01XXXXXXXXX" }],
+    defaultInstruction: "এই নম্বরে Tap Send Money করুন।" },
+  { id: "cellfin", name: "CellFin", region: "bd", icon: Smartphone, desc: "CellFin digital wallet", fields: ["merchant_id"],
+    personalFields: [{ key: "personal_number", label: "CellFin Number", placeholder: "01XXXXXXXXX" }] },
   { id: "sslcommerz", name: "SSLCommerz", region: "bd", icon: Globe, desc: "SSLCommerz payment gateway", fields: ["store_id", "store_password"] },
   { id: "aamarpay", name: "AamarPay", region: "bd", icon: Globe, desc: "AamarPay online payment", fields: ["store_id", "signature_key"] },
   { id: "shurjopay", name: "ShurjoPay", region: "bd", icon: Globe, desc: "ShurjoPay payment", fields: ["merchant_key", "merchant_code"] },
   { id: "portwallet", name: "PortWallet", region: "bd", icon: Globe, desc: "PortWallet gateway", fields: ["app_key", "secret_key"] },
   { id: "ekpay", name: "EkPay", region: "bd", icon: Globe, desc: "EkPay aggregator", fields: ["merchant_id", "api_key"] },
-  { id: "bd_bank", name: "Bank Transfer (BD)", region: "bd", icon: Landmark, desc: "Direct bank transfer", fields: ["bank_name", "account_number", "branch"] },
-  { id: "cod_bd", name: "Cash on Delivery", region: "bd", icon: Wallet, desc: "Pay on delivery", fields: [] },
+  { id: "bd_bank", name: "Bank Transfer (BD)", region: "bd", icon: Landmark, desc: "Direct bank transfer", fields: [],
+    personalFields: [
+      { key: "bank_name", label: "Bank Name", placeholder: "e.g. Dutch Bangla Bank" },
+      { key: "account_name", label: "Account Name", placeholder: "Account holder name" },
+      { key: "account_number", label: "Account Number", placeholder: "1234567890" },
+      { key: "branch_name", label: "Branch", placeholder: "Branch name" },
+      { key: "routing_number", label: "Routing Number", placeholder: "Optional" },
+    ],
+    defaultInstruction: "এই ব্যাংক অ্যাকাউন্টে টাকা ট্রান্সফার করুন এবং স্ক্রিনশট দিন।" },
+  { id: "cod_bd", name: "Cash on Delivery", region: "bd", icon: Wallet, desc: "Pay on delivery", fields: [],
+    defaultInstruction: "পণ্য হাতে পেয়ে ক্যাশে পেমেন্ট করুন।" },
   // India
   { id: "razorpay", name: "Razorpay", region: "in", icon: Globe, desc: "Razorpay payment gateway", fields: ["key_id", "key_secret"] },
-  { id: "paytm", name: "Paytm", region: "in", icon: Smartphone, desc: "Paytm wallet & UPI", fields: ["merchant_id", "merchant_key"] },
-  { id: "phonepe", name: "PhonePe", region: "in", icon: Smartphone, desc: "PhonePe UPI payments", fields: ["merchant_id", "salt_key"] },
-  { id: "googlepay", name: "Google Pay", region: "in", icon: Smartphone, desc: "Google Pay UPI", fields: ["upi_id"] },
+  { id: "paytm", name: "Paytm", region: "in", icon: Smartphone, desc: "Paytm wallet & UPI", fields: ["merchant_id", "merchant_key"],
+    personalFields: [
+      { key: "personal_number", label: "Paytm Number", placeholder: "+91 XXXXXXXXXX" },
+      { key: "upi_id", label: "UPI ID", placeholder: "name@paytm" },
+    ],
+    defaultInstruction: "Send payment to this Paytm number/UPI and share screenshot." },
+  { id: "phonepe", name: "PhonePe", region: "in", icon: Smartphone, desc: "PhonePe UPI payments", fields: ["merchant_id", "salt_key"],
+    personalFields: [
+      { key: "personal_number", label: "PhonePe Number", placeholder: "+91 XXXXXXXXXX" },
+      { key: "upi_id", label: "UPI ID", placeholder: "name@ybl" },
+    ],
+    defaultInstruction: "Send payment via PhonePe to this UPI ID and share transaction screenshot." },
+  { id: "googlepay", name: "Google Pay", region: "in", icon: Smartphone, desc: "Google Pay UPI", fields: ["upi_id"],
+    personalFields: [
+      { key: "personal_number", label: "Google Pay Number", placeholder: "+91 XXXXXXXXXX" },
+      { key: "upi_id", label: "UPI ID", placeholder: "name@okicici" },
+    ],
+    defaultInstruction: "Send payment via Google Pay to this UPI ID and share screenshot." },
   { id: "payu", name: "PayU", region: "in", icon: Globe, desc: "PayU payment gateway", fields: ["merchant_key", "salt"] },
   { id: "cashfree", name: "Cashfree", region: "in", icon: Globe, desc: "Cashfree payments", fields: ["app_id", "secret_key"] },
   { id: "instamojo", name: "Instamojo", region: "in", icon: Globe, desc: "Instamojo payments", fields: ["api_key", "auth_token"] },
   { id: "ccavenue", name: "CCAvenue", region: "in", icon: Globe, desc: "CCAvenue gateway", fields: ["merchant_id", "access_code", "working_key"] },
-  { id: "upi", name: "UPI Direct", region: "in", icon: Smartphone, desc: "Direct UPI transfer", fields: ["upi_id"] },
-  { id: "in_bank", name: "Bank Transfer (IN)", region: "in", icon: Landmark, desc: "NEFT/IMPS/RTGS", fields: ["bank_name", "account_number", "ifsc"] },
-  { id: "cod_in", name: "Cash on Delivery", region: "in", icon: Wallet, desc: "Pay on delivery (India)", fields: [] },
+  { id: "upi", name: "UPI Direct", region: "in", icon: Smartphone, desc: "Direct UPI transfer", fields: [],
+    personalFields: [
+      { key: "upi_id", label: "UPI ID", placeholder: "yourname@upi" },
+      { key: "personal_number", label: "Phone Number", placeholder: "+91 XXXXXXXXXX" },
+    ],
+    defaultInstruction: "Send payment to this UPI ID and share the transaction screenshot." },
+  { id: "in_bank", name: "Bank Transfer (IN)", region: "in", icon: Landmark, desc: "NEFT/IMPS/RTGS", fields: [],
+    personalFields: [
+      { key: "bank_name", label: "Bank Name", placeholder: "e.g. SBI, HDFC" },
+      { key: "account_name", label: "Account Name", placeholder: "Account holder name" },
+      { key: "account_number", label: "Account Number", placeholder: "1234567890" },
+      { key: "ifsc_code", label: "IFSC Code", placeholder: "SBIN0001234" },
+    ],
+    defaultInstruction: "Transfer via NEFT/IMPS/RTGS to this account and share receipt." },
+  { id: "cod_in", name: "Cash on Delivery", region: "in", icon: Wallet, desc: "Pay on delivery (India)", fields: [],
+    defaultInstruction: "Pay cash when you receive the product." },
   // International
-  { id: "paypal", name: "PayPal", region: "intl", icon: Globe, desc: "PayPal international payments", fields: ["client_id", "client_secret"] },
+  { id: "paypal", name: "PayPal", region: "intl", icon: Globe, desc: "PayPal international payments", fields: ["client_id", "client_secret"],
+    personalFields: [{ key: "paypal_email", label: "PayPal Email", placeholder: "your@email.com" }],
+    defaultInstruction: "Send payment to this PayPal email and share confirmation." },
   { id: "stripe", name: "Stripe", region: "intl", icon: Globe, desc: "Stripe card payments", fields: ["publishable_key", "secret_key"] },
-  { id: "binance", name: "Binance Pay", region: "intl", icon: Globe, desc: "Binance crypto payments", fields: ["merchant_id", "api_key"] },
-  { id: "payoneer", name: "Payoneer", region: "intl", icon: Globe, desc: "Payoneer global payments", fields: ["email"] },
-  { id: "wise", name: "Wise (TransferWise)", region: "intl", icon: Globe, desc: "Wise international transfer", fields: ["email", "account_details"] },
-  { id: "skrill", name: "Skrill", region: "intl", icon: Globe, desc: "Skrill digital wallet", fields: ["email"] },
-  { id: "crypto", name: "Cryptocurrency", region: "intl", icon: Globe, desc: "Accept BTC, ETH, USDT", fields: ["wallet_address", "network"] },
+  { id: "binance", name: "Binance Pay", region: "intl", icon: Globe, desc: "Binance crypto payments", fields: ["merchant_id", "api_key"],
+    personalFields: [{ key: "binance_id", label: "Binance Pay ID", placeholder: "Your Binance Pay ID" }] },
+  { id: "payoneer", name: "Payoneer", region: "intl", icon: Globe, desc: "Payoneer global payments", fields: ["email"],
+    personalFields: [{ key: "payoneer_email", label: "Payoneer Email", placeholder: "your@email.com" }],
+    defaultInstruction: "Send payment to this Payoneer email." },
+  { id: "wise", name: "Wise (TransferWise)", region: "intl", icon: Globe, desc: "Wise international transfer", fields: ["email", "account_details"],
+    personalFields: [
+      { key: "wise_email", label: "Wise Email", placeholder: "your@email.com" },
+      { key: "account_details", label: "Account Details", placeholder: "IBAN or account info" },
+    ],
+    defaultInstruction: "Transfer via Wise to this account." },
+  { id: "skrill", name: "Skrill", region: "intl", icon: Globe, desc: "Skrill digital wallet", fields: ["email"],
+    personalFields: [{ key: "skrill_email", label: "Skrill Email", placeholder: "your@email.com" }] },
+  { id: "crypto", name: "Cryptocurrency", region: "intl", icon: Globe, desc: "Accept BTC, ETH, USDT", fields: [],
+    personalFields: [
+      { key: "wallet_address", label: "Wallet Address", placeholder: "0x..." },
+      { key: "network", label: "Network", placeholder: "e.g. ERC-20, TRC-20, BEP-20" },
+      { key: "coin_type", label: "Coin Type", placeholder: "USDT, BTC, ETH" },
+    ],
+    defaultInstruction: "Send crypto to this wallet address on the specified network." },
   { id: "intl_card", name: "Credit/Debit Card", region: "intl", icon: CreditCard, desc: "Visa, Mastercard, Amex", fields: [] },
-  { id: "intl_bank", name: "Wire Transfer", region: "intl", icon: Landmark, desc: "International wire transfer", fields: ["swift_code", "iban", "bank_name"] },
+  { id: "intl_bank", name: "Wire Transfer", region: "intl", icon: Landmark, desc: "International wire transfer", fields: [],
+    personalFields: [
+      { key: "bank_name", label: "Bank Name", placeholder: "Bank name" },
+      { key: "account_name", label: "Account Name", placeholder: "Account holder" },
+      { key: "account_number", label: "Account/IBAN", placeholder: "Account number or IBAN" },
+      { key: "swift_code", label: "SWIFT/BIC Code", placeholder: "SWIFT code" },
+    ],
+    defaultInstruction: "Wire transfer to this bank account. Share receipt after transfer." },
 ];
 
 const REGION_LABELS: Record<string, Record<Lang, string>> = {
@@ -283,7 +365,13 @@ const SettingsPage = () => {
 
   const openConfig = (id: string) => {
     const gw = settings.payment_methods.find(p => p.id === id);
-    setConfigTemp(gw?.config ?? {});
+    const catalog = GATEWAY_CATALOG.find(g => g.id === id);
+    const existingConfig = gw?.config ?? {};
+    // Auto-populate default instruction if empty
+    if (!existingConfig.instructions && catalog?.defaultInstruction) {
+      existingConfig.instructions = catalog.defaultInstruction;
+    }
+    setConfigTemp(existingConfig);
     setConfigDialog(id);
   };
 
@@ -575,7 +663,15 @@ const SettingsPage = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">{catalog?.desc}</p>
                     {pm.config?.personal_number && <p className="text-[10px] text-muted-foreground">📱 {pm.config.personal_number}</p>}
+                    {pm.config?.upi_id && <p className="text-[10px] text-muted-foreground">💳 UPI: {pm.config.upi_id}</p>}
+                    {pm.config?.bank_name && <p className="text-[10px] text-muted-foreground">🏦 {pm.config.bank_name} - {pm.config.account_number || ""}</p>}
+                    {pm.config?.paypal_email && <p className="text-[10px] text-muted-foreground">📧 {pm.config.paypal_email}</p>}
+                    {pm.config?.wallet_address && <p className="text-[10px] text-muted-foreground">🔗 {pm.config.wallet_address?.substring(0, 20)}...</p>}
                     {pm.config?.qr_code_url && <p className="text-[10px] text-primary">📷 QR Code added</p>}
+                    {pm.config?.instructions && <p className="text-[10px] text-primary">📝 Instructions set</p>}
+                    {!pm.config?.personal_number && !pm.config?.upi_id && !pm.config?.bank_name && !pm.config?.qr_code_url && !pm.config?.instructions && !pm.config?.paypal_email && !pm.config?.wallet_address && Object.keys(pm.config || {}).length === 0 && (
+                      <p className="text-[10px] text-amber-500">⚠️ {lang === "bn" ? "কনফিগ করুন" : "Not configured"}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -610,22 +706,30 @@ const SettingsPage = () => {
             </TabsList>
 
             <TabsContent value="personal" className="space-y-4 mt-4">
-              <p className="text-xs text-muted-foreground">{lang === "bn" ? "পার্সোনাল অ্যাকাউন্ট নম্বর দিন — কাস্টমার এটি দেখে পেমেন্ট পাঠাবে" : "Enter your personal account number — customers will see this to send payment"}</p>
-              <div className="space-y-1.5">
-                <Label>{lang === "bn" ? "অ্যাকাউন্ট নম্বর" : "Account Number"}</Label>
-                <Input value={configTemp.personal_number ?? ""} onChange={e => setConfigTemp(p => ({ ...p, personal_number: e.target.value }))} placeholder="e.g. 01XXXXXXXXX" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{lang === "bn" ? "অ্যাকাউন্ট টাইপ" : "Account Type"}</Label>
-                <Select value={configTemp.account_type ?? "personal"} onValueChange={v => setConfigTemp(p => ({ ...p, account_type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">{lang === "bn" ? "পার্সোনাল" : "Personal"}</SelectItem>
-                    <SelectItem value="agent">{lang === "bn" ? "এজেন্ট" : "Agent"}</SelectItem>
-                    <SelectItem value="merchant">{lang === "bn" ? "মার্চেন্ট" : "Merchant"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="text-xs text-muted-foreground">{lang === "bn" ? "পার্সোনাল অ্যাকাউন্ট তথ্য দিন — কাস্টমার এটি দেখে পেমেন্ট পাঠাবে" : "Enter your personal account details — customers will see this to send payment"}</p>
+              {(() => {
+                const catalog = GATEWAY_CATALOG.find(g => g.id === configDialog);
+                const personalFields = catalog?.personalFields || [
+                  { key: "personal_number", label: lang === "bn" ? "অ্যাকাউন্ট নম্বর" : "Account Number", placeholder: "e.g. 01XXXXXXXXX" },
+                ];
+                return personalFields.map(field => (
+                  <div key={field.key} className="space-y-1.5">
+                    <Label>{field.label}</Label>
+                    {field.key === "account_type" ? (
+                      <Select value={configTemp[field.key] ?? "personal"} onValueChange={v => setConfigTemp(p => ({ ...p, [field.key]: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="personal">{lang === "bn" ? "পার্সোনাল" : "Personal"}</SelectItem>
+                          <SelectItem value="agent">{lang === "bn" ? "এজেন্ট" : "Agent"}</SelectItem>
+                          <SelectItem value="merchant">{lang === "bn" ? "মার্চেন্ট" : "Merchant"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input value={configTemp[field.key] ?? ""} onChange={e => setConfigTemp(p => ({ ...p, [field.key]: e.target.value }))} placeholder={field.placeholder} />
+                    )}
+                  </div>
+                ));
+              })()}
             </TabsContent>
 
             <TabsContent value="merchant" className="space-y-4 mt-4">
@@ -650,8 +754,19 @@ const SettingsPage = () => {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {lang === "bn" ? "কাস্টম নির্দেশনা" : "Custom Instructions"}</Label>
-                <Textarea value={configTemp.instructions ?? ""} onChange={e => setConfigTemp(p => ({ ...p, instructions: e.target.value }))} placeholder={lang === "bn" ? "যেমন: পেমেন্ট স্ক্রিনশট পাঠান..." : "e.g. Send payment screenshot..."} rows={3} />
+                <Label className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {lang === "bn" ? "পেমেন্ট গাইড / নির্দেশনা" : "Payment Guide / Instructions"}</Label>
+                <Textarea value={configTemp.instructions ?? ""} onChange={e => setConfigTemp(p => ({ ...p, instructions: e.target.value }))} placeholder={lang === "bn" ? "কাস্টমারকে কী করতে হবে সেই নির্দেশনা..." : "Instructions for customers on how to pay..."} rows={3} />
+                {(() => {
+                  const catalog = GATEWAY_CATALOG.find(g => g.id === configDialog);
+                  if (catalog?.defaultInstruction && !configTemp.instructions) {
+                    return (
+                      <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setConfigTemp(p => ({ ...p, instructions: catalog.defaultInstruction! }))}>
+                        <MessageSquare className="h-3 w-3" /> {lang === "bn" ? "ডিফল্ট নির্দেশনা ব্যবহার করুন" : "Use default instruction"}
+                      </Button>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </TabsContent>
           </Tabs>
