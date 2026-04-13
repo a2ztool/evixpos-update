@@ -25,7 +25,7 @@ const AdminDashboard = () => {
         { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
         { label: "Total Stores", value: stats.totalStores, icon: Store, color: "text-purple-400", bg: "bg-purple-500/10" },
         { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "text-amber-400", bg: "bg-amber-500/10" },
-        { label: "Total Revenue", value: `৳${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+        { label: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
         { label: "Active Subs", value: stats.activeSubs, icon: Crown, color: "text-pink-400", bg: "bg-pink-500/10" },
       ]
     : [];

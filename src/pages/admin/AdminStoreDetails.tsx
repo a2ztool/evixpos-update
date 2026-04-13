@@ -93,8 +93,8 @@ const AdminStoreDetails = () => {
           { label: "Products", value: stats.totalProducts, icon: Package, color: "text-blue-400" },
           { label: "Customers", value: stats.totalCustomers, icon: Users, color: "text-emerald-400" },
           { label: "Orders", value: stats.totalOrders, icon: ShoppingCart, color: "text-purple-400" },
-          { label: "Revenue", value: `৳${stats.totalRevenue.toLocaleString()}`, icon: BarChart3, color: "text-amber-400" },
-          { label: "Profit", value: `৳${stats.totalProfit.toLocaleString()}`, icon: CreditCard, color: "text-cyan-400" },
+          { label: "Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, icon: BarChart3, color: "text-amber-400" },
+          { label: "Profit", value: `$${stats.totalProfit.toLocaleString()}`, icon: CreditCard, color: "text-cyan-400" },
         ].map((s) => (
           <Card key={s.label} className="bg-slate-800 border-slate-700">
             <CardContent className="p-4 flex items-center gap-3">
