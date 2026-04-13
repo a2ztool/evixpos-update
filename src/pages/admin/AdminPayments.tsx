@@ -13,7 +13,7 @@ import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2 } from
 interface PlanPayment {
   id: string; user_id: string; store_id: string | null; plan: string; amount: number; currency: string;
   gateway_name: string; transaction_id: string; proof_url: string; status: string; admin_notes: string;
-  user_email: string; user_name: string; store_name: string; created_at: string;
+  user_email: string; user_name: string; store_name: string; created_at: string; expires_at: string | null;
 }
 
 const statusColors: Record<string, string> = {
