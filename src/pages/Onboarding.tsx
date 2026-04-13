@@ -114,7 +114,7 @@ const Onboarding = () => {
   // Don't render form if user already has stores (will redirect)
   if (stores.length > 0) return null;
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const currentProgress = step;
 
   return (
@@ -164,6 +164,42 @@ const Onboarding = () => {
               />
             </div>
 
+            {/* Store Type */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <Store className="h-4 w-4 text-primary" />
+                Store Type
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setStoreMode("online"); if (step < 2) setStep(2); }}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    storeMode === "online"
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/50 hover:border-primary/30"
+                  }`}
+                >
+                  <Globe className={`h-6 w-6 ${storeMode === "online" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-sm font-medium ${storeMode === "online" ? "text-primary" : "text-muted-foreground"}`}>Online Store</span>
+                  <span className="text-[10px] text-muted-foreground text-center">E-commerce, digital sales</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStoreMode("offline"); if (step < 2) setStep(2); }}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    storeMode === "offline"
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/50 hover:border-primary/30"
+                  }`}
+                >
+                  <MapPin className={`h-6 w-6 ${storeMode === "offline" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-sm font-medium ${storeMode === "offline" ? "text-primary" : "text-muted-foreground"}`}>Offline Store</span>
+                  <span className="text-[10px] text-muted-foreground text-center">Physical shop, POS based</span>
+                </button>
+              </div>
+            </div>
+
             {/* Store Name */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
@@ -173,8 +209,8 @@ const Onboarding = () => {
               <Input
                 placeholder="My Store"
                 value={storeName}
-                onChange={e => { handleStoreNameChange(e.target.value); if (step < 3) setStep(2); }}
-                onFocus={() => { if (step < 2) setStep(2); }}
+                onChange={e => { handleStoreNameChange(e.target.value); if (step < 3) setStep(3); }}
+                onFocus={() => { if (step < 3) setStep(3); }}
                 className="h-11 bg-muted/50 border-border/50"
               />
             </div>
