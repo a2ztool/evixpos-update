@@ -508,23 +508,23 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("features") && <section id="features" className="py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,hsl(var(--primary)/0.06),transparent)]" />
+      {show("features") && <section id="features" className="py-24 sm:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
-              <Layers className="h-3 w-3 mr-1.5" /> {get("features_badge", "Core Features")}
+          <AnimSection className="text-center max-w-3xl mx-auto mb-20">
+            <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
+              <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("features_title", "Everything You Need to Scale")}
+            <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
+              {get("features_title", "Everything You Need to Grow")}
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
               {get("features_subtitle", "Powerful tools designed for modern businesses — simple to use, built to scale.")}
             </p>
           </AnimSection>
 
-          {/* Large alternating feature cards */}
-          <div className="space-y-12 sm:space-y-16">
+          <div className="space-y-24 sm:space-y-32">
             {[1, 2, 3, 4, 5, 6].map((i) => {
               const title = get(`feature_${i}_title`);
               const desc = get(`feature_${i}_desc`);
@@ -536,35 +536,66 @@ const LandingPage = () => {
 
               return (
                 <AnimItem key={i} delay={0.1}>
-                  <div className={`grid lg:grid-cols-2 gap-8 lg:gap-12 items-center ${isReversed ? "lg:direction-rtl" : ""}`}>
-                    <div className={`${isReversed ? "lg:order-2" : ""}`}>
-                      <Badge variant="outline" className="mb-3 text-primary border-primary/30 px-3 py-1 text-xs">
-                        <Icon className="h-3 w-3 mr-1" /> {get(`feature_${i}_badge`, `Feature`)}
+                  <div className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center`}>
+                    {/* Text Content */}
+                    <div className={`${isReversed ? "lg:order-2" : ""} space-y-6`}>
+                      <Badge variant="outline" className="text-primary border-primary/30 px-3.5 py-1.5 text-xs font-semibold backdrop-blur-sm bg-card/50">
+                        <Icon className="h-3.5 w-3.5 mr-1.5" /> {get(`feature_${i}_badge`, `Feature`)}
                       </Badge>
-                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight mb-4">{title || `Feature ${i}`}</h3>
-                      <p className="text-muted-foreground leading-relaxed mb-6">{desc}</p>
+                      <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-[1.15]">{title || `Feature ${i}`}</h3>
+                      <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">{desc}</p>
                       {bullets.length > 0 && (
-                        <ul className="space-y-2.5 mb-6">
+                        <ul className="space-y-3 pt-2">
                           {bullets.map((b, j) => (
-                            <li key={j} className="flex items-center gap-2.5 text-sm">
-                              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><Check className="h-3 w-3 text-primary" /></div>
-                              {b.trim()}
+                            <li key={j} className="flex items-center gap-3 text-sm sm:text-base">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                                <Check className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              <span className="text-foreground/80">{b.trim()}</span>
                             </li>
                           ))}
                         </ul>
                       )}
                     </div>
+
+                    {/* Screenshot */}
                     <div className={`${isReversed ? "lg:order-1" : ""}`}>
                       {img ? (
                         <div className="relative group">
-                          <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 to-transparent rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-xl">
-                            <img src={img} alt={title || ""} className="w-full group-hover:scale-[1.02] transition-transform duration-700" loading="lazy" />
+                          {/* Glow effect */}
+                          <div className="absolute -inset-6 bg-gradient-to-tr from-primary/8 via-primary/4 to-transparent rounded-[2rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
+                          {/* Browser chrome frame */}
+                          <div className="relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/5 bg-card">
+                            {/* Browser dots */}
+                            <div className="flex items-center gap-2 px-4 py-3 bg-muted/60 border-b border-border/40">
+                              <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-destructive/60" />
+                                <div className="w-3 h-3 rounded-full bg-warning/60" />
+                                <div className="w-3 h-3 rounded-full bg-primary/40" />
+                              </div>
+                              <div className="flex-1 mx-4">
+                                <div className="bg-background/80 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono truncate border border-border/30">
+                                  app.evixpos.com
+                                </div>
+                              </div>
+                            </div>
+                            {/* Screenshot image */}
+                            <img
+                              src={img}
+                              alt={title || ""}
+                              className="w-full group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+                              loading="lazy"
+                            />
                           </div>
+                          {/* Floating accent decoration */}
+                          <div className={`absolute -z-10 ${isReversed ? '-left-3 -bottom-3' : '-right-3 -bottom-3'} w-24 h-24 bg-primary/5 rounded-2xl`} />
                         </div>
                       ) : (
-                        <div className="bg-card rounded-2xl border border-border/50 p-12 flex items-center justify-center">
-                          <Icon className="h-20 w-20 text-primary/20" />
+                        <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl border border-border/50 p-16 flex items-center justify-center">
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
+                            <Icon className="h-24 w-24 text-primary/20 relative" />
+                          </div>
                         </div>
                       )}
                     </div>
