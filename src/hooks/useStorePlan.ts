@@ -65,6 +65,12 @@ export const useStorePlan = () => {
   const [plan, setPlan] = useState<string>("free");
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelInstanceIdRef = useRef(
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
 
   // For staff, we need to check the store owner's plan, not the staff's own plan
   const planUserId = isStaff && staffInfo ? staffInfo.owner_id : user?.id;
@@ -116,9 +122,14 @@ export const useStorePlan = () => {
 
   // Realtime subscription for instant plan changes (user-level)
   useEffect(() => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     if (!planUserId) return;
 
-    const channelName = `user-plan-${planUserId}-${Date.now()}`;
+    const channelName = `user-plan-${planUserId}-${channelInstanceIdRef.current}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -135,7 +146,15 @@ export const useStorePlan = () => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        return;
+      }
+
       supabase.removeChannel(channel);
     };
   }, [planUserId, fetchPlan]);
