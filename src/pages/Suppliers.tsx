@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Truck, Phone, Mail, Edit2, Trash2 } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -97,6 +98,15 @@ const Suppliers = () => {
             <h1 className="text-2xl font-bold text-foreground">Suppliers</h1>
             <p className="text-sm text-muted-foreground">Manage your suppliers and purchase dues</p>
           </div>
+          <div className="flex items-center gap-2">
+            <PageGuide
+              title="How Suppliers Work"
+              steps={[
+                { title: "Add Supplier", description: "Click 'Add Supplier' to register a new supplier with contact info." },
+                { title: "Track Balance", description: "Each supplier shows their outstanding balance due from purchases." },
+                { title: "Edit or Remove", description: "Use the action buttons to edit supplier details or remove them." },
+              ]}
+            />
           <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 mr-2" /> Add Supplier</Button>
