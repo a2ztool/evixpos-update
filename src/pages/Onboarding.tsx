@@ -228,8 +228,8 @@ const Onboarding = () => {
                 <Input
                   placeholder="my-store-name"
                   value={storeSlug}
-                  onChange={e => { setStoreSlug(generateSlug(e.target.value)); setStep(3); }}
-                  onFocus={() => setStep(3)}
+                  onChange={e => { setStoreSlug(generateSlug(e.target.value)); setStep(4); }}
+                  onFocus={() => setStep(4)}
                   className="h-11 bg-muted/50 border-border/50 rounded-l-none"
                 />
               </div>
@@ -245,7 +245,7 @@ const Onboarding = () => {
                   <Languages className="h-4 w-4 text-primary" />
                   Language
                 </Label>
-                <Select value={language} onValueChange={(v) => { setLanguage(v); setStep(4); }}>
+                <Select value={language} onValueChange={(v) => { setLanguage(v); setStep(5); }}>
                   <SelectTrigger className="h-11 bg-muted/50 border-border/50">
                     <SelectValue />
                   </SelectTrigger>
