@@ -24,6 +24,8 @@ import {
   Printer, Zap, Layers,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
+import BarcodeScanner from "@/components/BarcodeScanner";
+import ThermalReceipt, { printThermalReceipt } from "@/components/ThermalReceipt";
 import { getGatewayIcon } from "@/lib/gatewayBrands";
 import { normalizePaymentMethods, getPublicPaymentDetails, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 
@@ -35,6 +37,7 @@ interface Product {
   stock: number;
   image_url?: string;
   category?: string;
+  sku?: string;
 }
 
 interface ProductVariation {
@@ -115,6 +118,7 @@ const POS = () => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const thermalRef = useRef<HTMLDivElement>(null);
 
   // Invoice from POS
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -130,7 +134,7 @@ const POS = () => {
 
   const fetchProductsAndVariations = useCallback(async () => {
     if (!user || !activeStore) return;
-    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).eq("is_active", true).order("name");
+    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category, sku").eq("store_id", activeStore.id).eq("is_active", true).order("name");
     if (data) setProducts(data as Product[]);
     // Fetch variations
     if (data && data.length > 0) {
@@ -516,10 +520,25 @@ const POS = () => {
     setSubmitting(false);
   };
 
+  // Barcode scan handler - find product by SKU or name
+  const handleBarcodeScan = useCallback((code: string) => {
+    const found = products.find(p => 
+      p.sku?.toLowerCase() === code.toLowerCase() || 
+      p.name.toLowerCase() === code.toLowerCase()
+    );
+    if (found) {
+      handleProductClick(found);
+      toast.success(`Added: ${found.name}`);
+    } else {
+      toast.error(`Product not found: ${code}`);
+    }
+  }, [products, handleProductClick]);
+
   // Filter products by search + category
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+        (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
       if (activeCategory === "all") return matchSearch;
       if (activeCategory === "__digital") return matchSearch && p.type === "digital";
       if (activeCategory === "__physical") return matchSearch && p.type === "physical";
@@ -928,6 +947,9 @@ const POS = () => {
               ))}
             </div>
           </ScrollArea>
+
+          {/* Barcode Scanner */}
+          <BarcodeScanner onScan={handleBarcodeScan} placeholder="Scan barcode / SKU..." className="mb-3" autoFocus={false} />
 
           {/* Search */}
           <div className="relative mb-4 sm:mb-6">
