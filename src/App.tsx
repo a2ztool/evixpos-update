@@ -47,6 +47,9 @@ import CashRegister from "./pages/CashRegister";
 import CustomerCredits from "./pages/CustomerCredits";
 import LoyaltyPoints from "./pages/LoyaltyPoints";
 import StockAlerts from "./pages/StockAlerts";
+import DailySalesReport from "./pages/DailySalesReport";
+import OfflineProfitLoss from "./pages/OfflineProfitLoss";
+import StaffPerformance from "./pages/StaffPerformance";
 
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
