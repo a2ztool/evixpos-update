@@ -580,7 +580,7 @@ const POS = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{item.product.name}</p>
                   {item.variation && (
-                    <p className="text-[10px] text-primary font-medium">{item.variation.name}</p>
+                    <p className="text-[10px] text-primary font-medium">{cleanVarName(item.variation.name)}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     {format(getItemPrice(item), 2)} × {item.quantity}
@@ -776,7 +776,7 @@ const POS = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.product.name}</p>
                       {item.variation && (
-                        <p className="text-[10px] text-primary font-medium">{item.variation.name} {item.variation.is_subscription && "• Subscription"}</p>
+                        <p className="text-[10px] text-primary font-medium">{cleanVarName(item.variation.name)} {item.variation.is_subscription && "• Subscription"}</p>
                       )}
                       <p className="text-xs text-muted-foreground">{format(getItemPrice(item))} × {item.quantity}</p>
                     </div>
@@ -1069,7 +1069,7 @@ const POS = () => {
                 }`}
               >
                 <div>
-                  <p className="font-medium text-sm">{v.name}</p>
+                  <p className="font-medium text-sm">{cleanVarName(v.name)}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">
                       {v.duration_days} days
@@ -1195,7 +1195,7 @@ const POS = () => {
                             <span className="font-medium ml-2">{receiptSymbol}{(getItemPrice(item) * item.quantity).toFixed(2)}</span>
                           </div>
                           {item.variation && (
-                            <span className="text-[10px] text-muted-foreground ml-2">↳ {item.variation.name}</span>
+                            <span className="text-[10px] text-muted-foreground ml-2">↳ {cleanVarName(item.variation.name)}</span>
                           )}
                         </div>
                       );
