@@ -519,10 +519,25 @@ const POS = () => {
     setSubmitting(false);
   };
 
+  // Barcode scan handler - find product by SKU or name
+  const handleBarcodeScan = useCallback((code: string) => {
+    const found = products.find(p => 
+      p.sku?.toLowerCase() === code.toLowerCase() || 
+      p.name.toLowerCase() === code.toLowerCase()
+    );
+    if (found) {
+      handleProductClick(found);
+      toast.success(`Added: ${found.name}`);
+    } else {
+      toast.error(`Product not found: ${code}`);
+    }
+  }, [products, handleProductClick]);
+
   // Filter products by search + category
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+        (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
       if (activeCategory === "all") return matchSearch;
       if (activeCategory === "__digital") return matchSearch && p.type === "digital";
       if (activeCategory === "__physical") return matchSearch && p.type === "physical";
