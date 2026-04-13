@@ -65,12 +65,12 @@ const CURRENCIES: { key: Currency; symbol: string; label: string }[] = [
   { key: "INR", symbol: "₹", label: "INR" },
   { key: "USD", symbol: "$", label: "USD" },
 ];
-const NAV_LINKS = [
-  { href: "#about", label: "About" },
-  { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#testimonials", label: "Reviews" },
-  { href: "#faq", label: "FAQ" },
+const DEFAULT_NAV_LINKS = [
+  { href: "#about", labelKey: "nav_about", defaultLabel: "About" },
+  { href: "#features", labelKey: "nav_features", defaultLabel: "Features" },
+  { href: "#pricing", labelKey: "nav_pricing", defaultLabel: "Pricing" },
+  { href: "#testimonials", labelKey: "nav_reviews", defaultLabel: "Reviews" },
+  { href: "#faq", labelKey: "nav_faq", defaultLabel: "FAQ" },
 ];
 
 /* ─── Marquee component ─── */
@@ -188,9 +188,9 @@ const LandingPage = () => {
             <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className={`w-auto transition-all duration-300 ${scrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"}`} />
           </div>
           <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-            {NAV_LINKS.map((link) => (
+            {DEFAULT_NAV_LINKS.map((link) => (
               <button key={link.href} onClick={() => smoothScroll(link.href)} className="relative px-4 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-all duration-200 group">
-                <span className="relative z-10">{link.label}</span>
+                <span className="relative z-10">{get(link.labelKey, link.defaultLabel)}</span>
                 <span className="absolute inset-0 rounded-xl bg-accent/0 group-hover:bg-accent/60 transition-colors duration-200" />
               </button>
             ))}
@@ -232,7 +232,7 @@ const LandingPage = () => {
               className="md:hidden max-w-5xl mx-auto mt-2.5 rounded-2xl border border-border/30 bg-background/90 backdrop-blur-2xl shadow-xl overflow-hidden"
             >
               <div className="px-3 py-3 space-y-0.5">
-                {NAV_LINKS.map((link, i) => (
+                {DEFAULT_NAV_LINKS.map((link, i) => (
                   <motion.button 
                     key={link.href} 
                     initial={{ opacity: 0, x: -12 }} 
@@ -241,7 +241,7 @@ const LandingPage = () => {
                     onClick={() => smoothScroll(link.href)} 
                     className="block w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
                   >
-                    {link.label}
+                    {get(link.labelKey, link.defaultLabel)}
                   </motion.button>
                 ))}
                 <div className="pt-2 px-2 pb-1 flex gap-2">
@@ -342,9 +342,9 @@ const LandingPage = () => {
               )}
             </div>
             <div className="flex items-center justify-center gap-5 text-sm text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Free forever plan</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> No credit card</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Setup in 2 min</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_1", "Free forever plan")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_2", "No credit card")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_3", "Setup in 2 min")}</span>
             </div>
           </motion.div>
 
@@ -983,9 +983,9 @@ const LandingPage = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-8 flex items-center justify-center gap-4 flex-wrap">
-              <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Secure & Private</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> No Credit Card</span>
-              <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Cancel Anytime</span>
+              <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> {get("cta_trust_1", "Secure & Private")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> {get("cta_trust_2", "No Credit Card")}</span>
+              <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {get("cta_trust_3", "Cancel Anytime")}</span>
             </p>
           </AnimSection>
         </div>
@@ -1028,29 +1028,29 @@ const LandingPage = () => {
               </a>
             </div>
             <div className="lg:col-span-2">
-              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">Product</h4>
+              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col1_title", "Product")}</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => smoothScroll("#features")} className="hover:text-primary transition-colors">Features</button></li>
-                <li><button onClick={() => smoothScroll("#pricing")} className="hover:text-primary transition-colors">Pricing</button></li>
-                <li><button onClick={() => smoothScroll("#how-it-works")} className="hover:text-primary transition-colors">How It Works</button></li>
-                <li><button onClick={() => smoothScroll("#screenshots")} className="hover:text-primary transition-colors">Screenshots</button></li>
+                <li><button onClick={() => smoothScroll("#features")} className="hover:text-primary transition-colors">{get("nav_features", "Features")}</button></li>
+                <li><button onClick={() => smoothScroll("#pricing")} className="hover:text-primary transition-colors">{get("nav_pricing", "Pricing")}</button></li>
+                <li><button onClick={() => smoothScroll("#how-it-works")} className="hover:text-primary transition-colors">{get("footer_link_how", "How It Works")}</button></li>
+                <li><button onClick={() => smoothScroll("#screenshots")} className="hover:text-primary transition-colors">{get("footer_link_screenshots", "Screenshots")}</button></li>
               </ul>
             </div>
             <div className="lg:col-span-2">
-              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">Company</h4>
+              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col2_title", "Company")}</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => smoothScroll("#about")} className="hover:text-primary transition-colors">About Us</button></li>
-                <li><button onClick={() => smoothScroll("#testimonials")} className="hover:text-primary transition-colors">Reviews</button></li>
-                <li><button onClick={() => smoothScroll("#faq")} className="hover:text-primary transition-colors">FAQ</button></li>
-                <li><a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="hover:text-primary transition-colors">Contact</a></li>
+                <li><button onClick={() => smoothScroll("#about")} className="hover:text-primary transition-colors">{get("nav_about", "About Us")}</button></li>
+                <li><button onClick={() => smoothScroll("#testimonials")} className="hover:text-primary transition-colors">{get("nav_reviews", "Reviews")}</button></li>
+                <li><button onClick={() => smoothScroll("#faq")} className="hover:text-primary transition-colors">{get("nav_faq", "FAQ")}</button></li>
+                <li><a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="hover:text-primary transition-colors">{get("footer_link_contact", "Contact")}</a></li>
               </ul>
             </div>
             <div className="lg:col-span-2">
-              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">Account</h4>
+              <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col3_title", "Account")}</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">Login</button></li>
-                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">Sign Up Free</button></li>
-                <li><button onClick={() => navigate("/dashboard")} className="hover:text-primary transition-colors">Dashboard</button></li>
+                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">{get("footer_link_login", "Login")}</button></li>
+                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">{get("footer_link_signup", "Sign Up Free")}</button></li>
+                <li><button onClick={() => navigate("/dashboard")} className="hover:text-primary transition-colors">{get("footer_link_dashboard", "Dashboard")}</button></li>
               </ul>
             </div>
             <div className="col-span-2 sm:col-span-2 lg:col-span-3">
