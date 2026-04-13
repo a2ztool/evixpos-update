@@ -24,6 +24,8 @@ import {
   Printer, Zap, Layers,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
+import BarcodeScanner from "@/components/BarcodeScanner";
+import ThermalReceipt, { printThermalReceipt } from "@/components/ThermalReceipt";
 import { getGatewayIcon } from "@/lib/gatewayBrands";
 import { normalizePaymentMethods, getPublicPaymentDetails, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 
@@ -115,6 +117,7 @@ const POS = () => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const thermalRef = useRef<HTMLDivElement>(null);
 
   // Invoice from POS
   const [invoiceOpen, setInvoiceOpen] = useState(false);
