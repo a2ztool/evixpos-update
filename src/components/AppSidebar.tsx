@@ -97,6 +97,7 @@ const AppSidebar = () => {
   const filteredCrm = filterByPerm(crmItems);
   const filteredFinance = filterByPerm(financeSubItems);
   const filteredIntegrations = filterByPerm(integrationSubItems);
+  const filteredOfflineOps = filterByPerm(offlineOpsItems);
 
   // Owner-only sections: referral, my-plan, settings (staff can see settings.view)
   const showReferral = !isStaff;
