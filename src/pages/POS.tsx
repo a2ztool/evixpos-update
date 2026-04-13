@@ -134,7 +134,7 @@ const POS = () => {
 
   const fetchProductsAndVariations = useCallback(async () => {
     if (!user || !activeStore) return;
-    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).eq("is_active", true).order("name");
+    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category, sku").eq("store_id", activeStore.id).eq("is_active", true).order("name");
     if (data) setProducts(data as Product[]);
     // Fetch variations
     if (data && data.length > 0) {
@@ -947,6 +947,9 @@ const POS = () => {
               ))}
             </div>
           </ScrollArea>
+
+          {/* Barcode Scanner */}
+          <BarcodeScanner onScan={handleBarcodeScan} placeholder="Scan barcode / SKU..." className="mb-3" autoFocus={false} />
 
           {/* Search */}
           <div className="relative mb-4 sm:mb-6">
