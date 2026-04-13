@@ -261,7 +261,7 @@ const Onboarding = () => {
                   <Coins className="h-4 w-4 text-primary" />
                   Currency
                 </Label>
-                <Select value={currency} onValueChange={(v) => { setCurrency(v); setStep(4); }}>
+                <Select value={currency} onValueChange={(v) => { setCurrency(v); setStep(5); }}>
                   <SelectTrigger className="h-11 bg-muted/50 border-border/50">
                     <SelectValue />
                   </SelectTrigger>

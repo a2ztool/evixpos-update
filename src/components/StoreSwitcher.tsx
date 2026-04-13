@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, ChevronDown, Plus, Check, Crown } from "lucide-react";
+import { Store, ChevronDown, Plus, Check, Crown, Globe, MapPin } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -77,6 +77,11 @@ const StoreSwitcher = () => {
             >
               <Store className="h-3.5 w-3.5" />
               <span className="flex-1 truncate text-sm">{store.name}</span>
+              {store.store_mode === "offline" ? (
+                <MapPin className="h-3 w-3 text-orange-500" />
+              ) : (
+                <Globe className="h-3 w-3 text-green-500" />
+              )}
               {store.id === activeStore?.id && <Check className="h-3.5 w-3.5 text-primary" />}
             </DropdownMenuItem>
           ))}
