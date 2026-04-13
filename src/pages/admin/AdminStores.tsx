@@ -12,15 +12,15 @@ import { Trash2, Eye, Search, Download, ChevronLeft, ChevronRight, Globe, MapPin
 import { toast } from "sonner";
 
 interface StoreRow {
-  id: string; name: string; phone: string; address: string; is_active: boolean; created_at: string;
+  id: string; name: string; phone: string; address: string; is_active: boolean; created_at: string; store_mode: string;
   owner: { name: string; email: string };
 }
 
 const ITEMS_PER_PAGE = 15;
 
 const exportCSV = (stores: StoreRow[]) => {
-  const headers = ["Store Name", "Owner Name", "Owner Email", "Phone", "Status", "Created"];
-  const rows = stores.map((s) => [s.name, s.owner.name || "", s.owner.email, s.phone || "", s.is_active ? "Active" : "Disabled", new Date(s.created_at).toLocaleDateString()]);
+  const headers = ["Store Name", "Owner Name", "Owner Email", "Phone", "Mode", "Status", "Created"];
+  const rows = stores.map((s) => [s.name, s.owner.name || "", s.owner.email, s.phone || "", s.store_mode || "online", s.is_active ? "Active" : "Disabled", new Date(s.created_at).toLocaleDateString()]);
   const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `stores_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(url);
