@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { ShoppingBag, CreditCard, CheckCircle2, Loader2 } from "lucide-react";
+import { ShoppingBag, CreditCard, CheckCircle2, Loader2, QrCode, MessageSquare } from "lucide-react";
+import { getGatewayIcon } from "@/lib/gatewayBrands";
 
 interface CustomField {
   id: string;
@@ -40,13 +41,11 @@ interface ProductVariation {
   duration_days: number;
 }
 
-interface PaymentGateway {
+interface ConfiguredPaymentMethod {
   id: string;
-  gateway_name: string;
-  gateway_type: string;
-  qr_code_url: string | null;
-  payment_details: any;
-  currency: string;
+  name: string;
+  enabled: boolean;
+  config: Record<string, string>;
 }
 
 interface FormData {
@@ -67,7 +66,7 @@ const PublicOrderForm = () => {
   const [form, setForm] = useState<FormData | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [variations, setVariations] = useState<ProductVariation[]>([]);
-  const [gateways, setGateways] = useState<PaymentGateway[]>([]);
+  const [gateways, setGateways] = useState<ConfiguredPaymentMethod[]>([]);
   const [businessSettings, setBusinessSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -125,21 +124,25 @@ const PublicOrderForm = () => {
 
     // Load products, variations, gateways, business settings in parallel
     const productIds = f.selected_products;
-    const [prodRes, varRes, gwRes, bsRes] = await Promise.all([
+    const [prodRes, varRes, bsRes] = await Promise.all([
       productIds.length > 0
         ? supabase.from("products").select("id, name, price, description, image_url, type").in("id", productIds)
         : Promise.resolve({ data: [] }),
       productIds.length > 0
         ? supabase.from("product_variations").select("*").in("product_id", productIds).order("sort_order")
         : Promise.resolve({ data: [] }),
-      supabase.from("payment_gateways").select("*").eq("is_active", true).order("sort_order"),
       supabase.from("business_settings").select("*").eq("store_id", f.store_id).maybeSingle(),
     ]);
 
     setProducts((prodRes.data as Product[]) || []);
     setVariations((varRes.data as ProductVariation[]) || []);
-    setGateways((gwRes.data as PaymentGateway[]) || []);
     setBusinessSettings(bsRes.data);
+
+    // Load payment methods from business_settings (user's configured gateways)
+    if (bsRes.data?.payment_methods && Array.isArray(bsRes.data.payment_methods)) {
+      const methods = (bsRes.data.payment_methods as unknown as ConfiguredPaymentMethod[]).filter(m => m.enabled);
+      setGateways(methods);
+    }
 
     // Pre-select first product with quantity 1
     if (productIds.length > 0) {
