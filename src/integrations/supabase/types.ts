@@ -1110,6 +1110,7 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          expires_at: string | null
           gateway_id: string | null
           id: string
           plan: string
@@ -1126,6 +1127,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          expires_at?: string | null
           gateway_id?: string | null
           id?: string
           plan?: string
@@ -1142,6 +1144,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          expires_at?: string | null
           gateway_id?: string | null
           id?: string
           plan?: string
