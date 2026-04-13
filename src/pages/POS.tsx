@@ -166,7 +166,7 @@ const POS = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, activeStore, fetchProductsAndVariations]);
+  }, [user, activeStore, effectiveUserId, fetchProductsAndVariations]);
 
   // Get variations for a specific product
   const getVariations = useCallback((productId: string) => {
