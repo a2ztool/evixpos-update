@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Package, Users, ShoppingCart, BarChart3, CreditCard } from "lucide-react";
+import { ArrowLeft, Package, Users, ShoppingCart, BarChart3, CreditCard, Globe, MapPin } from "lucide-react";
 
 interface StoreDetails {
   store: {
@@ -77,6 +77,9 @@ const AdminStoreDetails = () => {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-white">{store.name}</h1>
             <Badge variant="outline" className={planColor(plan)}>{plan}</Badge>
+            <Badge variant="outline" className="bg-slate-600/20 text-slate-300 border-slate-500/30 flex items-center gap-1">
+              {(data.store as any).store_mode === "offline" ? <><MapPin className="h-3 w-3" /> Offline</> : <><Globe className="h-3 w-3" /> Online</>}
+            </Badge>
             <Badge variant="outline" className={store.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>
               {store.is_active ? "Active" : "Disabled"}
             </Badge>

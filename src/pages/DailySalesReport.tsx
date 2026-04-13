@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, TrendingUp, ShoppingCart, DollarSign, Users, Printer, ArrowLeft, ArrowRight } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -96,6 +97,11 @@ const DailySalesReport = () => {
             <Button variant="outline" size="sm" onClick={handlePrint} className="print:hidden">
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>
+            <PageGuide title="Daily Sales Report Guide" steps={[
+              { title: "Navigate Dates", description: "Use arrows to view previous/next day's sales." },
+              { title: "Payment Breakdown", description: "See how much was collected via Cash, Card, bKash, etc." },
+              { title: "Print Report", description: "Click Print to generate a printable daily summary." },
+            ]} />
           </div>
         </div>
 
