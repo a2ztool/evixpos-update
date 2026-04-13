@@ -115,6 +115,29 @@ const StoreSwitcher = () => {
                 onKeyDown={e => e.key === "Enter" && handleCreate()}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Store Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewStoreMode("online")}
+                  className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm ${
+                    newStoreMode === "online" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  <Globe className="h-4 w-4" /> Online
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewStoreMode("offline")}
+                  className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm ${
+                    newStoreMode === "offline" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  <MapPin className="h-4 w-4" /> Offline
+                </button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
