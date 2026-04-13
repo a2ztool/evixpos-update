@@ -128,11 +128,21 @@ const POS = () => {
   const [newCustPhone, setNewCustPhone] = useState("");
   const [creatingCust, setCreatingCust] = useState(false);
 
+  const fetchProductsAndVariations = useCallback(async () => {
+    if (!user || !activeStore) return;
+    const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).eq("is_active", true).order("name");
+    if (data) setProducts(data as Product[]);
+    // Fetch variations
+    if (data && data.length > 0) {
+      const prodIds = data.map(p => p.id);
+      const { data: vars } = await (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any);
+      if (vars) setAllVariations(vars as ProductVariation[]);
+    }
+  }, [user, activeStore]);
+
   useEffect(() => {
     if (!user || !activeStore) return;
-    supabase.from("products").select("id, name, price, type, stock, image_url, category").eq("store_id", activeStore.id).order("name").then(({ data }) => {
-      if (data) setProducts(data as Product[]);
-    });
+    fetchProductsAndVariations();
     supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
       if (data) setCustomers(data as Customer[]);
     });
@@ -142,16 +152,20 @@ const POS = () => {
         setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
       }
     });
-    // Fetch all variations for products in this store
-    supabase.from("products").select("id").eq("store_id", activeStore.id).then(({ data: prods }) => {
-      if (prods && prods.length > 0) {
-        const prodIds = prods.map(p => p.id);
-        (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any).then(({ data: vars }: any) => {
-          if (vars) setAllVariations(vars as ProductVariation[]);
-        });
-      }
-    });
-  }, [user, activeStore]);
+
+    // Realtime: auto-refresh products when WooCommerce sync updates them
+    const channel = supabase
+      .channel(`pos-products-${activeStore.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `store_id=eq.${activeStore.id}` }, () => {
+        fetchProductsAndVariations();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_variations" }, () => {
+        fetchProductsAndVariations();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, activeStore, fetchProductsAndVariations]);
 
   // Get variations for a specific product
   const getVariations = useCallback((productId: string) => {
