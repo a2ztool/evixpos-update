@@ -2,7 +2,8 @@ import {
   LayoutDashboard, Package, Users, ShoppingCart, CreditCard,
   Settings, Plug, LogOut, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
   TrendingUp, ArrowUpDown, BookOpen, Megaphone, ListTodo, BarChart3, RefreshCw, Crown,
-  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, ExternalLink, Sheet, Lock
+  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, ExternalLink, Sheet, Lock,
+  Truck, Wallet, Star, AlertTriangle, Receipt
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
@@ -56,6 +57,14 @@ const AppSidebar = () => {
   const crmItems: NavItem[] = [
     { title: t.customers, icon: Users, path: "/customers", perm: "customers.view" },
     { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", perm: "customers.view", feature: "subscriptions", onlineOnly: true },
+    { title: "Customer Credits", icon: Receipt, path: "/offline/customer-credits", perm: "customers.view", offlineOnly: true },
+    { title: "Loyalty Points", icon: Star, path: "/offline/loyalty", perm: "customers.view", offlineOnly: true },
+  ];
+  const offlineOpsItems: NavItem[] = [
+    { title: "Suppliers", icon: Truck, path: "/offline/suppliers", perm: "products.view", offlineOnly: true },
+    { title: "Purchases", icon: ShoppingBag, path: "/offline/purchases", perm: "products.edit", offlineOnly: true },
+    { title: "Cash Register", icon: Wallet, path: "/offline/cash-register", perm: "pos.access", offlineOnly: true },
+    { title: "Stock Alerts", icon: AlertTriangle, path: "/offline/stock-alerts", perm: "products.view", offlineOnly: true },
   ];
   const financeSubItems: NavItem[] = [
     { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", perm: "reports.view", feature: "reports" },
