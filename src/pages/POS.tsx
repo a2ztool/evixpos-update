@@ -37,6 +37,7 @@ interface Product {
   stock: number;
   image_url?: string;
   category?: string;
+  sku?: string;
 }
 
 interface ProductVariation {
