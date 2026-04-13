@@ -1,6 +1,8 @@
 import { useStore } from "@/contexts/StoreContext";
 import type { StoreMode } from "@/contexts/StoreContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -33,11 +35,26 @@ const StoreSwitcher = () => {
     );
   }
 
+  const { user } = useAuth();
+
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
     const store = await createStore(newName.trim(), "", "", newStoreMode);
-    if (store) {
+    if (store && user) {
+      // Auto-create business_settings for the new store
+      await supabase.from("business_settings").insert({
+        user_id: user.id,
+        store_id: store.id,
+        store_slug: newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        business_name: newName.trim(),
+        default_currency: "BDT",
+        currencies: [
+          { code: "INR", symbol: "₹", rate: 1 },
+          { code: "BDT", symbol: "৳", rate: 0.98 },
+          { code: "USD", symbol: "$", rate: 0.012 },
+        ],
+      });
       toast.success(`Store "${newName}" created!`);
       setShowCreate(false);
       setNewName("");

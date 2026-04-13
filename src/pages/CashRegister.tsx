@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, AlertTriangle, CheckCircle2, Clock, Wallet } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -91,9 +92,16 @@ const CashRegister = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Cash Register</h1>
-          <p className="text-sm text-muted-foreground">Manage daily cash shifts and detect mismatches</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Cash Register</h1>
+            <p className="text-sm text-muted-foreground">Manage daily cash shifts and detect mismatches</p>
+          </div>
+          <PageGuide title="How Cash Register Works" steps={[
+            { title: "Open Shift", description: "Enter opening cash balance to start a new shift." },
+            { title: "Track Sales", description: "Cash in/out updates automatically from POS sales." },
+            { title: "Close Shift", description: "Enter closing balance — system detects any mismatch." },
+          ]} />
         </div>
 
         {/* Active Shift or Open New */}

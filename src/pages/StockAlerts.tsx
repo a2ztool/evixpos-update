@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Package, CheckCircle2, Archive, Skull, TrendingDown } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -99,9 +100,16 @@ const StockAlerts = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Stock Alerts</h1>
-          <p className="text-sm text-muted-foreground">Monitor inventory levels, detect dead stock, and prevent stockouts</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Stock Alerts</h1>
+            <p className="text-sm text-muted-foreground">Monitor inventory levels, detect dead stock, and prevent stockouts</p>
+          </div>
+          <PageGuide title="How Stock Alerts Work" steps={[
+            { title: "Low Stock", description: "Products with stock ≤5 appear as warnings." },
+            { title: "Dead Stock", description: "Products with stock but zero sales in 30 days are flagged." },
+            { title: "Resolve Alerts", description: "Restock items or mark alerts as resolved." },
+          ]} />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
