@@ -142,11 +142,12 @@ const POS = () => {
 
   useEffect(() => {
     if (!user || !activeStore) return;
+    const ownerId = effectiveUserId || user.id;
     fetchProductsAndVariations();
     supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
       if (data) setCustomers(data as Customer[]);
     });
-    supabase.from("business_settings").select("payment_methods").eq("user_id", user.id).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
+    supabase.from("business_settings").select("payment_methods").eq("user_id", ownerId).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
       if (data?.payment_methods) {
         const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
         setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
