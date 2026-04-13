@@ -3,7 +3,7 @@ import { Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
-  LayoutDashboard, Users, Store, BarChart3, LogOut, ShieldCheck, Settings, Tag, CreditCard, Wallet, Globe, Inbox, Ticket
+  LayoutDashboard, Users, Store, BarChart3, LogOut, ShieldCheck, Settings, Tag, CreditCard, Wallet, Globe, Inbox, Ticket, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: "Stores", path: "/admin/stores", icon: Store },
   { label: "Payments", path: "/admin/payments", icon: Wallet, badgeKey: "payments" as const },
   { label: "Gateways", path: "/admin/gateways", icon: CreditCard },
+  { label: "Auto Payments", path: "/admin/auto-payments", icon: Zap },
   { label: "Coupons", path: "/admin/coupons", icon: Tag },
   { label: "Inbox", path: "/admin/inbox", icon: Inbox, badgeKey: "inbox" as const },
   { label: "Support", path: "/admin/support", icon: Ticket },
