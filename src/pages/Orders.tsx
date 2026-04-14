@@ -872,7 +872,7 @@ const fetchProducts = async () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cost Price (৳)</Label>
+                <Label>Cost Price ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
