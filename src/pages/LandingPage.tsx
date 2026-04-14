@@ -654,16 +654,16 @@ const LandingPage = () => {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
 
             {/* Header */}
-            <div className="pt-14 sm:pt-20 pb-8 sm:pb-10">
+            <div className="pt-10 sm:pt-14 pb-6 sm:pb-8">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimSection className="text-center max-w-3xl mx-auto">
                   <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
                     <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
                   </Badge>
-                  <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-4 leading-[1.15]">
                     {get("features_title", "Everything for Online & Offline Business")}
                   </h2>
-                  <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
+                  <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
                     {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all.")}
                   </p>
                 </AnimSection>
@@ -671,7 +671,7 @@ const LandingPage = () => {
             </div>
 
             {/* Desktop — Interactive Tab + Content */}
-            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 relative">
+            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 relative">
               <FeatureShowcase featureCards={featureCards} get={get} />
             </div>
 
