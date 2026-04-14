@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
 import {
   MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X, ListTodo,
-  Calendar, Flag, Package, FileText as FileTextIcon, AlertCircle
+  Calendar, Flag, Package, FileText as FileTextIcon, AlertCircle, Plus, Users, Hash
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
@@ -25,6 +26,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 
+const db = supabase as any;
+
 interface StaffMember {
   id: string;
   name: string;
@@ -34,6 +37,28 @@ interface StaffMember {
   is_active: boolean;
 }
 
+interface ChatGroup {
+  id: string;
+  store_id: string;
+  created_by: string;
+  name: string;
+  icon: string;
+  created_at: string;
+}
+
+// Unified conversation item for left panel
+interface ConversationItem {
+  id: string; // chatId (auth_user_id) or group_id
+  type: "direct" | "group";
+  name: string;
+  icon?: string;
+  role?: string;
+  email?: string;
+  unread: number;
+  lastMessage?: string;
+  lastTime?: string;
+}
+
 const PRIORITY_OPTIONS = [
   { value: "low", label: "Low", color: "bg-sky-500/20 text-sky-600 dark:text-sky-400" },
   { value: "medium", label: "Medium", color: "bg-amber-500/20 text-amber-600 dark:text-amber-400" },
@@ -41,16 +66,21 @@ const PRIORITY_OPTIONS = [
   { value: "urgent", label: "Urgent", color: "bg-rose-500/20 text-rose-600 dark:text-rose-400" },
 ];
 
+const GROUP_ICONS = ["💬", "👥", "🚀", "📦", "🎯", "⚡", "🔥", "💼", "🏪", "🛒"];
+
 const StaffInbox = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
   const { activeStore } = useStore();
 
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [groups, setGroups] = useState<ChatGroup[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [activeChatType, setActiveChatType] = useState<"direct" | "group">("direct");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [filterTab, setFilterTab] = useState<"all" | "direct" | "groups">("all");
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -63,6 +93,11 @@ const StaffInbox = () => {
   const [taskDeadline, setTaskDeadline] = useState("");
   const [taskProduct, setTaskProduct] = useState("");
   const [taskInstructions, setTaskInstructions] = useState("");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupIcon, setNewGroupIcon] = useState("💬");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [groupMembers, setGroupMembers] = useState<{ user_id: string; role: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,6 +106,7 @@ const StaffInbox = () => {
 
   const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
 
+  // ─── Fetch contacts ───
   const fetchContacts = useCallback(async () => {
     if (!storeId || !myId) return;
     setLoading(true);
@@ -89,6 +125,14 @@ const StaffInbox = () => {
     setLoading(false);
   }, [storeId, myId, isStaff]);
 
+  // ─── Fetch groups ───
+  const fetchGroups = useCallback(async () => {
+    if (!storeId) return;
+    const { data } = await db.from("chat_groups").select("*").eq("store_id", storeId).order("created_at", { ascending: false });
+    if (data) setGroups(data);
+  }, [storeId]);
+
+  // ─── Fetch unread counts ───
   const fetchUnreadCounts = useCallback(async () => {
     if (!storeId || !myId) return;
     const { data } = await supabase
@@ -108,32 +152,67 @@ const StaffInbox = () => {
 
   useEffect(() => {
     fetchContacts();
+    fetchGroups();
     fetchUnreadCounts();
-  }, [fetchContacts, fetchUnreadCounts]);
+  }, [fetchContacts, fetchGroups, fetchUnreadCounts]);
 
+  // ─── Load messages ───
   useEffect(() => {
     if (!activeChat || !storeId || !myId) { setMessages([]); setReplyTo(null); return; }
+
     const load = async () => {
-      const { data } = await supabase
-        .from("staff_messages")
-        .select("*")
-        .eq("store_id", storeId)
-        .or(`and(sender_id.eq.${myId},receiver_id.eq.${activeChat}),and(sender_id.eq.${activeChat},receiver_id.eq.${myId})`)
-        .order("created_at", { ascending: true });
-      if (data) setMessages(data as ChatMessage[]);
-      scrollToBottom();
-      await supabase
-        .from("staff_messages")
-        .update({ is_read: true })
-        .eq("store_id", storeId)
-        .eq("sender_id", activeChat)
-        .eq("receiver_id", myId)
-        .eq("is_read", false);
-      fetchUnreadCounts();
+      if (activeChatType === "direct") {
+        const { data } = await supabase
+          .from("staff_messages")
+          .select("*")
+          .eq("store_id", storeId)
+          .or(`and(sender_id.eq.${myId},receiver_id.eq.${activeChat}),and(sender_id.eq.${activeChat},receiver_id.eq.${myId})`)
+          .order("created_at", { ascending: true });
+        if (data) setMessages(data as ChatMessage[]);
+        scrollToBottom();
+        await supabase
+          .from("staff_messages")
+          .update({ is_read: true })
+          .eq("store_id", storeId)
+          .eq("sender_id", activeChat)
+          .eq("receiver_id", myId)
+          .eq("is_read", false);
+        fetchUnreadCounts();
+      } else {
+        // Group messages — fetch from chat_messages table
+        const { data } = await db.from("chat_messages").select("*").eq("group_id", activeChat).order("created_at", { ascending: true }).limit(200);
+        if (data) {
+          // Map to ChatMessage shape for reuse
+          const mapped: ChatMessage[] = data.map((m: any) => ({
+            id: m.id,
+            store_id: storeId,
+            sender_id: m.sender_id,
+            receiver_id: activeChat, // group_id
+            message: m.message,
+            message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
+            file_url: null,
+            file_name: null,
+            task_title: m.type === "task" ? (tryParseTaskTitle(m.message)) : null,
+            task_status: null,
+            is_read: true,
+            created_at: m.created_at,
+            reply_to_id: null,
+            reactions: null,
+            deleted_for: null,
+            is_deleted_for_everyone: false,
+          }));
+          setMessages(mapped);
+        }
+        // Fetch group members
+        const { data: membersData } = await db.from("chat_group_members").select("user_id, role").eq("group_id", activeChat);
+        if (membersData) setGroupMembers(membersData);
+        scrollToBottom();
+      }
     };
     load();
-  }, [activeChat, storeId, myId, fetchUnreadCounts]);
+  }, [activeChat, activeChatType, storeId, myId, fetchUnreadCounts]);
 
+  // ─── Realtime ───
   useEffect(() => {
     if (!storeId || !myId) return;
     const channel = supabase
@@ -143,10 +222,10 @@ const StaffInbox = () => {
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const msg = payload.new as ChatMessage;
-        if (
+        if (activeChatType === "direct" && (
           (msg.sender_id === activeChat && msg.receiver_id === myId) ||
           (msg.sender_id === myId && msg.receiver_id === activeChat)
-        ) {
+        )) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           scrollToBottom();
           if (msg.receiver_id === myId) {
@@ -167,7 +246,29 @@ const StaffInbox = () => {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, myId, activeChat, soundEnabled, fetchUnreadCounts]);
+  }, [storeId, myId, activeChat, activeChatType, soundEnabled, fetchUnreadCounts]);
+
+  // Realtime for group messages
+  useEffect(() => {
+    if (!activeChat || activeChatType !== "group") return;
+    const channel = supabase.channel(`group-chat-${activeChat}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `group_id=eq.${activeChat}` },
+        (payload) => {
+          const m = payload.new as any;
+          const mapped: ChatMessage = {
+            id: m.id, store_id: storeId || "", sender_id: m.sender_id, receiver_id: activeChat,
+            message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
+            file_url: null, file_name: null, task_title: null, task_status: null,
+            is_read: true, created_at: m.created_at, reply_to_id: null,
+            reactions: null, deleted_for: null, is_deleted_for_everyone: false,
+          };
+          setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
+          scrollToBottom();
+          if (m.sender_id !== myId && soundEnabled) playNotificationSound();
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeChat, activeChatType, storeId, myId, soundEnabled]);
 
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
@@ -182,27 +283,29 @@ const StaffInbox = () => {
     }
   };
 
+  // ─── Send message ───
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeChat || !storeId || !myId) return;
     const msg = newMessage.trim();
     setNewMessage("");
-    const insertData: any = {
-      store_id: storeId, sender_id: myId, receiver_id: activeChat,
-      message: msg, message_type: "text",
-    };
-    if (replyTo) insertData.reply_to_id = replyTo.id;
-    setReplyTo(null);
-    const { error } = await supabase.from("staff_messages").insert(insertData);
-    if (error) {
-      console.error("Send failed:", error);
-      toast.error("Failed to send message");
+
+    if (activeChatType === "direct") {
+      const insertData: any = {
+        store_id: storeId, sender_id: myId, receiver_id: activeChat,
+        message: msg, message_type: "text",
+      };
+      if (replyTo) insertData.reply_to_id = replyTo.id;
+      setReplyTo(null);
+      const { error } = await supabase.from("staff_messages").insert(insertData);
+      if (error) { toast.error("Failed to send message"); }
+    } else {
+      await db.from("chat_messages").insert({ group_id: activeChat, sender_id: myId, message: msg, type: "text" });
     }
   };
 
+  // ─── Send task ───
   const sendTask = async () => {
     if (!taskTitle.trim() || !activeChat || !storeId || !myId) return;
-    
-    // Build rich task message
     let fullMessage = `📋 **Task Assigned**\n\n**Title:** ${taskTitle.trim()}`;
     if (taskPriority) fullMessage += `\n**Priority:** ${taskPriority.toUpperCase()}`;
     if (taskProduct) fullMessage += `\n**Product:** ${taskProduct}`;
@@ -210,27 +313,25 @@ const StaffInbox = () => {
     if (taskInstructions) fullMessage += `\n\n**Instructions:**\n${taskInstructions}`;
     if (taskMessage) fullMessage += `\n\n**Note:** ${taskMessage}`;
 
-    const { error } = await supabase.from("staff_messages").insert({
-      store_id: storeId, sender_id: myId, receiver_id: activeChat,
-      message: fullMessage,
-      message_type: "task",
-      task_title: taskTitle.trim(),
-      task_status: "pending",
-    });
-    if (error) {
-      toast.error("Failed to send task");
+    if (activeChatType === "direct") {
+      const { error } = await supabase.from("staff_messages").insert({
+        store_id: storeId, sender_id: myId, receiver_id: activeChat,
+        message: fullMessage, message_type: "task",
+        task_title: taskTitle.trim(), task_status: "pending",
+      });
+      if (error) { toast.error("Failed to send task"); return; }
     } else {
-      toast.success("Task assigned successfully!");
-      setTaskTitle("");
-      setTaskMessage("");
-      setTaskPriority("medium");
-      setTaskDeadline("");
-      setTaskProduct("");
-      setTaskInstructions("");
-      setTaskDialogOpen(false);
+      await db.from("chat_messages").insert({
+        group_id: activeChat, sender_id: myId, message: fullMessage, type: "task"
+      });
     }
+    toast.success("Task assigned!");
+    setTaskTitle(""); setTaskMessage(""); setTaskPriority("medium");
+    setTaskDeadline(""); setTaskProduct(""); setTaskInstructions("");
+    setTaskDialogOpen(false);
   };
 
+  // ─── File upload ───
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChat || !storeId || !myId) return;
@@ -241,128 +342,239 @@ const StaffInbox = () => {
       const { error: uploadError } = await supabase.storage.from("staff-chat").upload(path, file);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("staff-chat").getPublicUrl(path);
-      const { error } = await supabase.from("staff_messages").insert({
-        store_id: storeId, sender_id: myId, receiver_id: activeChat,
-        message: file.name, message_type: "file",
-        file_url: urlData.publicUrl, file_name: file.name,
-      });
-      if (error) throw error;
+
+      if (activeChatType === "direct") {
+        const { error } = await supabase.from("staff_messages").insert({
+          store_id: storeId, sender_id: myId, receiver_id: activeChat,
+          message: file.name, message_type: "file",
+          file_url: urlData.publicUrl, file_name: file.name,
+        });
+        if (error) throw error;
+      } else {
+        await db.from("chat_messages").insert({
+          group_id: activeChat, sender_id: myId,
+          message: `📎 [${file.name}](${urlData.publicUrl})`, type: "text"
+        });
+      }
       toast.success("File sent!");
     } catch (err: any) {
-      console.error("Upload failed:", err);
       toast.error("Upload failed: " + (err.message || "Unknown error"));
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const filteredContacts = useMemo(() => {
-    if (!search) return staffList;
-    const s = search.toLowerCase();
-    return staffList.filter(c => c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s));
-  }, [staffList, search]);
+  // ─── Create group ───
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim() || !storeId || !myId) return;
+    const { data: group, error } = await db.from("chat_groups").insert({
+      store_id: storeId, created_by: myId, name: newGroupName.trim(), icon: newGroupIcon
+    }).select().single();
+    if (error) { toast.error("Failed to create group"); return; }
+    await db.from("chat_group_members").insert({ group_id: group.id, user_id: myId, role: "admin" });
+    for (const uid of selectedMembers) {
+      await db.from("chat_group_members").insert({ group_id: group.id, user_id: uid, role: "staff" });
+    }
+    await db.from("chat_messages").insert({ group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system" });
+    setShowCreateGroup(false); setNewGroupName(""); setSelectedMembers([]); setNewGroupIcon("💬");
+    fetchGroups();
+    toast.success("Group created!");
+  };
 
-  const activePerson = staffList.find(s => s.auth_user_id === activeChat);
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-
+  // ─── Build conversation list ───
   const ownerContact = isStaff ? {
     id: "owner", name: "Store Owner", email: "", role: "owner",
     auth_user_id: staffInfo?.owner_id ?? null, is_active: true,
   } : null;
 
   const allContacts = useMemo(() => {
-    const contacts = [...filteredContacts];
+    const contacts = [...staffList];
     if (ownerContact && !contacts.find(c => c.auth_user_id === ownerContact.auth_user_id)) {
       contacts.unshift(ownerContact as StaffMember);
     }
     return contacts;
-  }, [filteredContacts, ownerContact]);
+  }, [staffList, ownerContact]);
+
+  const conversations = useMemo((): ConversationItem[] => {
+    const items: ConversationItem[] = [];
+    // Direct conversations
+    if (filterTab === "all" || filterTab === "direct") {
+      allContacts.forEach(c => {
+        if (!c.auth_user_id) return;
+        items.push({
+          id: c.auth_user_id,
+          type: "direct",
+          name: c.name,
+          role: c.role,
+          email: c.email,
+          unread: unreadCounts[c.auth_user_id] || 0,
+        });
+      });
+    }
+    // Group conversations
+    if (filterTab === "all" || filterTab === "groups") {
+      groups.forEach(g => {
+        items.push({
+          id: g.id,
+          type: "group",
+          name: g.name,
+          icon: g.icon,
+          unread: 0,
+        });
+      });
+    }
+    // Search filter
+    if (search) {
+      const s = search.toLowerCase();
+      return items.filter(i => i.name.toLowerCase().includes(s));
+    }
+    return items;
+  }, [allContacts, groups, unreadCounts, filterTab, search]);
 
   const getInitials = (name: string) => name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  const getContactChatId = (contact: StaffMember) => contact.auth_user_id;
+  const activePerson = staffList.find(s => s.auth_user_id === activeChat);
+  const activeGroupData = groups.find(g => g.id === activeChat);
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
   const showChat = activeChat !== null;
-
   const visibleMessages = messages.filter(m => isVisible(m));
+
+  const getSenderName = (senderId: string): string => {
+    if (senderId === myId) return "You";
+    const staff = staffList.find(s => s.auth_user_id === senderId);
+    return staff?.name || "Unknown";
+  };
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto px-2 md:px-4 py-3">
+      <div className="max-w-6xl mx-auto px-2 md:px-4 py-3">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
           {showChat && (
-            <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)} className="md:hidden h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={() => { setActiveChat(null); }} className="md:hidden h-8 w-8">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
           <MessageSquare className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Staff Inbox</h1>
+          <h1 className="text-lg font-bold text-foreground">Messages</h1>
           {totalUnread > 0 && <Badge className="bg-primary text-primary-foreground text-xs">{totalUnread}</Badge>}
-          <div className="ml-auto">
-            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)}
-              className="h-8 w-8 text-muted-foreground">
+          <div className="ml-auto flex items-center gap-1">
+            {!isStaff && (
+              <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1 text-xs">
+                    <Plus className="h-3.5 w-3.5" /> New Group
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Create Group</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div><Label>Group Name</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Sales Team" /></div>
+                    <div>
+                      <Label>Icon</Label>
+                      <div className="flex gap-2 flex-wrap mt-1">
+                        {GROUP_ICONS.map(ic => (
+                          <button key={ic} onClick={() => setNewGroupIcon(ic)}
+                            className={`text-2xl p-1.5 rounded-lg transition-all ${newGroupIcon === ic ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-accent"}`}>
+                            {ic}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Add Members</Label>
+                      <div className="space-y-2 mt-1 max-h-40 overflow-y-auto">
+                        {staffList.map(s => (
+                          <label key={s.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent cursor-pointer">
+                            <input type="checkbox" checked={selectedMembers.includes(s.auth_user_id || "")}
+                              onChange={e => {
+                                const uid = s.auth_user_id;
+                                if (!uid) return;
+                                setSelectedMembers(prev => e.target.checked ? [...prev, uid] : prev.filter(id => id !== uid));
+                              }}
+                              className="rounded" />
+                            <span className="text-sm">{s.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">{s.email}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <Button onClick={handleCreateGroup} className="w-full" disabled={!newGroupName.trim()}>Create Group</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} className="h-8 w-8 text-muted-foreground">
               {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
           </div>
         </div>
 
         <div className="flex rounded-xl border border-border overflow-hidden bg-card shadow-sm" style={{ height: "calc(100vh - 12rem)" }}>
-          {/* Contact list */}
-          <div className={cn(
-            "w-full md:w-80 border-r border-border flex flex-col",
-            showChat ? "hidden md:flex" : "flex"
-          )}>
-            <div className="p-3 border-b border-border">
+          {/* ─── LEFT: Conversation List ─── */}
+          <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col", showChat ? "hidden md:flex" : "flex")}>
+            {/* Search + Filter */}
+            <div className="p-3 border-b border-border space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search contacts..." value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 text-sm rounded-xl h-10" />
+                <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 text-sm rounded-xl h-9" />
+              </div>
+              <div className="flex gap-1">
+                {(["all", "direct", "groups"] as const).map(tab => (
+                  <button key={tab} onClick={() => setFilterTab(tab)}
+                    className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize",
+                      filterTab === tab ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent")}>
+                    {tab}
+                  </button>
+                ))}
               </div>
             </div>
             <ScrollArea className="flex-1">
-              {loading ? (
+              {loading && conversations.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
-              ) : allContacts.length === 0 ? (
+              ) : conversations.length === 0 ? (
                 <div className="p-8 text-center">
                   <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-muted-foreground text-sm">No contacts found</p>
+                  <p className="text-muted-foreground text-sm">No conversations found</p>
                 </div>
               ) : (
-                allContacts.map((contact) => {
-                  const chatId = getContactChatId(contact);
-                  if (!chatId) return null;
-                  const unread = unreadCounts[chatId] || 0;
-                  const isActive = activeChat === chatId;
+                conversations.map((conv) => {
+                  const isActive = activeChat === conv.id;
                   return (
-                    <button key={contact.id} onClick={() => setActiveChat(chatId)}
+                    <button key={conv.id} onClick={() => { setActiveChat(conv.id); setActiveChatType(conv.type); }}
                       className={cn(
                         "w-full p-3.5 text-left border-b border-border/50 hover:bg-accent/50 transition-colors",
                         isActive && "bg-primary/5 border-l-2 border-l-primary",
-                        unread > 0 && "bg-accent/30"
+                        conv.unread > 0 && "bg-accent/30"
                       )}>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarFallback className={cn(
-                            "text-xs font-medium",
-                            contact.role === "owner" ? "bg-primary/20 text-primary" : "bg-accent text-accent-foreground"
-                          )}>
-                            {getInitials(contact.name)}
-                          </AvatarFallback>
+                          {conv.type === "group" ? (
+                            <AvatarFallback className="bg-primary/10 text-lg">{conv.icon || "👥"}</AvatarFallback>
+                          ) : (
+                            <AvatarFallback className={cn("text-xs font-medium",
+                              conv.role === "owner" ? "bg-primary/20 text-primary" : "bg-accent text-accent-foreground")}>
+                              {getInitials(conv.name)}
+                            </AvatarFallback>
+                          )}
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className={cn("text-sm font-medium truncate", unread > 0 ? "text-foreground" : "text-muted-foreground")}>
-                              {contact.name}
+                            <span className={cn("text-sm font-medium truncate", conv.unread > 0 ? "text-foreground" : "text-muted-foreground")}>
+                              {conv.name}
                             </span>
-                            {unread > 0 && (
+                            {conv.unread > 0 && (
                               <Badge className="bg-primary text-primary-foreground text-[10px] h-5 min-w-5 flex items-center justify-center rounded-full">
-                                {unread}
+                                {conv.unread}
                               </Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <Badge variant="outline" className="text-[10px] capitalize h-4 px-1.5">{contact.role}</Badge>
-                            <span className="text-[11px] text-muted-foreground truncate">{contact.email}</span>
+                            {conv.type === "group" ? (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-0.5"><Users className="h-2.5 w-2.5" /> Group</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] capitalize h-4 px-1.5">{conv.role}</Badge>
+                            )}
+                            {conv.email && <span className="text-[11px] text-muted-foreground truncate">{conv.email}</span>}
                           </div>
                         </div>
                       </div>
@@ -373,13 +585,13 @@ const StaffInbox = () => {
             </ScrollArea>
           </div>
 
-          {/* Chat area */}
+          {/* ─── RIGHT: Chat Area ─── */}
           <div className={cn("flex-1 flex flex-col", !showChat ? "hidden md:flex" : "flex")}>
             {!activeChat ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <MessageSquare className="w-16 h-16 text-muted-foreground/20 mx-auto mb-3" />
-                  <p className="text-muted-foreground text-sm">Select a contact to start messaging</p>
+                  <p className="text-muted-foreground text-sm">Select a chat to start messaging</p>
                 </div>
               </div>
             ) : (
@@ -390,64 +602,52 @@ const StaffInbox = () => {
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
-                      {activePerson ? getInitials(activePerson.name).charAt(0) : (ownerContact?.auth_user_id === activeChat ? "SO" : "?")}
-                    </AvatarFallback>
+                    {activeChatType === "group" ? (
+                      <AvatarFallback className="bg-primary/10 text-lg">{activeGroupData?.icon || "👥"}</AvatarFallback>
+                    ) : (
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
+                        {activePerson ? getInitials(activePerson.name).charAt(0) : (ownerContact?.auth_user_id === activeChat ? "SO" : "?")}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-foreground">
-                      {activePerson?.name || (ownerContact?.auth_user_id === activeChat ? "Store Owner" : "Unknown")}
+                      {activeChatType === "group" ? activeGroupData?.name : (activePerson?.name || (ownerContact?.auth_user_id === activeChat ? "Store Owner" : "Unknown"))}
                     </h3>
                     <p className="text-[11px] text-muted-foreground capitalize">
-                      {activePerson?.role || "owner"}
+                      {activeChatType === "group" ? `${groupMembers.length} members` : (activePerson?.role || "owner")}
                     </p>
                   </div>
-                  {/* Task assign button (only for admin/owner) */}
-                  {!isStaff && (
+                  {/* Task assign */}
+                  {(!isStaff || activeChatType === "group") && (
                     <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-primary/30 hover:bg-primary/10">
-                          <ListTodo className="w-3.5 h-3.5" />
-                          Assign Task
+                          <ListTodo className="w-3.5 h-3.5" /> Assign Task
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             <ListTodo className="w-5 h-5 text-primary" />
-                            Assign Task to {activePerson?.name || "Staff"}
+                            Assign Task
                           </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 mt-2">
-                          {/* Task Title */}
                           <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" /> Task Title *
-                            </label>
-                            <Input
-                              placeholder="e.g., Update product images, Process refund..."
-                              value={taskTitle}
-                              onChange={(e) => setTaskTitle(e.target.value)}
-                              className="h-10"
-                            />
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Task Title *</label>
+                            <Input placeholder="e.g., Update product images..." value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="h-10" />
                           </div>
-
-                          {/* Priority & Deadline row */}
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                                <Flag className="w-3 h-3" /> Priority
-                              </label>
+                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><Flag className="w-3 h-3" /> Priority</label>
                               <Select value={taskPriority} onValueChange={setTaskPriority}>
-                                <SelectTrigger className="h-10">
-                                  <SelectValue />
-                                </SelectTrigger>
+                                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   {PRIORITY_OPTIONS.map(p => (
                                     <SelectItem key={p.value} value={p.value}>
                                       <span className="flex items-center gap-2">
-                                        <span className={cn("w-2 h-2 rounded-full", p.color.split(" ")[0])} />
-                                        {p.label}
+                                        <span className={cn("w-2 h-2 rounded-full", p.color.split(" ")[0])} /> {p.label}
                                       </span>
                                     </SelectItem>
                                   ))}
@@ -455,59 +655,23 @@ const StaffInbox = () => {
                               </Select>
                             </div>
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" /> Deadline
-                              </label>
-                              <Input
-                                type="date"
-                                value={taskDeadline}
-                                onChange={(e) => setTaskDeadline(e.target.value)}
-                                className="h-10"
-                              />
+                              <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><Calendar className="w-3 h-3" /> Deadline</label>
+                              <Input type="date" value={taskDeadline} onChange={(e) => setTaskDeadline(e.target.value)} className="h-10" />
                             </div>
                           </div>
-
-                          {/* Product Reference */}
                           <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                              <Package className="w-3 h-3" /> Product Reference
-                            </label>
-                            <Input
-                              placeholder="Product name or SKU (optional)"
-                              value={taskProduct}
-                              onChange={(e) => setTaskProduct(e.target.value)}
-                              className="h-10"
-                            />
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><Package className="w-3 h-3" /> Product Reference</label>
+                            <Input placeholder="Product name or SKU (optional)" value={taskProduct} onChange={(e) => setTaskProduct(e.target.value)} className="h-10" />
                           </div>
-
-                          {/* Instructions */}
                           <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                              <FileTextIcon className="w-3 h-3" /> Instructions
-                            </label>
-                            <Textarea
-                              placeholder="Detailed instructions for the staff..."
-                              value={taskInstructions}
-                              onChange={(e) => setTaskInstructions(e.target.value)}
-                              rows={3}
-                              className="resize-none"
-                            />
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><FileTextIcon className="w-3 h-3" /> Instructions</label>
+                            <Textarea placeholder="Detailed instructions..." value={taskInstructions} onChange={(e) => setTaskInstructions(e.target.value)} rows={3} className="resize-none" />
                           </div>
-
-                          {/* Additional Note */}
                           <div>
                             <label className="text-xs font-medium text-muted-foreground mb-1.5">Additional Note</label>
-                            <Input
-                              placeholder="Any extra note (optional)"
-                              value={taskMessage}
-                              onChange={(e) => setTaskMessage(e.target.value)}
-                              className="h-10"
-                            />
+                            <Input placeholder="Any extra note (optional)" value={taskMessage} onChange={(e) => setTaskMessage(e.target.value)} className="h-10" />
                           </div>
-
-                          <Button onClick={sendTask} disabled={!taskTitle.trim()} className="w-full h-11 gap-2">
-                            <Send className="w-4 h-4" /> Assign Task
-                          </Button>
+                          <Button onClick={sendTask} disabled={!taskTitle.trim()} className="w-full h-11 gap-2"><Send className="w-4 h-4" /> Assign Task</Button>
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -517,14 +681,42 @@ const StaffInbox = () => {
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-muted/30">
                   {visibleMessages.length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-10">
-                      No messages yet. Start the conversation!
-                    </div>
+                    <div className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</div>
                   )}
                   {visibleMessages.map((msg) => {
-                    const replyMsg = msg.reply_to_id
-                      ? messages.find(m => m.id === msg.reply_to_id) || null
-                      : null;
+                    // System messages for groups
+                    if (msg.message_type === "system") {
+                      return (
+                        <div key={msg.id} className="flex justify-center" id={`msg-${msg.id}`}>
+                          <span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">{msg.message}</span>
+                        </div>
+                      );
+                    }
+
+                    if (activeChatType === "group") {
+                      // Render group messages with sender info
+                      const isMine = msg.sender_id === myId;
+                      const senderName = getSenderName(msg.sender_id);
+                      return (
+                        <div key={msg.id} id={`msg-${msg.id}`} className={cn("flex gap-2", isMine ? "justify-end" : "justify-start")}>
+                          {!isMine && (
+                            <Avatar className="h-7 w-7 flex-shrink-0 mt-1">
+                              <AvatarFallback className="text-[10px] bg-accent">{getInitials(senderName)}</AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div className={cn("max-w-[70%] rounded-2xl px-3 py-2", isMine ? "bg-primary text-primary-foreground" : "bg-accent")}>
+                            {!isMine && <p className="text-[10px] font-medium text-primary mb-0.5">{senderName}</p>}
+                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                            <p className={cn("text-[10px] mt-1", isMine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Direct messages use ChatMessageBubble
+                    const replyMsg = msg.reply_to_id ? messages.find(m => m.id === msg.reply_to_id) || null : null;
                     return (
                       <ChatMessageBubble
                         key={msg.id}
@@ -538,10 +730,7 @@ const StaffInbox = () => {
                         onDeleteForEveryone={deleteForEveryone}
                         onScrollToMessage={scrollToMessage}
                         onTaskStatusUpdate={async (msgId, status) => {
-                          const { error } = await supabase
-                            .from("staff_messages")
-                            .update({ task_status: status })
-                            .eq("id", msgId);
+                          const { error } = await supabase.from("staff_messages").update({ task_status: status }).eq("id", msgId);
                           if (error) toast.error("Failed to update task status");
                           else toast.success(`Task marked as ${status}`);
                         }}
@@ -553,14 +742,12 @@ const StaffInbox = () => {
                 </div>
 
                 {/* Reply preview */}
-                {replyTo && (
+                {replyTo && activeChatType === "direct" && (
                   <div className="px-4 py-2 border-t border-border bg-muted/50 flex items-center gap-2">
                     <div className="flex-1 text-xs text-muted-foreground truncate">
                       Replying to: <span className="font-medium">{replyTo.message.slice(0, 60)}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo(null)}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo(null)}><X className="h-3.5 w-3.5" /></Button>
                   </div>
                 )}
 
@@ -574,8 +761,7 @@ const StaffInbox = () => {
                     </Button>
                     <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Type a message..." className="text-sm rounded-xl h-10 flex-1" />
-                    <Button type="submit" disabled={!newMessage.trim() || uploading} size="icon"
-                      className="h-10 w-10 rounded-xl shrink-0">
+                    <Button type="submit" disabled={!newMessage.trim() || uploading} size="icon" className="h-10 w-10 rounded-xl shrink-0">
                       <Send className="w-4 h-4" />
                     </Button>
                   </form>
@@ -588,5 +774,18 @@ const StaffInbox = () => {
     </DashboardLayout>
   );
 };
+
+function tryParseTaskTitle(msg: string): string | null {
+  try {
+    const parsed = JSON.parse(msg);
+    return parsed.title || null;
+  } catch {
+    if (msg.includes("**Title:**")) {
+      const match = msg.match(/\*\*Title:\*\*\s*(.+)/);
+      return match?.[1] || null;
+    }
+    return null;
+  }
+}
 
 export default StaffInbox;
