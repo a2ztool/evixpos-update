@@ -339,17 +339,25 @@ const SettingsPage = () => {
       const { error } = await supabase.from("business_settings").update(payload).eq("id", settings.id);
       if (error) { toast.error(error.message); setLoading(false); return; }
     } else {
-      // Check if a record already exists (may have been auto-created with different user_id)
-      const { data: existing } = await supabase.from("business_settings").select("id").eq("store_id", activeStore.id).maybeSingle();
-      if (existing) {
-        // Update existing record
+      // Check if a record already exists for this user (unique constraint on user_id)
+      const { data: existing } = await supabase.from("business_settings").select("id").eq("user_id", uid).maybeSingle();
+      if (!existing) {
+        // Also check by store_id
+        const { data: storeExisting } = await supabase.from("business_settings").select("id").eq("store_id", activeStore.id).maybeSingle();
+        if (storeExisting) {
+          const { error } = await supabase.from("business_settings").update(payload).eq("id", storeExisting.id);
+          if (error) { toast.error(error.message); setLoading(false); return; }
+          setSettings(prev => ({ ...prev, id: storeExisting.id }));
+        } else {
+          const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
+          if (error) { toast.error(error.message); setLoading(false); return; }
+          if (data) setSettings(prev => ({ ...prev, id: data.id }));
+        }
+      } else {
+        // Update the existing record with the new store_id and settings
         const { error } = await supabase.from("business_settings").update(payload).eq("id", existing.id);
         if (error) { toast.error(error.message); setLoading(false); return; }
         setSettings(prev => ({ ...prev, id: existing.id }));
-      } else {
-        const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
-        if (error) { toast.error(error.message); setLoading(false); return; }
-        if (data) setSettings(prev => ({ ...prev, id: data.id }));
       }
     }
     setLoading(false);
