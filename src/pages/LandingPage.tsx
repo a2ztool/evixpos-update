@@ -508,111 +508,165 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("features") && <section id="features" className="py-14 sm:py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/20" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-12">
-            <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
-              <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
-            </Badge>
-             <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
-               {get("features_title", "Everything for Online & Offline Business")}
-             </h2>
-             <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-               {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
-            </p>
-          </AnimSection>
+      {show("features") && <section id="features" className="relative">
+        <div className="bg-gradient-to-b from-muted/30 via-background to-muted/20 py-14 sm:py-20 relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <AnimSection className="text-center max-w-3xl mx-auto mb-6">
+              <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
+                <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
+                {get("features_title", "Everything for Online & Offline Business")}
+              </h2>
+              <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
+                {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
+              </p>
+            </AnimSection>
+          </div>
+        </div>
 
-          <div className="space-y-16 sm:space-y-20">
-            {[1, 2, 3, 4, 5, 6].map((i) => {
-              const title = get(`feature_${i}_title`);
-              const desc = get(`feature_${i}_desc`);
-              const img = get(`feature_${i}_image`);
-              const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
-              const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
-              if (!title && !img) return null;
-              const isReversed = i % 2 === 0;
+        {/* Stacked Scroll Cards - Desktop */}
+        <div className="hidden lg:block relative">
+          {[1, 2, 3, 4, 5, 6].map((i) => {
+            const title = get(`feature_${i}_title`);
+            const desc = get(`feature_${i}_desc`);
+            const img = get(`feature_${i}_image`);
+            const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
+            const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
+            if (!title && !img) return null;
 
-              return (
-                <AnimItem key={i} delay={0.1}>
-                  <div className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-center`}>
-                    {/* Text Content */}
-                    <div className={`${isReversed ? "lg:order-2" : ""} space-y-6`}>
-                      <Badge variant="outline" className="text-primary border-primary/30 px-3.5 py-1.5 text-xs font-semibold backdrop-blur-sm bg-card/50">
-                        <Icon className="h-3.5 w-3.5 mr-1.5" /> {get(`feature_${i}_badge`, `Feature`)}
-                      </Badge>
-                      <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-[1.15]">{title || `Feature ${i}`}</h3>
-                      <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">{desc}</p>
-                      {bullets.length > 0 && (
-                        <ul className="space-y-3 pt-2">
-                          {bullets.map((b, j) => (
-                            <li key={j} className="flex items-center gap-3 text-sm sm:text-base">
-                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-                                <Check className="h-3.5 w-3.5 text-primary" />
-                              </div>
-                              <span className="text-foreground/80">{b.trim()}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+            return (
+              <div
+                key={i}
+                className="sticky top-24"
+                style={{ paddingBottom: `${(6 - i) * 12}px` }}
+              >
+                <div
+                  className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8"
+                >
+                  <div
+                    className="rounded-3xl border border-border/50 bg-card shadow-xl overflow-hidden transition-all duration-500"
+                    style={{
+                      transform: `scale(${1 - (i - 1) * 0.015})`,
+                      transformOrigin: 'top center',
+                    }}
+                  >
+                    <div className="grid lg:grid-cols-2 gap-0">
+                      {/* Text Content */}
+                      <div className="p-8 lg:p-12 flex flex-col justify-center space-y-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-primary" />
+                          </div>
+                          <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
+                            {get(`feature_${i}_badge`, `Feature ${i}`)}
+                          </Badge>
+                          <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{i} / 06</span>
+                        </div>
+                        <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title || `Feature ${i}`}</h3>
+                        <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
+                        {bullets.length > 0 && (
+                          <ul className="space-y-2.5 pt-1">
+                            {bullets.map((b, j) => (
+                              <li key={j} className="flex items-center gap-3 text-sm">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                                  <Check className="h-3 w-3 text-primary" />
+                                </div>
+                                <span className="text-foreground/80">{b.trim()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
 
-                    {/* Screenshot - 3D Perspective */}
-                    <div className={`${isReversed ? "lg:order-1" : ""}`} style={{ perspective: '1200px' }}>
-                      {img ? (
-                        <div 
-                          className="relative group transition-transform duration-700 ease-out"
-                          style={{ 
-                            transform: `rotateY(${isReversed ? '6deg' : '-6deg'}) rotateX(2deg)`,
-                            transformStyle: 'preserve-3d'
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1.02)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = `rotateY(${isReversed ? '6deg' : '-6deg'}) rotateX(2deg)`; }}
-                        >
-                          {/* 3D Shadow layer */}
-                          <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 via-primary/5 to-transparent rounded-[2rem] blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
-                          <div className={`absolute inset-0 rounded-2xl bg-foreground/5 translate-y-4 ${isReversed ? '-translate-x-2' : 'translate-x-2'} blur-xl`} />
-                          {/* Browser chrome frame */}
-                          <div className="relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl shadow-primary/10 bg-card">
-                            {/* Browser dots */}
-                            <div className="flex items-center gap-2 px-4 py-3 bg-muted/60 border-b border-border/40">
-                              <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                                <div className="w-3 h-3 rounded-full bg-warning/60" />
-                                <div className="w-3 h-3 rounded-full bg-primary/40" />
-                              </div>
-                              <div className="flex-1 mx-4">
-                                <div className="bg-background/80 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono truncate border border-border/30">
-                                  app.evixpos.com
+                      {/* Screenshot */}
+                      <div className="relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px]">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
+                        {img ? (
+                          <div className="relative w-full">
+                            <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
+                              <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
+                                <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
+                                <div className="flex-1 mx-3">
+                                  <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
                                 </div>
                               </div>
+                              <img src={img} alt={title || ""} className="w-full" loading="lazy" />
                             </div>
-                            {/* Screenshot image */}
-                            <img
-                              src={img}
-                              alt={title || ""}
-                              className="w-full"
-                              loading="lazy"
-                            />
                           </div>
-                          {/* Floating accent decoration */}
-                          <div className={`absolute -z-10 ${isReversed ? '-left-4 -bottom-4' : '-right-4 -bottom-4'} w-28 h-28 bg-primary/8 rounded-2xl blur-sm`} />
-                        </div>
-                      ) : (
-                        <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl border border-border/50 p-16 flex items-center justify-center">
+                        ) : (
                           <div className="relative">
                             <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
                             <Icon className="h-24 w-24 text-primary/20 relative" />
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </AnimItem>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+            );
+          })}
+          {/* Spacer so last card can unstick */}
+          <div className="h-24" />
+        </div>
+
+        {/* Mobile: Simplified stacked cards */}
+        <div className="lg:hidden px-4 sm:px-6 space-y-6 pb-10">
+          {[1, 2, 3, 4, 5, 6].map((i) => {
+            const title = get(`feature_${i}_title`);
+            const desc = get(`feature_${i}_desc`);
+            const img = get(`feature_${i}_image`);
+            const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
+            const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
+            if (!title && !img) return null;
+
+            return (
+              <AnimItem key={i} delay={(i - 1) * 0.08}>
+                <div className="rounded-2xl border border-border/50 bg-card shadow-lg overflow-hidden">
+                  {img && (
+                    <div className="relative bg-muted/30 p-4">
+                      <div className="rounded-lg overflow-hidden border border-border/30 shadow-sm">
+                        <div className="flex items-center gap-1 px-2.5 py-1.5 bg-muted/50 border-b border-border/20">
+                          <div className="w-2 h-2 rounded-full bg-destructive/40" />
+                          <div className="w-2 h-2 rounded-full bg-warning/40" />
+                          <div className="w-2 h-2 rounded-full bg-primary/30" />
+                        </div>
+                        <img src={img} alt={title || ""} className="w-full" loading="lazy" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-5 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <Badge variant="outline" className="text-primary border-primary/30 px-2.5 py-0.5 text-[10px] font-semibold">
+                        {get(`feature_${i}_badge`, `Feature ${i}`)}
+                      </Badge>
+                    </div>
+                    <h3 className="text-xl font-black tracking-tight leading-tight">{title || `Feature ${i}`}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+                    {bullets.length > 0 && (
+                      <ul className="space-y-2 pt-1">
+                        {bullets.map((b, j) => (
+                          <li key={j} className="flex items-center gap-2 text-xs">
+                            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <Check className="h-2.5 w-2.5 text-primary" />
+                            </div>
+                            <span className="text-foreground/80">{b.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </AnimItem>
+            );
+          })}
         </div>
       </section>}
 
