@@ -197,13 +197,25 @@ const SupportPage = () => {
 
   const handleCreateTicket = async () => {
     if (!user || !form.subject.trim()) { toast.error("Subject is required"); return; }
-    const payload: any = { user_id: effectiveUserId!, store_id: activeStore?.id || null, ...form };
+    
+    // Generate auto ticket ID: EVX-XXXX
+    const ticketCount = tickets.length;
+    const ticketNumber = 1001 + ticketCount;
+    const ticketId = `EVX-${ticketNumber}`;
+
+    const payload: any = {
+      user_id: effectiveUserId!,
+      store_id: activeStore?.id || null,
+      ...form,
+      // Attach store context metadata in description
+      description: form.description + (activeStore ? `\n\n---\n📋 Store: ${activeStore.name} (${activeStore.store_mode || "online"})\n🔗 Ticket ID: ${ticketId}` : `\n\n---\n🔗 Ticket ID: ${ticketId}`),
+    };
     if (editingTicket) {
-      const { error } = await supabase.from("support_tickets").update(payload).eq("id", editingTicket.id);
+      const { error } = await supabase.from("support_tickets").update({ ...form, updated_at: new Date().toISOString() } as any).eq("id", editingTicket.id);
       if (!error) { toast.success("Ticket updated"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Update failed");
     } else {
       const { error } = await supabase.from("support_tickets").insert(payload);
-      if (!error) { toast.success("Ticket created"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Create failed");
+      if (!error) { toast.success(`Ticket ${ticketId} created successfully!`); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Create failed");
     }
   };
 
