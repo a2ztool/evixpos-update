@@ -410,7 +410,7 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "footer_why_title", type: "text", defaultValue: "Why EvixPOS" },
     { key: "footer_highlights", type: "text", defaultValue: "Online + Offline in One Panel|Multi-Store Support|24/7 Support|Fast & Reliable" },
     { key: "footer_cta_title", type: "text", defaultValue: "Unify Your Business Today" },
-    { key: "footer_copyright", type: "text", defaultValue: "© 2026 EvixPOS. All rights reserved." },
+    { key: "footer_copyright", type: "text", defaultValue: `© ${new Date().getFullYear()} EvixPOS. All rights reserved.` },
     { key: "footer_powered_by", type: "text", defaultValue: "LifeAim IT" },
     { key: "footer_powered_url", type: "text", defaultValue: "https://www.lifeaimit.in" },
   ],
