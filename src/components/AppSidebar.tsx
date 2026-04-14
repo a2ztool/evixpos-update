@@ -264,7 +264,33 @@ const AppSidebar = () => {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
-                {renderItem({ title: "Messages", icon: MessageSquare, path: "/staff-inbox" })}
+                <SidebarMenuItem key="/staff-inbox">
+                  <SidebarMenuButton
+                    onClick={() => navigate("/staff-inbox")}
+                    onMouseEnter={() => prefetchRoute("/staff-inbox")}
+                    isActive={fullPath === "/staff-inbox"}
+                    className={`rounded-lg transition-all duration-150 ${
+                      fullPath === "/staff-inbox" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <MessageSquare className={`h-4 w-4 ${fullPath === "/staff-inbox" ? "text-primary" : ""}`} />
+                    {!collapsed && (
+                      <span className="flex items-center gap-2 flex-1">
+                        Messages
+                        {msgUnread > 0 && (
+                          <Badge className="ml-auto h-5 min-w-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] p-0 px-1.5 animate-pulse">
+                            {msgUnread > 99 ? "99+" : msgUnread}
+                          </Badge>
+                        )}
+                      </span>
+                    )}
+                    {collapsed && msgUnread > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center">
+                        {msgUnread > 9 ? "9+" : msgUnread}
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
                 {showSettings && renderItem({ title: t.settings, icon: Settings, path: "/settings" })}
