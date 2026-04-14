@@ -494,11 +494,11 @@ const SupportPage = () => {
                 <h3 className="font-bold text-center mb-4">{t.contact}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { icon: MessageCircle, label: "WhatsApp", value: "+880 1XXXXXXXXX", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                    { icon: Mail, label: "Email", value: "support@evixpos.com", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Headphones, label: "Live Chat", value: "24/7 Support", color: "text-orange-500", bg: "bg-orange-500/10" },
+                    { icon: MessageCircle, label: "WhatsApp", value: "+91 8101949890", color: "text-emerald-500", bg: "bg-emerald-500/10", href: "https://wa.me/918101949890" },
+                    { icon: Mail, label: "Email", value: "support@evixpos.com", color: "text-primary", bg: "bg-primary/10", href: "mailto:support@evixpos.com" },
+                    { icon: Headphones, label: "Live Chat", value: "24/7 Support", color: "text-orange-500", bg: "bg-orange-500/10", href: "#" },
                   ].map((c, i) => (
-                    <div key={i} className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
+                    <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className={`h-10 w-10 rounded-full ${c.bg} flex items-center justify-center`}>
                         <c.icon className={`h-5 w-5 ${c.color}`} />
                       </div>
@@ -506,7 +506,7 @@ const SupportPage = () => {
                         <p className="font-semibold text-sm">{c.label}</p>
                         <p className="text-xs text-muted-foreground">{c.value}</p>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </CardContent>
