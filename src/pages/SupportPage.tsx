@@ -94,15 +94,18 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
   open: { label: "Open", icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10" },
   in_progress: { label: "In Progress", icon: Clock, color: "text-orange-600", bg: "bg-orange-500/10" },
+  waiting_for_user: { label: "Waiting for User", icon: Eye, color: "text-purple-600", bg: "bg-purple-500/10" },
   resolved: { label: "Resolved", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
   closed: { label: "Closed", icon: XCircle, color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 const CATEGORY_OPTIONS = [
-  { value: "general", label: "General" },
+  { value: "pos", label: "POS" },
   { value: "billing", label: "Billing" },
-  { value: "technical", label: "Technical" },
+  { value: "bug", label: "Bug" },
+  { value: "integration", label: "Integration" },
   { value: "feature", label: "Feature Request" },
+  { value: "other", label: "Other" },
 ];
 
 const SupportPage = () => {
