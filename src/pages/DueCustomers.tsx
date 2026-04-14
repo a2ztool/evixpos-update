@@ -1,0 +1,279 @@
+import { useState } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Users, Receipt, MessageCircle, Eye, DollarSign, AlertTriangle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useStoreQuery } from "@/hooks/useStoreQuery";
+import { useCurrency } from "@/hooks/useCurrency";
+import { toast } from "sonner";
+import { format as formatDate } from "date-fns";
+
+const DueCustomers = () => {
+  const { storeId, userId, ready } = useStoreQuery();
+  const { format } = useCurrency();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [payDialog, setPayDialog] = useState<any>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payMethod, setPayMethod] = useState("cash");
+  const [txDialog, setTxDialog] = useState<any>(null);
+  const [txData, setTxData] = useState<any[]>([]);
+
+  // Fetch customers with dues > 0
+  const { data: dueCustomers = [], isLoading } = useQuery({
+    queryKey: ["due-customers", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customer_credits")
+        .select("*, customers(name, phone, email)")
+        .eq("store_id", storeId!)
+        .gt("total_due", 0)
+        .order("total_due", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const totalDue = dueCustomers.reduce((s: number, c: any) => s + Number(c.total_due), 0);
+
+  const filtered = dueCustomers.filter((c: any) =>
+    c.customers?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.customers?.phone?.includes(search)
+  );
+
+  // Pay mutation
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      const amount = Number(payAmount);
+      if (!payDialog || amount <= 0) return;
+
+      await supabase.from("credit_payments").insert({
+        store_id: storeId!, user_id: userId!,
+        customer_id: payDialog.customer_id,
+        amount, payment_method: payMethod,
+      });
+
+      const newDue = Math.max(0, Number(payDialog.total_due) - amount);
+      await supabase.from("customer_credits").update({
+        total_due: newDue, last_payment_date: new Date().toISOString(),
+      }).eq("id", payDialog.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["due-customers"] });
+      setPayDialog(null);
+      setPayAmount("");
+      toast.success("Payment recorded");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // View transactions
+  const viewTransactions = async (credit: any) => {
+    setTxDialog(credit);
+    const { data } = await supabase
+      .from("credit_payments")
+      .select("*")
+      .eq("customer_id", credit.customer_id)
+      .eq("store_id", storeId!)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setTxData(data || []);
+  };
+
+  // WhatsApp reminder
+  const sendWhatsApp = (credit: any) => {
+    const phone = credit.customers?.phone?.replace(/[^0-9]/g, "") || "";
+    if (!phone) { toast.error("No phone number for this customer"); return; }
+    const name = credit.customers?.name || "Customer";
+    const amount = format(Number(credit.total_due));
+    const text = `Hello ${name}, your due amount is ${amount}. Please clear it at your earliest convenience. Thank you!`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+              Due Customers
+            </h1>
+            <p className="text-sm text-muted-foreground">Customers with outstanding dues</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-3">
+              <DollarSign className="h-8 w-8 text-destructive" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Outstanding</p>
+                <p className="text-2xl font-bold text-destructive">{format(totalDue)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Due Customers</p>
+                <p className="text-2xl font-bold">{dueCustomers.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search customers..." className="pl-9" />
+        </div>
+
+        <Card>
+          <CardHeader><CardTitle className="text-lg">Due List</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3 p-4">
+              {isLoading ? (
+                <p className="text-center py-8 text-muted-foreground">Loading...</p>
+              ) : filtered.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No due customers 🎉</p>
+              ) : filtered.map((c: any) => (
+                <div key={c.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{c.customers?.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.customers?.phone}</p>
+                    </div>
+                    <Badge variant="destructive">{format(Number(c.total_due))}</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setPayDialog(c)} className="flex-1">
+                      <Receipt className="h-3 w-3 mr-1" /> Pay
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => viewTransactions(c)}>
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => sendWhatsApp(c)}>
+                      <MessageCircle className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Total Due</TableHead>
+                    <TableHead>Last Payment</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No due customers 🎉</TableCell></TableRow>
+                  ) : filtered.map((c: any) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.customers?.name}</TableCell>
+                      <TableCell>{c.customers?.phone || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="destructive">{format(Number(c.total_due))}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {c.last_payment_date ? formatDate(new Date(c.last_payment_date), "dd MMM yyyy") : "—"}
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button size="sm" variant="outline" onClick={() => setPayDialog(c)}>
+                          <Receipt className="h-3 w-3 mr-1" /> Pay Now
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => viewTransactions(c)} title="View Transactions">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => sendWhatsApp(c)} title="WhatsApp Reminder">
+                          <MessageCircle className="h-3 w-3 text-green-600" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pay dialog */}
+        <Dialog open={!!payDialog} onOpenChange={v => { if (!v) setPayDialog(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Collect Payment — {payDialog?.customers?.name}</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm">Due: <span className="font-bold text-destructive">{format(Number(payDialog?.total_due || 0))}</span></p>
+              <div><Label>Amount</Label><Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="Payment amount" /></div>
+              <div>
+                <Label>Method</Label>
+                <Select value={payMethod} onValueChange={setPayMethod}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bkash">bKash</SelectItem>
+                    <SelectItem value="nagad">Nagad</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={() => payMutation.mutate()} disabled={!payAmount || payMutation.isPending} className="w-full">
+                {payMutation.isPending ? "Recording..." : "Record Payment"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Transaction history dialog */}
+        <Dialog open={!!txDialog} onOpenChange={v => { if (!v) setTxDialog(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Payment History — {txDialog?.customers?.name}</DialogTitle></DialogHeader>
+            {txData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-6">No payment records yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {txData.map((t: any) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-sm">{formatDate(new Date(t.created_at), "dd MMM yyyy")}</TableCell>
+                      <TableCell className="text-green-600 font-medium">{format(Number(t.amount))}</TableCell>
+                      <TableCell><Badge variant="secondary">{t.payment_method}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default DueCustomers;
