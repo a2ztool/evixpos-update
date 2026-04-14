@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import {
   MessageSquare, Send, Search, ArrowLeft, Volume2, VolumeX, Paperclip, X, ListTodo,
   Calendar, Flag, Package, FileText as FileTextIcon, AlertCircle, Plus, Users, Hash,
-  Link as LinkIcon, Info
+  Link as LinkIcon, Info, Settings, Trash2, UserPlus, UserMinus, Pencil, MoreVertical
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
