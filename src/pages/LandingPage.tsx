@@ -166,7 +166,7 @@ const LandingPage = () => {
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-2 sm:gap-3 relative">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-              <span className="line-clamp-1">{get("banner_subtitle", "Get 50% off your first 3 months on any paid plan. Limited time only.")}</span>
+              <span className="line-clamp-1">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
               <Button size="sm" variant="secondary" className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
             </div>
           </div>
@@ -293,7 +293,7 @@ const LandingPage = () => {
                 })}
               </div>
               <span className="text-sm font-medium text-muted-foreground">
-                {get("hero_social_proof", "Join 3,000+ businesses")}
+                {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
               </span>
               <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="h-7 px-3 text-xs font-semibold text-primary hover:text-primary">
                 Join Now <ArrowRight className="h-3 w-3 ml-1" />
@@ -304,14 +304,14 @@ const LandingPage = () => {
           {/* Hero headline — centered for max impact */}
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-center max-w-4xl mx-auto mb-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-tight leading-[1.08] mb-6">
-              {get("hero_title_line1", "Sell Smarter.")}
+              {get("hero_title_line1", "One Platform.")}
               <br />
               <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-                {get("hero_title_line2", "Automate Faster.")}
+                {get("hero_title_line2", "Online + Offline.")}
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
-              {get("hero_subtitle", "POS, subscriptions, WooCommerce sync, auto reminders & profit analytics — built for the busy digital entrepreneur.")}
+              {get("hero_subtitle", "Manage your online store, POS billing, walk-in sales, inventory, customers & profit analytics — all from one powerful panel. No more juggling separate tools.")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 w-full max-w-xl mx-auto">
               <Button 
@@ -342,9 +342,9 @@ const LandingPage = () => {
               )}
             </div>
             <div className="flex items-center justify-center gap-5 text-sm text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_1", "Free forever plan")}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_2", "No credit card")}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_3", "Setup in 2 min")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_1", "Online + Offline in one panel")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_2", "No credit card needed")}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> {get("hero_bullet_3", "Setup in 2 minutes")}</span>
             </div>
           </motion.div>
 
@@ -383,8 +383,8 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
             {[
-              { val: get("stats_users", "3,000+"), label: get("stats_users_label", "Active Users"), icon: Users },
-              { val: get("stats_stores", "1,983+"), label: get("stats_stores_label", "Stores Managed"), icon: Store },
+              { val: get("stats_users", "3,000+"), label: get("stats_users_label", "Active Businesses"), icon: Users },
+              { val: get("stats_stores", "1,983+"), label: get("stats_stores_label", "Online & Offline Stores"), icon: Store },
               { val: get("stats_orders", "50K+"), label: get("stats_orders_label", "Orders Processed"), icon: Package },
               { val: get("stats_uptime", "99.9%"), label: get("stats_uptime_label", "Uptime"), icon: Shield },
             ].map((s, idx) => (
@@ -405,13 +405,13 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <AnimSection className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="outline" className="mb-4 text-destructive border-destructive/30 px-3 py-1.5">
-              <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "Pain Point")}
+              <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("pain_title", "Your Business Shouldn't Be This Hard")}
+              {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              {get("pain_subtitle", "Managing subscriptions, billing, and customers using spreadsheets and guesswork is draining your profits and your time.")}
+              {get("pain_subtitle", "You sell online and from a physical counter — but you're using separate tools for each. Disconnected data, missed sales, and zero visibility into real profits.")}
             </p>
           </AnimSection>
 
@@ -421,17 +421,17 @@ const LandingPage = () => {
               <div className="relative rounded-2xl border-2 border-destructive/20 bg-gradient-to-b from-destructive/5 to-card overflow-hidden h-full">
                 <div className="flex items-center gap-3 px-6 py-4 border-b border-destructive/10 bg-destructive/5">
                   <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center"><Clock className="h-4 w-4 text-destructive" /></div>
-                  <span className="font-bold text-destructive text-sm">🕐 {get("pain_old_title", "Old Way")}</span>
+                  <span className="font-bold text-destructive text-sm">🕐 {get("pain_old_title", "Without EvixPOS")}</span>
                 </div>
                 {get("pain_old_image") && (
                   <div className="px-6 pt-4"><img src={get("pain_old_image")} alt="Old way" className="w-full rounded-xl border border-destructive/10" loading="lazy" /></div>
                 )}
                 <div className="p-6 grid grid-cols-2 gap-4">
                   {[
-                    { label: get("pain_metric_1_label", "Time Wasted"), val: get("pain_metric_1_val", "5+ Hrs/Day") },
-                    { label: get("pain_metric_2_label", "Revenue Lost"), val: get("pain_metric_2_val", "৳40K+/Mo") },
-                    { label: get("pain_metric_3_label", "Manual Work"), val: get("pain_metric_3_val", "Everything") },
-                    { label: get("pain_metric_4_label", "Insight"), val: get("pain_metric_4_val", "None") },
+                     { label: get("pain_metric_1_label", "Tools Used"), val: get("pain_metric_1_val", "5+ Apps") },
+                     { label: get("pain_metric_2_label", "Data Sync"), val: get("pain_metric_2_val", "Manual") },
+                     { label: get("pain_metric_3_label", "Profit Visibility"), val: get("pain_metric_3_val", "Guesswork") },
+                     { label: get("pain_metric_4_label", "Time Wasted"), val: get("pain_metric_4_val", "5+ Hrs/Day") },
                   ].map((m, i) => (
                     <div key={i} className="bg-destructive/5 rounded-xl p-4 border border-destructive/10">
                       <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
@@ -469,10 +469,10 @@ const LandingPage = () => {
                 )}
                 <div className="p-6 grid grid-cols-2 gap-4">
                   {[
-                    { label: get("solution_metric_1_label", "Time Saved"), val: get("solution_metric_1_val", "20 Min/Day") },
-                    { label: get("solution_metric_2_label", "Revenue Gained"), val: get("solution_metric_2_val", "৳40K+/Mo") },
-                    { label: get("solution_metric_3_label", "Automations"), val: get("solution_metric_3_val", "Unlimited") },
-                    { label: get("solution_metric_4_label", "Insight"), val: get("solution_metric_4_val", "Real-Time") },
+                     { label: get("solution_metric_1_label", "One Panel"), val: get("solution_metric_1_val", "Online + Offline") },
+                     { label: get("solution_metric_2_label", "Data Sync"), val: get("solution_metric_2_val", "Real-Time") },
+                     { label: get("solution_metric_3_label", "Profit View"), val: get("solution_metric_3_val", "Instant") },
+                     { label: get("solution_metric_4_label", "Time Saved"), val: get("solution_metric_4_val", "4+ Hrs/Day") },
                   ].map((m, i) => (
                     <div key={i} className="bg-primary/5 rounded-xl p-4 border border-primary/10">
                       <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
@@ -502,7 +502,7 @@ const LandingPage = () => {
           {/* Transition CTA */}
           <AnimSection className="text-center mt-14" delay={0.2}>
             <Button size="lg" onClick={() => navigate("/auth")} className="gap-2 rounded-xl shadow-lg shadow-primary/20 px-8">
-              {get("pain_cta", "Switch to the Better Way")} <ArrowRight className="h-4 w-4" />
+              {get("pain_cta", "Unify Your Business Today")} <ArrowRight className="h-4 w-4" />
             </Button>
           </AnimSection>
         </div>
@@ -516,11 +516,11 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
               <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
-              {get("features_title", "Everything You Need to Grow")}
-            </h2>
-            <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-              {get("features_subtitle", "Powerful tools designed for modern businesses — simple to use, built to scale.")}
+             <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
+               {get("features_title", "Everything for Online & Offline Business")}
+             </h2>
+             <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
+               {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
             </p>
           </AnimSection>
 
@@ -674,11 +674,11 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Timer className="h-3 w-3 mr-1.5" /> {get("how_badge", "Quick Setup")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("how_it_works_title", "Up and Running in 15 Minutes")}
-            </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              {get("how_it_works_subtitle", "Four steps from sign-up to your first automated renewal going out.")}
+             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+               {get("how_it_works_title", "Go Live in Under 15 Minutes")}
+             </h2>
+             <p className="text-muted-foreground text-lg leading-relaxed">
+               {get("how_it_works_subtitle", "Whether you're setting up an online store or a physical POS — you'll be selling in four simple steps.")}
             </p>
           </AnimSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -725,13 +725,13 @@ const LandingPage = () => {
                 <Sparkles className="h-3 w-3 mr-1.5" /> {get("about_badge", "About Us")}
               </Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-6">
-                {get("about_title", "Built for Modern Entrepreneurs")}
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6">{get("about_desc_1", "EvixPOS is a comprehensive business management platform designed to simplify operations for small and medium businesses.")}</p>
-              <p className="text-muted-foreground leading-relaxed mb-8">{get("about_desc_2", "Founded with the mission to empower local businesses with world-class tools.")}</p>
+               {get("about_title", "Built for the Hybrid Business Owner")}
+             </h2>
+             <p className="text-muted-foreground text-lg leading-relaxed mb-6">{get("about_desc_1", "EvixPOS is the all-in-one business management platform that bridges the gap between online and offline commerce. Whether you run an e-commerce store, a physical retail shop, or both — we give you one unified panel to manage everything.")}</p>
+             <p className="text-muted-foreground leading-relaxed mb-8">{get("about_desc_2", "Founded with the mission to eliminate the chaos of juggling separate tools. We believe every business deserves enterprise-grade management without enterprise-grade complexity.")}</p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { icon: Globe, label: get("about_point_1", "Multi-Country") },
+                  { icon: Globe, label: get("about_point_1", "Online + Offline") },
                   { icon: Shield, label: get("about_point_2", "Bank-Grade Security") },
                   { icon: Clock, label: get("about_point_3", "24/7 Support") },
                   { icon: Smartphone, label: get("about_point_4", "Mobile Ready") },
@@ -761,10 +761,10 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Award className="h-3 w-3 mr-1.5" /> {get("why_badge", "Why EvixPOS")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("why_title", "Stop juggling isolated tools. Run everything in one place.")}
-            </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">{get("why_subtitle", "We're not just another tool — we're your business partner.")}</p>
+             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+               {get("why_title", "One Dashboard. Online + Offline. Zero Compromise.")}
+             </h2>
+             <p className="text-muted-foreground text-lg leading-relaxed">{get("why_subtitle", "We're not just another tool — we're the only platform that truly unifies your online and offline business.")}</p>
           </AnimSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => {
@@ -792,7 +792,7 @@ const LandingPage = () => {
               <Target className="h-3 w-3 mr-1.5" /> {get("comparison_badge", "Comparison")}
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("comparison_title", "Why Choose Us Over Others?")}
+              {get("comparison_title", "Why EvixPOS Beats Separate Tools")}
             </h2>
           </AnimSection>
           <AnimSection delay={0.15}>
@@ -802,7 +802,7 @@ const LandingPage = () => {
                 <div className="p-4 sm:p-5 text-center"><div className="text-sm font-bold text-primary">{get("brand_name", "EvixPOS")}</div></div>
                 <div className="p-4 sm:p-5 text-center text-sm font-semibold text-muted-foreground">Others</div>
               </div>
-              {(get("comparison_features", "Multi-Store Management|Built-in POS|WhatsApp Integration|Subscription Tracking|Referral System|Multi-Currency|Free Plan Available|Mobile Optimized")).split("|").map((feature, i, arr) => (
+              {(get("comparison_features", "Online + Offline in One Panel|Built-in POS System|Walk-in Sales Management|Multi-Store (Online & Offline)|Subscription & Renewal Tracking|WhatsApp Integration|Multi-Currency Support|Free Plan Available")).split("|").map((feature, i, arr) => (
                 <div key={feature} className={`grid grid-cols-3 ${i < arr.length - 1 ? "border-b border-border/30" : ""} hover:bg-muted/30 transition-colors`}>
                   <div className="p-4 sm:p-5 text-sm">{feature.trim()}</div>
                   <div className="p-4 sm:p-5 flex justify-center"><div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center"><Check className="h-4 w-4 text-primary" /></div></div>
@@ -829,11 +829,11 @@ const LandingPage = () => {
                 <Download className="h-3 w-3 mr-1.5" /> {get("mobile_badge", "Mobile App")}
               </Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-                {get("app_download_title", "Manage Your Business On The Go")}
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Get the full power of EvixPOS on your mobile device.")}</p>
+               {get("app_download_title", "Manage Online & Offline Sales On The Go")}
+             </h2>
+             <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Process POS sales, track online orders, and monitor your business from anywhere — all from your phone.")}</p>
               <ul className="space-y-3 mb-8">
-                {(get("mobile_features", "Process sales from anywhere|Real-time order notifications|Full inventory management|Customer management on the go")).split("|").map((item) => (
+                {(get("mobile_features", "Process walk-in POS sales from your phone|Track online orders in real-time|Manage inventory across all stores|View combined profit analytics")).split("|").map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm"><div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>{item.trim()}</li>
                 ))}
               </ul>
@@ -862,7 +862,7 @@ const LandingPage = () => {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
               {get("pricing_title", "Plans That Scale With You")}
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free. Upgrade when you're ready. No hidden fees.")}</p>
+            <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free with online or offline. Upgrade when you're ready. No hidden fees.")}</p>
           </AnimSection>
           <AnimSection delay={0.1} className="flex justify-center mb-10">
             <div className="inline-flex bg-card rounded-xl border border-border/50 p-1 shadow-sm">
@@ -1008,11 +1008,11 @@ const LandingPage = () => {
             <motion.div whileHover={{ scale: 1.05 }} className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-primary/20">
               <Zap className="h-10 w-10 text-primary" />
             </motion.div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("cta_title", "Ready to Transform Your Business?")}
-            </h2>
-            <p className="text-muted-foreground text-lg sm:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-              {get("cta_subtitle", "Join thousands of entrepreneurs who manage their entire business from one powerful platform.")}
+             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+               {get("cta_title", "Ready to Unify Your Online & Offline Business?")}
+             </h2>
+             <p className="text-muted-foreground text-lg sm:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
+               {get("cta_subtitle", "Join thousands of entrepreneurs who manage their entire business — online store, physical POS, inventory, customers — from one powerful platform.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/auth")} className="text-base px-10 h-12 gap-2 shadow-xl shadow-primary/25 hover:shadow-2xl transition-all">
@@ -1057,7 +1057,7 @@ const LandingPage = () => {
               <div className="flex items-center gap-2.5 mb-5">
                 <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className="h-9 w-auto" />
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">{get("footer_tagline", "The modern platform for managing your business — orders, products, customers, and more.")}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">{get("footer_tagline", "The all-in-one platform for online & offline business management — orders, POS, customers, inventory, and analytics in one panel.")}</p>
               <a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-primary transition-colors group mb-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors"><Mail className="h-4 w-4" /></div>
                 {get("brand_email", "support@evixpos.com")}
@@ -1096,12 +1096,12 @@ const LandingPage = () => {
             <div className="col-span-2 sm:col-span-2 lg:col-span-3">
               <h4 className="font-semibold text-sm mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_why_title", "Why EvixPOS")}</h4>
               <ul className="space-y-2.5 mb-6">
-                {(get("footer_highlights", "Secure Platform|Multi-Store Support|24/7 Support|Fast & Reliable")).split("|").map((item, idx) => (
+                {(get("footer_highlights", "Online + Offline in One Panel|Multi-Store Support|24/7 Support|Fast & Reliable")).split("|").map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />{item.trim()}</li>
                 ))}
               </ul>
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                <p className="text-sm font-medium mb-3">{get("footer_cta_title", "Start Your Business Today")}</p>
+                <p className="text-sm font-medium mb-3">{get("footer_cta_title", "Unify Your Business Today")}</p>
                 <Button size="sm" onClick={() => navigate("/auth")} className="gap-1.5 shadow-md shadow-primary/15 w-full">Get Started <ArrowRight className="h-3.5 w-3.5" /></Button>
               </div>
             </div>
