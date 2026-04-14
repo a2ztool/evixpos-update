@@ -413,7 +413,7 @@ const FacebookAds = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="pt-0 space-y-3">
-                    {SETUP_STEPS.map((step, i) => (
+                    {getSetupSteps().map((step, i) => (
                       <div key={i} className="flex gap-4 p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
                         <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                           {i + 1}
