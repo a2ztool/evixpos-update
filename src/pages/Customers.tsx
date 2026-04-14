@@ -512,11 +512,7 @@ const Customers = () => {
 
       {/* DNA Profile */}
       {dnaCustomer && (
-        <Dialog open={dnaOpen} onOpenChange={setDnaOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CustomerDNAProfile customerId={dnaCustomer.id} customerName={dnaCustomer.name} />
-          </DialogContent>
-        </Dialog>
+        <CustomerDNAProfile open={dnaOpen} onOpenChange={setDnaOpen} customerId={dnaCustomer.id} customerName={dnaCustomer.name} storeId={activeStore?.id || ""} />
       )}
     </DashboardLayout>
   );
