@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { StaffProvider } from "@/contexts/StaffContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import OfflineBanner from "@/components/OfflineBanner";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
