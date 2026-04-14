@@ -160,14 +160,22 @@ const AdminSupportTickets = () => {
   const filteredTickets = useMemo(() => {
     return tickets.filter(t => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const userName = profiles[t.user_id]?.toLowerCase() || "";
-        if (!t.subject.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q) && !userName.includes(q)) return false;
+        const storeName = (t.store_id ? storeNames[t.store_id] : "")?.toLowerCase() || "";
+        if (!t.subject.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q) && !userName.includes(q) && !storeName.includes(q)) return false;
       }
       return true;
     });
-  }, [tickets, statusFilter, searchQuery, profiles]);
+  }, [tickets, statusFilter, priorityFilter, searchQuery, profiles, storeNames]);
+
+  // Check if ticket is new (less than 1 hour old)
+  const isNewTicket = (ticket: SupportTicket) => {
+    const created = new Date(ticket.created_at);
+    return (Date.now() - created.getTime()) < 3600000 && ticket.status === "open";
+  };
 
   return (
     <div className="space-y-6">
