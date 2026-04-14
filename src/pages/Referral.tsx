@@ -77,7 +77,16 @@ const Referral = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const referralLink = settings ? `${window.location.origin}/auth?tab=signup&ref=${settings.referral_code}` : "";
+  // Use published domain if available, fallback to current origin
+  const getBaseUrl = () => {
+    const origin = window.location.origin;
+    // If on preview/lovableproject domain, use published URL
+    if (origin.includes("lovable.app") && origin.includes("preview")) {
+      return "https://evipose.lovable.app";
+    }
+    return origin;
+  };
+  const referralLink = settings ? `${getBaseUrl()}/auth?tab=signup&ref=${settings.referral_code}` : "";
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
