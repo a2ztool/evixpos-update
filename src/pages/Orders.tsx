@@ -104,7 +104,10 @@ const Orders = () => {
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tabParam = searchParams.get("tab");
+
+  const isOfflineStore = activeStore?.store_mode === "offline";
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
