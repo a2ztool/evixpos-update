@@ -242,6 +242,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 // Mobile bottom nav
 import { LayoutDashboard, Monitor, ShoppingCart, CreditCard, Package, MoreHorizontal, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon, MessageSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ownerMoreMenuItems = [
@@ -423,6 +424,8 @@ const NavItem = ({
   return (
     <motion.button
       onClick={() => !isMore && navigate(path)}
+      onMouseEnter={() => !isMore && prefetchRoute(path)}
+      onFocus={() => !isMore && prefetchRoute(path)}
       whileTap={{ scale: 0.85 }}
       className="relative flex flex-col items-center gap-1 py-1 min-w-[56px]"
     >
