@@ -541,7 +541,7 @@ const LandingPage = () => {
             return (
               <div
                 key={i}
-                className="h-screen"
+                className={i < 6 ? "h-[50vh]" : ""}
                 style={{ marginBottom: i === 6 ? '0' : undefined }}
               >
                 <div
