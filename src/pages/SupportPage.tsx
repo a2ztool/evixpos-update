@@ -94,15 +94,18 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
   open: { label: "Open", icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10" },
   in_progress: { label: "In Progress", icon: Clock, color: "text-orange-600", bg: "bg-orange-500/10" },
+  waiting_for_user: { label: "Waiting for User", icon: Eye, color: "text-purple-600", bg: "bg-purple-500/10" },
   resolved: { label: "Resolved", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
   closed: { label: "Closed", icon: XCircle, color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 const CATEGORY_OPTIONS = [
-  { value: "general", label: "General" },
+  { value: "pos", label: "POS" },
   { value: "billing", label: "Billing" },
-  { value: "technical", label: "Technical" },
+  { value: "bug", label: "Bug" },
+  { value: "integration", label: "Integration" },
   { value: "feature", label: "Feature Request" },
+  { value: "other", label: "Other" },
 ];
 
 const SupportPage = () => {
@@ -120,7 +123,7 @@ const SupportPage = () => {
   // Ticket form
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<SupportTicket | null>(null);
-  const [form, setForm] = useState({ subject: "", description: "", category: "general", priority: "medium" });
+  const [form, setForm] = useState({ subject: "", description: "", category: "pos", priority: "medium" });
 
   // Ticket detail / messages
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -133,6 +136,20 @@ const SupportPage = () => {
   const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [guideSearch, setGuideSearch] = useState("");
+
+  // Handle pre-fill from SupportPopup
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefillSubject = params.get("prefill_subject");
+    const prefillDesc = params.get("prefill_desc");
+    if (prefillSubject) {
+      setForm(p => ({ ...p, subject: prefillSubject, description: prefillDesc || "" }));
+      setSheetOpen(true);
+      setActiveTab("tickets");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   const fetchTickets = async () => {
     if (!user) return;
@@ -180,13 +197,25 @@ const SupportPage = () => {
 
   const handleCreateTicket = async () => {
     if (!user || !form.subject.trim()) { toast.error("Subject is required"); return; }
-    const payload: any = { user_id: effectiveUserId!, store_id: activeStore?.id || null, ...form };
+    
+    // Generate auto ticket ID: EVX-XXXX
+    const ticketCount = tickets.length;
+    const ticketNumber = 1001 + ticketCount;
+    const ticketId = `EVX-${ticketNumber}`;
+
+    const payload: any = {
+      user_id: effectiveUserId!,
+      store_id: activeStore?.id || null,
+      ...form,
+      // Attach store context metadata in description
+      description: form.description + (activeStore ? `\n\n---\n📋 Store: ${activeStore.name} (${activeStore.store_mode || "online"})\n🔗 Ticket ID: ${ticketId}` : `\n\n---\n🔗 Ticket ID: ${ticketId}`),
+    };
     if (editingTicket) {
-      const { error } = await supabase.from("support_tickets").update(payload).eq("id", editingTicket.id);
+      const { error } = await supabase.from("support_tickets").update({ ...form, updated_at: new Date().toISOString() } as any).eq("id", editingTicket.id);
       if (!error) { toast.success("Ticket updated"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Update failed");
     } else {
       const { error } = await supabase.from("support_tickets").insert(payload);
-      if (!error) { toast.success("Ticket created"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Create failed");
+      if (!error) { toast.success(`Ticket ${ticketId} created successfully!`); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Create failed");
     }
   };
 
@@ -310,11 +339,12 @@ const SupportPage = () => {
               </div>
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[130px]"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[150px]"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="waiting_for_user">Waiting</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
@@ -409,16 +439,19 @@ const SupportPage = () => {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
-                              <h4 className="font-semibold text-sm truncate">{ticket.subject}</h4>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1 ml-6">{ticket.description}</p>
-                            <div className="flex items-center gap-2 mt-2 ml-6">
-                              <Badge variant="secondary" className="text-[10px]">{CATEGORY_OPTIONS.find(c => c.value === ticket.category)?.label || ticket.category}</Badge>
-                              <Badge variant="outline" className={`text-[10px] ${priorityConf.color}`}>{priorityConf.label}</Badge>
-                              <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
-                            </div>
+                             <div className="flex items-center gap-2 mb-1">
+                               <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
+                               <h4 className="font-semibold text-sm truncate">{ticket.subject}</h4>
+                               <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono">
+                                 EVX-{1001 + tickets.indexOf(ticket)}
+                               </Badge>
+                             </div>
+                             <p className="text-xs text-muted-foreground line-clamp-1 ml-6">{ticket.description.split("\n---")[0]}</p>
+                             <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                               <Badge variant="secondary" className="text-[10px]">{CATEGORY_OPTIONS.find(c => c.value === ticket.category)?.label || ticket.category}</Badge>
+                               <Badge variant="outline" className={`text-[10px] ${priorityConf.color}`}>{priorityConf.label}</Badge>
+                               <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+                             </div>
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(ticket)}><FileText className="h-3.5 w-3.5" /></Button>
@@ -461,11 +494,11 @@ const SupportPage = () => {
                 <h3 className="font-bold text-center mb-4">{t.contact}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { icon: MessageCircle, label: "WhatsApp", value: "+880 1XXXXXXXXX", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                    { icon: Mail, label: "Email", value: "support@evixpos.com", color: "text-primary", bg: "bg-primary/10" },
-                    { icon: Headphones, label: "Live Chat", value: "24/7 Support", color: "text-orange-500", bg: "bg-orange-500/10" },
+                    { icon: MessageCircle, label: "WhatsApp", value: "+91 8101949890", color: "text-emerald-500", bg: "bg-emerald-500/10", href: "https://wa.me/918101949890" },
+                    { icon: Mail, label: "Email", value: "support@evixpos.com", color: "text-primary", bg: "bg-primary/10", href: "mailto:support@evixpos.com" },
+                    { icon: Headphones, label: "Live Chat", value: "24/7 Support", color: "text-orange-500", bg: "bg-orange-500/10", href: "#" },
                   ].map((c, i) => (
-                    <div key={i} className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
+                    <a key={i} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className={`h-10 w-10 rounded-full ${c.bg} flex items-center justify-center`}>
                         <c.icon className={`h-5 w-5 ${c.color}`} />
                       </div>
@@ -473,7 +506,7 @@ const SupportPage = () => {
                         <p className="font-semibold text-sm">{c.label}</p>
                         <p className="text-xs text-muted-foreground">{c.value}</p>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </CardContent>
