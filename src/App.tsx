@@ -86,17 +86,17 @@ const AdminInbox = lazyPage(() => import("./pages/admin/AdminInbox"));
 const AdminSupportTickets = lazyPage(() => import("./pages/admin/AdminSupportTickets"));
 const AdminReferrals = lazyPage(() => import("./pages/admin/AdminReferrals"));
 
-// ─── QueryClient with optimized defaults ───
+// ─── QueryClient with aggressive caching for instant navigation ───
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
-      staleTime: 60_000,       // 1 min stale — avoid re-fetches
-      gcTime: 10 * 60_000,     // 10 min cache
+      staleTime: 5 * 60_000,     // 5 min stale — avoid re-fetches on navigation
+      gcTime: 30 * 60_000,       // 30 min cache — keep data warm
       refetchOnReconnect: "always",
       refetchOnWindowFocus: false,
-      refetchOnMount: false,   // Use cached data on re-mount
+      refetchOnMount: false,     // Use cached data on re-mount (instant render)
       networkMode: "online",
     },
     mutations: {
