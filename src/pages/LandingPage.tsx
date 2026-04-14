@@ -31,7 +31,7 @@ import mobileAppMockup from "@/assets/mobile-app-mockup.png";
 import brandLogo from "@/assets/evixPos.png";
 
 /* ─── icon arrays for dynamic sections ─── */
-const FEATURE_ICONS = [ShoppingCart, Repeat, Users, BarChart3, Bot, Globe];
+const FEATURE_ICONS = [ShoppingCart, Repeat, Users, BarChart3, Bot, Globe, CreditCard, Layers, Target, Sparkles];
 const PAIN_ICONS = [AlertTriangle, XCircle, Clock, Database];
 const SOLUTION_ICONS = [Lightbulb, CheckCircle2, Zap, Workflow];
 const WHY_ICONS = [Rocket, Shield, BarChart, Headphones];
