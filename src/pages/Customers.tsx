@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna, Star, CreditCard, ShoppingBag } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import CustomerDNAProfile from "@/components/CustomerDNAProfile";
 
@@ -27,6 +28,12 @@ interface Customer {
   tags: string;
   notes: string;
   created_at: string;
+}
+
+interface CustomerEnriched extends Customer {
+  total_due: number;
+  total_points: number;
+  order_count: number;
 }
 
 interface OrderHistory {
@@ -50,7 +57,8 @@ const Customers = () => {
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const { format } = useCurrency();
+  const [customers, setCustomers] = useState<CustomerEnriched[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -68,7 +76,33 @@ const Customers = () => {
   const fetchCustomers = async () => {
     if (!activeStore) return;
     const { data } = await supabase.from("customers").select("*").eq("store_id", activeStore.id).order("created_at", { ascending: false });
-    if (data) setCustomers(data as Customer[]);
+    if (!data) return;
+
+    // Fetch enrichment data in parallel
+    const customerIds = data.map(c => c.id);
+    
+    const [creditsRes, loyaltyRes, ordersRes] = await Promise.all([
+      supabase.from("customer_credits").select("customer_id, total_due").eq("store_id", activeStore.id).in("customer_id", customerIds),
+      supabase.from("loyalty_points").select("customer_id, total_points, redeemed_points").eq("store_id", activeStore.id).in("customer_id", customerIds),
+      supabase.from("orders").select("customer_id").eq("store_id", activeStore.id).in("customer_id", customerIds),
+    ]);
+
+    const dueMap = new Map<string, number>();
+    (creditsRes.data || []).forEach((c: any) => dueMap.set(c.customer_id, Number(c.total_due)));
+    
+    const pointsMap = new Map<string, number>();
+    (loyaltyRes.data || []).forEach((l: any) => pointsMap.set(l.customer_id, Number(l.total_points) - Number(l.redeemed_points)));
+    
+    const orderCountMap = new Map<string, number>();
+    (ordersRes.data || []).forEach((o: any) => orderCountMap.set(o.customer_id, (orderCountMap.get(o.customer_id) || 0) + 1));
+
+    const enriched: CustomerEnriched[] = (data as Customer[]).map(c => ({
+      ...c,
+      total_due: dueMap.get(c.id) || 0,
+      total_points: pointsMap.get(c.id) || 0,
+      order_count: orderCountMap.get(c.id) || 0,
+    }));
+    setCustomers(enriched);
   };
 
   useEffect(() => {
@@ -80,11 +114,7 @@ const Customers = () => {
   );
 
   const openAdd = async () => {
-    // Check GLOBAL customer count (across all stores)
-    const { count } = await supabase
-      .from("customers")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", effectiveUserId!);
+    const { count } = await supabase.from("customers").select("id", { count: "exact", head: true }).eq("user_id", effectiveUserId!);
     if ((count ?? 0) >= limits.maxCustomers) {
       toast.error(`Your plan allows up to ${limits.maxCustomers} customers across all stores. Please upgrade.`);
       return;
@@ -118,19 +148,12 @@ const Customers = () => {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else {
-      toast.success("Customer deleted");
-      fetchCustomers();
-    }
+    else { toast.success("Customer deleted"); fetchCustomers(); }
   };
 
   const viewHistory = async (customer: Customer) => {
     setHistoryCustomer(customer.name);
-    const { data } = await supabase
-      .from("orders")
-      .select("id, total_amount, status, payment_status, created_at")
-      .eq("customer_id", customer.id)
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("orders").select("id, total_amount, status, payment_status, created_at").eq("customer_id", customer.id).order("created_at", { ascending: false });
     setOrders((data ?? []) as OrderHistory[]);
     setHistoryOpen(true);
   };
@@ -195,12 +218,63 @@ const Customers = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportCSV = () => {
+    const header = "Name,Email,Phone,Tags,Total Due,Total Points,Order Count\n";
+    const rows = customers.map(c => `"${c.name}","${c.email}","${c.phone}","${c.tags}",${c.total_due},${c.total_points},${c.order_count}`).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `customers_${activeStore?.name || "store"}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Stats
+  const totalCustomers = customers.length;
+  const totalDue = customers.reduce((s, c) => s + c.total_due, 0);
+  const totalOrders = customers.reduce((s, c) => s + c.order_count, 0);
+
   return (
     <DashboardLayout>
       <UsageWarningBanner type="customers" />
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">Customers</span>
+          </div>
+          <p className="text-xl font-bold mt-1">{totalCustomers}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4 text-green-600" />
+            <span className="text-xs text-muted-foreground">Total Orders</span>
+          </div>
+          <p className="text-xl font-bold mt-1">{totalOrders}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-destructive" />
+            <span className="text-xs text-muted-foreground">Total Due</span>
+          </div>
+          <p className="text-xl font-bold mt-1 text-destructive">{format(totalDue)}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-yellow-500" />
+            <span className="text-xs text-muted-foreground">Avg Points</span>
+          </div>
+          <p className="text-xl font-bold mt-1">{totalCustomers > 0 ? Math.round(customers.reduce((s, c) => s + c.total_points, 0) / totalCustomers) : 0}</p>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Customers</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportCSV} className="hidden sm:inline-flex">
+            <FileDown className="mr-2 h-4 w-4" />Export
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { setImportRows([]); setImportOpen(true); }} className="hidden sm:inline-flex">
             <Upload className="mr-2 h-4 w-4" />Import
           </Button>
@@ -238,6 +312,9 @@ const Customers = () => {
                     <p className="text-xs text-muted-foreground truncate">{c.email || c.phone || "No contact"}</p>
                   </div>
                   <div className="flex gap-1 flex-shrink-0 ml-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); viewHistory(c); }} title="Order History">
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setDnaCustomer(c); setDnaOpen(true); }} title="DNA Profile">
                       <Dna className="h-3.5 w-3.5" />
                     </Button>
@@ -246,8 +323,13 @@ const Customers = () => {
                     </Button>
                   </div>
                 </div>
+                <div className="flex gap-2 flex-wrap mt-2 text-[10px]">
+                  {c.order_count > 0 && <Badge variant="secondary">{c.order_count} orders</Badge>}
+                  {c.total_due > 0 && <Badge variant="destructive">{format(c.total_due)} due</Badge>}
+                  {c.total_points > 0 && <Badge variant="outline" className="gap-0.5"><Star className="h-2.5 w-2.5" />{c.total_points} pts</Badge>}
+                </div>
                 {(c.tags || "").split(",").filter(Boolean).length > 0 && (
-                  <div className="flex gap-1 flex-wrap mt-2">
+                  <div className="flex gap-1 flex-wrap mt-1">
                     {(c.tags || "").split(",").filter(Boolean).map((t, i) => (
                       <Badge key={i} variant="secondary" className="text-[10px]">{t.trim()}</Badge>
                     ))}
@@ -265,6 +347,9 @@ const Customers = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead className="text-center">Orders</TableHead>
+                  <TableHead className="text-right">Due</TableHead>
+                  <TableHead className="text-center">Points</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -275,6 +360,17 @@ const Customers = () => {
                     <TableCell className="font-medium">{c.name}</TableCell>
                     <TableCell>{c.email}</TableCell>
                     <TableCell>{c.phone}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="text-xs">{c.order_count}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {c.total_due > 0 ? <Badge variant="destructive">{format(c.total_due)}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {c.total_points > 0 ? (
+                        <Badge variant="outline" className="gap-0.5"><Star className="h-3 w-3 text-yellow-500" />{c.total_points}</Badge>
+                      ) : <span className="text-muted-foreground text-xs">0</span>}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {(c.tags || "").split(",").filter(Boolean).map((t, i) => (
@@ -283,6 +379,9 @@ const Customers = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => viewHistory(c)} title="Order History">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => { setDnaCustomer(c); setDnaOpen(true); }} title="DNA Profile">
                         <Dna className="h-4 w-4" />
                       </Button>
@@ -362,7 +461,7 @@ const Customers = () => {
                 {orders.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell>{new Date(o.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>${Number(o.total_amount).toFixed(2)}</TableCell>
+                    <TableCell>{format(Number(o.total_amount))}</TableCell>
                     <TableCell>
                       <Badge className={statusColors[o.status] ?? ""}>{o.status}</Badge>
                     </TableCell>
@@ -405,18 +504,19 @@ const Customers = () => {
               Import {importRows.length} Records
             </Button>
           </div>
+          {importRows.length > 0 && (
+            <p className="text-sm text-green-600 font-medium">{importRows.length} records ready to import</p>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Customer DNA Profile */}
-      {dnaCustomer && activeStore && (
-        <CustomerDNAProfile
-          open={dnaOpen}
-          onOpenChange={setDnaOpen}
-          customerId={dnaCustomer.id}
-          customerName={dnaCustomer.name}
-          storeId={activeStore.id}
-        />
+      {/* DNA Profile */}
+      {dnaCustomer && (
+        <Dialog open={dnaOpen} onOpenChange={setDnaOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CustomerDNAProfile customerId={dnaCustomer.id} customerName={dnaCustomer.name} />
+          </DialogContent>
+        </Dialog>
       )}
     </DashboardLayout>
   );
