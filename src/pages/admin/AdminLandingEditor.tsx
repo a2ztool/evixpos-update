@@ -56,7 +56,7 @@ const SECTION_DESCRIPTIONS: Record<string, string> = {
   trust: "Stats — users, stores, orders, uptime",
   pain_points: "4 pain points + 4 solutions with titles & descriptions",
   about: "About section: title, descriptions, image, highlight points",
-  features: "6 core features with title, description & optional image",
+  features: "10 core features with title, description & optional image",
   who_is_it_for: "Marquee items showing target audiences",
   showcase: "Dashboard showcase: up to 6 cards with image, title & description",
   how_it_works: "4 steps showing how users get started",
@@ -176,16 +176,20 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "features_badge", type: "text", defaultValue: "Core Features" },
     { key: "features_title", type: "text", defaultValue: "Everything for Online & Offline Business" },
     { key: "features_subtitle", type: "text", defaultValue: "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime." },
-    ...([1,2,3,4,5,6].flatMap(i => [
-      { key: `feature_${i}_badge`, type: "text" as const, defaultValue: ["Online + Offline Orders", "POS & Walk-in Billing", "Unified Customers", "Profit Analytics", "Smart Automation", "Multi-Store"][i-1] || "Feature" },
-      { key: `feature_${i}_title`, type: "text" as const, defaultValue: ["Manage Orders From Every Channel", "Built-in POS for Physical Sales", "One Customer Database, Everywhere", "Real-Time Profit Across All Channels", "Automate Renewals & Reminders", "Multi-Store, Multi-Mode"][i-1] || "" },
+    ...([1,2,3,4,5,6,7,8,9,10].flatMap(i => [
+      { key: `feature_${i}_badge`, type: "text" as const, defaultValue: ["Online + Offline Orders", "POS & Walk-in Billing", "Unified Customers", "Profit Analytics", "Smart Automation", "Multi-Store", "Payment Gateway", "Inventory Control", "Staff Management", "Marketing Tools"][i-1] || "Feature" },
+      { key: `feature_${i}_title`, type: "text" as const, defaultValue: ["Manage Orders From Every Channel", "Built-in POS for Physical Sales", "One Customer Database, Everywhere", "Real-Time Profit Across All Channels", "Automate Renewals & Reminders", "Multi-Store, Multi-Mode", "Flexible Payment Integration", "Smart Inventory Tracking", "Team & Staff Control", "Built-in Marketing Suite"][i-1] || "" },
       { key: `feature_${i}_desc`, type: "text" as const, defaultValue: [
         "Whether customers order from your website, WooCommerce store, or walk into your shop — every order lands in one unified dashboard with full tracking.",
         "Ring up walk-in sales instantly with our built-in POS. Barcode scanning, receipt printing, cash register management — everything a physical store needs.",
         "No more separate customer lists. Online buyers and walk-in customers are tracked in one place with purchase history, credits, and loyalty points.",
         "See your true business performance. Combined revenue from online orders and in-store sales, expense tracking, and profit margins — all in real-time.",
         "Set up auto-reminders for subscription renewals via email and WhatsApp. Bot automation handles follow-ups so you never lose a customer.",
-        "Run multiple stores — some online, some offline, some hybrid. Each store has its own inventory, staff, and settings, but you see everything from one panel."
+        "Run multiple stores — some online, some offline, some hybrid. Each store has its own inventory, staff, and settings, but you see everything from one panel.",
+        "Accept payments via bKash, Nagad, Stripe, and more. Configure manual or automatic payment methods per store.",
+        "Track stock levels across all stores in real-time. Get alerts for low stock and dead stock automatically.",
+        "Assign roles, manage permissions, and track staff performance. Built-in chat for team communication.",
+        "Run email campaigns, create coupons, manage loyalty points, and track ad performance — all from one place."
       ][i-1] || "" },
       { key: `feature_${i}_image`, type: "image" as const, defaultValue: "" },
       { key: `feature_${i}_bullets`, type: "text" as const, defaultValue: [
@@ -194,7 +198,11 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
         "Customer profiles|Purchase history|Credit management|Loyalty points",
         "Revenue dashboard|Expense tracking|Profit margins|Daily sales report",
         "Email reminders|WhatsApp alerts|Bot automation|Subscription tracking",
-        "Online stores|Offline stores|Hybrid mode|Store-wise analytics"
+        "Online stores|Offline stores|Hybrid mode|Store-wise analytics",
+        "bKash & Nagad|Stripe & PayPal|QR payments|Auto verification",
+        "Stock alerts|Dead stock report|Supplier management|Purchase orders",
+        "Role-based access|Staff inbox|Performance tracking|Task assignment",
+        "Email campaigns|Coupon codes|Loyalty rewards|Ad analytics"
       ][i-1] || "" },
     ])),
   ],
