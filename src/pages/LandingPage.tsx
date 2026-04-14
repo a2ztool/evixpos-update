@@ -543,7 +543,7 @@ const LandingPage = () => {
             return (
               <div
                 key={i}
-                style={{ height: i < 6 ? '40vh' : 'auto', position: 'relative' }}
+                style={{ height: i < 6 ? '60vh' : 'auto' }}
               >
                 <div
                   className="sticky"
