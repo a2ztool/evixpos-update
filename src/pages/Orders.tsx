@@ -917,17 +917,27 @@ const fetchProducts = async () => {
             {/* Payment Method & Source */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Payment Method</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Payment Method</Label>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/settings?tab=payment")}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title="Manage Payment Methods"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <Select value={formPaymentMethod} onValueChange={setFormPaymentMethod}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={settingsLoading ? "Loading..." : "Select method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bkash">bKash</SelectItem>
-                    <SelectItem value="nagad">Nagad</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    {storePaymentMethods.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -955,9 +965,8 @@ const fetchProducts = async () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BDT">৳ BDT</SelectItem>
+                  <SelectItem value="INR">₹ INR</SelectItem>
                   <SelectItem value="USD">$ USD</SelectItem>
-                  <SelectItem value="EUR">€ EUR</SelectItem>
-                  <SelectItem value="GBP">£ GBP</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -988,19 +997,21 @@ const fetchProducts = async () => {
               />
             </div>
 
-            {/* Create Subscription Checkbox */}
-            <div className="flex items-center space-x-2 py-2">
-              <Checkbox
-                id="createSub"
-                checked={formCreateSub}
-                onCheckedChange={(checked) => setFormCreateSub(checked === true)}
-              />
-              <label htmlFor="createSub" className="text-sm cursor-pointer">
-                Create subscription from this order
-              </label>
-            </div>
+            {/* Create Subscription Checkbox - only for online stores */}
+            {!isOfflineStore && (
+              <div className="flex items-center space-x-2 py-2">
+                <Checkbox
+                  id="createSub"
+                  checked={formCreateSub}
+                  onCheckedChange={(checked) => setFormCreateSub(checked === true)}
+                />
+                <label htmlFor="createSub" className="text-sm cursor-pointer">
+                  Create subscription from this order
+                </label>
+              </div>
+            )}
 
-            {formCreateSub && (
+            {!isOfflineStore && formCreateSub && (
               <div className="space-y-2 pl-6 border-l-2 border-primary/20">
                 <Label>Subscription Variation</Label>
                 <Select value={formSubVariation} onValueChange={setFormSubVariation}>
