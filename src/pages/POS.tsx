@@ -426,6 +426,72 @@ const POS = () => {
         });
       }
 
+      // ─── Sync Customer Credits (due orders) ───
+      if (isDue && customerId && activeStore?.id) {
+        // Upsert customer_credits record
+        const { data: existingCredit } = await supabase
+          .from("customer_credits")
+          .select("id, total_due")
+          .eq("customer_id", customerId)
+          .eq("store_id", activeStore.id)
+          .maybeSingle();
+
+        if (existingCredit) {
+          await supabase.from("customer_credits").update({
+            total_due: Number(existingCredit.total_due) + total,
+            updated_at: new Date().toISOString(),
+          }).eq("id", existingCredit.id);
+        } else {
+          await supabase.from("customer_credits").insert({
+            customer_id: customerId,
+            store_id: activeStore.id,
+            user_id: effectiveUserId!,
+            total_due: total,
+            credit_limit: 0,
+          });
+        }
+      }
+
+      // ─── Sync Loyalty Points (earned on completed paid orders) ───
+      if (!isDue && customerId && activeStore?.id) {
+        const pointsEarned = Math.floor(total / 100); // 1 point per 100 currency
+        if (pointsEarned > 0) {
+          // Upsert loyalty_points summary
+          const { data: existingLoyalty } = await supabase
+            .from("loyalty_points")
+            .select("id, total_points")
+            .eq("customer_id", customerId)
+            .eq("store_id", activeStore.id)
+            .maybeSingle();
+
+          if (existingLoyalty) {
+            await supabase.from("loyalty_points").update({
+              total_points: Number(existingLoyalty.total_points) + pointsEarned,
+              updated_at: new Date().toISOString(),
+            }).eq("id", existingLoyalty.id);
+          } else {
+            await supabase.from("loyalty_points").insert({
+              customer_id: customerId,
+              store_id: activeStore.id,
+              user_id: effectiveUserId!,
+              total_points: pointsEarned,
+              redeemed_points: 0,
+            });
+          }
+
+          // Record loyalty transaction
+          await supabase.from("loyalty_transactions").insert({
+            customer_id: customerId,
+            store_id: activeStore.id,
+            user_id: effectiveUserId!,
+            points: pointsEarned,
+            type: "earned",
+            order_id: order.id,
+            notes: `Earned from POS Order #${order.id.slice(0, 8)}`,
+          });
+        }
+      }
+
       // Auto-create subscriptions
       const subscriptionItems = cart.filter(i => i.variation?.is_subscription);
       for (const item of subscriptionItems) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, DollarSign, Users, Receipt, MessageCircle } from "lucide-react";
-import PageGuide from "@/components/PageGuide";
+import { Search, Users, Receipt, MessageCircle, Eye, DollarSign, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
@@ -17,7 +16,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { format as formatDate } from "date-fns";
 
-const CustomerCredits = () => {
+const DueCustomers = () => {
   const { storeId, userId, ready } = useStoreQuery();
   const { format } = useCurrency();
   const queryClient = useQueryClient();
@@ -25,50 +24,33 @@ const CustomerCredits = () => {
   const [payDialog, setPayDialog] = useState<any>(null);
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
+  const [txDialog, setTxDialog] = useState<any>(null);
+  const [txData, setTxData] = useState<any[]>([]);
 
-  const { data: credits = [], isLoading } = useQuery({
-    queryKey: ["customer-credits", storeId],
+  // Fetch customers with dues > 0
+  const { data: dueCustomers = [], isLoading } = useQuery({
+    queryKey: ["due-customers", storeId],
     enabled: ready,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_credits")
-        .select("*, customers(name, phone)")
+        .select("*, customers(name, phone, email)")
         .eq("store_id", storeId!)
+        .gt("total_due", 0)
         .order("total_due", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: payments = [] } = useQuery({
-    queryKey: ["credit-payments", storeId],
-    enabled: ready,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("credit_payments")
-        .select("*, customers(name)")
-        .eq("store_id", storeId!)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return data || [];
-    },
-  });
+  const totalDue = dueCustomers.reduce((s: number, c: any) => s + Number(c.total_due), 0);
 
-  // Real-time subscription
-  useEffect(() => {
-    if (!storeId) return;
-    const channel = supabase
-      .channel(`credits-rt-${storeId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "customer_credits", filter: `store_id=eq.${storeId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["customer-credits", storeId] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "credit_payments", filter: `store_id=eq.${storeId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["credit-payments", storeId] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [storeId, queryClient]);
+  const filtered = dueCustomers.filter((c: any) =>
+    c.customers?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.customers?.phone?.includes(search)
+  );
 
+  // Pay mutation
   const payMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(payAmount);
@@ -86,8 +68,7 @@ const CustomerCredits = () => {
       }).eq("id", payDialog.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customer-credits"] });
-      queryClient.invalidateQueries({ queryKey: ["credit-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["due-customers"] });
       setPayDialog(null);
       setPayAmount("");
       toast.success("Payment recorded");
@@ -95,41 +76,61 @@ const CustomerCredits = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // View transactions
+  const viewTransactions = async (credit: any) => {
+    setTxDialog(credit);
+    const { data } = await supabase
+      .from("credit_payments")
+      .select("*")
+      .eq("customer_id", credit.customer_id)
+      .eq("store_id", storeId!)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setTxData(data || []);
+  };
+
+  // WhatsApp reminder
   const sendWhatsApp = (credit: any) => {
     const phone = credit.customers?.phone?.replace(/[^0-9]/g, "") || "";
-    if (!phone) { toast.error("No phone number"); return; }
+    if (!phone) { toast.error("No phone number for this customer"); return; }
     const name = credit.customers?.name || "Customer";
     const amount = format(Number(credit.total_due));
     const text = `Hello ${name}, your due amount is ${amount}. Please clear it at your earliest convenience. Thank you!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const totalDue = credits.reduce((s: number, c: any) => s + Number(c.total_due), 0);
-  const customersWithDue = credits.filter((c: any) => Number(c.total_due) > 0).length;
-
-  const filtered = credits.filter((c: any) =>
-    c.customers?.name?.toLowerCase().includes(search.toLowerCase()) || c.customers?.phone?.includes(search)
-  );
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Customer Credits</h1>
-            <p className="text-sm text-muted-foreground">Track customer dues and collect payments</p>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+              Due Customers
+            </h1>
+            <p className="text-sm text-muted-foreground">Customers with outstanding dues</p>
           </div>
-          <PageGuide title="How Customer Credits Work" steps={[
-            { title: "Auto Sync", description: "Due orders from POS automatically appear here." },
-            { title: "Track Dues", description: "Outstanding balances update in real-time." },
-            { title: "Collect Payment", description: "Click 'Collect' to record payment. Send WhatsApp reminders." },
-          ]} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Due</p><p className="text-2xl font-bold text-destructive">{format(totalDue)}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Customers with Due</p><p className="text-2xl font-bold">{customersWithDue}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Recent Payments</p><p className="text-2xl font-bold text-green-600">{payments.length}</p></CardContent></Card>
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-3">
+              <DollarSign className="h-8 w-8 text-destructive" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Outstanding</p>
+                <p className="text-2xl font-bold text-destructive">{format(totalDue)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Due Customers</p>
+                <p className="text-2xl font-bold">{dueCustomers.length}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="relative max-w-sm">
@@ -138,14 +139,14 @@ const CustomerCredits = () => {
         </div>
 
         <Card>
-          <CardHeader><CardTitle className="text-lg">Customer Dues</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Due List</CardTitle></CardHeader>
           <CardContent className="p-0">
             {/* Mobile cards */}
             <div className="md:hidden space-y-3 p-4">
               {isLoading ? (
                 <p className="text-center py-8 text-muted-foreground">Loading...</p>
               ) : filtered.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">No credit records</p>
+                <p className="text-center py-8 text-muted-foreground">No due customers 🎉</p>
               ) : filtered.map((c: any) => (
                 <div key={c.id} className="border rounded-lg p-3 space-y-2">
                   <div className="flex justify-between items-start">
@@ -153,22 +154,18 @@ const CustomerCredits = () => {
                       <p className="font-medium">{c.customers?.name}</p>
                       <p className="text-xs text-muted-foreground">{c.customers?.phone}</p>
                     </div>
-                    <Badge variant={Number(c.total_due) > 0 ? "destructive" : "secondary"}>
-                      {format(Number(c.total_due))}
-                    </Badge>
+                    <Badge variant="destructive">{format(Number(c.total_due))}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">Limit: {format(Number(c.credit_limit))}</p>
                   <div className="flex gap-2">
-                    {Number(c.total_due) > 0 && (
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => setPayDialog(c)} className="flex-1">
-                          <Receipt className="h-3 w-3 mr-1" /> Collect
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => sendWhatsApp(c)}>
-                          <MessageCircle className="h-3 w-3" />
-                        </Button>
-                      </>
-                    )}
+                    <Button size="sm" variant="outline" onClick={() => setPayDialog(c)} className="flex-1">
+                      <Receipt className="h-3 w-3 mr-1" /> Pay
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => viewTransactions(c)}>
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => sendWhatsApp(c)}>
+                      <MessageCircle className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -180,43 +177,37 @@ const CustomerCredits = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Credit Limit</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Total Due</TableHead>
                     <TableHead>Last Payment</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
                   ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No credit records</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No due customers 🎉</TableCell></TableRow>
                   ) : filtered.map((c: any) => (
                     <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.customers?.name}</TableCell>
+                      <TableCell>{c.customers?.phone || "—"}</TableCell>
                       <TableCell>
-                        <p className="font-medium">{c.customers?.name}</p>
-                        <p className="text-xs text-muted-foreground">{c.customers?.phone}</p>
-                      </TableCell>
-                      <TableCell>{format(Number(c.credit_limit))}</TableCell>
-                      <TableCell>
-                        <Badge variant={Number(c.total_due) > 0 ? "destructive" : "secondary"}>
-                          {format(Number(c.total_due))}
-                        </Badge>
+                        <Badge variant="destructive">{format(Number(c.total_due))}</Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {c.last_payment_date ? formatDate(new Date(c.last_payment_date), "dd MMM yyyy") : "—"}
                       </TableCell>
                       <TableCell className="text-right space-x-1">
-                        {Number(c.total_due) > 0 && (
-                          <>
-                            <Button size="sm" variant="outline" onClick={() => setPayDialog(c)}>
-                              <Receipt className="h-3 w-3 mr-1" /> Collect
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => sendWhatsApp(c)} title="WhatsApp Reminder">
-                              <MessageCircle className="h-3 w-3 text-green-600" />
-                            </Button>
-                          </>
-                        )}
+                        <Button size="sm" variant="outline" onClick={() => setPayDialog(c)}>
+                          <Receipt className="h-3 w-3 mr-1" /> Pay Now
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => viewTransactions(c)} title="View Transactions">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => sendWhatsApp(c)} title="WhatsApp Reminder">
+                          <MessageCircle className="h-3 w-3 text-green-600" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -225,35 +216,6 @@ const CustomerCredits = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Recent Payments */}
-        {payments.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Recent Payments</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((p: any) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="text-sm">{formatDate(new Date(p.created_at), "dd MMM yyyy")}</TableCell>
-                      <TableCell>{p.customers?.name}</TableCell>
-                      <TableCell className="text-green-600 font-medium">{format(Number(p.amount))}</TableCell>
-                      <TableCell><Badge variant="secondary">{p.payment_method}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Pay dialog */}
         <Dialog open={!!payDialog} onOpenChange={v => { if (!v) setPayDialog(null); }}>
@@ -280,9 +242,38 @@ const CustomerCredits = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Transaction history dialog */}
+        <Dialog open={!!txDialog} onOpenChange={v => { if (!v) setTxDialog(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Payment History — {txDialog?.customers?.name}</DialogTitle></DialogHeader>
+            {txData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-6">No payment records yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {txData.map((t: any) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-sm">{formatDate(new Date(t.created_at), "dd MMM yyyy")}</TableCell>
+                      <TableCell className="text-green-600 font-medium">{format(Number(t.amount))}</TableCell>
+                      <TableCell><Badge variant="secondary">{t.payment_method}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
 };
 
-export default CustomerCredits;
+export default DueCustomers;

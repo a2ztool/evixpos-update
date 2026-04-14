@@ -46,6 +46,7 @@ import Purchases from "./pages/Purchases";
 import CashRegister from "./pages/CashRegister";
 import CustomerCredits from "./pages/CustomerCredits";
 import LoyaltyPoints from "./pages/LoyaltyPoints";
+import DueCustomers from "./pages/DueCustomers";
 import StockAlerts from "./pages/StockAlerts";
 import DailySalesReport from "./pages/DailySalesReport";
 import OfflineProfitLoss from "./pages/OfflineProfitLoss";
@@ -137,6 +138,7 @@ const App = () => (
             <Route path="/offline/cash-register" element={<P perm="pos.access"><CashRegister /></P>} />
             <Route path="/offline/customer-credits" element={<P perm="customers.view"><CustomerCredits /></P>} />
             <Route path="/offline/loyalty" element={<P perm="customers.view"><LoyaltyPoints /></P>} />
+            <Route path="/offline/due-customers" element={<P perm="customers.view"><DueCustomers /></P>} />
             <Route path="/offline/stock-alerts" element={<P perm="products.view"><StockAlerts /></P>} />
             <Route path="/offline/daily-report" element={<P perm="reports.view"><DailySalesReport /></P>} />
             <Route path="/offline/profit-loss" element={<P perm="reports.view"><OfflineProfitLoss /></P>} />

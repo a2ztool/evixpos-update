@@ -58,6 +58,7 @@ const AppSidebar = () => {
     { title: t.customers, icon: Users, path: "/customers", perm: "customers.view" },
     { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", perm: "customers.view", feature: "subscriptions", onlineOnly: true },
     { title: "Customer Credits", icon: Receipt, path: "/offline/customer-credits", perm: "customers.view", offlineOnly: true },
+    { title: "Due Customers", icon: AlertTriangle, path: "/offline/due-customers", perm: "customers.view", offlineOnly: true },
     { title: "Loyalty Points", icon: Star, path: "/offline/loyalty", perm: "customers.view", offlineOnly: true },
   ];
   const offlineOpsItems: NavItem[] = [
