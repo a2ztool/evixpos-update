@@ -527,7 +527,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative">
+        <div className="hidden lg:block relative pb-16">
           {[1, 2, 3, 4, 5, 6].map((i) => {
             const title = get(`feature_${i}_title`);
             const desc = get(`feature_${i}_desc`);
@@ -536,73 +536,78 @@ const LandingPage = () => {
             const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
             if (!title && !img) return null;
 
+            // Each card gets a taller scroll container so the next card scrolls up over it
+            // The sticky top increases slightly for each card so they peek behind
+            const stickyTop = 96 + (i - 1) * 16; // 96px, 112px, 128px, ...
+
             return (
               <div
                 key={i}
-                className="sticky top-24"
-                style={{ paddingBottom: `${(6 - i) * 12}px` }}
+                style={{ height: i < 6 ? '60vh' : 'auto' }}
               >
                 <div
-                  className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8"
+                  className="sticky"
+                  style={{ top: `${stickyTop}px`, zIndex: i * 10 }}
                 >
-                  <div
-                    className="rounded-3xl border border-border/50 bg-card shadow-xl overflow-hidden transition-all duration-500"
-                    style={{
-                      transform: `scale(${1 - (i - 1) * 0.015})`,
-                      transformOrigin: 'top center',
-                    }}
-                  >
-                    <div className="grid lg:grid-cols-2 gap-0">
-                      {/* Text Content */}
-                      <div className="p-8 lg:p-12 flex flex-col justify-center space-y-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Icon className="h-5 w-5 text-primary" />
-                          </div>
-                          <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
-                            {get(`feature_${i}_badge`, `Feature ${i}`)}
-                          </Badge>
-                          <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{i} / 06</span>
-                        </div>
-                        <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title || `Feature ${i}`}</h3>
-                        <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
-                        {bullets.length > 0 && (
-                          <ul className="space-y-2.5 pt-1">
-                            {bullets.map((b, j) => (
-                              <li key={j} className="flex items-center gap-3 text-sm">
-                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-                                  <Check className="h-3 w-3 text-primary" />
-                                </div>
-                                <span className="text-foreground/80">{b.trim()}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-
-                      {/* Screenshot */}
-                      <div className="relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px]">
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
-                        {img ? (
-                          <div className="relative w-full">
-                            <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
-                              <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
-                                <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
-                                <div className="flex-1 mx-3">
-                                  <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
-                                </div>
-                              </div>
-                              <img src={img} alt={title || ""} className="w-full" loading="lazy" />
+                  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div
+                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-shadow duration-300"
+                      style={{
+                        boxShadow: `0 ${8 + i * 4}px ${30 + i * 10}px -${8 + i * 2}px hsl(var(--foreground) / ${0.08 + i * 0.02}), 0 0 0 1px hsl(var(--border) / 0.1)`,
+                      }}
+                    >
+                      <div className="grid lg:grid-cols-2 gap-0">
+                        {/* Text Content */}
+                        <div className="p-8 lg:p-12 flex flex-col justify-center space-y-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <Icon className="h-5 w-5 text-primary" />
                             </div>
+                            <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
+                              {get(`feature_${i}_badge`, `Feature ${i}`)}
+                            </Badge>
+                            <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{i} / 06</span>
                           </div>
-                        ) : (
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
-                            <Icon className="h-24 w-24 text-primary/20 relative" />
-                          </div>
-                        )}
+                          <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title || `Feature ${i}`}</h3>
+                          <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
+                          {bullets.length > 0 && (
+                            <ul className="space-y-2.5 pt-1">
+                              {bullets.map((b, j) => (
+                                <li key={j} className="flex items-center gap-3 text-sm">
+                                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                                    <Check className="h-3 w-3 text-primary" />
+                                  </div>
+                                  <span className="text-foreground/80">{b.trim()}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        {/* Screenshot */}
+                        <div className="relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px]">
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
+                          {img ? (
+                            <div className="relative w-full">
+                              <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
+                                <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
+                                  <div className="flex-1 mx-3">
+                                    <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
+                                  </div>
+                                </div>
+                                <img src={img} alt={title || ""} className="w-full" loading="lazy" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
+                              <Icon className="h-24 w-24 text-primary/20 relative" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -610,8 +615,6 @@ const LandingPage = () => {
               </div>
             );
           })}
-          {/* Spacer so last card can unstick */}
-          <div className="h-24" />
         </div>
 
         {/* Mobile: Simplified stacked cards */}
