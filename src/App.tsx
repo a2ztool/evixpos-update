@@ -51,6 +51,7 @@ const Referral = lazyPage(() => import("./pages/Referral"));
 const MyPlan = lazyPage(() => import("./pages/MyPlan"));
 const SupportPage = lazyPage(() => import("./pages/SupportPage"));
 const StaffInbox = lazyPage(() => import("./pages/StaffInbox"));
+const TeamChat = lazyPage(() => import("./pages/TeamChat"));
 const Suppliers = lazyPage(() => import("./pages/Suppliers"));
 const Purchases = lazyPage(() => import("./pages/Purchases"));
 const CashRegister = lazyPage(() => import("./pages/CashRegister"));
@@ -181,6 +182,7 @@ const App = () => {
             <Route path="/referral" element={<P ownerOnly feature="referral"><Referral /></P>} />
             <Route path="/my-plan" element={<P ownerOnly><MyPlan /></P>} />
             <Route path="/support" element={<P><SupportPage /></P>} />
+            <Route path="/team-chat" element={<P><TeamChat /></P>} />
             <Route path="/staff-inbox" element={<P ownerOnly><StaffInbox /></P>} />
             <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
             <Route path="/notification-center" element={<P><NotificationCenter /></P>} />

@@ -24,47 +24,24 @@ import {
 // Types
 // ══════════════════════════════════════════════════════
 interface ChatGroup {
-  id: string;
-  store_id: string;
-  created_by: string;
-  name: string;
-  icon: string;
-  created_at: string;
+  id: string; store_id: string; created_by: string;
+  name: string; icon: string; created_at: string;
 }
-
 interface ChatMessage {
-  id: string;
-  group_id: string;
-  sender_id: string;
-  message: string;
-  type: "text" | "task" | "system";
-  created_at: string;
+  id: string; group_id: string; sender_id: string;
+  message: string; type: "text" | "task" | "system"; created_at: string;
 }
-
 interface ChatTask {
-  id: string;
-  group_id: string;
-  assigned_by: string;
-  assigned_to: string;
-  title: string;
-  term: string | null;
-  order_id: string | null;
-  description: string | null;
-  priority: "low" | "medium" | "high";
-  status: "pending" | "in_progress" | "completed";
+  id: string; group_id: string; assigned_by: string; assigned_to: string;
+  title: string; term: string | null; order_id: string | null; description: string | null;
+  priority: "low" | "medium" | "high"; status: "pending" | "in_progress" | "completed";
   created_at: string;
 }
+interface Member { user_id: string; role: string; name?: string; email?: string; }
 
-interface Member {
-  user_id: string;
-  role: string;
-  name?: string;
-  email?: string;
-}
+// Helper to bypass generated types for new tables
+const db = supabase as any;
 
-// ══════════════════════════════════════════════════════
-// Component
-// ══════════════════════════════════════════════════════
 const TeamChat = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
@@ -72,7 +49,6 @@ const TeamChat = () => {
   const storeId = activeStore?.id;
   const myId = user?.id;
 
-  // State
   const [groups, setGroups] = useState<ChatGroup[]>([]);
   const [activeGroup, setActiveGroup] = useState<ChatGroup | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -86,66 +62,42 @@ const TeamChat = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupIcon, setNewGroupIcon] = useState("💬");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [taskForm, setTaskForm] = useState({ title: "", term: "", order_id: "", description: "", assigned_to: "", priority: "medium" as string });
-  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+  const [taskForm, setTaskForm] = useState({ title: "", term: "", order_id: "", description: "", assigned_to: "", priority: "medium" });
+  const [unreadMap] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
   // ─── Fetch groups ───
   const fetchGroups = useCallback(async () => {
     if (!storeId) return;
-    const { data } = await supabase
-      .from("chat_groups")
-      .select("*")
-      .eq("store_id", storeId)
-      .order("created_at", { ascending: false }) as any;
+    const { data } = await db.from("chat_groups").select("*").eq("store_id", storeId).order("created_at", { ascending: false });
     if (data) setGroups(data);
   }, [storeId]);
 
-  // ─── Fetch staff list ───
   const fetchStaff = useCallback(async () => {
     if (!storeId) return;
-    const { data } = await supabase
-      .from("staff_members")
-      .select("user_id, name, email")
-      .eq("store_id", storeId)
-      .eq("is_active", true) as any;
+    const { data } = await db.from("staff_members").select("user_id, name, email").eq("store_id", storeId).eq("is_active", true);
     if (data) setStaffList(data);
   }, [storeId]);
 
-  // ─── Fetch messages ───
   const fetchMessages = useCallback(async (groupId: string) => {
-    const { data } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: true })
-      .limit(200) as any;
+    const { data } = await db.from("chat_messages").select("*").eq("group_id", groupId).order("created_at", { ascending: true }).limit(200);
     if (data) setMessages(data);
   }, []);
 
-  // ─── Fetch members ───
   const fetchMembers = useCallback(async (groupId: string) => {
-    const { data } = await supabase
-      .from("chat_group_members")
-      .select("user_id, role")
-      .eq("group_id", groupId) as any;
+    const { data } = await db.from("chat_group_members").select("user_id, role").eq("group_id", groupId);
     if (data) {
       const enriched = data.map((m: any) => {
-        const staff = staffList.find(s => s.user_id === m.user_id);
+        const staff = staffList.find((s: any) => s.user_id === m.user_id);
         return { ...m, name: staff?.name || "Owner", email: staff?.email || user?.email || "" };
       });
       setMembers(enriched);
     }
   }, [staffList, user]);
 
-  // ─── Fetch tasks ───
   const fetchTasks = useCallback(async (groupId: string) => {
-    const { data } = await supabase
-      .from("chat_tasks")
-      .select("*")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: false }) as any;
+    const { data } = await db.from("chat_tasks").select("*").eq("group_id", groupId).order("created_at", { ascending: false });
     if (data) setTasks(data);
   }, []);
 
@@ -174,106 +126,74 @@ const TeamChat = () => {
     return () => { supabase.removeChannel(channel); };
   }, [activeGroup, myId, fetchTasks]);
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // ─── Create Group ───
+  // ─── Actions ───
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || !storeId || !myId) return;
-    const { data: group, error } = await supabase.from("chat_groups").insert({
-      store_id: storeId, created_by: myId, name: newGroupName.trim(), icon: newGroupIcon
-    } as any).select().single() as any;
+    const { data: group, error } = await db.from("chat_groups").insert({ store_id: storeId, created_by: myId, name: newGroupName.trim(), icon: newGroupIcon }).select().single();
     if (error) { toast.error("Failed to create group"); return; }
-    // Add creator as admin
-    await supabase.from("chat_group_members").insert({ group_id: group.id, user_id: myId, role: "admin" } as any);
-    // Add selected members
+    await db.from("chat_group_members").insert({ group_id: group.id, user_id: myId, role: "admin" });
     for (const uid of selectedMembers) {
-      await supabase.from("chat_group_members").insert({ group_id: group.id, user_id: uid, role: "staff" } as any);
+      await db.from("chat_group_members").insert({ group_id: group.id, user_id: uid, role: "staff" });
     }
-    // System message
-    await supabase.from("chat_messages").insert({
-      group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system"
-    } as any);
-    setShowCreateGroup(false);
-    setNewGroupName("");
-    setSelectedMembers([]);
+    await db.from("chat_messages").insert({ group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system" });
+    setShowCreateGroup(false); setNewGroupName(""); setSelectedMembers([]);
     fetchGroups();
     toast.success("Group created!");
   };
 
-  // ─── Send Message ───
   const handleSend = async () => {
     if (!msgInput.trim() || !activeGroup || !myId) return;
     const msg = msgInput.trim();
     setMsgInput("");
-    await supabase.from("chat_messages").insert({
-      group_id: activeGroup.id, sender_id: myId, message: msg, type: "text"
-    } as any);
+    await db.from("chat_messages").insert({ group_id: activeGroup.id, sender_id: myId, message: msg, type: "text" });
   };
 
-  // ─── Assign Task ───
   const handleAssignTask = async () => {
     if (!taskForm.title.trim() || !taskForm.assigned_to || !activeGroup || !myId) return;
-    const { data: task, error } = await supabase.from("chat_tasks").insert({
-      group_id: activeGroup.id,
-      assigned_by: myId,
-      assigned_to: taskForm.assigned_to,
-      title: taskForm.title,
-      term: taskForm.term || null,
-      order_id: taskForm.order_id || null,
-      description: taskForm.description || null,
-      priority: taskForm.priority,
-      status: "pending"
-    } as any).select().single() as any;
+    const { data: task, error } = await db.from("chat_tasks").insert({
+      group_id: activeGroup.id, assigned_by: myId, assigned_to: taskForm.assigned_to,
+      title: taskForm.title, term: taskForm.term || null, order_id: taskForm.order_id || null,
+      description: taskForm.description || null, priority: taskForm.priority, status: "pending"
+    }).select().single();
     if (error) { toast.error("Failed to assign task"); return; }
-    // Send task message
     const assigneeName = members.find(m => m.user_id === taskForm.assigned_to)?.name || "Staff";
-    await supabase.from("chat_messages").insert({
+    await db.from("chat_messages").insert({
       group_id: activeGroup.id, sender_id: myId,
       message: JSON.stringify({ taskId: task.id, title: taskForm.title, assignee: assigneeName, priority: taskForm.priority, status: "pending" }),
       type: "task"
-    } as any);
+    });
     setShowTaskModal(false);
     setTaskForm({ title: "", term: "", order_id: "", description: "", assigned_to: "", priority: "medium" });
     toast.success("Task assigned!");
     playNotificationSound();
   };
 
-  // ─── Update Task Status ───
   const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
-    await supabase.from("chat_tasks").update({ status: newStatus } as any).eq("id", taskId);
+    await db.from("chat_tasks").update({ status: newStatus }).eq("id", taskId);
     fetchTasks(activeGroup!.id);
     toast.success(`Task ${newStatus}`);
   };
 
-  // ─── Helpers ───
   const getSenderName = (senderId: string) => {
     if (senderId === myId) return "You";
-    const m = members.find(m => m.user_id === senderId);
-    return m?.name || "Unknown";
+    return members.find(m => m.user_id === senderId)?.name || "Unknown";
   };
-
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
-
-  const priorityColor = (p: string) => p === "high" ? "text-red-500" : p === "medium" ? "text-yellow-500" : "text-green-500";
+  const priorityColor = (p: string) => p === "high" ? "text-destructive" : p === "medium" ? "text-yellow-500" : "text-green-500";
   const statusIcon = (s: string) => s === "completed" ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : s === "in_progress" ? <Clock className="h-4 w-4 text-yellow-500" /> : <AlertCircle className="h-4 w-4 text-muted-foreground" />;
-
   const filteredGroups = groups.filter(g => g.name.toLowerCase().includes(searchGroup.toLowerCase()));
-  const lastMessages: Record<string, string> = {};
 
   const ICONS = ["💬", "👥", "🚀", "📦", "🎯", "⚡", "🔥", "💼", "🏪", "🛒"];
 
-  // ══════════════════════════════════════════════════════
-  // Render
-  // ══════════════════════════════════════════════════════
   return (
     <DashboardLayout>
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
-        {/* ─── LEFT: Group List ─── */}
+        {/* LEFT: Group List */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-border/50 flex flex-col ${mobileShowChat ? "hidden md:flex" : "flex"}`}>
-          {/* Header */}
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -287,10 +207,7 @@ const TeamChat = () => {
                   <DialogContent>
                     <DialogHeader><DialogTitle>Create Group</DialogTitle></DialogHeader>
                     <div className="space-y-4">
-                      <div>
-                        <Label>Group Name</Label>
-                        <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Sales Team" />
-                      </div>
+                      <div><Label>Group Name</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Sales Team" /></div>
                       <div>
                         <Label>Icon</Label>
                         <div className="flex gap-2 flex-wrap mt-1">
@@ -324,12 +241,9 @@ const TeamChat = () => {
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={searchGroup} onChange={e => setSearchGroup(e.target.value)}
-                placeholder="Search groups..." className="pl-9" />
+              <Input value={searchGroup} onChange={e => setSearchGroup(e.target.value)} placeholder="Search groups..." className="pl-9" />
             </div>
           </div>
-
-          {/* Group List */}
           <ScrollArea className="flex-1">
             {filteredGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-60 text-muted-foreground">
@@ -337,29 +251,23 @@ const TeamChat = () => {
                 <p className="text-sm">No groups yet</p>
                 <p className="text-xs">Create a group to start chatting</p>
               </div>
-            ) : (
-              filteredGroups.map(g => (
-                <button key={g.id} onClick={() => { setActiveGroup(g); setMobileShowChat(true); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-accent/50 transition-colors text-left ${activeGroup?.id === g.id ? "bg-accent" : ""}`}>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">
-                    {g.icon}
+            ) : filteredGroups.map(g => (
+              <button key={g.id} onClick={() => { setActiveGroup(g); setMobileShowChat(true); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-accent/50 transition-colors text-left ${activeGroup?.id === g.id ? "bg-accent" : ""}`}>
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">{g.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-sm truncate">{g.name}</p>
+                    <span className="text-[10px] text-muted-foreground">{new Date(g.created_at).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm truncate">{g.name}</p>
-                      <span className="text-[10px] text-muted-foreground">{new Date(g.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  {unreadMap[g.id] > 0 && (
-                    <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 min-w-[20px] h-5">{unreadMap[g.id]}</Badge>
-                  )}
-                </button>
-              ))
-            )}
+                </div>
+                {unreadMap[g.id] > 0 && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 min-w-[20px] h-5">{unreadMap[g.id]}</Badge>}
+              </button>
+            ))}
           </ScrollArea>
         </div>
 
-        {/* ─── RIGHT: Chat Window ─── */}
+        {/* RIGHT: Chat Window */}
         <div className={`flex-1 flex flex-col ${!mobileShowChat ? "hidden md:flex" : "flex"}`}>
           {!activeGroup ? (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
@@ -369,7 +277,7 @@ const TeamChat = () => {
             </div>
           ) : (
             <>
-              {/* Chat Header */}
+              {/* Header */}
               <div className="px-4 py-3 border-b border-border/50 flex items-center gap-3">
                 <button className="md:hidden mr-1" onClick={() => setMobileShowChat(false)}>
                   <ChevronRight className="h-5 w-5 rotate-180" />
@@ -379,11 +287,7 @@ const TeamChat = () => {
                   <p className="font-semibold text-sm">{activeGroup.name}</p>
                   <p className="text-xs text-muted-foreground">{members.length} members</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Members">
-                    <Users className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8"><Users className="h-4 w-4" /></Button>
               </div>
 
               {/* Messages */}
@@ -391,11 +295,7 @@ const TeamChat = () => {
                 {messages.map(msg => {
                   const isMe = msg.sender_id === myId;
                   if (msg.type === "system") {
-                    return (
-                      <div key={msg.id} className="flex justify-center">
-                        <span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">{msg.message}</span>
-                      </div>
-                    );
+                    return <div key={msg.id} className="flex justify-center"><span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">{msg.message}</span></div>;
                   }
                   if (msg.type === "task") {
                     let taskData: any = {};
@@ -404,10 +304,7 @@ const TeamChat = () => {
                     return (
                       <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                         <div className="max-w-sm bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <ListTodo className="h-4 w-4 text-primary" />
-                            <span className="text-xs font-medium text-primary">Task Assigned</span>
-                          </div>
+                          <div className="flex items-center gap-2"><ListTodo className="h-4 w-4 text-primary" /><span className="text-xs font-medium text-primary">Task Assigned</span></div>
                           <p className="font-semibold text-sm">{taskData.title}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>→ {taskData.assignee}</span>
@@ -433,14 +330,9 @@ const TeamChat = () => {
                       </div>
                     );
                   }
-                  // Text message
                   return (
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} gap-2`}>
-                      {!isMe && (
-                        <Avatar className="h-7 w-7 flex-shrink-0">
-                          <AvatarFallback className="text-[10px] bg-accent">{getInitials(getSenderName(msg.sender_id))}</AvatarFallback>
-                        </Avatar>
-                      )}
+                      {!isMe && <Avatar className="h-7 w-7 flex-shrink-0"><AvatarFallback className="text-[10px] bg-accent">{getInitials(getSenderName(msg.sender_id))}</AvatarFallback></Avatar>}
                       <div className={`max-w-[70%] ${isMe ? "bg-primary text-primary-foreground" : "bg-accent"} rounded-2xl px-3 py-2`}>
                         {!isMe && <p className="text-[10px] font-medium text-primary mb-0.5">{getSenderName(msg.sender_id)}</p>}
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
@@ -453,14 +345,11 @@ const TeamChat = () => {
                 })}
               </div>
 
-              {/* Input Bar */}
+              {/* Input */}
               <div className="p-3 border-t border-border/50 flex items-center gap-2">
-                {/* Task Button */}
                 <Dialog open={showTaskModal} onOpenChange={setShowTaskModal}>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" title="Assign Task">
-                      <ListTodo className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" title="Assign Task"><ListTodo className="h-4 w-4" /></Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader><DialogTitle className="flex items-center gap-2"><ListTodo className="h-5 w-5 text-primary" /> Assign Task</DialogTitle></DialogHeader>
@@ -469,11 +358,7 @@ const TeamChat = () => {
                       <div><Label>Assign To *</Label>
                         <Select value={taskForm.assigned_to} onValueChange={v => setTaskForm(p => ({ ...p, assigned_to: v }))}>
                           <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
-                          <SelectContent>
-                            {members.filter(m => m.user_id !== myId).map(m => (
-                              <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>
-                            ))}
-                          </SelectContent>
+                          <SelectContent>{members.filter(m => m.user_id !== myId).map(m => <SelectItem key={m.user_id} value={m.user_id}>{m.name}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -495,13 +380,10 @@ const TeamChat = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
-
                 <Input value={msgInput} onChange={e => setMsgInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())}
                   placeholder="Type a message..." className="flex-1" />
-                <Button size="icon" onClick={handleSend} disabled={!msgInput.trim()} className="h-9 w-9 flex-shrink-0">
-                  <Send className="h-4 w-4" />
-                </Button>
+                <Button size="icon" onClick={handleSend} disabled={!msgInput.trim()} className="h-9 w-9 flex-shrink-0"><Send className="h-4 w-4" /></Button>
               </div>
             </>
           )}
