@@ -405,73 +405,114 @@ const Referral = () => {
 
       {/* Withdraw Dialog */}
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Withdraw Earnings</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="bg-muted/30 p-3 rounded-lg text-sm">
               Available balance: <strong>{fmtCurrency(settings?.pending_balance || 0)}</strong>
               <br />Minimum withdrawal: <strong>{fmtCurrency(settings?.min_withdraw || 500)}</strong>
             </div>
+
+            {hasPendingWithdrawal && (
+              <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg text-sm text-yellow-700 dark:text-yellow-400">
+                ⚠️ You have a pending withdrawal. Please wait for it to be processed.
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Amount ({symbol})</Label>
-              <Input type="number" value={withdrawForm.amount} onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: Number(e.target.value) })} min={0} />
+              <Input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(Number(e.target.value))} min={0} />
             </div>
+
             <div className="space-y-2">
               <Label>Payment Method</Label>
-              <Select value={withdrawForm.method} onValueChange={(v) => setWithdrawForm({ ...withdrawForm, method: v })}>
+              <Select value={withdrawMethod} onValueChange={(v) => { setWithdrawMethod(v); setWithdrawDetails({}); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bkash">bKash</SelectItem>
-                  <SelectItem value="nagad">Nagad</SelectItem>
-                  <SelectItem value="rocket">Rocket</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  {getGroupedMethods().map(group => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel className="text-xs font-bold">{group.label}</SelectLabel>
+                      {group.methods.map(m => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <span className="flex items-center gap-2">
+                            <span>{m.emoji}</span>
+                            <span>{m.label}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Account Number</Label>
-              <Input value={withdrawForm.account_number} onChange={(e) => setWithdrawForm({ ...withdrawForm, account_number: e.target.value })} placeholder="01XXXXXXXXX" />
-            </div>
+
+            {/* Dynamic Fields */}
+            {selectedMethod && selectedMethod.fields.map(field => (
+              <div key={field.key} className="space-y-2">
+                <Label>{field.label} {field.required && <span className="text-destructive">*</span>}</Label>
+                <Input
+                  type={field.type || "text"}
+                  value={withdrawDetails[field.key] || ""}
+                  onChange={(e) => setWithdrawDetails(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
+
             <div className="space-y-2">
               <Label>Notes (optional)</Label>
-              <Textarea value={withdrawForm.notes} onChange={(e) => setWithdrawForm({ ...withdrawForm, notes: e.target.value })} rows={2} />
+              <Textarea value={withdrawNotes} onChange={(e) => setWithdrawNotes(e.target.value)} rows={2} />
             </div>
-            <Button className="w-full" onClick={requestWithdraw}>Submit Withdrawal Request</Button>
+
+            <Button
+              className="w-full"
+              onClick={requestWithdraw}
+              disabled={!isWithdrawValid() || hasPendingWithdrawal}
+            >
+              Submit Withdrawal Request
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* History Dialog */}
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Withdrawal History</DialogTitle></DialogHeader>
           {withdrawals.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 text-sm">No withdrawal history.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {withdrawals.map((w) => (
-                  <TableRow key={w.id}>
-                    <TableCell className="text-sm">{format(new Date(w.created_at), "MMM dd, yyyy")}</TableCell>
-                    <TableCell className="text-sm font-medium">{fmtCurrency(w.amount)}</TableCell>
-                    <TableCell className="text-sm capitalize">{w.method}</TableCell>
-                    <TableCell>
+            <div className="space-y-3">
+              {withdrawals.map((w) => {
+                const method = getMethodById(w.method);
+                let details: Record<string, string> = {};
+                try { details = JSON.parse(w.account_number || "{}"); } catch { details = { account: w.account_number }; }
+                return (
+                  <div key={w.id} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span>{method?.emoji || "💳"}</span>
+                        <span className="font-medium text-sm">{method?.label || w.method}</span>
+                      </div>
                       <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "secondary"}>
                         {w.status}
                       </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{format(new Date(w.created_at), "MMM dd, yyyy")}</span>
+                      <span className="font-semibold">{fmtCurrency(w.amount)}</span>
+                    </div>
+                    {Object.keys(details).length > 0 && (
+                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
+                        {Object.entries(details).map(([k, v]) => (
+                          <div key={k}><span className="capitalize">{k.replace(/_/g, " ")}:</span> {v}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </DialogContent>
       </Dialog>
