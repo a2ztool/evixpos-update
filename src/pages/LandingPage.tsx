@@ -443,15 +443,32 @@ const LandingPage = () => {
           {/* Hero headline — centered for max impact */}
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-center max-w-4xl mx-auto mb-6">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.08] mb-6">
-              {get("hero_title_line1", "One Platform.")}
+              <motion.span
+                initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-block"
+              >
+                {get("hero_title_line1", "One Platform.")}
+              </motion.span>
               <br />
-              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              <motion.span
+                initial={{ opacity: 0, y: 20, filter: "blur(8px)", scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer-gradient_3s_ease-in-out_infinite]"
+              >
                 {get("hero_title_line2", "Online + Offline.")}
-              </span>
+              </motion.span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8"
+            >
               {get("hero_subtitle", "Manage your online store, POS billing, walk-in sales, inventory, customers & profit analytics — all from one powerful panel. No more juggling separate tools.")}
-            </p>
+            </motion.p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 w-full max-w-xl mx-auto">
               <Button 
                 size="lg" 
