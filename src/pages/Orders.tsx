@@ -863,7 +863,7 @@ const fetchProducts = async () => {
             {/* Amount & Cost */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Amount Paid (৳)</Label>
+                <Label>Amount Paid ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
