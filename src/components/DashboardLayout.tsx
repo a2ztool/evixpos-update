@@ -381,6 +381,7 @@ const MobileNav = () => {
                           transition={{ delay: idx * 0.035, type: "spring", stiffness: 350, damping: 25 }}
                           whileTap={{ scale: 0.92 }}
                           onClick={() => { navigate(item.path); setMoreOpen(false); }}
+                          onMouseEnter={() => prefetchRoute(item.path)}
                           className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl transition-all duration-200 ${
                             active
                               ? "bg-primary/8 text-primary"
