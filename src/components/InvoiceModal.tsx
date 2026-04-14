@@ -546,7 +546,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
             {/* QR Code Section */}
             <div className="mt-6 flex flex-col sm:flex-row items-center gap-4 rounded-xl bg-muted/30 p-4 border border-border/40">
-              <div className="shrink-0 bg-white p-2 rounded-lg shadow-sm">
+              <div className="inv-qr-container shrink-0 bg-white p-2 rounded-lg shadow-sm">
                 <QRCodeSVG value={qrData} size={80} level="M" />
               </div>
               <div className="text-center sm:text-left">
