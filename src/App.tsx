@@ -90,12 +90,13 @@ const AdminReferrals = lazyPage(() => import("./pages/admin/AdminReferrals"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1500 * 2 ** attemptIndex, 10000),
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      retry: 1,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
+      staleTime: 60_000,       // 1 min stale — avoid re-fetches
+      gcTime: 10 * 60_000,     // 10 min cache
       refetchOnReconnect: "always",
       refetchOnWindowFocus: false,
+      refetchOnMount: false,   // Use cached data on re-mount
       networkMode: "online",
     },
     mutations: {
@@ -130,8 +131,12 @@ const P = ({ children, perm, ownerOnly, feature }: { children: React.ReactNode; 
   </ProtectedRoute>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  useEffect(() => {
+    prefetchCriticalRoutes();
+  }, []);
+
+  return (
     <AuthProvider>
     <LanguageProvider>
     <StoreProvider>
