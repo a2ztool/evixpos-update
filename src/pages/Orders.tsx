@@ -168,6 +168,11 @@ const Orders = () => {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Dynamic payment methods & currency from store settings
+  const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([]);
+  const [defaultCurrency, setDefaultCurrency] = useState("BDT");
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
   const confirmDelete = (order: Order) => {
     setOrderToDelete(order);
     setDeleteConfirmOpen(true);
