@@ -339,11 +339,12 @@ const SupportPage = () => {
               </div>
               <div className="flex gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[130px]"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[150px]"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="waiting_for_user">Waiting</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
@@ -438,16 +439,19 @@ const SupportPage = () => {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
-                              <h4 className="font-semibold text-sm truncate">{ticket.subject}</h4>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1 ml-6">{ticket.description}</p>
-                            <div className="flex items-center gap-2 mt-2 ml-6">
-                              <Badge variant="secondary" className="text-[10px]">{CATEGORY_OPTIONS.find(c => c.value === ticket.category)?.label || ticket.category}</Badge>
-                              <Badge variant="outline" className={`text-[10px] ${priorityConf.color}`}>{priorityConf.label}</Badge>
-                              <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
-                            </div>
+                             <div className="flex items-center gap-2 mb-1">
+                               <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
+                               <h4 className="font-semibold text-sm truncate">{ticket.subject}</h4>
+                               <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono">
+                                 EVX-{1001 + tickets.indexOf(ticket)}
+                               </Badge>
+                             </div>
+                             <p className="text-xs text-muted-foreground line-clamp-1 ml-6">{ticket.description.split("\n---")[0]}</p>
+                             <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                               <Badge variant="secondary" className="text-[10px]">{CATEGORY_OPTIONS.find(c => c.value === ticket.category)?.label || ticket.category}</Badge>
+                               <Badge variant="outline" className={`text-[10px] ${priorityConf.color}`}>{priorityConf.label}</Badge>
+                               <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
+                             </div>
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(ticket)}><FileText className="h-3.5 w-3.5" /></Button>
