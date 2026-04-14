@@ -1,9 +1,10 @@
-import { Bell, CheckCheck, Volume2, VolumeX } from "lucide-react";
+import { Bell, CheckCheck, Volume2, VolumeX, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useMessageUnread } from "@/hooks/useMessageUnread";
 import { TYPE_EMOJI, TYPE_LABEL } from "@/lib/notificationTriggers";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import { useState } from "react";
 
 const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
+  const { unreadCount: msgUnread } = useMessageUnread();
   const navigate = useNavigate();
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
@@ -30,13 +32,15 @@ const NotificationBell = () => {
     } catch {}
   };
 
+  const totalBadge = unreadCount + msgUnread;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           <AnimatePresence>
-            {unreadCount > 0 && (
+            {totalBadge > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -44,7 +48,7 @@ const NotificationBell = () => {
                 className="absolute -top-1 -right-1"
               >
                 <Badge className="h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {totalBadge > 99 ? "99+" : totalBadge}
                 </Badge>
               </motion.div>
             )}
@@ -57,8 +61,8 @@ const NotificationBell = () => {
           <h4 className="font-semibold text-sm flex items-center gap-1.5">
             <Bell className="h-4 w-4 text-primary" />
             Notifications
-            {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{unreadCount}</Badge>
+            {totalBadge > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{totalBadge}</Badge>
             )}
           </h4>
           <div className="flex items-center gap-1">
