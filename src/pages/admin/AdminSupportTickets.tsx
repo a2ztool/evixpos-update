@@ -214,7 +214,7 @@ const AdminSupportTickets = () => {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input placeholder="Search by subject, description, or user..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+          <Input placeholder="Search by subject, user, or store..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[150px] bg-slate-800 border-slate-700 text-white">
@@ -224,8 +224,21 @@ const AdminSupportTickets = () => {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="open">Open</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="waiting_for_user">Waiting</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <SelectTrigger className="w-[130px] bg-slate-800 border-slate-700 text-white">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectItem value="all">All Priority</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -247,21 +260,25 @@ const AdminSupportTickets = () => {
             const priorityConf = PRIORITY_CONFIG[ticket.priority] || PRIORITY_CONFIG.medium;
             const StatusIcon = statusConf.icon;
             return (
-              <Card key={ticket.id} className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-all cursor-pointer group" onClick={() => openTicketDetail(ticket)}>
+              <Card key={ticket.id} className={`bg-slate-800 border-slate-700 hover:border-slate-600 transition-all cursor-pointer group ${isNewTicket(ticket) ? "ring-1 ring-blue-500/50" : ""}`} onClick={() => openTicketDetail(ticket)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
                         <h4 className="font-semibold text-sm text-white truncate">{ticket.subject}</h4>
+                        {isNewTicket(ticket) && <Badge className="text-[9px] bg-blue-500 text-white border-0 px-1.5 py-0">NEW</Badge>}
                       </div>
-                      <p className="text-xs text-slate-400 line-clamp-1 ml-6">{ticket.description}</p>
+                      <p className="text-xs text-slate-400 line-clamp-1 ml-6">{ticket.description.split("\n---")[0]}</p>
                       <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
                         <Badge className={`text-[10px] ${statusConf.bgClass} ${statusConf.color} border-0`}>{statusConf.label}</Badge>
                         <Badge variant="outline" className={`text-[10px] border-slate-600 ${priorityConf.color}`}>{priorityConf.label}</Badge>
                         <span className="text-[10px] text-slate-500 flex items-center gap-1">
                           <User className="h-3 w-3" />{profiles[ticket.user_id] || "Unknown"}
                         </span>
+                        {ticket.store_id && storeNames[ticket.store_id] && (
+                          <span className="text-[10px] text-slate-500">📍 {storeNames[ticket.store_id]}</span>
+                        )}
                         <span className="text-[10px] text-slate-500">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
                       </div>
                     </div>
