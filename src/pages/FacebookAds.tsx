@@ -200,7 +200,7 @@ const FacebookAds = () => {
     if (!user || !activeStore) { toast.error("Please select a store first"); return; }
     setConnectingOAuth(true);
     const META_APP_ID = "1304633021527034";
-    const redirectUri = "https://identical-copy.lovable.app/api/facebook/callback";
+    const redirectUri = getRedirectUri();
     const state = btoa(JSON.stringify({ user_id: user.id, store_id: activeStore.id }));
     window.location.href =
       `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_read,ads_management&response_type=code&state=${encodeURIComponent(state)}`;
