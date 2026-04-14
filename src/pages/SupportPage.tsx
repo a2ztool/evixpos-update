@@ -123,7 +123,7 @@ const SupportPage = () => {
   // Ticket form
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<SupportTicket | null>(null);
-  const [form, setForm] = useState({ subject: "", description: "", category: "general", priority: "medium" });
+  const [form, setForm] = useState({ subject: "", description: "", category: "pos", priority: "medium" });
 
   // Ticket detail / messages
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -136,6 +136,20 @@ const SupportPage = () => {
   const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [guideSearch, setGuideSearch] = useState("");
+
+  // Handle pre-fill from SupportPopup
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefillSubject = params.get("prefill_subject");
+    const prefillDesc = params.get("prefill_desc");
+    if (prefillSubject) {
+      setForm(p => ({ ...p, subject: prefillSubject, description: prefillDesc || "" }));
+      setSheetOpen(true);
+      setActiveTab("tickets");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   const fetchTickets = async () => {
     if (!user) return;
