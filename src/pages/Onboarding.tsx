@@ -294,7 +294,7 @@ const Onboarding = () => {
           <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-primary" /> Quick Setup</span>
           <span className="flex items-center gap-1"><Sparkles className="h-3.5 w-3.5 text-primary" /> Free Forever</span>
         </div>
-        <p className="text-center text-xs text-muted-foreground mt-3">© 2026 EvixPOS.com</p>
+        <p className="text-center text-xs text-muted-foreground mt-3">© {new Date().getFullYear()} EvixPOS. All rights reserved.</p>
       </div>
     </div>
   );

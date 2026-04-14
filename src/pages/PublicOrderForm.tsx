@@ -700,7 +700,7 @@ const PublicOrderForm = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground pb-6">
-          Powered by {businessSettings?.business_name || "EviPOS"}
+          Powered by {businessSettings?.business_name || "EvixPOS"}
         </p>
       </div>
     </div>
