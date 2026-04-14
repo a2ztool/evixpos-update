@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
@@ -56,6 +57,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut, user } = useAuth();
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
+  const { plan } = useStorePlan();
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
@@ -185,7 +187,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{displayName}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {isStaff ? `Staff • ${staffInfo?.role}` : "Free Plan"}
+                          {isStaff ? `Staff • ${staffInfo?.role}` : `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`}
                         </p>
                       </div>
                     </DropdownMenuLabel>
