@@ -35,6 +35,7 @@ const routeImports: Record<string, () => Promise<any>> = {
   "/coupons": () => import("@/pages/Coupons"),
   "/order-forms": () => import("@/pages/OrderForms"),
   "/staff-inbox": () => import("@/pages/StaffInbox"),
+  "/inventory": () => import("@/pages/Inventory"),
   "/offline/suppliers": () => import("@/pages/Suppliers"),
   "/offline/purchases": () => import("@/pages/Purchases"),
   "/offline/cash-register": () => import("@/pages/CashRegister"),
