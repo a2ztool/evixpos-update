@@ -910,7 +910,7 @@ const fetchProducts = async () => {
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted">
               <span className="text-sm font-medium">Profit:</span>
               <span className={`text-sm font-bold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                ৳{profit.toFixed(2)}
+                {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{profit.toFixed(2)}
               </span>
             </div>
 
