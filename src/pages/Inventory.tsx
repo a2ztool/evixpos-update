@@ -173,8 +173,8 @@ const Inventory = () => {
       for (const item of itemsWithCalc) {
         const matchedProduct = products.find((p: any) => p.name.toLowerCase() === item.product_name.toLowerCase());
         if (matchedProduct) {
-          const newQty = Number(matchedProduct.stock_quantity || 0) + Number(item.quantity);
-          await supabase.from("products").update({ stock_quantity: newQty }).eq("id", matchedProduct.id);
+          const newQty = Number(matchedProduct.stock || 0) + Number(item.quantity);
+          await supabase.from("products").update({ stock: newQty }).eq("id", matchedProduct.id);
         }
       }
     },
