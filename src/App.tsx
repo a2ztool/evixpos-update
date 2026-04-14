@@ -13,7 +13,9 @@ import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
 import { lazyPage } from "@/lib/lazyPage";
+import { prefetchCriticalRoutes } from "@/lib/routePrefetch";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 // ─── Eager-loaded (critical path) ───
 import LandingPage from "./pages/LandingPage";
