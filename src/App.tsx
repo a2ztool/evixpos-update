@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,87 +12,111 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
+import { lazyPage } from "@/lib/lazyPage";
+import { toast } from "sonner";
+
+// ─── Eager-loaded (critical path) ───
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
-import Products from "./pages/Products";
-import OrderForms from "./pages/OrderForms";
-import Coupons from "./pages/Coupons";
-import Customers from "./pages/Customers";
-import Orders from "./pages/Orders";
-import PendingOrders from "./pages/PendingOrders";
-import Transactions from "./pages/Transactions";
-import Subscriptions from "./pages/Subscriptions";
-import NotificationsPage from "./pages/NotificationsPage";
-import NotificationCenter from "./pages/NotificationCenter";
-import WooCommercePage from "./pages/WooCommercePage";
-import BotAutomation from "./pages/BotAutomation";
-import WhatsAppPage from "./pages/WhatsAppPage";
-import GoogleSheetsPage from "./pages/GoogleSheetsPage";
-import POS from "./pages/POS";
-import SalesProfit from "./pages/SalesProfit";
-import IncomeExpense from "./pages/IncomeExpense";
-import DueBook from "./pages/DueBook";
-import AdCosts from "./pages/AdCosts";
-import FacebookAds from "./pages/FacebookAds";
-import TaskMission from "./pages/TaskMission";
-import Reports from "./pages/Reports";
-import Referral from "./pages/Referral";
-import MyPlan from "./pages/MyPlan";
-import SupportPage from "./pages/SupportPage";
-import StaffInbox from "./pages/StaffInbox";
-import Suppliers from "./pages/Suppliers";
-import Purchases from "./pages/Purchases";
-import CashRegister from "./pages/CashRegister";
-import CustomerCredits from "./pages/CustomerCredits";
-import LoyaltyPoints from "./pages/LoyaltyPoints";
-import DueCustomers from "./pages/DueCustomers";
-import StockAlerts from "./pages/StockAlerts";
-import DailySalesReport from "./pages/DailySalesReport";
-import OfflineProfitLoss from "./pages/OfflineProfitLoss";
-import StaffPerformance from "./pages/StaffPerformance";
-
-import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import ResetPassword from "./pages/ResetPassword";
 
-// Admin pages
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminStores from "./pages/admin/AdminStores";
-import AdminReports from "./pages/admin/AdminReports";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import AdminStoreDetails from "./pages/admin/AdminStoreDetails";
-import AdminUserDetails from "./pages/admin/AdminUserDetails";
-import AdminPayments from "./pages/admin/AdminPayments";
-import AdminPaymentGateways from "./pages/admin/AdminPaymentGateways";
-import AdminAutoPayments from "./pages/admin/AdminAutoPayments";
-import AdminLandingEditor from "./pages/admin/AdminLandingEditor";
-import AdminInbox from "./pages/admin/AdminInbox";
-import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
-import AdminReferrals from "./pages/admin/AdminReferrals";
-import PublicOrderForm from "./pages/PublicOrderForm";
-import FacebookCallback from "./pages/FacebookCallback";
+// ─── Lazy-loaded pages ───
+const Onboarding = lazyPage(() => import("./pages/Onboarding"));
+const Dashboard = lazyPage(() => import("./pages/Dashboard"));
+const Products = lazyPage(() => import("./pages/Products"));
+const OrderForms = lazyPage(() => import("./pages/OrderForms"));
+const Coupons = lazyPage(() => import("./pages/Coupons"));
+const Customers = lazyPage(() => import("./pages/Customers"));
+const Orders = lazyPage(() => import("./pages/Orders"));
+const PendingOrders = lazyPage(() => import("./pages/PendingOrders"));
+const Transactions = lazyPage(() => import("./pages/Transactions"));
+const Subscriptions = lazyPage(() => import("./pages/Subscriptions"));
+const NotificationsPage = lazyPage(() => import("./pages/NotificationsPage"));
+const NotificationCenter = lazyPage(() => import("./pages/NotificationCenter"));
+const WooCommercePage = lazyPage(() => import("./pages/WooCommercePage"));
+const BotAutomation = lazyPage(() => import("./pages/BotAutomation"));
+const WhatsAppPage = lazyPage(() => import("./pages/WhatsAppPage"));
+const GoogleSheetsPage = lazyPage(() => import("./pages/GoogleSheetsPage"));
+const POS = lazyPage(() => import("./pages/POS"));
+const SalesProfit = lazyPage(() => import("./pages/SalesProfit"));
+const IncomeExpense = lazyPage(() => import("./pages/IncomeExpense"));
+const DueBook = lazyPage(() => import("./pages/DueBook"));
+const AdCosts = lazyPage(() => import("./pages/AdCosts"));
+const FacebookAds = lazyPage(() => import("./pages/FacebookAds"));
+const TaskMission = lazyPage(() => import("./pages/TaskMission"));
+const Reports = lazyPage(() => import("./pages/Reports"));
+const Referral = lazyPage(() => import("./pages/Referral"));
+const MyPlan = lazyPage(() => import("./pages/MyPlan"));
+const SupportPage = lazyPage(() => import("./pages/SupportPage"));
+const StaffInbox = lazyPage(() => import("./pages/StaffInbox"));
+const Suppliers = lazyPage(() => import("./pages/Suppliers"));
+const Purchases = lazyPage(() => import("./pages/Purchases"));
+const CashRegister = lazyPage(() => import("./pages/CashRegister"));
+const CustomerCredits = lazyPage(() => import("./pages/CustomerCredits"));
+const LoyaltyPoints = lazyPage(() => import("./pages/LoyaltyPoints"));
+const DueCustomers = lazyPage(() => import("./pages/DueCustomers"));
+const StockAlerts = lazyPage(() => import("./pages/StockAlerts"));
+const DailySalesReport = lazyPage(() => import("./pages/DailySalesReport"));
+const OfflineProfitLoss = lazyPage(() => import("./pages/OfflineProfitLoss"));
+const StaffPerformance = lazyPage(() => import("./pages/StaffPerformance"));
+const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
+const ResetPassword = lazyPage(() => import("./pages/ResetPassword"));
+const PublicOrderForm = lazyPage(() => import("./pages/PublicOrderForm"));
+const FacebookCallback = lazyPage(() => import("./pages/FacebookCallback"));
+const Integrations = lazyPage(() => import("./pages/Integrations"));
 
+// Admin pages (lazy)
+const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
+const AdminLayout = lazyPage(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazyPage(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazyPage(() => import("./pages/admin/AdminUsers"));
+const AdminStores = lazyPage(() => import("./pages/admin/AdminStores"));
+const AdminReports = lazyPage(() => import("./pages/admin/AdminReports"));
+const AdminSettings = lazyPage(() => import("./pages/admin/AdminSettings"));
+const AdminCoupons = lazyPage(() => import("./pages/admin/AdminCoupons"));
+const AdminStoreDetails = lazyPage(() => import("./pages/admin/AdminStoreDetails"));
+const AdminUserDetails = lazyPage(() => import("./pages/admin/AdminUserDetails"));
+const AdminPayments = lazyPage(() => import("./pages/admin/AdminPayments"));
+const AdminPaymentGateways = lazyPage(() => import("./pages/admin/AdminPaymentGateways"));
+const AdminAutoPayments = lazyPage(() => import("./pages/admin/AdminAutoPayments"));
+const AdminLandingEditor = lazyPage(() => import("./pages/admin/AdminLandingEditor"));
+const AdminInbox = lazyPage(() => import("./pages/admin/AdminInbox"));
+const AdminSupportTickets = lazyPage(() => import("./pages/admin/AdminSupportTickets"));
+const AdminReferrals = lazyPage(() => import("./pages/admin/AdminReferrals"));
+
+// ─── QueryClient with optimized defaults ───
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
       retryDelay: (attemptIndex) => Math.min(1500 * 2 ** attemptIndex, 10000),
-      staleTime: 30000,
-      gcTime: 5 * 60 * 1000,
-      refetchOnReconnect: true,
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnReconnect: "always",
+      refetchOnWindowFocus: false,
       networkMode: "online",
     },
     mutations: {
       retry: 1,
       networkMode: "online",
+      onError: (error) => {
+        const msg = error instanceof Error ? error.message : "Something went wrong";
+        toast.error("Action failed", { description: msg });
+      },
     },
   },
+});
+
+// Sync online manager with browser
+onlineManager.setEventListener((setOnline) => {
+  const onlineHandler = () => setOnline(true);
+  const offlineHandler = () => setOnline(false);
+  window.addEventListener("online", onlineHandler);
+  window.addEventListener("offline", offlineHandler);
+  return () => {
+    window.removeEventListener("online", onlineHandler);
+    window.removeEventListener("offline", offlineHandler);
+  };
 });
 
 /** Helper: ProtectedRoute + PermissionGuard */
