@@ -435,7 +435,56 @@ const StaffInbox = () => {
     toast.success("Group created!");
   };
 
-  // ─── Build conversation list ───
+  // ─── Edit group ───
+  const handleEditGroup = async () => {
+    if (!editGroupName.trim() || !activeChat) return;
+    const { error } = await db.from("chat_groups").update({ name: editGroupName.trim(), icon: editGroupIcon }).eq("id", activeChat);
+    if (error) { toast.error("Failed to update group"); return; }
+    await db.from("chat_group_messages").insert({ group_id: activeChat, sender_id: myId, message: `Group renamed to "${editGroupName.trim()}"`, type: "system" });
+    fetchGroups();
+    setEditGroupOpen(false);
+    toast.success("Group updated!");
+  };
+
+  // ─── Delete group ───
+  const handleDeleteGroup = async () => {
+    if (!activeChat) return;
+    // Delete messages, members, then group
+    await db.from("chat_group_messages").delete().eq("group_id", activeChat);
+    await db.from("chat_group_members").delete().eq("group_id", activeChat);
+    const { error } = await db.from("chat_groups").delete().eq("id", activeChat);
+    if (error) { toast.error("Failed to delete group"); return; }
+    setActiveChat(null);
+    setDeleteGroupConfirm(false);
+    fetchGroups();
+    toast.success("Group deleted!");
+  };
+
+  // ─── Add member to group ───
+  const handleAddMember = async (userId: string) => {
+    if (!activeChat) return;
+    const exists = groupMembers.find(m => m.user_id === userId);
+    if (exists) { toast.info("Already a member"); return; }
+    const { error } = await db.from("chat_group_members").insert({ group_id: activeChat, user_id: userId, role: "staff" });
+    if (error) { toast.error("Failed to add member"); return; }
+    const staff = staffList.find(s => s.auth_user_id === userId);
+    await db.from("chat_group_messages").insert({ group_id: activeChat, sender_id: myId, message: `${staff?.name || "A member"} was added to the group`, type: "system" });
+    setGroupMembers(prev => [...prev, { user_id: userId, role: "staff" }]);
+    toast.success(`${staff?.name} added!`);
+  };
+
+  // ─── Remove member from group ───
+  const handleRemoveMember = async (userId: string) => {
+    if (!activeChat || userId === myId) return;
+    const { error } = await db.from("chat_group_members").delete().eq("group_id", activeChat).eq("user_id", userId);
+    if (error) { toast.error("Failed to remove member"); return; }
+    const staff = staffList.find(s => s.auth_user_id === userId);
+    await db.from("chat_group_messages").insert({ group_id: activeChat, sender_id: myId, message: `${staff?.name || "A member"} was removed from the group`, type: "system" });
+    setGroupMembers(prev => prev.filter(m => m.user_id !== userId));
+    toast.success("Member removed!");
+  };
+
+
   const ownerContact = isStaff ? {
     id: "owner", name: "Store Owner", email: "", role: "owner",
     auth_user_id: staffInfo?.owner_id ?? null, is_active: true,
