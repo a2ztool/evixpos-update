@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Plus, Trash2, CalendarIcon, TrendingUp, TrendingDown, DollarSign, AlertCircle, CheckCircle } from "lucide-react";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface Transaction {
@@ -58,6 +59,14 @@ const Transactions = () => {
   };
 
   useEffect(() => { if (user && activeStore) fetchData(); }, [user, activeStore]);
+
+  // Real-time sync
+  useRealtimeSync(
+    `transactions-rt-${activeStore?.id}`,
+    [{ table: "transactions", filter: `store_id=eq.${activeStore?.id}` }],
+    fetchData,
+    !!activeStore?.id && !!user
+  );
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
