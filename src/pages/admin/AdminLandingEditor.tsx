@@ -56,7 +56,7 @@ const SECTION_DESCRIPTIONS: Record<string, string> = {
   trust: "Stats — users, stores, orders, uptime",
   pain_points: "4 pain points + 4 solutions with titles & descriptions",
   about: "About section: title, descriptions, image, highlight points",
-  features: "6 core features with title, description & optional image",
+  features: "10 core features with title, description & optional image",
   who_is_it_for: "Marquee items showing target audiences",
   showcase: "Dashboard showcase: up to 6 cards with image, title & description",
   how_it_works: "4 steps showing how users get started",
