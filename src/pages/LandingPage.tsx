@@ -91,7 +91,146 @@ const Marquee = ({ items, reverse = false }: { items: string[]; reverse?: boolea
   </div>
 );
 
-/* ─── Main Component ─── */
+/* ─── Feature Showcase (Desktop Interactive) ─── */
+const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (key: string, fallback?: string) => string }) => {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  const activeI = featureCards[activeIdx] || 1;
+  const title = get(`feature_${activeI}_title`) || `Feature ${activeI}`;
+  const desc = get(`feature_${activeI}_desc`);
+  const img = get(`feature_${activeI}_image`);
+  const Icon = FEATURE_ICONS[(activeI - 1) % FEATURE_ICONS.length];
+  const bullets = get(`feature_${activeI}_bullets`, "").split("|").filter(Boolean);
+
+  return (
+    <div ref={sectionRef} className="grid grid-cols-[280px_1fr] gap-8 items-start">
+      {/* Left — Feature Nav */}
+      <div className="sticky top-28 space-y-1.5">
+        {featureCards.map((i, idx) => {
+          const fIcon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
+          const FIcon = fIcon;
+          const isActive = idx === activeIdx;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(idx)}
+              className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 transition-all duration-300 group relative overflow-hidden ${
+                isActive
+                  ? "bg-primary/10 border border-primary/20 shadow-sm"
+                  : "hover:bg-muted/60 border border-transparent"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="feature-active-bg"
+                  className="absolute inset-0 bg-primary/10 rounded-xl border border-primary/20"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <div className={`relative z-10 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
+                isActive ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" : "bg-muted/80 text-muted-foreground group-hover:bg-muted"
+              }`}>
+                <FIcon className="h-4 w-4" />
+              </div>
+              <div className="relative z-10 flex-1 min-w-0">
+                <div className={`text-sm font-semibold truncate transition-colors duration-200 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                  {get(`feature_${i}_title`) || `Feature ${i}`}
+                </div>
+                <div className={`text-[11px] truncate transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
+                  {get(`feature_${i}_badge`, `Feature`)}
+                </div>
+              </div>
+              <span className={`relative z-10 text-[10px] font-bold transition-colors ${isActive ? "text-primary" : "text-muted-foreground/30"}`}>
+                0{i}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right — Feature Content */}
+      <div className="relative min-h-[520px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeIdx}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-xl shadow-primary/5"
+          >
+            {/* Image Area */}
+            {img && (
+              <div className="relative bg-gradient-to-b from-muted/40 to-muted/10 p-6 pb-0">
+                <div className="rounded-t-xl overflow-hidden border border-border/40 border-b-0 shadow-lg bg-card">
+                  <div className="flex items-center gap-1.5 px-4 py-2.5 bg-muted/60 border-b border-border/30">
+                    <div className="w-3 h-3 rounded-full bg-destructive/50" />
+                    <div className="w-3 h-3 rounded-full bg-warning/50" />
+                    <div className="w-3 h-3 rounded-full bg-primary/40" />
+                    <div className="flex-1 mx-4">
+                      <div className="bg-background/60 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono max-w-[200px] mx-auto">
+                        app.evixpos.com
+                      </div>
+                    </div>
+                  </div>
+                  <img src={img} alt={title} className="w-full" loading="lazy" />
+                </div>
+              </div>
+            )}
+
+            {/* Text Content */}
+            <div className="p-8 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight leading-tight">{title}</h3>
+                  <span className="text-xs font-medium text-primary">{get(`feature_${activeI}_badge`, `Feature`)}</span>
+                </div>
+              </div>
+              <p className="text-muted-foreground text-[15px] leading-relaxed max-w-xl">{desc}</p>
+              {bullets.length > 0 && (
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  {bullets.map((b, j) => (
+                    <motion.div
+                      key={j}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + j * 0.06 }}
+                      className="flex items-center gap-2.5 text-sm bg-muted/30 rounded-lg px-3 py-2 border border-border/30"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                        <Check className="h-3 w-3 text-primary" />
+                      </div>
+                      <span className="text-foreground/80">{b.trim()}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Step indicator */}
+        <div className="flex justify-center gap-1.5 mt-6">
+          {featureCards.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                idx === activeIdx ? "w-8 bg-primary" : "w-3 bg-border hover:bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const { get, loading } = useLandingContent();
@@ -512,6 +651,8 @@ const LandingPage = () => {
         const featureCards = [1, 2, 3, 4, 5, 6].filter(i => get(`feature_${i}_title`) || get(`feature_${i}_image`));
         return (
           <section id="features" className="relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
+
             {/* Header */}
             <div className="pt-16 sm:pt-24 pb-10 sm:pb-14">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -523,96 +664,19 @@ const LandingPage = () => {
                     {get("features_title", "Everything for Online & Offline Business")}
                   </h2>
                   <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-                    {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
+                    {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all.")}
                   </p>
                 </AnimSection>
               </div>
             </div>
 
-            {/* Sticky Stacked Cards - Desktop */}
-            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-              {featureCards.map((i, idx) => {
-                const title = get(`feature_${i}_title`);
-                const desc = get(`feature_${i}_desc`);
-                const img = get(`feature_${i}_image`);
-                const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
-                const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
-                const isEven = i % 2 === 0;
-                const topOffset = 100 + idx * 30;
-
-                return (
-                  <div key={i} style={{ height: idx < featureCards.length - 1 ? '70vh' : 'auto', position: 'relative' }}>
-                    <div
-                      className="sticky will-change-transform"
-                      style={{ top: `${topOffset}px`, zIndex: (idx + 1) * 10 }}
-                    >
-                      <div
-                        className="group rounded-2xl lg:rounded-3xl border border-border/50 bg-card overflow-hidden shadow-lg transition-all duration-500"
-                        style={{
-                          boxShadow: `0 ${4 + idx * 6}px ${20 + idx * 10}px -${4 + idx}px hsl(var(--foreground) / ${0.06 + idx * 0.02})`,
-                        }}
-                      >
-                        <div className="grid lg:grid-cols-2 gap-0">
-                          {/* Text Side */}
-                          <div className={`p-6 sm:p-8 lg:p-12 flex flex-col justify-center space-y-5 ${isEven ? 'lg:order-2' : ''}`}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
-                                <Icon className="h-5 w-5 text-primary" />
-                              </div>
-                              <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
-                                {get(`feature_${i}_badge`, `Feature`)}
-                              </Badge>
-                              <span className="text-xs font-bold text-muted-foreground/40 ml-auto">0{i}</span>
-                            </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-[1.15]">{title || `Feature ${i}`}</h3>
-                            <p className="text-muted-foreground text-sm lg:text-base leading-relaxed">{desc}</p>
-                            {bullets.length > 0 && (
-                              <ul className="space-y-2.5 pt-2">
-                                {bullets.map((b, j) => (
-                                  <li key={j} className="flex items-center gap-3 text-sm">
-                                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-                                      <Check className="h-3 w-3 text-primary" />
-                                    </div>
-                                    <span className="text-foreground/80">{b.trim()}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                          {/* Image Side */}
-                          <div className={`relative bg-muted/20 flex items-center justify-center p-5 sm:p-6 lg:p-8 min-h-[240px] lg:min-h-[360px] ${isEven ? 'lg:order-1' : ''}`}>
-                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.03),transparent_70%)]" />
-                            {img ? (
-                              <div className="relative w-full">
-                                <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
-                                  <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
-                                    <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
-                                    <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
-                                    <div className="flex-1 mx-3">
-                                      <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
-                                    </div>
-                                  </div>
-                                  <img src={img} alt={title || ""} className="w-full" loading="lazy" />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="relative">
-                                <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
-                                <Icon className="h-24 w-24 text-primary/20 relative" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Desktop — Interactive Tab + Content */}
+            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 relative">
+              <FeatureShowcase featureCards={featureCards} get={get} />
             </div>
 
-            {/* Mobile - Simple vertical list */}
-            <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
+            {/* Mobile — Vertical cards */}
+            <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 pb-16 space-y-5">
               {featureCards.map((i) => {
                 const title = get(`feature_${i}_title`);
                 const desc = get(`feature_${i}_desc`);
@@ -623,32 +687,9 @@ const LandingPage = () => {
                 return (
                   <AnimItem key={i} delay={(i - 1) * 0.05}>
                     <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
-                      <div className="p-5 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Icon className="h-4 w-4 text-primary" />
-                          </div>
-                          <Badge variant="outline" className="text-primary border-primary/30 px-2 py-0.5 text-xs">
-                            {get(`feature_${i}_badge`, `Feature`)}
-                          </Badge>
-                          <span className="text-xs font-bold text-muted-foreground/40 ml-auto">0{i}</span>
-                        </div>
-                        <h3 className="text-lg font-black">{title || `Feature ${i}`}</h3>
-                        <p className="text-muted-foreground text-sm">{desc}</p>
-                        {bullets.length > 0 && (
-                          <ul className="space-y-2">
-                            {bullets.map((b, j) => (
-                              <li key={j} className="flex items-center gap-2.5 text-sm">
-                                <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                                <span className="text-foreground/80">{b.trim()}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
                       {img && (
-                        <div className="bg-muted/20 p-4">
-                          <div className="rounded-lg overflow-hidden border border-border/40 shadow bg-card">
+                        <div className="bg-muted/30 p-4 pb-0">
+                          <div className="rounded-t-xl overflow-hidden border border-border/40 border-b-0 bg-card">
                             <div className="flex items-center gap-1 px-2.5 py-1.5 bg-muted/60 border-b border-border/30">
                               <div className="w-2 h-2 rounded-full bg-destructive/50" />
                               <div className="w-2 h-2 rounded-full bg-warning/50" />
@@ -658,6 +699,25 @@ const LandingPage = () => {
                           </div>
                         </div>
                       )}
+                      <div className="p-5 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-black">{title || `Feature ${i}`}</h3>
+                        </div>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+                        {bullets.length > 0 && (
+                          <ul className="space-y-1.5 pt-1">
+                            {bullets.map((b, j) => (
+                              <li key={j} className="flex items-center gap-2.5 text-sm">
+                                <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+                                <span className="text-foreground/80">{b.trim()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     </div>
                   </AnimItem>
                 );
