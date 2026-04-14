@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna, Star, CreditCard, ShoppingBag } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import CustomerDNAProfile from "@/components/CustomerDNAProfile";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface Customer {
   id: string;
@@ -108,6 +109,18 @@ const Customers = () => {
   useEffect(() => {
     if (user && activeStore) fetchCustomers();
   }, [user, activeStore]);
+
+  // Real-time sync
+  useRealtimeSync(
+    `customers-rt-${activeStore?.id}`,
+    [
+      { table: "customers", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "customer_credits", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "loyalty_points", filter: `store_id=eq.${activeStore?.id}` },
+    ],
+    fetchCustomers,
+    !!activeStore?.id && !!user
+  );
 
   const filtered = customers.filter((c) =>
     [c.name, c.phone, c.email, c.tags].some((f) => (f || "").toLowerCase().includes(search.toLowerCase()))
