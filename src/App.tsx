@@ -137,6 +137,7 @@ const App = () => {
   }, []);
 
   return (
+  <QueryClientProvider client={queryClient}>
     <AuthProvider>
     <LanguageProvider>
     <StoreProvider>
