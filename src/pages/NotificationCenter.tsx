@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNotifications } from "@/hooks/useNotifications";
+import { TYPE_EMOJI, TYPE_LABEL, SOUND_CATEGORY } from "@/lib/notificationTriggers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,15 +13,21 @@ import { formatDistanceToNow, format, subDays, isAfter } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, BellOff, CheckCheck, Trash2, Search, Filter,
-  AlertCircle, CheckCircle, AlertTriangle, Info,
+  AlertCircle, CheckCircle, AlertTriangle, Info, ShoppingCart, CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const typeConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  success: { icon: <CheckCircle className="h-4 w-4 text-emerald-500" />, label: "Success", color: "bg-emerald-500/10 text-emerald-700 border-emerald-200" },
-  error: { icon: <AlertCircle className="h-4 w-4 text-destructive" />, label: "Error", color: "bg-destructive/10 text-destructive border-destructive/20" },
-  warning: { icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, label: "Warning", color: "bg-amber-500/10 text-amber-700 border-amber-200" },
-  info: { icon: <Info className="h-4 w-4 text-blue-500" />, label: "Info", color: "bg-blue-500/10 text-blue-700 border-blue-200" },
+const getCfg = (type: string) => {
+  const cat = SOUND_CATEGORY[type] || "info";
+  const map: Record<string, { icon: React.ReactNode; color: string }> = {
+    order: { icon: <ShoppingCart className="h-4 w-4 text-blue-500" />, color: "bg-blue-500/10 text-blue-700 border-blue-200" },
+    payment: { icon: <CreditCard className="h-4 w-4 text-emerald-500" />, color: "bg-emerald-500/10 text-emerald-700 border-emerald-200" },
+    alert: { icon: <AlertTriangle className="h-4 w-4 text-amber-500" />, color: "bg-amber-500/10 text-amber-700 border-amber-200" },
+    success: { icon: <CheckCircle className="h-4 w-4 text-emerald-500" />, color: "bg-emerald-500/10 text-emerald-700 border-emerald-200" },
+    error: { icon: <AlertCircle className="h-4 w-4 text-destructive" />, color: "bg-destructive/10 text-destructive border-destructive/20" },
+    info: { icon: <Info className="h-4 w-4 text-blue-500" />, color: "bg-blue-500/10 text-blue-700 border-blue-200" },
+  };
+  return { icon: map[cat]?.icon || map.info.icon, label: TYPE_LABEL[type] || type, color: map[cat]?.color || map.info.color };
 };
 
 const NotificationCenter = () => {
@@ -75,7 +82,7 @@ const NotificationCenter = () => {
     toast.success("All notifications cleared");
   };
 
-  const cfg = (type: string) => typeConfig[type] || typeConfig.info;
+  const cfg = (type: string) => getCfg(type);
 
   return (
     <DashboardLayout>
