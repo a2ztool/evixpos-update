@@ -77,6 +77,23 @@ const NotificationBell = () => {
           </div>
         </div>
 
+        {/* Unread messages shortcut */}
+        {msgUnread > 0 && (
+          <div
+            className="p-3 border-b bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+            onClick={() => navigate("/staff-inbox")}
+          >
+            <div className="flex items-center gap-2.5">
+              <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{msgUnread} unread message{msgUnread > 1 ? "s" : ""}</p>
+                <p className="text-[11px] text-muted-foreground">Tap to view messages</p>
+              </div>
+              <Badge className="bg-primary text-primary-foreground text-[10px]">{msgUnread}</Badge>
+            </div>
+          </div>
+        )}
+
         {/* Notification List */}
         <ScrollArea className="max-h-[350px]">
           {notifications.length === 0 ? (
