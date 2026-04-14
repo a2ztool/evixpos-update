@@ -107,59 +107,204 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
     date: orderDate.toISOString(),
   });
 
-  const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
+  const generateInvoiceHTML = () => {
+    const items = orderItems.length > 0
+      ? orderItems.map((item, idx) => ({
+          num: String(idx + 1).padStart(2, "0"),
+          name: item.products?.name || "—",
+          qty: item.quantity,
+          price: Number(item.price),
+          amount: Number(item.price) * item.quantity,
+        }))
+      : [{ num: "01", name: "Order", qty: 1, price: total, amount: total }];
+
+    const itemRows = items.map((it, idx) =>
+      `<tr style="background:${idx % 2 === 0 ? "#fff" : "#f8fafb"}">
+        <td style="padding:11px 16px;font-size:13px;color:#888;border-bottom:1px solid #f0f2f5">${it.num}</td>
+        <td style="padding:11px 16px;font-size:13px;font-weight:600;border-bottom:1px solid #f0f2f5">${it.name}</td>
+        <td style="padding:11px 16px;font-size:13px;text-align:center;border-bottom:1px solid #f0f2f5">${it.qty}</td>
+        <td style="padding:11px 16px;font-size:13px;text-align:right;color:#888;border-bottom:1px solid #f0f2f5">${curSymbol}${it.price.toFixed(2)}</td>
+        <td style="padding:11px 16px;font-size:13px;text-align:right;font-weight:700;border-bottom:1px solid #f0f2f5">${curSymbol}${it.amount.toFixed(2)}</td>
+      </tr>`
+    ).join("");
+
+    const discountRow = Number(order.discount) > 0
+      ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+          <span style="color:#888">Discount${order.discount_type === "percentage" ? ` (${order.discount}%)` : ""}</span>
+          <span style="color:#ef4444;font-weight:500">-${curSymbol}${discountAmount.toFixed(2)}</span>
+        </div>`
+      : "";
+
+    const notesSection = order.notes
+      ? `<div style="margin-top:20px;padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:6px">📋 Notes</p>
+          <p style="font-size:12px;color:#666;line-height:1.6">${order.notes}</p>
+        </div>`
+      : "";
+
+    return `<!DOCTYPE html><html><head><title>Invoice ${invoiceId}</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1a1a2e;background:#fff}
+      @media print{@page{size:A4;margin:10mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>
+    <div style="max-width:720px;margin:0 auto;padding:40px 36px">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #0d9488">
+        <div>
+          <img src="${logoUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='36'%3E%3Ctext y='28' font-size='24' font-weight='900' font-family='system-ui' fill='%230d9488'%3EevixPOS%3C/text%3E%3C/svg%3E"}" alt="${storeName}" style="height:38px;object-fit:contain;margin-bottom:8px;display:block">
+          <p style="font-size:18px;font-weight:800;color:#0d9488">${storeName}</p>
+          ${storePhone ? `<p style="font-size:11px;color:#888;margin-top:2px">${storePhone}</p>` : ""}
+          ${storeEmail ? `<p style="font-size:11px;color:#888">${storeEmail}</p>` : ""}
+        </div>
+        <div style="text-align:right">
+          <h2 style="font-size:32px;font-weight:900;color:#0d9488;letter-spacing:3px">INVOICE</h2>
+          <p style="font-size:12px;color:#666;font-family:monospace;margin-top:6px;background:#f0fdfa;padding:3px 10px;border-radius:4px;display:inline-block">${invoiceId}</p>
+          <div style="margin-top:8px">
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;${
+              order.payment_status === "paid" ? "background:#dcfce7;color:#166534" :
+              order.payment_status === "partial" ? "background:#fef3c7;color:#92400e" :
+              "background:#fee2e2;color:#991b1b"
+            }">● ${statusCfg.label}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:24px">
+        <div style="padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:5px">👤 Bill To</p>
+          <p style="font-size:14px;font-weight:700">${order.customers?.name || "Walk-in Customer"}</p>
+        </div>
+        <div style="padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:5px">📅 Date</p>
+          <p style="font-size:14px;font-weight:700">${orderDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+          <p style="font-size:10px;color:#888;margin-top:2px">${orderDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
+        </div>
+        <div style="padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:5px">💳 Payment</p>
+          <p style="font-size:14px;font-weight:700;text-transform:capitalize">${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+          <p style="font-size:10px;color:#888;margin-top:2px;text-transform:capitalize">Source: ${order.source}</p>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px">
+        <div style="padding:12px;text-align:center;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px"># Items</p>
+          <p style="font-size:15px;font-weight:800;margin-top:4px">${itemCount}</p>
+        </div>
+        <div style="padding:12px;text-align:center;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px">Subtotal</p>
+          <p style="font-size:15px;font-weight:800;margin-top:4px">${curSymbol}${(orderItems.length > 0 ? subtotal : total).toFixed(2)}</p>
+        </div>
+        <div style="padding:12px;text-align:center;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px">Discount</p>
+          <p style="font-size:15px;font-weight:800;margin-top:4px">${Number(order.discount) > 0 ? `-${curSymbol}${discountAmount.toFixed(2)}` : "—"}</p>
+        </div>
+        <div style="padding:12px;text-align:center;border-radius:10px;background:#f0fdfa;border:1px solid #99f6e4">
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#0d9488;letter-spacing:1px">Total</p>
+          <p style="font-size:15px;font-weight:800;margin-top:4px;color:#0d9488">${curSymbol}${total.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div style="border-radius:10px;overflow:hidden;border:1px solid #e8ecef;margin-bottom:24px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#0d9488">
+              <th style="text-align:left;padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#fff">#</th>
+              <th style="text-align:left;padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#fff">Item</th>
+              <th style="text-align:center;padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#fff">Qty</th>
+              <th style="text-align:right;padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#fff">Unit Price</th>
+              <th style="text-align:right;padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#fff">Amount</th>
+            </tr>
+          </thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Totals -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <div style="width:280px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span style="color:#888">Subtotal</span>
+            <span style="font-weight:500">${curSymbol}${(orderItems.length > 0 ? subtotal : total).toFixed(2)}</span>
+          </div>
+          ${discountRow}
+          <div style="border-top:2px solid #0d9488;margin-top:10px;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:18px;font-weight:900;color:#0d9488">Total Due</span>
+            <span style="font-size:20px;font-weight:900;color:#0d9488">${curSymbol}${total.toFixed(2)}</span>
+          </div>
+          <p style="font-size:10px;text-align:right;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${order.payment_currency} • ${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+        </div>
+      </div>
+
+      ${notesSection}
+
+      <!-- QR Section -->
+      <div style="margin-top:20px;display:flex;align-items:center;gap:16px;padding:16px;background:#f8fafb;border-radius:10px;border:1px solid #e8ecef">
+        <div id="qr-placeholder" style="width:80px;height:80px;background:#fff;padding:8px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);flex-shrink:0"></div>
+        <div>
+          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:4px">🛡️ Payment Verification</p>
+          <p style="font-size:11px;color:#666;line-height:1.6">Scan this QR code to verify invoice authenticity and payment details. This code contains encrypted invoice information for your records.</p>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div style="margin-top:16px;padding:14px 16px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+        <p style="font-size:9px;font-weight:700;color:#854d0e;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">⚖️ Terms & Conditions</p>
+        <ul style="font-size:11px;color:#92400e;line-height:1.8;padding-left:16px;margin:0">
+          <li>Payment is due upon receipt unless otherwise agreed.</li>
+          <li>All sales are final. Refunds subject to store policy.</li>
+          <li>This invoice is system-generated and valid without signature.</li>
+          <li>For queries, contact the store directly using the details above.</li>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <div style="margin-top:32px;padding-top:16px;border-top:2px solid #f0f2f5;text-align:center">
+        <p style="font-size:14px;font-weight:700;color:#0d9488">Thank you for your business!</p>
+        <p style="font-size:11px;color:#888;margin-top:4px">${storeName}</p>
+        <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px">
+          <img src="${evixposLogo}" alt="EvixPOS" style="height:20px;object-fit:contain;opacity:0.5" onerror="this.style.display='none'">
+          <span style="font-size:9px;color:#ccc;text-transform:uppercase;letter-spacing:2px">Powered by EvixPOS</span>
+        </div>
+        <p style="font-size:9px;color:#ddd;margin-top:4px">Generated on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+      </div>
+    </div>
+    </body></html>`;
+  };
+
+  const openPrintWindow = (afterLoad: (win: Window) => void) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) { toast.error("Please allow popups"); return; }
-    
-    // Clone content and convert QR SVG to data for print
-    const cloned = printContent.cloneNode(true) as HTMLElement;
-    
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Invoice ${invoiceId}</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1a1a2e; padding: 0; margin: 0; background: #fff; }
-      .inv-wrap { max-width: 780px; margin: 0 auto; padding: 40px 36px; }
-      .inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #0d9488; }
-      .inv-brand img { height: 38px; object-fit: contain; }
-      .inv-brand-name { font-size: 20px; font-weight: 800; color: #0d9488; letter-spacing: -0.3px; }
-      .inv-title { font-size: 32px; font-weight: 900; color: #0d9488; letter-spacing: 3px; }
-      .inv-id { font-size: 12px; color: #666; font-family: monospace; margin-top: 4px; background: #f0fdfa; padding: 3px 10px; border-radius: 4px; display: inline-block; }
-      .inv-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 6px; }
-      .inv-status-paid { background: #dcfce7; color: #166534; }
-      .inv-status-unpaid { background: #fee2e2; color: #991b1b; }
-      .inv-status-partial { background: #fef3c7; color: #92400e; }
-      .inv-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
-      .inv-info-box { padding: 14px 16px; border-radius: 10px; background: #f8fafb; border: 1px solid #e8ecef; }
-      .inv-info-label { font-size: 9px; text-transform: uppercase; font-weight: 700; color: #9ca3af; letter-spacing: 1px; margin-bottom: 5px; }
-      .inv-info-value { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-      .inv-table { width: 100%; border-collapse: collapse; }
-      .inv-table thead th { background: #0d9488; color: white; padding: 11px 16px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-      .inv-table thead th:first-child { border-radius: 10px 0 0 0; }
-      .inv-table thead th:last-child { border-radius: 0 10px 0 0; text-align: right; }
-      .inv-table tbody td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid #f0f2f5; }
-      .inv-table tbody td:last-child { text-align: right; font-weight: 700; }
-      .inv-table tbody tr:nth-child(even) { background: #fafbfc; }
-      .inv-totals { margin-left: auto; width: 280px; }
-      .inv-total-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
-      .inv-total-row.grand { font-size: 20px; font-weight: 900; color: #0d9488; border-top: 2px solid #0d9488; padding-top: 12px; margin-top: 8px; }
-      .inv-qr-section { display: flex; align-items: center; gap: 16px; margin-top: 24px; padding: 16px; background: #f8fafb; border-radius: 10px; border: 1px solid #e8ecef; }
-      .inv-qr-text { font-size: 11px; color: #666; }
-      .inv-terms { margin-top: 20px; padding: 14px 16px; border-radius: 10px; background: #fefce8; border: 1px solid #fef08a; }
-      .inv-terms-title { font-size: 10px; font-weight: 700; color: #854d0e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-      .inv-terms-text { font-size: 11px; color: #92400e; line-height: 1.6; }
-      .inv-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e8ecef; text-align: center; }
-      .inv-footer-thanks { font-size: 14px; font-weight: 700; color: #0d9488; }
-      .inv-footer-powered { font-size: 9px; color: #bbb; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 8px; }
-      @media print { body { padding: 0; } .inv-wrap { padding: 20px; } }
-    </style></head><body>${cloned.innerHTML}</body></html>`);
+
+    const html = generateInvoiceHTML();
+    printWindow.document.write(html);
     printWindow.document.close();
-    printWindow.onload = () => { printWindow.print(); };
+
+    // Copy QR SVG into the print window
+    const qrSvg = printRef.current?.querySelector(".inv-qr-container svg");
+    if (qrSvg) {
+      printWindow.onload = () => {
+        const placeholder = printWindow.document.getElementById("qr-placeholder");
+        if (placeholder) {
+          placeholder.innerHTML = qrSvg.outerHTML;
+        }
+        afterLoad(printWindow);
+      };
+    } else {
+      printWindow.onload = () => afterLoad(printWindow);
+    }
+  };
+
+  const handlePrint = () => {
+    openPrintWindow((win) => { win.print(); });
   };
 
   const handleDownloadPDF = () => {
-    handlePrint();
+    openPrintWindow((win) => { win.print(); });
     toast.success("Print dialog opened — save as PDF");
   };
 
