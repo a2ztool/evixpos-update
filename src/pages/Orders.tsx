@@ -242,6 +242,36 @@ const fetchProducts = async () => {
     setRefundOpen(true);
   };
 
+  // Fetch dynamic store settings (payment methods + currency)
+  useEffect(() => {
+    if (!user || !activeStore) { setSettingsLoading(false); return; }
+    const ownerId = effectiveUserId || user.id;
+    setSettingsLoading(true);
+    supabase
+      .from("business_settings")
+      .select("payment_methods, default_currency")
+      .eq("user_id", ownerId)
+      .eq("store_id", activeStore.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        // Payment methods
+        if (data?.payment_methods) {
+          const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
+          setStorePaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
+          // Set default payment method to first enabled
+          if (methods.length > 0) setFormPaymentMethod(methods[0].id);
+        } else {
+          setStorePaymentMethods([{ id: "cash", name: "Cash", enabled: true, config: {} }]);
+          setFormPaymentMethod("cash");
+        }
+        // Currency
+        const cur = (data?.default_currency as string) || "BDT";
+        setDefaultCurrency(cur);
+        setFormCurrency(cur);
+        setSettingsLoading(false);
+      });
+  }, [user, activeStore, effectiveUserId]);
+
   useEffect(() => {
     if (user && activeStore) {
       fetchOrders();
