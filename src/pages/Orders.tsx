@@ -16,13 +16,14 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2 } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useRef, useCallback } from "react";
 import { addDays, format } from "date-fns";
+import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 
 interface OrderItem {
   id: string;
@@ -103,7 +104,10 @@ const Orders = () => {
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tabParam = searchParams.get("tab");
+
+  const isOfflineStore = activeStore?.store_mode === "offline";
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -163,6 +167,11 @@ const Orders = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Dynamic payment methods & currency from store settings
+  const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([]);
+  const [defaultCurrency, setDefaultCurrency] = useState("BDT");
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
   const confirmDelete = (order: Order) => {
     setOrderToDelete(order);
@@ -232,6 +241,36 @@ const fetchProducts = async () => {
     setRefundOrderItems((data ?? []) as any[]);
     setRefundOpen(true);
   };
+
+  // Fetch dynamic store settings (payment methods + currency)
+  useEffect(() => {
+    if (!user || !activeStore) { setSettingsLoading(false); return; }
+    const ownerId = effectiveUserId || user.id;
+    setSettingsLoading(true);
+    supabase
+      .from("business_settings")
+      .select("payment_methods, default_currency")
+      .eq("user_id", ownerId)
+      .eq("store_id", activeStore.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        // Payment methods
+        if (data?.payment_methods) {
+          const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
+          setStorePaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
+          // Set default payment method to first enabled
+          if (methods.length > 0) setFormPaymentMethod(methods[0].id);
+        } else {
+          setStorePaymentMethods([{ id: "cash", name: "Cash", enabled: true, config: {} }]);
+          setFormPaymentMethod("cash");
+        }
+        // Currency
+        const cur = (data?.default_currency as string) || "BDT";
+        setDefaultCurrency(cur);
+        setFormCurrency(cur);
+        setSettingsLoading(false);
+      });
+  }, [user, activeStore, effectiveUserId]);
 
   useEffect(() => {
     if (user && activeStore) {
@@ -408,9 +447,9 @@ const fetchProducts = async () => {
     setFormCostPrice("");
     setFormDiscount("0");
     setFormDiscountType("fixed");
-    setFormPaymentMethod("cash");
+    setFormPaymentMethod(storePaymentMethods.length > 0 ? storePaymentMethods[0].id : "cash");
     setFormSource("manual");
-    setFormCurrency("BDT");
+    setFormCurrency(defaultCurrency);
     setFormStatus("completed");
     setFormNotes("");
     setFormCreateSub(false);
@@ -824,7 +863,7 @@ const fetchProducts = async () => {
             {/* Amount & Cost */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Amount Paid (৳)</Label>
+                <Label>Amount Paid ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -833,7 +872,7 @@ const fetchProducts = async () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cost Price (৳)</Label>
+                <Label>Cost Price ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -860,7 +899,7 @@ const fetchProducts = async () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fixed">Fixed (৳)</SelectItem>
+                    <SelectItem value="fixed">Fixed ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</SelectItem>
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -871,24 +910,34 @@ const fetchProducts = async () => {
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted">
               <span className="text-sm font-medium">Profit:</span>
               <span className={`text-sm font-bold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                ৳{profit.toFixed(2)}
+                {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{profit.toFixed(2)}
               </span>
             </div>
 
             {/* Payment Method & Source */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Payment Method</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Payment Method</Label>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/settings?tab=payment")}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title="Manage Payment Methods"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <Select value={formPaymentMethod} onValueChange={setFormPaymentMethod}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={settingsLoading ? "Loading..." : "Select method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bkash">bKash</SelectItem>
-                    <SelectItem value="nagad">Nagad</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    {storePaymentMethods.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -916,9 +965,8 @@ const fetchProducts = async () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BDT">৳ BDT</SelectItem>
+                  <SelectItem value="INR">₹ INR</SelectItem>
                   <SelectItem value="USD">$ USD</SelectItem>
-                  <SelectItem value="EUR">€ EUR</SelectItem>
-                  <SelectItem value="GBP">£ GBP</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -949,19 +997,21 @@ const fetchProducts = async () => {
               />
             </div>
 
-            {/* Create Subscription Checkbox */}
-            <div className="flex items-center space-x-2 py-2">
-              <Checkbox
-                id="createSub"
-                checked={formCreateSub}
-                onCheckedChange={(checked) => setFormCreateSub(checked === true)}
-              />
-              <label htmlFor="createSub" className="text-sm cursor-pointer">
-                Create subscription from this order
-              </label>
-            </div>
+            {/* Create Subscription Checkbox - only for online stores */}
+            {!isOfflineStore && (
+              <div className="flex items-center space-x-2 py-2">
+                <Checkbox
+                  id="createSub"
+                  checked={formCreateSub}
+                  onCheckedChange={(checked) => setFormCreateSub(checked === true)}
+                />
+                <label htmlFor="createSub" className="text-sm cursor-pointer">
+                  Create subscription from this order
+                </label>
+              </div>
+            )}
 
-            {formCreateSub && (
+            {!isOfflineStore && formCreateSub && (
               <div className="space-y-2 pl-6 border-l-2 border-primary/20">
                 <Label>Subscription Variation</Label>
                 <Select value={formSubVariation} onValueChange={setFormSubVariation}>
