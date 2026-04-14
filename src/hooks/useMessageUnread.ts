@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -13,6 +13,7 @@ export const useMessageUnread = () => {
   const { isStaff, staffInfo } = useStaff();
   const { activeStore } = useStore();
   const [unreadCount, setUnreadCount] = useState(0);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const storeId = isStaff ? staffInfo?.store_id : activeStore?.id;
   const myId = user?.id;
@@ -34,9 +35,16 @@ export const useMessageUnread = () => {
     fetchCount();
     if (!storeId || !myId) return;
 
-    const channelName = `msg-unread-global-${myId}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const channel = supabase.channel(`msg-unread-${myId}-${Date.now()}`);
+    channelRef.current = channel;
+
+    channel
       .on("postgres_changes", {
         event: "*", schema: "public", table: "staff_messages",
         filter: `receiver_id=eq.${myId}`,
@@ -45,7 +53,12 @@ export const useMessageUnread = () => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [storeId, myId, fetchCount]);
 
   return { unreadCount, refetch: fetchCount };
