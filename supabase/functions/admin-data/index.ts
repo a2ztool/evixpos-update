@@ -398,6 +398,40 @@ Deno.serve(async (req) => {
       return json(data || []);
     }
 
+    // ─── GET COUPONS ───
+    if (action === "get_coupons") {
+      const { data } = await supabase
+        .from("platform_coupons")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return json(data || []);
+    }
+
+    // ─── CREATE COUPON ───
+    if (action === "create_coupon") {
+      const { code, discount_type, discount_value, expires_at, max_uses, is_active } = params;
+      const { error } = await supabase.from("platform_coupons").insert({
+        code, discount_type, discount_value, expires_at, max_uses: max_uses || 0, is_active: is_active ?? true,
+      });
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ─── UPDATE COUPON ───
+    if (action === "update_coupon") {
+      const { coupon_id, ...updates } = params;
+      const { error } = await supabase.from("platform_coupons").update(updates).eq("id", coupon_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ─── DELETE COUPON ───
+    if (action === "delete_coupon") {
+      const { error } = await supabase.from("platform_coupons").delete().eq("id", params.coupon_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
