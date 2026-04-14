@@ -546,7 +546,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-destructive border-destructive/30 px-3 py-1.5">
               <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-5 lg:text-xs">
               {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
