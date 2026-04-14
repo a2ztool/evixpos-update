@@ -73,6 +73,7 @@ import AdminAutoPayments from "./pages/admin/AdminAutoPayments";
 import AdminLandingEditor from "./pages/admin/AdminLandingEditor";
 import AdminInbox from "./pages/admin/AdminInbox";
 import AdminSupportTickets from "./pages/admin/AdminSupportTickets";
+import AdminReferrals from "./pages/admin/AdminReferrals";
 import PublicOrderForm from "./pages/PublicOrderForm";
 import FacebookCallback from "./pages/FacebookCallback";
 
@@ -161,6 +162,7 @@ const App = () => (
               <Route path="landing" element={<AdminLandingEditor />} />
               <Route path="inbox" element={<AdminInbox />} />
               <Route path="support" element={<AdminSupportTickets />} />
+              <Route path="referrals" element={<AdminReferrals />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
