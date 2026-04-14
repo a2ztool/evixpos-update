@@ -1219,7 +1219,7 @@ const LandingPage = () => {
           </div>
           <div className="border-t border-border/40 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              {get("footer_copyright", "© 2026 EvixPOS. All rights reserved.")} Powered by{" "}
+              {get("footer_copyright", `© ${new Date().getFullYear()} EvixPOS. All rights reserved.`)} Powered by{" "}
               <a href={get("footer_powered_url", "https://www.lifeaimit.in")} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{get("footer_powered_by", "LifeAim IT")}</a>
             </p>
             <div className="flex items-center gap-6 text-xs text-muted-foreground">
