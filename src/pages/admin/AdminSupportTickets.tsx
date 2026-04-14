@@ -314,10 +314,13 @@ const AdminSupportTickets = () => {
                   </Badge>
                   <Badge variant="outline" className="border-slate-600 text-slate-300">{selectedTicket.category}</Badge>
                 </div>
-                <p className="text-sm text-slate-300">{selectedTicket.description}</p>
+                <p className="text-sm text-slate-300">{selectedTicket.description.split("\n---")[0]}</p>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <User className="h-3 w-3" />{profiles[selectedTicket.user_id] || "Unknown"} • {format(new Date(selectedTicket.created_at), "PPp")}
                 </div>
+                {selectedTicket.store_id && storeNames[selectedTicket.store_id] && (
+                  <p className="text-xs text-slate-500">📍 Store: {storeNames[selectedTicket.store_id]}</p>
+                )}
 
                 {/* Status Change */}
                 <div>
@@ -327,6 +330,7 @@ const AdminSupportTickets = () => {
                     <SelectContent className="bg-slate-700 border-slate-600">
                       <SelectItem value="open">Open</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="waiting_for_user">Waiting for User</SelectItem>
                       <SelectItem value="resolved">Resolved</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
