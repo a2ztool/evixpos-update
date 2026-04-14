@@ -58,6 +58,100 @@ const AnimItem = ({ children, className = "", delay = 0 }: { children: React.Rea
   );
 };
 
+/* ─── Sticky Feature Card with scroll-based depth ─── */
+const FeatureStickyCard = ({ index, title, desc, img, Icon, bullets, badge }: {
+  index: number; title: string; desc?: string; img?: string;
+  Icon: React.ElementType; bullets: string[]; badge: string;
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["start start", "end start"],
+  });
+  // As user scrolls past this card's container, scale it down & fade
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1, 0.93]);
+  const opacity = useTransform(scrollYProgress, [0, 0.6, 1], [1, 1, 0.6]);
+  const borderRadius = useTransform(scrollYProgress, [0, 0.5, 1], [24, 24, 32]);
+
+  const stickyTop = 100 + (index - 1) * 28;
+
+  return (
+    <div ref={cardRef} style={{ height: '100vh', position: 'relative' }}>
+      <div
+        className="sticky will-change-transform"
+        style={{ top: `${stickyTop}px`, zIndex: index * 10 }}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            style={{ scale, opacity, borderRadius }}
+            className="border border-border/50 bg-card overflow-hidden transition-shadow duration-500"
+            initial={false}
+          >
+            <div
+              className="absolute inset-0 pointer-events-none rounded-[inherit]"
+              style={{
+                boxShadow: `0 ${8 + index * 6}px ${24 + index * 10}px -${4 + index}px hsl(var(--foreground) / ${0.06 + index * 0.02}), 0 0 0 1px hsl(var(--border) / 0.08)`,
+              }}
+            />
+            <div className={`grid lg:grid-cols-2 gap-0 ${index % 2 === 0 ? 'direction-rtl' : ''}`}>
+              {/* Text */}
+              <div className={`p-8 lg:p-12 flex flex-col justify-center space-y-5 ${index % 2 === 0 ? 'lg:order-2' : ''}`} style={{ direction: 'ltr' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
+                    {badge}
+                  </Badge>
+                  <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{index} / 06</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title}</h3>
+                <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
+                {bullets.length > 0 && (
+                  <ul className="space-y-2.5 pt-1">
+                    {bullets.map((b, j) => (
+                      <li key={j} className="flex items-center gap-3 text-sm">
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                        <span className="text-foreground/80">{b.trim()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {/* Screenshot */}
+              <div className={`relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px] ${index % 2 === 0 ? 'lg:order-1' : ''}`} style={{ direction: 'ltr' }}>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
+                {img ? (
+                  <div className="relative w-full">
+                    <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
+                      <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
+                        <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
+                        <div className="flex-1 mx-3">
+                          <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
+                        </div>
+                      </div>
+                      <img src={img} alt={title} className="w-full" loading="lazy" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
+                    <Icon className="h-24 w-24 text-primary/20 relative" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ─── types ─── */
 type Currency = "BDT" | "INR" | "USD";
 const CURRENCIES: { key: Currency; symbol: string; label: string }[] = [
@@ -527,7 +621,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative pb-[40vh]">
+        <div className="hidden lg:block relative">
           {[1, 2, 3, 4, 5, 6].map((i) => {
             const title = get(`feature_${i}_title`);
             const desc = get(`feature_${i}_desc`);
@@ -536,94 +630,20 @@ const LandingPage = () => {
             const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
             if (!title && !img) return null;
 
-            const totalCards = 6;
-            const stickyTop = 80 + (i - 1) * 24;
-            const scaleValue = 1 - (totalCards - i) * 0.02;
-
             return (
-              <div
+              <FeatureStickyCard
                 key={i}
-                style={{ height: '100vh', position: 'relative' }}
-              >
-                <div
-                  className="sticky will-change-transform"
-                  style={{
-                    top: `${stickyTop}px`,
-                    zIndex: i * 10,
-                  }}
-                >
-                  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div
-                      initial={{ opacity: 0, y: 60 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-50px" }}
-                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-all duration-700"
-                      style={{
-                        boxShadow: `0 ${4 + i * 8}px ${20 + i * 12}px -${6 + i * 2}px hsl(var(--foreground) / ${0.04 + i * 0.025}), 0 0 0 1px hsl(var(--border) / 0.1)`,
-                        transform: `scale(${scaleValue})`,
-                        transformOrigin: 'top center',
-                      }}
-                    >
-                      <div className={`grid lg:grid-cols-2 gap-0 ${i % 2 === 0 ? 'direction-rtl' : ''}`}>
-                        {/* Text */}
-                        <div className={`p-8 lg:p-12 flex flex-col justify-center space-y-5 ${i % 2 === 0 ? 'lg:order-2' : ''}`} style={{ direction: 'ltr' }}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <Icon className="h-5 w-5 text-primary" />
-                            </div>
-                            <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
-                              {get(`feature_${i}_badge`, `Feature ${i}`)}
-                            </Badge>
-                            <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{i} / 06</span>
-                          </div>
-                          <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title || `Feature ${i}`}</h3>
-                          <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
-                          {bullets.length > 0 && (
-                            <ul className="space-y-2.5 pt-1">
-                              {bullets.map((b, j) => (
-                                <li key={j} className="flex items-center gap-3 text-sm">
-                                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-                                    <Check className="h-3 w-3 text-primary" />
-                                  </div>
-                                  <span className="text-foreground/80">{b.trim()}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-
-                        {/* Screenshot */}
-                        <div className={`relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px] ${i % 2 === 0 ? 'lg:order-1' : ''}`} style={{ direction: 'ltr' }}>
-                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
-                          {img ? (
-                            <div className="relative w-full">
-                              <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
-                                <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
-                                  <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
-                                  <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
-                                  <div className="flex-1 mx-3">
-                                    <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
-                                  </div>
-                                </div>
-                                <img src={img} alt={title || ""} className="w-full" loading="lazy" />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
-                              <Icon className="h-24 w-24 text-primary/20 relative" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
-              </div>
+                index={i}
+                title={title || `Feature ${i}`}
+                desc={desc}
+                img={img}
+                Icon={Icon}
+                bullets={bullets}
+                badge={get(`feature_${i}_badge`, `Feature ${i}`)}
+              />
             );
           })}
+          <div className="h-[30vh]" />
         </div>
 
         {/* Mobile: Simplified stacked cards */}
