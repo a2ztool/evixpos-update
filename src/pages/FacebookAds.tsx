@@ -35,28 +35,37 @@ interface AdsMetric {
   fetched_at: string;
 }
 
-const SETUP_STEPS = [
+const getRedirectUri = () => {
+  const origin = window.location.origin;
+  // Use real/custom domain when available, fallback to published domain
+  if (origin.includes("lovableproject.com") || origin.includes("localhost")) {
+    return "https://evipose.lovable.app/api/facebook/callback";
+  }
+  return `${origin}/api/facebook/callback`;
+};
+
+const getSetupSteps = () => [
   {
-    title: "Create Meta Developer App",
-    desc: "Go to developers.facebook.com and create a new app. Select 'Business' type.",
+    title: "Meta Developer অ্যাপ তৈরি করুন",
+    desc: "প্রথমে developers.facebook.com-এ যান এবং একটি নতুন অ্যাপ তৈরি করুন। অ্যাপের ধরন 'Business' সিলেক্ট করুন। এই অ্যাপটি আপনার Facebook Ads account-এর সাথে সংযুক্ত হবে।",
     link: "https://developers.facebook.com/apps/create/",
   },
   {
-    title: "Enable Marketing API",
-    desc: "In your app settings, add the 'Marketing API' product to enable ads data access.",
+    title: "Marketing API চালু করুন",
+    desc: "আপনার অ্যাপের সেটিংসে গিয়ে 'Add Product' বাটনে ক্লিক করুন এবং 'Marketing API' যোগ করুন। এটি ছাড়া আপনার ads-এর ডেটা পড়া যাবে না।",
   },
   {
-    title: "Add OAuth Redirect URL",
-    desc: "Add this URL to your app's Valid OAuth Redirect URIs:",
-    copyValue: "https://identical-copy.lovable.app/api/facebook/callback",
+    title: "OAuth Redirect URL যোগ করুন",
+    desc: "আপনার Meta অ্যাপের Settings → Facebook Login → Valid OAuth Redirect URIs-এ নিচের URL টি পেস্ট করুন। এই URL-এ Facebook আপনাকে ফেরত পাঠাবে connect হওয়ার পর।",
+    copyValue: getRedirectUri(),
   },
   {
-    title: "Click Connect Button",
-    desc: "Use the 'Connect Meta Ads' button above to start the OAuth flow.",
+    title: "Connect বাটনে ক্লিক করুন",
+    desc: "উপরের 'Connect Meta Ads' বাটনে ক্লিক করুন। এটি আপনাকে Facebook-এ নিয়ে যাবে permission দেওয়ার জন্য। Permission দিলেই আপনার account connect হয়ে যাবে।",
   },
   {
-    title: "Grant Permissions",
-    desc: "Allow ads_read and ads_management permissions when prompted by Facebook.",
+    title: "Permission দিন এবং দেখুন",
+    desc: "Facebook আপনাকে ads_read এবং ads_management permission চাইবে — 'Allow' করুন। এরপর আপনার সব Facebook ও Instagram Ads-এর spend, clicks, impressions সবকিছু এই dashboard-এ অটো সিঙ্ক হবে প্রতি ৫ মিনিটে।",
   },
 ];
 
