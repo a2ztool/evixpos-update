@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { StaffProvider } from "@/contexts/StaffContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import OfflineBanner from "@/components/OfflineBanner";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
@@ -77,7 +78,22 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import PublicOrderForm from "./pages/PublicOrderForm";
 import FacebookCallback from "./pages/FacebookCallback";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1500 * 2 ** attemptIndex, 10000),
+      staleTime: 30000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnReconnect: true,
+      networkMode: "online",
+    },
+    mutations: {
+      retry: 1,
+      networkMode: "online",
+    },
+  },
+});
 
 /** Helper: ProtectedRoute + PermissionGuard */
 const P = ({ children, perm, ownerOnly, feature }: { children: React.ReactNode; perm?: string | string[]; ownerOnly?: boolean; feature?: FeatureKey }) => (
@@ -97,6 +113,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineBanner />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
