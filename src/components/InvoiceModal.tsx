@@ -12,6 +12,9 @@ import {
 import { useStore } from "@/contexts/StoreContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
+import { QRCodeSVG } from "qrcode.react";
+import evixposLogo from "@/assets/evixpos-logo.png";
 import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
 
