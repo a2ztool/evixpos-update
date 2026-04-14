@@ -758,6 +758,127 @@ const StaffInbox = () => {
                       </DialogContent>
                     </Dialog>
                   )}
+
+                  {/* Group management buttons */}
+                  {activeChatType === "group" && !isStaff && activeGroupData && (
+                    <>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => {
+                            setEditGroupName(activeGroupData.name);
+                            setEditGroupIcon(activeGroupData.icon || "💬");
+                            setEditGroupOpen(true);
+                          }}>
+                            <Pencil className="w-3.5 h-3.5 mr-2" /> Edit Group
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setManageMembers(true)}>
+                            <UserPlus className="w-3.5 h-3.5 mr-2" /> Manage Members
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteGroupConfirm(true)}>
+                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete Group
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* Edit Group Dialog */}
+                      <Dialog open={editGroupOpen} onOpenChange={setEditGroupOpen}>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="w-4 h-4 text-primary" /> Edit Group</DialogTitle></DialogHeader>
+                          <div className="space-y-4 mt-2">
+                            <div><Label>Group Name</Label><Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} /></div>
+                            <div>
+                              <Label>Icon</Label>
+                              <div className="flex gap-2 flex-wrap mt-1">
+                                {GROUP_ICONS.map(ic => (
+                                  <button key={ic} onClick={() => setEditGroupIcon(ic)}
+                                    className={`text-2xl p-1.5 rounded-lg transition-all ${editGroupIcon === ic ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-accent"}`}>
+                                    {ic}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <Button onClick={handleEditGroup} className="w-full" disabled={!editGroupName.trim()}>Save Changes</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Manage Members Dialog */}
+                      <Dialog open={manageMembers} onOpenChange={setManageMembers}>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader><DialogTitle className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> Manage Members</DialogTitle></DialogHeader>
+                          <div className="space-y-3 mt-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Current Members ({groupMembers.length})</Label>
+                              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                {groupMembers.map(m => {
+                                  const staff = staffList.find(s => s.auth_user_id === m.user_id);
+                                  const isMe = m.user_id === myId;
+                                  return (
+                                    <div key={m.user_id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarFallback className="text-[10px] bg-accent">{staff ? getInitials(staff.name) : "?"}</AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm flex-1">{staff?.name || (isMe ? "You" : "Unknown")}</span>
+                                      <Badge variant="outline" className="text-[10px] capitalize h-4 px-1.5">{m.role}</Badge>
+                                      {!isMe && (
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                                          onClick={() => handleRemoveMember(m.user_id)}>
+                                          <UserMinus className="w-3 h-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Add Members</Label>
+                              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                {staffList.filter(s => s.auth_user_id && !groupMembers.find(m => m.user_id === s.auth_user_id)).map(s => (
+                                  <div key={s.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent cursor-pointer"
+                                    onClick={() => s.auth_user_id && handleAddMember(s.auth_user_id)}>
+                                    <Avatar className="h-7 w-7">
+                                      <AvatarFallback className="text-[10px] bg-accent">{getInitials(s.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm flex-1">{s.name}</span>
+                                    <span className="text-[11px] text-muted-foreground">{s.email}</span>
+                                    <UserPlus className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                ))}
+                                {staffList.filter(s => s.auth_user_id && !groupMembers.find(m => m.user_id === s.auth_user_id)).length === 0 && (
+                                  <p className="text-xs text-muted-foreground text-center py-2">All staff are already members</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Delete Confirmation */}
+                      <AlertDialog open={deleteGroupConfirm} onOpenChange={setDeleteGroupConfirm}>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Group</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{activeGroupData?.name}"? All messages will be permanently deleted. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
                 </div>
 
                 {/* Messages */}
