@@ -19,14 +19,14 @@ export const useMessageUnread = () => {
 
   const fetchCount = useCallback(async () => {
     if (!storeId || !myId) return;
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from("staff_messages")
-      .select("id", { count: "exact", head: true })
+      .select("*", { count: "exact", head: true })
       .eq("store_id", storeId)
       .eq("receiver_id", myId)
       .eq("is_read", false);
     if (!error) {
-      setUnreadCount(data?.length ?? 0);
+      setUnreadCount(count ?? 0);
     }
   }, [storeId, myId]);
 
@@ -34,8 +34,9 @@ export const useMessageUnread = () => {
     fetchCount();
     if (!storeId || !myId) return;
 
+    const channelName = `msg-unread-global-${myId}-${Date.now()}`;
     const channel = supabase
-      .channel(`msg-unread-global-${myId}`)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "*", schema: "public", table: "staff_messages",
         filter: `receiver_id=eq.${myId}`,
