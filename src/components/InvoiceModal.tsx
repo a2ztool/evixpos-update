@@ -15,8 +15,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
-import { QRCodeSVG } from "qrcode.react";
-import evixposLogo from "@/assets/evixpos-logo.png";
 
 interface OrderItem {
   id: string;
