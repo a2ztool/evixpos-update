@@ -57,6 +57,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut, user } = useAuth();
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
+  const { plan } = useStorePlan();
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
