@@ -527,7 +527,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative pb-16">
+        <div className="hidden lg:block relative">
           {[1, 2, 3, 4, 5, 6].map((i) => {
             const title = get(`feature_${i}_title`);
             const desc = get(`feature_${i}_desc`);
@@ -536,29 +536,32 @@ const LandingPage = () => {
             const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
             if (!title && !img) return null;
 
-            // Each card gets a taller scroll container so the next card scrolls up over it
-            // The sticky top increases slightly for each card so they peek behind
-            const stickyTop = 96 + (i - 1) * 16; // 96px, 112px, 128px, ...
+            const stickyTop = 80 + (i - 1) * 20;
 
             return (
               <div
                 key={i}
-                style={{ height: i < 6 ? '60vh' : 'auto' }}
+                className={i < 6 ? "h-[70vh]" : ""}
+                style={{ marginBottom: i === 6 ? '0' : undefined }}
               >
                 <div
                   className="sticky"
                   style={{ top: `${stickyTop}px`, zIndex: i * 10 }}
                 >
                   <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div
-                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-shadow duration-300"
+                    <motion.div
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-shadow duration-500"
                       style={{
-                        boxShadow: `0 ${8 + i * 4}px ${30 + i * 10}px -${8 + i * 2}px hsl(var(--foreground) / ${0.08 + i * 0.02}), 0 0 0 1px hsl(var(--border) / 0.1)`,
+                        boxShadow: `0 ${10 + i * 6}px ${40 + i * 10}px -${10 + i * 2}px hsl(var(--foreground) / ${0.06 + i * 0.02}), 0 0 0 1px hsl(var(--border) / 0.08)`,
                       }}
                     >
-                      <div className="grid lg:grid-cols-2 gap-0">
-                        {/* Text Content */}
-                        <div className="p-8 lg:p-12 flex flex-col justify-center space-y-5">
+                      <div className={`grid lg:grid-cols-2 gap-0 ${i % 2 === 0 ? 'direction-rtl' : ''}`}>
+                        {/* Text - swap order on even cards */}
+                        <div className={`p-8 lg:p-12 flex flex-col justify-center space-y-5 ${i % 2 === 0 ? 'lg:order-2' : ''}`} style={{ direction: 'ltr' }}>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                               <Icon className="h-5 w-5 text-primary" />
@@ -585,7 +588,7 @@ const LandingPage = () => {
                         </div>
 
                         {/* Screenshot */}
-                        <div className="relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px]">
+                        <div className={`relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px] ${i % 2 === 0 ? 'lg:order-1' : ''}`} style={{ direction: 'ltr' }}>
                           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
                           {img ? (
                             <div className="relative w-full">
@@ -609,12 +612,14 @@ const LandingPage = () => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
               </div>
             );
           })}
+          {/* Extra space so last card has room to fully appear */}
+          <div className="h-[30vh]" />
         </div>
 
         {/* Mobile: Simplified stacked cards */}
