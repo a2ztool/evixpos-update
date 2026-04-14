@@ -53,6 +53,7 @@ const AppSidebar = () => {
   ];
   const productSubItems: NavItem[] = [
     { title: t.products, icon: Package, path: "/products", perm: "products.view" },
+    { title: "Inventory", icon: Truck, path: "/inventory", perm: "products.view", onlineOnly: true },
     { title: t.orderForms, icon: FileText, path: "/order-forms", perm: "products.view", feature: "order_forms", onlineOnly: true },
     { title: t.coupons, icon: Tag, path: "/coupons", perm: "products.edit", feature: "coupons" },
   ];
