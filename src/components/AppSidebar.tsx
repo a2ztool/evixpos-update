@@ -8,6 +8,7 @@ import {
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { prefetchRoute } from "@/lib/routePrefetch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -124,6 +125,8 @@ const AppSidebar = () => {
       <SidebarMenuItem key={item.path}>
         <SidebarMenuButton
           onClick={() => navigate(item.path)}
+          onMouseEnter={() => prefetchRoute(item.path)}
+          onFocus={() => prefetchRoute(item.path)}
           isActive={active}
           className={`rounded-lg transition-all duration-150 ${
             active ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-foreground"
