@@ -78,12 +78,12 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
         .eq("user_id", uid)
         .eq("store_id", activeStore.id)
         .maybeSingle();
-      // Fallback: try by store_id only
+      // Fallback: try by user_id only (unique constraint is on user_id)
       if (!data) {
         const { data: fallback } = await supabase
           .from("business_settings")
           .select("business_name, business_phone, business_email, logo_url")
-          .eq("store_id", activeStore.id)
+          .eq("user_id", uid)
           .maybeSingle();
         data = fallback;
       }
