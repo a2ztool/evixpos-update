@@ -103,37 +103,60 @@ const Referral = () => {
     toast.success("Referral code copied!");
   };
 
+  const selectedMethod = getMethodById(withdrawMethod);
+  const hasPendingWithdrawal = withdrawals.some(w => w.status === "pending");
+
+  const resetWithdrawForm = () => {
+    setWithdrawAmount(0);
+    setWithdrawMethod("bkash");
+    setWithdrawDetails({});
+    setWithdrawNotes("");
+  };
+
+  const isWithdrawValid = () => {
+    if (!settings) return false;
+    if (withdrawAmount < settings.min_withdraw) return false;
+    if (withdrawAmount > settings.pending_balance) return false;
+    if (!selectedMethod) return false;
+    return selectedMethod.fields.filter(f => f.required).every(f => withdrawDetails[f.key]?.trim());
+  };
+
   const requestWithdraw = async () => {
-    if (!user || !settings) return;
-    if (withdrawForm.amount < settings.min_withdraw) {
+    if (!user || !settings || !selectedMethod) return;
+    if (hasPendingWithdrawal) {
+      toast.error("You already have a pending withdrawal request");
+      return;
+    }
+    if (withdrawAmount < settings.min_withdraw) {
       toast.error(`Minimum withdrawal is ${fmtCurrency(settings.min_withdraw)}`);
       return;
     }
-    if (withdrawForm.amount > settings.pending_balance) {
+    if (withdrawAmount > settings.pending_balance) {
       toast.error("Insufficient balance");
       return;
     }
-    if (!withdrawForm.account_number) {
-      toast.error("Enter account number");
+    const missingField = selectedMethod.fields.find(f => f.required && !withdrawDetails[f.key]?.trim());
+    if (missingField) {
+      toast.error(`Please fill: ${missingField.label}`);
       return;
     }
 
     const { error } = await supabase.from("referral_withdrawals").insert({
       user_id: user.id,
-      amount: withdrawForm.amount,
-      method: withdrawForm.method,
-      account_number: withdrawForm.account_number,
-      notes: withdrawForm.notes,
+      amount: withdrawAmount,
+      method: withdrawMethod,
+      account_number: JSON.stringify(withdrawDetails),
+      notes: withdrawNotes,
     });
     if (error) { toast.error(error.message); return; }
 
     await supabase.from("referral_settings").update({
-      pending_balance: settings.pending_balance - withdrawForm.amount,
+      pending_balance: settings.pending_balance - withdrawAmount,
     }).eq("id", settings.id);
 
     toast.success("Withdrawal request submitted!");
     setWithdrawOpen(false);
-    setWithdrawForm({ amount: 0, method: "bkash", account_number: "", notes: "" });
+    resetWithdrawForm();
     fetchData();
   };
 
