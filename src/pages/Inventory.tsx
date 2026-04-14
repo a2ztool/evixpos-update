@@ -83,7 +83,7 @@ const Inventory = () => {
     queryKey: ["products-list", storeId],
     enabled: ready,
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("id, name, stock_quantity")
+      const { data } = await supabase.from("products").select("id, name, stock")
         .eq("store_id", storeId!).order("name");
       return data || [];
     },
