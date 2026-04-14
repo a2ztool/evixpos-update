@@ -291,7 +291,12 @@ const SettingsPage = () => {
     if (!user || !activeStore) return;
     const load = async () => {
       const uid = effectiveUserId || user.id;
-      const { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
+      // Try by user_id + store_id first, then user_id only (unique constraint is on user_id)
+      let { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
+      if (!s) {
+        const { data: fallback } = await supabase.from("business_settings").select("*").eq("user_id", uid).maybeSingle();
+        s = fallback;
+      }
       if (s) {
         setSettings({
           id: s.id, business_name: s.business_name, business_email: s.business_email,
@@ -334,10 +339,26 @@ const SettingsPage = () => {
       const { error } = await supabase.from("business_settings").update(payload).eq("id", settings.id);
       if (error) { toast.error(error.message); setLoading(false); return; }
     } else {
-      // Use upsert to handle cases where a record was auto-created
-      const { data, error } = await supabase.from("business_settings").upsert(payload, { onConflict: "user_id,store_id" }).select().single();
-      if (error) { toast.error(error.message); setLoading(false); return; }
-      if (data) setSettings(prev => ({ ...prev, id: data.id }));
+      // Check if a record already exists for this user (unique constraint on user_id)
+      const { data: existing } = await supabase.from("business_settings").select("id").eq("user_id", uid).maybeSingle();
+      if (!existing) {
+        // Also check by store_id
+        const { data: storeExisting } = await supabase.from("business_settings").select("id").eq("store_id", activeStore.id).maybeSingle();
+        if (storeExisting) {
+          const { error } = await supabase.from("business_settings").update(payload).eq("id", storeExisting.id);
+          if (error) { toast.error(error.message); setLoading(false); return; }
+          setSettings(prev => ({ ...prev, id: storeExisting.id }));
+        } else {
+          const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
+          if (error) { toast.error(error.message); setLoading(false); return; }
+          if (data) setSettings(prev => ({ ...prev, id: data.id }));
+        }
+      } else {
+        // Update the existing record with the new store_id and settings
+        const { error } = await supabase.from("business_settings").update(payload).eq("id", existing.id);
+        if (error) { toast.error(error.message); setLoading(false); return; }
+        setSettings(prev => ({ ...prev, id: existing.id }));
+      }
     }
     setLoading(false);
     toast.success(lang === "bn" ? "সেটিংস সেভ হয়েছে!" : lang === "hi" ? "सेटिंग्स सेव हो गई!" : "Settings saved!");

@@ -70,16 +70,26 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
   useEffect(() => {
     if (!user || !activeStore || !open) return;
-    const uid = effectiveUserId || user.id;
-    supabase
-      .from("business_settings")
-      .select("business_name, business_phone, business_email, logo_url")
-      .eq("user_id", uid)
-      .eq("store_id", activeStore.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setBusinessSettings(data);
-      });
+    const fetchSettings = async () => {
+      const uid = effectiveUserId || user.id;
+      let { data } = await supabase
+        .from("business_settings")
+        .select("business_name, business_phone, business_email, logo_url")
+        .eq("user_id", uid)
+        .eq("store_id", activeStore.id)
+        .maybeSingle();
+      // Fallback: try by user_id only (unique constraint is on user_id)
+      if (!data) {
+        const { data: fallback } = await supabase
+          .from("business_settings")
+          .select("business_name, business_phone, business_email, logo_url")
+          .eq("user_id", uid)
+          .maybeSingle();
+        data = fallback;
+      }
+      if (data) setBusinessSettings(data);
+    };
+    fetchSettings();
   }, [user, activeStore, open, effectiveUserId]);
 
   if (!order) return null;
