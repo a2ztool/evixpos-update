@@ -232,7 +232,7 @@ const Referral = () => {
               <Button onClick={copyLink} className="gap-2"><Copy className="h-4 w-4" />Copy</Button>
               <Button variant="outline" onClick={() => {
                 if (!settings) return;
-                setWithdrawForm({ ...withdrawForm, amount: settings.pending_balance });
+                setWithdrawAmount(settings.pending_balance);
                 setWithdrawOpen(true);
               }}>
                 <Wallet className="h-4 w-4 mr-2" />Withdraw Earning
