@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 
 export interface PlanLimits {
   maxProducts: number;
@@ -25,40 +26,73 @@ export const PLAN_FEATURES: Record<string, string[]> = {
 };
 
 /**
- * User-level subscription hook.
- * Plan applies globally to the user, not per store.
+ * User-level subscription hook with real-time updates.
+ * For staff, checks the store owner's plan.
  */
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string>("free");
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    supabase
+  // For staff, use the store owner's plan
+  const planUserId = isStaff && staffInfo ? staffInfo.owner_id : user?.id;
+
+  const fetchPlan = useCallback(async () => {
+    if (!planUserId) { setLoading(false); return; }
+    const { data } = await supabase
       .from("subscriptions")
       .select("plan, status")
-      .eq("user_id", user.id)
+      .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
       .order("start_date", { ascending: false })
       .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setPlan(data.plan);
-        setLoading(false);
-      });
-  }, [user]);
+      .maybeSingle();
+    if (data) setPlan(data.plan);
+    else setPlan("free");
+    setLoading(false);
+  }, [planUserId]);
+
+  useEffect(() => {
+    fetchPlan();
+  }, [fetchPlan]);
+
+  // Real-time subscription changes
+  useEffect(() => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    if (!planUserId) return;
+
+    const ch = supabase
+      .channel(`sub-plan-${planUserId}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${planUserId}` },
+        () => fetchPlan()
+      )
+      .subscribe();
+
+    channelRef.current = ch;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [planUserId, fetchPlan]);
 
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 
   const upgradeTo = async (newPlan: "free" | "pro" | "business") => {
-    if (!user) return;
-    // Deactivate current platform subscriptions only (not customer subs)
-    await supabase.from("subscriptions").update({ status: "inactive" }).eq("user_id", user.id).eq("status", "active").is("customer_id", null);
-    // Create new (user-level, no store_id needed)
+    if (!planUserId) return;
+    await supabase.from("subscriptions").update({ status: "inactive" }).eq("user_id", planUserId).eq("status", "active").is("customer_id", null);
     await supabase.from("subscriptions").insert({
-      user_id: user.id,
+      user_id: planUserId,
       plan: newPlan,
       status: "active",
     });
