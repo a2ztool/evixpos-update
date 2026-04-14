@@ -180,7 +180,7 @@ const StaffInbox = () => {
         fetchUnreadCounts();
       } else {
         // Group messages — fetch from chat_messages table
-        const { data } = await db.from("chat_messages").select("*").eq("group_id", activeChat).order("created_at", { ascending: true }).limit(200);
+        const { data } = await db.from("chat_group_messages").select("*").eq("group_id", activeChat).order("created_at", { ascending: true }).limit(200);
         if (data) {
           // Map to ChatMessage shape for reuse
           const mapped: ChatMessage[] = data.map((m: any) => ({
@@ -252,7 +252,7 @@ const StaffInbox = () => {
   useEffect(() => {
     if (!activeChat || activeChatType !== "group") return;
     const channel = supabase.channel(`group-chat-${activeChat}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `group_id=eq.${activeChat}` },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_group_messages", filter: `group_id=eq.${activeChat}` },
         (payload) => {
           const m = payload.new as any;
           const mapped: ChatMessage = {
@@ -299,7 +299,7 @@ const StaffInbox = () => {
       const { error } = await supabase.from("staff_messages").insert(insertData);
       if (error) { toast.error("Failed to send message"); }
     } else {
-      await db.from("chat_messages").insert({ group_id: activeChat, sender_id: myId, message: msg, type: "text" });
+      await db.from("chat_group_messages").insert({ group_id: activeChat, sender_id: myId, message: msg, type: "text" });
     }
   };
 
@@ -321,7 +321,7 @@ const StaffInbox = () => {
       });
       if (error) { toast.error("Failed to send task"); return; }
     } else {
-      await db.from("chat_messages").insert({
+      await db.from("chat_group_messages").insert({
         group_id: activeChat, sender_id: myId, message: fullMessage, type: "task"
       });
     }
@@ -351,7 +351,7 @@ const StaffInbox = () => {
         });
         if (error) throw error;
       } else {
-        await db.from("chat_messages").insert({
+        await db.from("chat_group_messages").insert({
           group_id: activeChat, sender_id: myId,
           message: `📎 [${file.name}](${urlData.publicUrl})`, type: "text"
         });
@@ -375,7 +375,7 @@ const StaffInbox = () => {
     for (const uid of selectedMembers) {
       await db.from("chat_group_members").insert({ group_id: group.id, user_id: uid, role: "staff" });
     }
-    await db.from("chat_messages").insert({ group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system" });
+    await db.from("chat_group_messages").insert({ group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system" });
     setShowCreateGroup(false); setNewGroupName(""); setSelectedMembers([]); setNewGroupIcon("💬");
     fetchGroups();
     toast.success("Group created!");
