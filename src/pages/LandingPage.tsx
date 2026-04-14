@@ -527,7 +527,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative">
+        <div className="hidden lg:block relative pb-16">
           {[1, 2, 3, 4, 5, 6].map((i) => {
             const title = get(`feature_${i}_title`);
             const desc = get(`feature_${i}_desc`);
@@ -536,21 +536,24 @@ const LandingPage = () => {
             const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
             if (!title && !img) return null;
 
+            // Each card gets a taller scroll container so the next card scrolls up over it
+            // The sticky top increases slightly for each card so they peek behind
+            const stickyTop = 96 + (i - 1) * 16; // 96px, 112px, 128px, ...
+
             return (
               <div
                 key={i}
-                className="h-[70vh]"
-                style={{ marginBottom: i === 6 ? 0 : '-10vh' }}
+                style={{ height: i < 6 ? '90vh' : 'auto', position: 'relative' }}
               >
                 <div
-                  className="sticky top-28"
-                  style={{ zIndex: i }}
+                  className="sticky"
+                  style={{ top: `${stickyTop}px`, zIndex: i * 10 }}
                 >
                   <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div
-                      className="rounded-3xl border border-border/50 bg-card shadow-2xl overflow-hidden"
+                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-shadow duration-300"
                       style={{
-                        boxShadow: `0 ${4 + i * 2}px ${20 + i * 8}px -${4 + i}px hsl(var(--foreground) / ${0.06 + i * 0.02})`,
+                        boxShadow: `0 ${8 + i * 4}px ${30 + i * 10}px -${8 + i * 2}px hsl(var(--foreground) / ${0.08 + i * 0.02}), 0 0 0 1px hsl(var(--border) / 0.1)`,
                       }}
                     >
                       <div className="grid lg:grid-cols-2 gap-0">
