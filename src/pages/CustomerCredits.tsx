@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, DollarSign, Users, Receipt } from "lucide-react";
+import { Search, DollarSign, Users, Receipt, MessageCircle } from "lucide-react";
 import PageGuide from "@/components/PageGuide";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,20 +54,32 @@ const CustomerCredits = () => {
     },
   });
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!storeId) return;
+    const channel = supabase
+      .channel(`credits-rt-${storeId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "customer_credits", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["customer-credits", storeId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "credit_payments", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["credit-payments", storeId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, queryClient]);
+
   const payMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(payAmount);
       if (!payDialog || amount <= 0) return;
 
-      // Record payment
-      const { error } = await supabase.from("credit_payments").insert({
+      await supabase.from("credit_payments").insert({
         store_id: storeId!, user_id: userId!,
         customer_id: payDialog.customer_id,
         amount, payment_method: payMethod,
       });
-      if (error) throw error;
 
-      // Update credit
       const newDue = Math.max(0, Number(payDialog.total_due) - amount);
       await supabase.from("customer_credits").update({
         total_due: newDue, last_payment_date: new Date().toISOString(),
@@ -82,6 +94,15 @@ const CustomerCredits = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const sendWhatsApp = (credit: any) => {
+    const phone = credit.customers?.phone?.replace(/[^0-9]/g, "") || "";
+    if (!phone) { toast.error("No phone number"); return; }
+    const name = credit.customers?.name || "Customer";
+    const amount = format(Number(credit.total_due));
+    const text = `Hello ${name}, your due amount is ${amount}. Please clear it at your earliest convenience. Thank you!`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+  };
 
   const totalDue = credits.reduce((s: number, c: any) => s + Number(c.total_due), 0);
   const customersWithDue = credits.filter((c: any) => Number(c.total_due) > 0).length;
@@ -99,9 +120,9 @@ const CustomerCredits = () => {
             <p className="text-sm text-muted-foreground">Track customer dues and collect payments</p>
           </div>
           <PageGuide title="How Customer Credits Work" steps={[
-            { title: "Set Credit Limit", description: "Assign a credit limit to allow customers to buy on credit." },
-            { title: "Track Dues", description: "Outstanding balances update automatically with each order." },
-            { title: "Collect Payment", description: "Click 'Pay' to record partial or full payment from customer." },
+            { title: "Auto Sync", description: "Due orders from POS automatically appear here." },
+            { title: "Track Dues", description: "Outstanding balances update in real-time." },
+            { title: "Collect Payment", description: "Click 'Collect' to record payment. Send WhatsApp reminders." },
           ]} />
         </div>
 
@@ -119,47 +140,89 @@ const CustomerCredits = () => {
         <Card>
           <CardHeader><CardTitle className="text-lg">Customer Dues</CardTitle></CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Credit Limit</TableHead>
-                  <TableHead>Total Due</TableHead>
-                  <TableHead>Last Payment</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No credit records</TableCell></TableRow>
-                ) : filtered.map((c: any) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3 p-4">
+              {isLoading ? (
+                <p className="text-center py-8 text-muted-foreground">Loading...</p>
+              ) : filtered.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No credit records</p>
+              ) : filtered.map((c: any) => (
+                <div key={c.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
                       <p className="font-medium">{c.customers?.name}</p>
                       <p className="text-xs text-muted-foreground">{c.customers?.phone}</p>
-                    </TableCell>
-                    <TableCell>{format(Number(c.credit_limit))}</TableCell>
-                    <TableCell>
-                      <Badge variant={Number(c.total_due) > 0 ? "destructive" : "secondary"}>
-                        {format(Number(c.total_due))}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {c.last_payment_date ? formatDate(new Date(c.last_payment_date), "dd MMM yyyy") : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(c.total_due) > 0 && (
-                        <Button size="sm" variant="outline" onClick={() => setPayDialog(c)}>
+                    </div>
+                    <Badge variant={Number(c.total_due) > 0 ? "destructive" : "secondary"}>
+                      {format(Number(c.total_due))}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Limit: {format(Number(c.credit_limit))}</p>
+                  <div className="flex gap-2">
+                    {Number(c.total_due) > 0 && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => setPayDialog(c)} className="flex-1">
                           <Receipt className="h-3 w-3 mr-1" /> Collect
                         </Button>
-                      )}
-                    </TableCell>
+                        <Button size="sm" variant="outline" onClick={() => sendWhatsApp(c)}>
+                          <MessageCircle className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Credit Limit</TableHead>
+                    <TableHead>Total Due</TableHead>
+                    <TableHead>Last Payment</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No credit records</TableCell></TableRow>
+                  ) : filtered.map((c: any) => (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        <p className="font-medium">{c.customers?.name}</p>
+                        <p className="text-xs text-muted-foreground">{c.customers?.phone}</p>
+                      </TableCell>
+                      <TableCell>{format(Number(c.credit_limit))}</TableCell>
+                      <TableCell>
+                        <Badge variant={Number(c.total_due) > 0 ? "destructive" : "secondary"}>
+                          {format(Number(c.total_due))}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {c.last_payment_date ? formatDate(new Date(c.last_payment_date), "dd MMM yyyy") : "—"}
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        {Number(c.total_due) > 0 && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => setPayDialog(c)}>
+                              <Receipt className="h-3 w-3 mr-1" /> Collect
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => sendWhatsApp(c)} title="WhatsApp Reminder">
+                              <MessageCircle className="h-3 w-3 text-green-600" />
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
