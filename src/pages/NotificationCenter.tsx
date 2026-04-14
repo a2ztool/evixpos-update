@@ -82,7 +82,7 @@ const NotificationCenter = () => {
     toast.success("All notifications cleared");
   };
 
-  const cfg = (type: string) => typeConfig[type] || typeConfig.info;
+  const cfg = (type: string) => getCfg(type);
 
   return (
     <DashboardLayout>
