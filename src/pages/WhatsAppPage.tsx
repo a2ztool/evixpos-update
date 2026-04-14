@@ -38,8 +38,8 @@ const MESSAGE_TEMPLATES = [
 const WhatsAppPage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
-  const { staffData } = useStaff();
-  const effectiveUserId = staffData?.owner_id || user?.id;
+  const { staffInfo, effectiveUserId: staffEffective } = useStaff();
+  const effectiveUserId = staffEffective || user?.id;
 
   const [wa, setWa] = useState<any>(null);
   const [form, setForm] = useState({ api_key: "", phone_number: "" });
