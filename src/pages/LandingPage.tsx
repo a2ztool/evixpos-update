@@ -269,7 +269,7 @@ const LandingPage = () => {
       </div>
 
       {/* ═══════════════════ HERO — 5-Second Clarity ═══════════════════ */}
-      <section className="relative pt-32 sm:pt-36 lg:pt-40 pb-16 sm:pb-24 overflow-hidden">
+      <section className="relative pt-32 sm:pt-36 lg:pt-40 pb-10 sm:pb-14 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,hsl(var(--primary)/0.08),transparent_70%)]" />
         <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-card/50 to-transparent" />
         <div className="absolute top-32 -left-32 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]" />
@@ -378,7 +378,7 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════════════ TRUST STATS ═══════════════════ */}
-      {show("trust") && <section className="py-10 sm:py-14 border-y border-border/40 bg-muted/20 relative">
+      {show("trust") && <section className="py-8 sm:py-10 border-y border-border/40 bg-muted/20 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
@@ -400,7 +400,7 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("pain_points") && <section id="pain-points" className="py-20 sm:py-28 relative overflow-hidden">
+      {show("pain_points") && <section id="pain-points" className="py-12 sm:py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,hsl(var(--muted)/0.5),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <AnimSection className="text-center max-w-3xl mx-auto mb-16">
@@ -500,7 +500,7 @@ const LandingPage = () => {
           </div>
 
           {/* Transition CTA */}
-          <AnimSection className="text-center mt-14" delay={0.2}>
+          <AnimSection className="text-center mt-8" delay={0.2}>
             <Button size="lg" onClick={() => navigate("/auth")} className="gap-2 rounded-xl shadow-lg shadow-primary/20 px-8">
               {get("pain_cta", "Unify Your Business Today")} <ArrowRight className="h-4 w-4" />
             </Button>
@@ -508,11 +508,11 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("features") && <section id="features" className="py-24 sm:py-32 relative overflow-hidden">
+      {show("features") && <section id="features" className="py-14 sm:py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/20" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-20">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-12">
             <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
               <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
             </Badge>
@@ -524,7 +524,7 @@ const LandingPage = () => {
             </p>
           </AnimSection>
 
-          <div className="space-y-24 sm:space-y-32">
+          <div className="space-y-16 sm:space-y-20">
             {[1, 2, 3, 4, 5, 6].map((i) => {
               const title = get(`feature_${i}_title`);
               const desc = get(`feature_${i}_desc`);
@@ -616,7 +616,7 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("who") && <section className="py-14 sm:py-20 bg-muted/20 relative overflow-hidden">
+      {show("who") && <section className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
           <AnimSection className="text-center max-w-3xl mx-auto">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
@@ -633,9 +633,9 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("screenshots") && <section id="screenshots" className="py-14 sm:py-20 relative overflow-hidden">
+      {show("screenshots") && <section id="screenshots" className="py-10 sm:py-14 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-14">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <MonitorSmartphone className="h-3 w-3 mr-1.5" /> {get("screenshots_badge", "Product Preview")}
             </Badge>
@@ -667,10 +667,10 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("how_it_works") && <section id="how-it-works" className="py-14 sm:py-20 bg-muted/20 relative overflow-hidden">
+      {show("how_it_works") && <section id="how-it-works" className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,hsl(var(--primary)/0.06),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-16">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Timer className="h-3 w-3 mr-1.5" /> {get("how_badge", "Quick Setup")}
             </Badge>
@@ -716,7 +716,7 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("about") && <section id="about" className="py-14 sm:py-20 relative overflow-hidden">
+      {show("about") && <section id="about" className="py-10 sm:py-14 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_50%,hsl(var(--primary)/0.06),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -755,9 +755,9 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("why_us") && <section id="why-us" className="py-14 sm:py-20 bg-muted/20 relative overflow-hidden">
+      {show("why_us") && <section id="why-us" className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-14">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Award className="h-3 w-3 mr-1.5" /> {get("why_badge", "Why EvixPOS")}
             </Badge>
@@ -785,9 +785,9 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("comparison") && <section className="py-14 sm:py-20">
+      {show("comparison") && <section className="py-10 sm:py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-14">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Target className="h-3 w-3 mr-1.5" /> {get("comparison_badge", "Comparison")}
             </Badge>
@@ -814,7 +814,7 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("mobile") && <section className="py-14 sm:py-20 bg-muted/20 relative overflow-hidden">
+      {show("mobile") && <section className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_80%_50%,hsl(var(--primary)/0.08),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -917,9 +917,9 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("testimonials") && <section id="testimonials" className="py-14 sm:py-20 bg-muted/20 relative overflow-hidden">
+      {show("testimonials") && <section id="testimonials" className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-14">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Star className="h-3 w-3 mr-1.5" /> {get("testimonials_badge", "Testimonials")}
             </Badge>
@@ -959,9 +959,9 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("faq") && <section id="faq" className="py-14 sm:py-20">
+      {show("faq") && <section id="faq" className="py-10 sm:py-14">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimSection className="text-center mb-14">
+          <AnimSection className="text-center mb-10">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <HelpCircle className="h-3 w-3 mr-1.5" /> FAQ
             </Badge>
@@ -999,7 +999,7 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("cta") && <section className="py-20 sm:py-28 relative overflow-hidden">
+      {show("cta") && <section className="py-14 sm:py-18 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-primary/6 to-transparent" />
         <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-primary/8 rounded-full blur-[80px]" />
