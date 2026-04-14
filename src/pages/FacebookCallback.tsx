@@ -15,7 +15,7 @@ const FacebookCallback = () => {
 
       if (!code || !state) {
         setError("Missing code or state parameter");
-        setTimeout(() => navigate("/finance/facebook-ads?error=missing_params"), 2000);
+        setTimeout(() => navigate("/integrations/facebook-ads?error=missing_params"), 2000);
         return;
       }
 
@@ -31,14 +31,14 @@ const FacebookCallback = () => {
 
         if (fnError || data?.error) {
           const msg = data?.error || fnError?.message || "Token exchange failed";
-          navigate(`/finance/facebook-ads?error=${encodeURIComponent(msg)}`);
+          navigate(`/integrations/facebook-ads?error=${encodeURIComponent(msg)}`);
           return;
         }
 
         const account = data?.account_name || "Facebook Ads";
-        navigate(`/finance/facebook-ads?connected=true&account=${encodeURIComponent(account)}`);
+        navigate(`/integrations/facebook-ads?connected=true&account=${encodeURIComponent(account)}`);
       } catch (err: any) {
-        navigate(`/finance/facebook-ads?error=${encodeURIComponent(err.message)}`);
+        navigate(`/integrations/facebook-ads?error=${encodeURIComponent(err.message)}`);
       }
     };
 
