@@ -72,7 +72,7 @@ const AppSidebar = () => {
     { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
     { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book", onlineOnly: true },
     { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
-    { title: "Facebook Ads", icon: Zap, path: "/finance/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
+    
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission", onlineOnly: true },
     { title: "Daily Report", icon: CalendarDays, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
     { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", perm: "reports.view", offlineOnly: true },
@@ -84,6 +84,7 @@ const AppSidebar = () => {
     { title: t.botAutomation, icon: Bot, path: "/integrations/bot-automation", perm: "settings.edit", feature: "bot_automation", onlineOnly: true },
     { title: t.whatsapp, icon: MessageCircle, path: "/integrations/whatsapp", perm: "settings.edit", feature: "whatsapp" },
     { title: t.googleSheets, icon: Sheet, path: "/integrations/google-sheets", perm: "settings.edit", feature: "google_sheets" },
+    { title: "Facebook Ads", icon: Zap, path: "/integrations/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
   ];
 
   /** Filter items based on staff permissions and store mode */
