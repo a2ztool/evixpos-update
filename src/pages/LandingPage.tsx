@@ -852,10 +852,10 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("pricing") && <section id="pricing" className="py-14 sm:py-20 relative overflow-hidden">
+      {show("pricing") && <section id="pricing" className="py-10 sm:py-14 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,hsl(var(--primary)/0.08),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-8">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <CreditCard className="h-3 w-3 mr-1.5" /> {get("pricing_badge", "Pricing")}
             </Badge>
@@ -864,7 +864,7 @@ const LandingPage = () => {
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free with online or offline. Upgrade when you're ready. No hidden fees.")}</p>
           </AnimSection>
-          <AnimSection delay={0.1} className="flex justify-center mb-10">
+          <AnimSection delay={0.1} className="flex justify-center mb-8">
             <div className="inline-flex bg-card rounded-xl border border-border/50 p-1 shadow-sm">
               {CURRENCIES.map((c) => (
                 <button key={c.key} onClick={() => setCurrency(c.key)} className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${currency === c.key ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>{c.symbol} {c.label}</button>
