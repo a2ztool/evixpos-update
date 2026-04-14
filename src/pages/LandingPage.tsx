@@ -442,7 +442,7 @@ const LandingPage = () => {
 
           {/* Hero headline — centered for max impact */}
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-center max-w-4xl mx-auto mb-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-black tracking-tight leading-[1.08] mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.08] mb-6">
               {get("hero_title_line1", "One Platform.")}
               <br />
               <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
@@ -546,7 +546,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-destructive border-destructive/30 px-3 py-1.5">
               <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-5 lg:text-xs">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-5">
               {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
@@ -660,7 +660,7 @@ const LandingPage = () => {
                   <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
                     <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
                   </Badge>
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-4 leading-[1.15]">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight mb-4 leading-[1.15]">
                     {get("features_title", "Everything for Online & Offline Business")}
                   </h2>
                   <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
@@ -733,7 +733,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Target className="h-3 w-3 mr-1.5" /> {get("who_badge", "Who Is It For?")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("who_title", "Built for Every Business Model")}
             </h2>
           </AnimSection>
@@ -744,39 +744,6 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("screenshots") && <section id="screenshots" className="py-10 sm:py-14 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
-            <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
-              <MonitorSmartphone className="h-3 w-3 mr-1.5" /> {get("screenshots_badge", "Product Preview")}
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
-              {get("screenshots_title", "See EvixPOS in Action")}
-            </h2>
-          </AnimSection>
-          <AnimSection delay={0.15}>
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {screenshots.map((s, idx) => (
-                <button key={idx} onClick={() => setActiveScreenshot(idx)} className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${activeScreenshot === idx ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-card border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30"}`}>{s.label}</button>
-              ))}
-            </div>
-            <div className="relative max-w-5xl mx-auto">
-              <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 via-primary/5 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
-                <div className="bg-muted/80 h-9 flex items-center gap-2 px-4 border-b border-border/50">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-warning/60" />
-                  <div className="w-3 h-3 rounded-full bg-primary/60" />
-                  <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-10 py-0.5 text-[10px] text-muted-foreground">app.evixpos.com</div></div>
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.img key={activeScreenshot} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} src={screenshots[activeScreenshot].src} alt={screenshots[activeScreenshot].label} className="w-full" loading="lazy" />
-                </AnimatePresence>
-              </div>
-            </div>
-          </AnimSection>
-        </div>
-      </section>}
 
       {show("how_it_works") && <section id="how-it-works" className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,hsl(var(--primary)/0.06),transparent)]" />
@@ -785,7 +752,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Timer className="h-3 w-3 mr-1.5" /> {get("how_badge", "Quick Setup")}
             </Badge>
-             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("how_it_works_title", "Go Live in Under 15 Minutes")}
              </h2>
              <p className="text-muted-foreground text-lg leading-relaxed">
@@ -835,7 +802,7 @@ const LandingPage = () => {
               <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
                 <Sparkles className="h-3 w-3 mr-1.5" /> {get("about_badge", "About Us")}
               </Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-6">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-6">
                {get("about_title", "Built for the Hybrid Business Owner")}
              </h2>
              <p className="text-muted-foreground text-lg leading-relaxed mb-6">{get("about_desc_1", "EvixPOS is the all-in-one business management platform that bridges the gap between online and offline commerce. Whether you run an e-commerce store, a physical retail shop, or both — we give you one unified panel to manage everything.")}</p>
@@ -872,7 +839,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Award className="h-3 w-3 mr-1.5" /> {get("why_badge", "Why EvixPOS")}
             </Badge>
-             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("why_title", "One Dashboard. Online + Offline. Zero Compromise.")}
              </h2>
              <p className="text-muted-foreground text-lg leading-relaxed">{get("why_subtitle", "We're not just another tool — we're the only platform that truly unifies your online and offline business.")}</p>
@@ -902,7 +869,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Target className="h-3 w-3 mr-1.5" /> {get("comparison_badge", "Comparison")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("comparison_title", "Why EvixPOS Beats Separate Tools")}
             </h2>
           </AnimSection>
@@ -939,7 +906,7 @@ const LandingPage = () => {
               <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
                 <Download className="h-3 w-3 mr-1.5" /> {get("mobile_badge", "Mobile App")}
               </Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("app_download_title", "Manage Online & Offline Sales On The Go")}
              </h2>
              <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Process POS sales, track online orders, and monitor your business from anywhere — all from your phone.")}</p>
@@ -970,7 +937,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <CreditCard className="h-3 w-3 mr-1.5" /> {get("pricing_badge", "Pricing")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("pricing_title", "Plans That Scale With You")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free with online or offline. Upgrade when you're ready. No hidden fees.")}</p>
@@ -1034,7 +1001,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <Star className="h-3 w-3 mr-1.5" /> {get("testimonials_badge", "Testimonials")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("testimonials_title", "Real Stories From Real Businesses")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">{get("testimonials_subtitle", "See how businesses just like yours are leveling up.")}</p>
@@ -1076,7 +1043,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <HelpCircle className="h-3 w-3 mr-1.5" /> FAQ
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("faq_title", "Got Questions? We've Got Answers.")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">{get("faq_subtitle", "Everything you need to know before getting started.")}</p>
@@ -1119,7 +1086,7 @@ const LandingPage = () => {
             <motion.div whileHover={{ scale: 1.05 }} className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-primary/20">
               <Zap className="h-10 w-10 text-primary" />
             </motion.div>
-             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-5">
+             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("cta_title", "Ready to Unify Your Online & Offline Business?")}
              </h2>
              <p className="text-muted-foreground text-lg sm:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
