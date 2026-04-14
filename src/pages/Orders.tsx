@@ -447,9 +447,9 @@ const fetchProducts = async () => {
     setFormCostPrice("");
     setFormDiscount("0");
     setFormDiscountType("fixed");
-    setFormPaymentMethod("cash");
+    setFormPaymentMethod(storePaymentMethods.length > 0 ? storePaymentMethods[0].id : "cash");
     setFormSource("manual");
-    setFormCurrency("BDT");
+    setFormCurrency(defaultCurrency);
     setFormStatus("completed");
     setFormNotes("");
     setFormCreateSub(false);
