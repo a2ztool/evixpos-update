@@ -78,7 +78,22 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import PublicOrderForm from "./pages/PublicOrderForm";
 import FacebookCallback from "./pages/FacebookCallback";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1500 * 2 ** attemptIndex, 10000),
+      staleTime: 30000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnReconnect: true,
+      networkMode: "online",
+    },
+    mutations: {
+      retry: 1,
+      networkMode: "online",
+    },
+  },
+});
 
 /** Helper: ProtectedRoute + PermissionGuard */
 const P = ({ children, perm, ownerOnly, feature }: { children: React.ReactNode; perm?: string | string[]; ownerOnly?: boolean; feature?: FeatureKey }) => (
