@@ -527,7 +527,7 @@ const LandingPage = () => {
         </div>
 
         {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative">
+        <div className="hidden lg:block relative pb-[40vh]">
           {[1, 2, 3, 4, 5, 6].map((i) => {
             const title = get(`feature_${i}_title`);
             const desc = get(`feature_${i}_desc`);
@@ -536,31 +536,37 @@ const LandingPage = () => {
             const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
             if (!title && !img) return null;
 
-            const stickyTop = 80 + (i - 1) * 20;
+            const totalCards = 6;
+            const stickyTop = 80 + (i - 1) * 24;
+            const scaleValue = 1 - (totalCards - i) * 0.02;
 
             return (
               <div
                 key={i}
-                className={i < 6 ? "h-[70vh]" : ""}
-                style={{ marginBottom: i === 6 ? '0' : undefined }}
+                style={{ height: '100vh', position: 'relative' }}
               >
                 <div
-                  className="sticky"
-                  style={{ top: `${stickyTop}px`, zIndex: i * 10 }}
+                  className="sticky will-change-transform"
+                  style={{
+                    top: `${stickyTop}px`,
+                    zIndex: i * 10,
+                  }}
                 >
                   <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
-                      initial={{ opacity: 0, y: 40 }}
+                      initial={{ opacity: 0, y: 60 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-100px" }}
-                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-shadow duration-500"
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-3xl border border-border/50 bg-card overflow-hidden transition-all duration-700"
                       style={{
-                        boxShadow: `0 ${10 + i * 6}px ${40 + i * 10}px -${10 + i * 2}px hsl(var(--foreground) / ${0.06 + i * 0.02}), 0 0 0 1px hsl(var(--border) / 0.08)`,
+                        boxShadow: `0 ${4 + i * 8}px ${20 + i * 12}px -${6 + i * 2}px hsl(var(--foreground) / ${0.04 + i * 0.025}), 0 0 0 1px hsl(var(--border) / 0.1)`,
+                        transform: `scale(${scaleValue})`,
+                        transformOrigin: 'top center',
                       }}
                     >
                       <div className={`grid lg:grid-cols-2 gap-0 ${i % 2 === 0 ? 'direction-rtl' : ''}`}>
-                        {/* Text - swap order on even cards */}
+                        {/* Text */}
                         <div className={`p-8 lg:p-12 flex flex-col justify-center space-y-5 ${i % 2 === 0 ? 'lg:order-2' : ''}`} style={{ direction: 'ltr' }}>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -618,8 +624,6 @@ const LandingPage = () => {
               </div>
             );
           })}
-          {/* Extra space so last card has room to fully appear */}
-          <div className="h-[30vh]" />
         </div>
 
         {/* Mobile: Simplified stacked cards */}
