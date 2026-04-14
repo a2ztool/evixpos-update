@@ -93,11 +93,11 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
-      staleTime: 5 * 60_000,     // 5 min stale — avoid re-fetches on navigation
+      staleTime: 2 * 60_000,     // 2 min stale — show cached instantly, background refresh
       gcTime: 30 * 60_000,       // 30 min cache — keep data warm
       refetchOnReconnect: "always",
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,     // Use cached data on re-mount (instant render)
+      refetchOnWindowFocus: true, // Refresh on tab focus for multi-tab sync
+      refetchOnMount: true,       // Always refetch on mount for fresh data
       networkMode: "online",
     },
     mutations: {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -18,6 +18,7 @@ import {
   Receipt, Wallet, AlertCircle, BarChart3
 } from "lucide-react";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { format, differenceInDays, addDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -72,24 +73,33 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  useEffect(() => {
+  const fetchMeta = useCallback(async () => {
     if (!user || !activeStore) return;
     const sid = activeStore.id;
-
-    const fetchMeta = async () => {
-      const [profileRes, subsRes, productsRes] = await Promise.all([
-        supabase.from("profiles").select("name").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("id, status, price, end_date, product_name, customer_id, variation, customers(name, phone)").eq("store_id", sid),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", sid),
-      ]);
-
-      if (profileRes.data) setProfileName(profileRes.data.name);
-      setSubscriptions((subsRes.data ?? []) as Subscription[]);
-      setProductCount(productsRes.count ?? 0);
-    };
-
-    fetchMeta();
+    const [profileRes, subsRes, productsRes] = await Promise.all([
+      supabase.from("profiles").select("name").eq("id", user.id).maybeSingle(),
+      supabase.from("subscriptions").select("id, status, price, end_date, product_name, customer_id, variation, customers(name, phone)").eq("store_id", sid),
+      supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", sid),
+    ]);
+    if (profileRes.data) setProfileName(profileRes.data.name);
+    setSubscriptions((subsRes.data ?? []) as Subscription[]);
+    setProductCount(productsRes.count ?? 0);
   }, [user, activeStore]);
+
+  useEffect(() => { fetchMeta(); }, [fetchMeta]);
+
+  // Real-time sync for dashboard data
+  useRealtimeSync(
+    `dashboard-meta-${activeStore?.id}`,
+    [
+      { table: "orders", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "products", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "subscriptions", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "customers", filter: `store_id=eq.${activeStore?.id}` },
+    ],
+    fetchMeta,
+    !!activeStore?.id && !!user
+  );
 
   // Expiring within 2 days (urgent)
   const expiringUrgent = useMemo(() => {

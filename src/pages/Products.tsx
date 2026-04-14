@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface Product {
   id: string;
@@ -110,6 +111,16 @@ const Products = () => {
   useEffect(() => {
     if (user && activeStore) fetchProducts();
   }, [user, activeStore]);
+
+  // Real-time sync
+  useRealtimeSync(
+    `products-rt-${activeStore?.id}`,
+    [
+      { table: "products", filter: `store_id=eq.${activeStore?.id}` },
+    ],
+    fetchProducts,
+    !!activeStore?.id && !!user
+  );
 
   const openAdd = async () => {
     // Check GLOBAL product count (across all stores)
