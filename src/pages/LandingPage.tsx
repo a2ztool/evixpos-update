@@ -91,7 +91,146 @@ const Marquee = ({ items, reverse = false }: { items: string[]; reverse?: boolea
   </div>
 );
 
-/* ─── Main Component ─── */
+/* ─── Feature Showcase (Desktop Interactive) ─── */
+const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (key: string, fallback?: string) => string }) => {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  const activeI = featureCards[activeIdx] || 1;
+  const title = get(`feature_${activeI}_title`) || `Feature ${activeI}`;
+  const desc = get(`feature_${activeI}_desc`);
+  const img = get(`feature_${activeI}_image`);
+  const Icon = FEATURE_ICONS[(activeI - 1) % FEATURE_ICONS.length];
+  const bullets = get(`feature_${activeI}_bullets`, "").split("|").filter(Boolean);
+
+  return (
+    <div ref={sectionRef} className="grid grid-cols-[280px_1fr] gap-8 items-start">
+      {/* Left — Feature Nav */}
+      <div className="sticky top-28 space-y-1.5">
+        {featureCards.map((i, idx) => {
+          const fIcon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
+          const FIcon = fIcon;
+          const isActive = idx === activeIdx;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(idx)}
+              className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 transition-all duration-300 group relative overflow-hidden ${
+                isActive
+                  ? "bg-primary/10 border border-primary/20 shadow-sm"
+                  : "hover:bg-muted/60 border border-transparent"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="feature-active-bg"
+                  className="absolute inset-0 bg-primary/10 rounded-xl border border-primary/20"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+              <div className={`relative z-10 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
+                isActive ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" : "bg-muted/80 text-muted-foreground group-hover:bg-muted"
+              }`}>
+                <FIcon className="h-4 w-4" />
+              </div>
+              <div className="relative z-10 flex-1 min-w-0">
+                <div className={`text-sm font-semibold truncate transition-colors duration-200 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                  {get(`feature_${i}_title`) || `Feature ${i}`}
+                </div>
+                <div className={`text-[11px] truncate transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
+                  {get(`feature_${i}_badge`, `Feature`)}
+                </div>
+              </div>
+              <span className={`relative z-10 text-[10px] font-bold transition-colors ${isActive ? "text-primary" : "text-muted-foreground/30"}`}>
+                0{i}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right — Feature Content */}
+      <div className="relative min-h-[520px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeIdx}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-xl shadow-primary/5"
+          >
+            {/* Image Area */}
+            {img && (
+              <div className="relative bg-gradient-to-b from-muted/40 to-muted/10 p-6 pb-0">
+                <div className="rounded-t-xl overflow-hidden border border-border/40 border-b-0 shadow-lg bg-card">
+                  <div className="flex items-center gap-1.5 px-4 py-2.5 bg-muted/60 border-b border-border/30">
+                    <div className="w-3 h-3 rounded-full bg-destructive/50" />
+                    <div className="w-3 h-3 rounded-full bg-warning/50" />
+                    <div className="w-3 h-3 rounded-full bg-primary/40" />
+                    <div className="flex-1 mx-4">
+                      <div className="bg-background/60 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono max-w-[200px] mx-auto">
+                        app.evixpos.com
+                      </div>
+                    </div>
+                  </div>
+                  <img src={img} alt={title} className="w-full" loading="lazy" />
+                </div>
+              </div>
+            )}
+
+            {/* Text Content */}
+            <div className="p-8 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight leading-tight">{title}</h3>
+                  <span className="text-xs font-medium text-primary">{get(`feature_${activeI}_badge`, `Feature`)}</span>
+                </div>
+              </div>
+              <p className="text-muted-foreground text-[15px] leading-relaxed max-w-xl">{desc}</p>
+              {bullets.length > 0 && (
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  {bullets.map((b, j) => (
+                    <motion.div
+                      key={j}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15 + j * 0.06 }}
+                      className="flex items-center gap-2.5 text-sm bg-muted/30 rounded-lg px-3 py-2 border border-border/30"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                        <Check className="h-3 w-3 text-primary" />
+                      </div>
+                      <span className="text-foreground/80">{b.trim()}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Step indicator */}
+        <div className="flex justify-center gap-1.5 mt-6">
+          {featureCards.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                idx === activeIdx ? "w-8 bg-primary" : "w-3 bg-border hover:bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const { get, loading } = useLandingContent();
