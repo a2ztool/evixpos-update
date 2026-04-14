@@ -60,12 +60,14 @@ const AdminSupportTickets = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [storeNames, setStoreNames] = useState<Record<string, string>>({});
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -80,6 +82,14 @@ const AdminSupportTickets = () => {
       const profileMap: Record<string, string> = {};
       (profileData || []).forEach((p: any) => { profileMap[p.id] = p.name || p.email || "Unknown"; });
       setProfiles(profileMap);
+    }
+    // Fetch store names
+    const storeIds = [...new Set(ticketData.filter(t => t.store_id).map(t => t.store_id!))];
+    if (storeIds.length > 0) {
+      const { data: storeData } = await supabase.from("stores").select("id, name, store_mode").in("id", storeIds);
+      const storeMap: Record<string, string> = {};
+      (storeData || []).forEach((s: any) => { storeMap[s.id] = `${s.name} (${s.store_mode || "online"})`; });
+      setStoreNames(storeMap);
     }
     setLoading(false);
   };
