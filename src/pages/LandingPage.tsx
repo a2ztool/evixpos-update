@@ -104,9 +104,9 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
   const bullets = get(`feature_${activeI}_bullets`, "").split("|").filter(Boolean);
 
   return (
-    <div ref={sectionRef} className="grid grid-cols-[280px_1fr] gap-8 items-start">
+    <div ref={sectionRef} className="grid grid-cols-[260px_1fr] gap-6 items-start">
       {/* Left — Feature Nav */}
-      <div className="sticky top-28 space-y-1.5">
+      <div className="sticky top-24 space-y-1 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-thin pr-1">
         {featureCards.map((i, idx) => {
           const fIcon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
           const FIcon = fIcon;
@@ -115,7 +115,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
             <button
               key={i}
               onClick={() => setActiveIdx(idx)}
-              className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 transition-all duration-300 group relative overflow-hidden ${
+              className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 transition-all duration-300 group relative overflow-hidden ${
                 isActive
                   ? "bg-primary/10 border border-primary/20 shadow-sm"
                   : "hover:bg-muted/60 border border-transparent"
@@ -128,21 +128,21 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <div className={`relative z-10 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
+              <div className={`relative z-10 w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
                 isActive ? "bg-primary text-primary-foreground shadow-md shadow-primary/30" : "bg-muted/80 text-muted-foreground group-hover:bg-muted"
               }`}>
-                <FIcon className="h-4 w-4" />
+                <FIcon className="h-3.5 w-3.5" />
               </div>
               <div className="relative z-10 flex-1 min-w-0">
-                <div className={`text-sm font-semibold truncate transition-colors duration-200 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                <div className={`text-[13px] font-semibold truncate transition-colors duration-200 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
                   {get(`feature_${i}_title`) || `Feature ${i}`}
                 </div>
                 <div className={`text-[11px] truncate transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
                   {get(`feature_${i}_badge`, `Feature`)}
                 </div>
               </div>
-              <span className={`relative z-10 text-[10px] font-bold transition-colors ${isActive ? "text-primary" : "text-muted-foreground/30"}`}>
-                0{i}
+              <span className={`relative z-10 text-[10px] font-bold tabular-nums transition-colors ${isActive ? "text-primary" : "text-muted-foreground/30"}`}>
+                {String(idx + 1).padStart(2, '0')}
               </span>
             </button>
           );
@@ -150,7 +150,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
       </div>
 
       {/* Right — Feature Content */}
-      <div className="relative min-h-[520px]">
+      <div className="relative min-h-[460px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeIdx}
@@ -180,13 +180,13 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
             )}
 
             {/* Text Content */}
-            <div className="p-8 space-y-5">
+            <div className="p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black tracking-tight leading-tight">{title}</h3>
+                  <h3 className="text-xl font-black tracking-tight leading-tight">{title}</h3>
                   <span className="text-xs font-medium text-primary">{get(`feature_${activeI}_badge`, `Feature`)}</span>
                 </div>
               </div>
@@ -648,13 +648,13 @@ const LandingPage = () => {
       </section>}
 
       {show("features") && (() => {
-        const featureCards = [1, 2, 3, 4, 5, 6].filter(i => get(`feature_${i}_title`) || get(`feature_${i}_image`));
+        const featureCards = Array.from({ length: 20 }, (_, i) => i + 1).filter(i => get(`feature_${i}_title`) || get(`feature_${i}_image`));
         return (
           <section id="features" className="relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
 
             {/* Header */}
-            <div className="pt-16 sm:pt-24 pb-10 sm:pb-14">
+            <div className="pt-14 sm:pt-20 pb-8 sm:pb-10">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimSection className="text-center max-w-3xl mx-auto">
                   <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
@@ -671,12 +671,12 @@ const LandingPage = () => {
             </div>
 
             {/* Desktop — Interactive Tab + Content */}
-            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 relative">
+            <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 relative">
               <FeatureShowcase featureCards={featureCards} get={get} />
             </div>
 
             {/* Mobile — Vertical cards */}
-            <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 pb-16 space-y-5">
+            <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 pb-12 space-y-4">
               {featureCards.map((i) => {
                 const title = get(`feature_${i}_title`);
                 const desc = get(`feature_${i}_desc`);
