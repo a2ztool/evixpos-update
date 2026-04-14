@@ -12,6 +12,7 @@ import {
 import { useStore } from "@/contexts/StoreContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
 
@@ -57,6 +58,7 @@ const paymentStatusConfig: Record<string, { bg: string; text: string; dot: strin
 const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalProps) => {
   const { activeStore } = useStore();
   const { user } = useAuth();
+  const { effectiveUserId } = useStaff();
   const printRef = useRef<HTMLDivElement>(null);
   const [businessSettings, setBusinessSettings] = useState<{
     business_name: string;
@@ -68,16 +70,17 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
   useEffect(() => {
     if (!user || !activeStore || !open) return;
+    const uid = effectiveUserId || user.id;
     supabase
       .from("business_settings")
       .select("business_name, business_phone, business_email, logo_url")
-      .eq("user_id", user.id)
+      .eq("user_id", uid)
       .eq("store_id", activeStore.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data) setBusinessSettings(data);
       });
-  }, [user, activeStore, open]);
+  }, [user, activeStore, open, effectiveUserId]);
 
   if (!order) return null;
 

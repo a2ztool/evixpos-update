@@ -290,7 +290,8 @@ const SettingsPage = () => {
   useEffect(() => {
     if (!user || !activeStore) return;
     const load = async () => {
-      const { data: s } = await supabase.from("business_settings").select("*").eq("user_id", user.id).eq("store_id", activeStore.id).maybeSingle();
+      const uid = effectiveUserId || user.id;
+      const { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
       if (s) {
         setSettings({
           id: s.id, business_name: s.business_name, business_email: s.business_email,
@@ -320,8 +321,9 @@ const SettingsPage = () => {
   const saveSettings = async () => {
     if (!user || !activeStore) return;
     setLoading(true);
+    const uid = effectiveUserId || user.id;
     const payload = {
-      user_id: effectiveUserId!, store_id: activeStore.id, business_name: settings.business_name, business_email: settings.business_email,
+      user_id: uid, store_id: activeStore.id, business_name: settings.business_name, business_email: settings.business_email,
       store_slug: settings.store_slug, shop_url: settings.shop_url, business_phone: settings.business_phone,
       logo_url: settings.logo_url, show_payment_in_pos: settings.show_payment_in_pos,
       default_currency: settings.default_currency, timezone: settings.timezone, tax_rate: settings.tax_rate,
@@ -329,9 +331,12 @@ const SettingsPage = () => {
       currencies: settings.currencies as any, updated_at: new Date().toISOString(),
     };
     if (settings.id) {
-      await supabase.from("business_settings").update(payload).eq("id", settings.id);
+      const { error } = await supabase.from("business_settings").update(payload).eq("id", settings.id);
+      if (error) { toast.error(error.message); setLoading(false); return; }
     } else {
-      const { data } = await supabase.from("business_settings").insert(payload).select().single();
+      // Use upsert to handle cases where a record was auto-created
+      const { data, error } = await supabase.from("business_settings").upsert(payload, { onConflict: "user_id,store_id" }).select().single();
+      if (error) { toast.error(error.message); setLoading(false); return; }
       if (data) setSettings(prev => ({ ...prev, id: data.id }));
     }
     setLoading(false);
