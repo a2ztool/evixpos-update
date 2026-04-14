@@ -50,6 +50,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; bgClass: string }> = {
   open: { label: "Open", icon: AlertCircle, color: "text-blue-400", bgClass: "bg-blue-500/20" },
   in_progress: { label: "In Progress", icon: Clock, color: "text-orange-400", bgClass: "bg-orange-500/20" },
+  waiting_for_user: { label: "Waiting", icon: AlertCircle, color: "text-purple-400", bgClass: "bg-purple-500/20" },
   resolved: { label: "Resolved", icon: CheckCircle2, color: "text-emerald-400", bgClass: "bg-emerald-500/20" },
   closed: { label: "Closed", icon: XCircle, color: "text-slate-400", bgClass: "bg-slate-500/20" },
 };
