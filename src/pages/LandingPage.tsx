@@ -744,39 +744,6 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("screenshots") && <section id="screenshots" className="py-10 sm:py-14 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-10">
-            <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
-              <MonitorSmartphone className="h-3 w-3 mr-1.5" /> {get("screenshots_badge", "Product Preview")}
-            </Badge>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
-              {get("screenshots_title", "See EvixPOS in Action")}
-            </h2>
-          </AnimSection>
-          <AnimSection delay={0.15}>
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {screenshots.map((s, idx) => (
-                <button key={idx} onClick={() => setActiveScreenshot(idx)} className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${activeScreenshot === idx ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "bg-card border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30"}`}>{s.label}</button>
-              ))}
-            </div>
-            <div className="relative max-w-5xl mx-auto">
-              <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 via-primary/5 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
-                <div className="bg-muted/80 h-9 flex items-center gap-2 px-4 border-b border-border/50">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-warning/60" />
-                  <div className="w-3 h-3 rounded-full bg-primary/60" />
-                  <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-10 py-0.5 text-[10px] text-muted-foreground">app.evixpos.com</div></div>
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.img key={activeScreenshot} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} src={screenshots[activeScreenshot].src} alt={screenshots[activeScreenshot].label} className="w-full" loading="lazy" />
-                </AnimatePresence>
-              </div>
-            </div>
-          </AnimSection>
-        </div>
-      </section>}
 
       {show("how_it_works") && <section id="how-it-works" className="py-10 sm:py-14 bg-muted/20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_80%_50%,hsl(var(--primary)/0.06),transparent)]" />
