@@ -899,7 +899,7 @@ const fetchProducts = async () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fixed">Fixed (৳)</SelectItem>
+                    <SelectItem value="fixed">Fixed ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</SelectItem>
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
                   </SelectContent>
                 </Select>
