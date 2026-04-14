@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStorePlan, FeatureKey } from "@/hooks/useStorePlan";
+import { useMessageUnread } from "@/hooks/useMessageUnread";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -25,7 +26,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
-
 type NavItem = { title: string; icon: any; path: string; perm?: string; feature?: FeatureKey; onlineOnly?: boolean; offlineOnly?: boolean };
 
 /** Maps each nav item to the permission required to see it */
@@ -38,6 +38,7 @@ const AppSidebar = () => {
   const { isStaff, staffInfo, hasPermission, hasAnyPermission } = useStaff();
   const { activeStore } = useStore();
   const { plan, hasFeature } = useStorePlan();
+  const { unreadCount: msgUnread } = useMessageUnread();
   const collapsed = state === "collapsed";
   const isOffline = activeStore?.store_mode === "offline";
 
