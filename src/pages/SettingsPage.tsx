@@ -570,8 +570,79 @@ const SettingsPage = () => {
         <div className="space-y-1.5"><Label>{lang === "bn" ? "ব্যবসার ফোন (WhatsApp)" : "Business Phone (WhatsApp)"}</Label>
           <Input value={settings.business_phone} onChange={e => setSettings(p => ({ ...p, business_phone: e.target.value }))} /></div>
       </div>
-      <div className="space-y-1.5"><Label>Logo URL</Label>
-        <Input value={settings.logo_url} onChange={e => setSettings(p => ({ ...p, logo_url: e.target.value }))} /></div>
+      {/* Logo Section */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2">
+          Logo
+          {plan === "free" && (
+            <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 font-semibold border-amber-300 text-amber-600">
+              <Crown className="h-3 w-3" /> Pro
+            </Badge>
+          )}
+        </Label>
+
+        {/* Logo Preview */}
+        {settings.logo_url && (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
+            <img src={settings.logo_url} alt="Store logo" className="h-12 max-w-[160px] object-contain rounded-md bg-white p-1 border" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground truncate">{settings.logo_url}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 w-8 p-0" onClick={() => setSettings(p => ({ ...p, logo_url: "" }))}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Upload Button (Pro/Business only) */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input placeholder="Paste logo URL" value={settings.logo_url} onChange={e => setSettings(p => ({ ...p, logo_url: e.target.value }))} />
+          </div>
+          {plan !== "free" ? (
+            <Button variant="outline" size="sm" className="gap-1.5 h-9 shrink-0" onClick={() => document.getElementById("logo-upload-input")?.click()}>
+              <Upload className="h-3.5 w-3.5" /> Upload
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="gap-1.5 h-9 shrink-0 opacity-50 cursor-not-allowed" disabled title="Upgrade to Pro to upload logos">
+              <Upload className="h-3.5 w-3.5" /> Upload
+            </Button>
+          )}
+        </div>
+
+        <input
+          id="logo-upload-input"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file || !activeStore) return;
+            if (file.size > 2 * 1024 * 1024) {
+              toast.error("Logo must be under 2MB");
+              return;
+            }
+            const ext = file.name.split(".").pop() || "png";
+            const filePath = `${activeStore.id}/logo_${Date.now()}.${ext}`;
+            toast.loading("Uploading logo...", { id: "logo-upload" });
+            const { error } = await supabase.storage.from("store-logos").upload(filePath, file, { upsert: true });
+            if (error) {
+              toast.error("Upload failed: " + error.message, { id: "logo-upload" });
+              return;
+            }
+            const { data: urlData } = supabase.storage.from("store-logos").getPublicUrl(filePath);
+            setSettings(p => ({ ...p, logo_url: urlData.publicUrl }));
+            toast.success("Logo uploaded!", { id: "logo-upload" });
+            e.target.value = "";
+          }}
+        />
+
+        {plan === "free" && (
+          <p className="text-[11px] text-muted-foreground">
+            💡 {lang === "bn" ? "লোগো আপলোড করতে Pro বা Business প্ল্যানে আপগ্রেড করুন। আপনি URL পেস্ট করতে পারেন।" : "Upgrade to Pro or Business plan to upload a logo. You can paste a logo URL instead."}
+          </p>
+        )}
+      </div>
       <div className="flex items-center justify-between p-4 rounded-xl border border-border">
         <div>
           <p className="font-medium text-sm">{lang === "bn" ? "POS এ পেমেন্ট পদ্ধতি দেখান" : "Show Payment Methods in POS"}</p>
