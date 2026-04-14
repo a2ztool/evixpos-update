@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Receipt, MessageCircle, Eye, DollarSign, AlertTriangle } from "lucide-react";
+import { Search, Users, Receipt, MessageCircle, Eye, DollarSign, AlertTriangle, TrendingDown, Calendar } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { format as formatDate } from "date-fns";
+import { format as formatDate, subDays } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const DueCustomers = () => {
   const { storeId, userId, ready } = useStoreQuery();
@@ -27,7 +28,6 @@ const DueCustomers = () => {
   const [txDialog, setTxDialog] = useState<any>(null);
   const [txData, setTxData] = useState<any[]>([]);
 
-  // Fetch customers with dues > 0
   const { data: dueCustomers = [], isLoading } = useQuery({
     queryKey: ["due-customers", storeId],
     enabled: ready,
@@ -43,25 +43,69 @@ const DueCustomers = () => {
     },
   });
 
+  // Fetch payment history for chart (last 30 days)
+  const { data: paymentHistory = [] } = useQuery({
+    queryKey: ["payment-history-chart", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+      const { data } = await supabase
+        .from("credit_payments")
+        .select("amount, created_at")
+        .eq("store_id", storeId!)
+        .gte("created_at", thirtyDaysAgo)
+        .order("created_at", { ascending: true });
+      return data || [];
+    },
+  });
+
+  // Realtime
+  useEffect(() => {
+    if (!storeId) return;
+    const channel = supabase
+      .channel(`due-rt-${storeId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "customer_credits", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "credit_payments", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["payment-history-chart", storeId] });
+        queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, queryClient]);
+
+  // Build chart data
+  const chartData = (() => {
+    const dayMap = new Map<string, number>();
+    for (let i = 6; i >= 0; i--) {
+      const d = formatDate(subDays(new Date(), i), "dd MMM");
+      dayMap.set(d, 0);
+    }
+    paymentHistory.forEach((p: any) => {
+      const d = formatDate(new Date(p.created_at), "dd MMM");
+      if (dayMap.has(d)) dayMap.set(d, (dayMap.get(d) || 0) + Number(p.amount));
+    });
+    return Array.from(dayMap.entries()).map(([date, amount]) => ({ date, amount }));
+  })();
+
   const totalDue = dueCustomers.reduce((s: number, c: any) => s + Number(c.total_due), 0);
+  const highestDue = dueCustomers.length > 0 ? dueCustomers[0] : null;
 
   const filtered = dueCustomers.filter((c: any) =>
     c.customers?.name?.toLowerCase().includes(search.toLowerCase()) ||
     c.customers?.phone?.includes(search)
   );
 
-  // Pay mutation
   const payMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(payAmount);
       if (!payDialog || amount <= 0) return;
-
       await supabase.from("credit_payments").insert({
         store_id: storeId!, user_id: userId!,
         customer_id: payDialog.customer_id,
         amount, payment_method: payMethod,
       });
-
       const newDue = Math.max(0, Number(payDialog.total_due) - amount);
       await supabase.from("customer_credits").update({
         total_due: newDue, last_payment_date: new Date().toISOString(),
@@ -76,7 +120,6 @@ const DueCustomers = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // View transactions
   const viewTransactions = async (credit: any) => {
     setTxDialog(credit);
     const { data } = await supabase
@@ -89,7 +132,6 @@ const DueCustomers = () => {
     setTxData(data || []);
   };
 
-  // WhatsApp reminder
   const sendWhatsApp = (credit: any) => {
     const phone = credit.customers?.phone?.replace(/[^0-9]/g, "") || "";
     if (!phone) { toast.error("No phone number for this customer"); return; }
@@ -97,6 +139,17 @@ const DueCustomers = () => {
     const amount = format(Number(credit.total_due));
     const text = `Hello ${name}, your due amount is ${amount}. Please clear it at your earliest convenience. Thank you!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const sendBulkWhatsApp = () => {
+    let sent = 0;
+    dueCustomers.forEach((c: any) => {
+      const phone = c.customers?.phone?.replace(/[^0-9]/g, "") || "";
+      if (phone) sent++;
+    });
+    if (sent === 0) { toast.error("No customers with phone numbers"); return; }
+    toast.info(`Opening WhatsApp for ${dueCustomers.length} customers individually...`);
+    if (dueCustomers.length > 0) sendWhatsApp(dueCustomers[0]);
   };
 
   return (
@@ -110,6 +163,9 @@ const DueCustomers = () => {
             </h1>
             <p className="text-sm text-muted-foreground">Customers with outstanding dues</p>
           </div>
+          <Button variant="outline" size="sm" onClick={sendBulkWhatsApp} disabled={dueCustomers.length === 0}>
+            <MessageCircle className="h-4 w-4 mr-1" /> Send Reminders
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -131,7 +187,42 @@ const DueCustomers = () => {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-3">
+              <TrendingDown className="h-8 w-8 text-amber-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Highest Due</p>
+                <p className="text-lg font-bold">{highestDue ? `${highestDue.customers?.name}: ${format(Number(highestDue.total_due))}` : "—"}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Payment Collection Chart */}
+        {chartData.some(d => d.amount > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Payment Collections (Last 7 Days)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 11 }} />
+                  <YAxis className="text-xs" tick={{ fontSize: 11 }} />
+                  <RechartsTooltip
+                    contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+                    formatter={(value: number) => [format(value), "Collected"]}
+                  />
+                  <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -224,6 +315,10 @@ const DueCustomers = () => {
             <div className="space-y-4">
               <p className="text-sm">Due: <span className="font-bold text-destructive">{format(Number(payDialog?.total_due || 0))}</span></p>
               <div><Label>Amount</Label><Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="Payment amount" /></div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPayAmount(String(payDialog?.total_due || 0))}>Full Amount</Button>
+                <Button variant="outline" size="sm" onClick={() => setPayAmount(String(Math.round(Number(payDialog?.total_due || 0) / 2)))}>Half</Button>
+              </div>
               <div>
                 <Label>Method</Label>
                 <Select value={payMethod} onValueChange={setPayMethod}>
