@@ -1,18 +1,24 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Gift, Users, DollarSign, Wallet, CheckCircle, XCircle, Clock,
-  TrendingUp, Search, UserCheck, Star,
+  TrendingUp, Search, UserCheck, Star, Eye,
 } from "lucide-react";
 import { format } from "date-fns";
+import { getMethodById } from "@/lib/withdrawMethods";
+
+const parseDetails = (raw: string): Record<string, string> => {
+  try { return JSON.parse(raw || "{}"); } catch { return { account: raw }; }
+};
 
 const AdminReferrals = () => {
   const [settings, setSettings] = useState<any[]>([]);
@@ -21,6 +27,8 @@ const AdminReferrals = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [wdFilter, setWdFilter] = useState("all");
+  const [detailsModal, setDetailsModal] = useState<any>(null);
+  const [adminNote, setAdminNote] = useState("");
 
   const fetchAll = useCallback(async () => {
     const [s, r, w] = await Promise.all([
@@ -41,10 +49,14 @@ const AdminReferrals = () => {
   const pendingWithdrawals = withdrawals.filter(w => w.status === "pending");
   const premiumRefs = referrals.filter(r => r.plan !== "free").length;
 
-  const handleWithdrawalAction = async (id: string, action: "completed" | "rejected") => {
-    const { error } = await supabase.from("referral_withdrawals").update({ status: action }).eq("id", id);
+  const handleWithdrawalAction = async (id: string, action: "completed" | "rejected", note?: string) => {
+    const updateData: any = { status: action };
+    if (note) updateData.notes = note;
+    const { error } = await supabase.from("referral_withdrawals").update(updateData).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Withdrawal ${action}`);
+    setDetailsModal(null);
+    setAdminNote("");
     fetchAll();
   };
 
@@ -105,37 +117,49 @@ const AdminReferrals = () => {
                   <TableHead>User ID</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Account</TableHead>
+                  <TableHead>Details</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingWithdrawals.map(w => (
-                  <TableRow key={w.id}>
-                    <TableCell className="text-sm">{format(new Date(w.created_at), "MMM dd, yyyy")}</TableCell>
-                    <TableCell className="text-xs font-mono">{w.user_id.slice(0, 8)}...</TableCell>
-                    <TableCell className="font-semibold">৳{Number(w.amount).toFixed(2)}</TableCell>
-                    <TableCell className="capitalize text-sm">{w.method}</TableCell>
-                    <TableCell className="text-sm">{w.account_number}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleWithdrawalAction(w.id, "completed")} className="gap-1">
-                          <CheckCircle className="h-3.5 w-3.5" /> Approve
+                {pendingWithdrawals.map(w => {
+                  const method = getMethodById(w.method);
+                  return (
+                    <TableRow key={w.id}>
+                      <TableCell className="text-sm">{format(new Date(w.created_at), "MMM dd, yyyy")}</TableCell>
+                      <TableCell className="text-xs font-mono">{w.user_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-semibold">৳{Number(w.amount).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1.5 text-sm">
+                          <span>{method?.emoji || "💳"}</span>
+                          <span>{method?.label || w.method}</span>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={() => { setDetailsModal(w); setAdminNote(""); }}>
+                          <Eye className="h-3.5 w-3.5 mr-1" /> View
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleWithdrawalAction(w.id, "rejected")} className="gap-1">
-                          <XCircle className="h-3.5 w-3.5" /> Reject
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleWithdrawalAction(w.id, "completed")} className="gap-1">
+                            <CheckCircle className="h-3.5 w-3.5" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleWithdrawalAction(w.id, "rejected")} className="gap-1">
+                            <XCircle className="h-3.5 w-3.5" /> Reject
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       )}
 
-      {/* User-wise Referral Settings */}
+      {/* Referrer Overview */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Referrer Overview</CardTitle>
@@ -257,25 +281,37 @@ const AdminReferrals = () => {
                 <TableHead>User ID</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Method</TableHead>
-                <TableHead>Account</TableHead>
+                <TableHead>Details</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredWithdrawals.map(w => (
-                <TableRow key={w.id}>
-                  <TableCell className="text-sm">{format(new Date(w.created_at), "MMM dd, yyyy")}</TableCell>
-                  <TableCell className="text-xs font-mono">{w.user_id.slice(0, 8)}...</TableCell>
-                  <TableCell className="font-semibold">৳{Number(w.amount).toFixed(2)}</TableCell>
-                  <TableCell className="capitalize text-sm">{w.method}</TableCell>
-                  <TableCell className="text-sm">{w.account_number}</TableCell>
-                  <TableCell>
-                    <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "secondary"}>
-                      {w.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredWithdrawals.map(w => {
+                const method = getMethodById(w.method);
+                return (
+                  <TableRow key={w.id}>
+                    <TableCell className="text-sm">{format(new Date(w.created_at), "MMM dd, yyyy")}</TableCell>
+                    <TableCell className="text-xs font-mono">{w.user_id.slice(0, 8)}...</TableCell>
+                    <TableCell className="font-semibold">৳{Number(w.amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5 text-sm">
+                        <span>{method?.emoji || "💳"}</span>
+                        <span>{method?.label || w.method}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={() => { setDetailsModal(w); setAdminNote(""); }}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={w.status === "completed" ? "default" : w.status === "rejected" ? "destructive" : "secondary"}>
+                        {w.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {filteredWithdrawals.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No withdrawals</TableCell></TableRow>
               )}
@@ -283,6 +319,79 @@ const AdminReferrals = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Withdrawal Details Modal */}
+      <Dialog open={!!detailsModal} onOpenChange={() => setDetailsModal(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Withdrawal Details</DialogTitle></DialogHeader>
+          {detailsModal && (() => {
+            const method = getMethodById(detailsModal.method);
+            const details = parseDetails(detailsModal.account_number);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Amount</span>
+                    <p className="font-bold text-lg">৳{Number(detailsModal.amount).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Method</span>
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <span>{method?.emoji || "💳"}</span> {method?.label || detailsModal.method}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Date</span>
+                    <p>{format(new Date(detailsModal.created_at), "MMM dd, yyyy HH:mm")}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status</span>
+                    <p>
+                      <Badge variant={detailsModal.status === "completed" ? "default" : detailsModal.status === "rejected" ? "destructive" : "secondary"}>
+                        {detailsModal.status}
+                      </Badge>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Payment Details</p>
+                  {Object.entries(details).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground capitalize">{k.replace(/_/g, " ")}</span>
+                      <span className="font-medium">{v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {detailsModal.notes && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">User Notes:</span>
+                    <p className="mt-1">{detailsModal.notes}</p>
+                  </div>
+                )}
+
+                {detailsModal.status === "pending" && (
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">Admin Note (optional)</span>
+                      <Textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={2} placeholder="Add a note..." />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button className="flex-1 gap-1" onClick={() => handleWithdrawalAction(detailsModal.id, "completed", adminNote || undefined)}>
+                        <CheckCircle className="h-4 w-4" /> Approve
+                      </Button>
+                      <Button variant="destructive" className="flex-1 gap-1" onClick={() => handleWithdrawalAction(detailsModal.id, "rejected", adminNote || undefined)}>
+                        <XCircle className="h-4 w-4" /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
