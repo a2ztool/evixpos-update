@@ -113,6 +113,12 @@ const StaffInbox = () => {
   const [newGroupIcon, setNewGroupIcon] = useState("💬");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [groupMembers, setGroupMembers] = useState<{ user_id: string; role: string }[]>([]);
+  // Group management
+  const [editGroupOpen, setEditGroupOpen] = useState(false);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupIcon, setEditGroupIcon] = useState("💬");
+  const [manageMembers, setManageMembers] = useState(false);
+  const [deleteGroupConfirm, setDeleteGroupConfirm] = useState(false);
   // Typing indicator
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
