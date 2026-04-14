@@ -334,10 +334,18 @@ const SettingsPage = () => {
       const { error } = await supabase.from("business_settings").update(payload).eq("id", settings.id);
       if (error) { toast.error(error.message); setLoading(false); return; }
     } else {
-      // Use upsert to handle cases where a record was auto-created
-      const { data, error } = await supabase.from("business_settings").upsert(payload, { onConflict: "user_id,store_id" }).select().single();
-      if (error) { toast.error(error.message); setLoading(false); return; }
-      if (data) setSettings(prev => ({ ...prev, id: data.id }));
+      // Check if a record already exists (may have been auto-created with different user_id)
+      const { data: existing } = await supabase.from("business_settings").select("id").eq("store_id", activeStore.id).maybeSingle();
+      if (existing) {
+        // Update existing record
+        const { error } = await supabase.from("business_settings").update(payload).eq("id", existing.id);
+        if (error) { toast.error(error.message); setLoading(false); return; }
+        setSettings(prev => ({ ...prev, id: existing.id }));
+      } else {
+        const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
+        if (error) { toast.error(error.message); setLoading(false); return; }
+        if (data) setSettings(prev => ({ ...prev, id: data.id }));
+      }
     }
     setLoading(false);
     toast.success(lang === "bn" ? "সেটিংস সেভ হয়েছে!" : lang === "hi" ? "सेटिंग्स सेव हो गई!" : "Settings saved!");
