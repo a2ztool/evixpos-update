@@ -58,100 +58,6 @@ const AnimItem = ({ children, className = "", delay = 0 }: { children: React.Rea
   );
 };
 
-/* ─── Sticky Feature Card with scroll-based depth ─── */
-const FeatureStickyCard = ({ index, title, desc, img, Icon, bullets, badge }: {
-  index: number; title: string; desc?: string; img?: string;
-  Icon: React.ElementType; bullets: string[]; badge: string;
-}) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: cardRef,
-    offset: ["start start", "end start"],
-  });
-  // As user scrolls past this card's container, scale it down & fade
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1, 0.93]);
-  const opacity = useTransform(scrollYProgress, [0, 0.6, 1], [1, 1, 0.6]);
-  const borderRadius = useTransform(scrollYProgress, [0, 0.5, 1], [24, 24, 32]);
-
-  const stickyTop = 100 + (index - 1) * 28;
-
-  return (
-    <div ref={cardRef} style={{ height: '100vh', position: 'relative' }}>
-      <div
-        className="sticky will-change-transform"
-        style={{ top: `${stickyTop}px`, zIndex: index * 10 }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            style={{ scale, opacity, borderRadius }}
-            className="border border-border/50 bg-card overflow-hidden transition-shadow duration-500"
-            initial={false}
-          >
-            <div
-              className="absolute inset-0 pointer-events-none rounded-[inherit]"
-              style={{
-                boxShadow: `0 ${8 + index * 6}px ${24 + index * 10}px -${4 + index}px hsl(var(--foreground) / ${0.06 + index * 0.02}), 0 0 0 1px hsl(var(--border) / 0.08)`,
-              }}
-            />
-            <div className={`grid lg:grid-cols-2 gap-0 ${index % 2 === 0 ? 'direction-rtl' : ''}`}>
-              {/* Text */}
-              <div className={`p-8 lg:p-12 flex flex-col justify-center space-y-5 ${index % 2 === 0 ? 'lg:order-2' : ''}`} style={{ direction: 'ltr' }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
-                    {badge}
-                  </Badge>
-                  <span className="text-xs font-bold text-muted-foreground/50 ml-auto">0{index} / 06</span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black tracking-tight leading-[1.12]">{title}</h3>
-                <p className="text-muted-foreground text-base lg:text-lg leading-relaxed">{desc}</p>
-                {bullets.length > 0 && (
-                  <ul className="space-y-2.5 pt-1">
-                    {bullets.map((b, j) => (
-                      <li key={j} className="flex items-center gap-3 text-sm">
-                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-                          <Check className="h-3 w-3 text-primary" />
-                        </div>
-                        <span className="text-foreground/80">{b.trim()}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {/* Screenshot */}
-              <div className={`relative bg-muted/30 flex items-center justify-center p-6 lg:p-8 min-h-[320px] ${index % 2 === 0 ? 'lg:order-1' : ''}`} style={{ direction: 'ltr' }}>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
-                {img ? (
-                  <div className="relative w-full">
-                    <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
-                      <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
-                        <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
-                        <div className="flex-1 mx-3">
-                          <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
-                        </div>
-                      </div>
-                      <img src={img} alt={title} className="w-full" loading="lazy" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
-                    <Icon className="h-24 w-24 text-primary/20 relative" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 /* ─── types ─── */
 type Currency = "BDT" | "INR" | "USD";
 const CURRENCIES: { key: Currency; symbol: string; label: string }[] = [
@@ -602,103 +508,91 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("features") && <section id="features" className="relative">
-        <div className="bg-gradient-to-b from-muted/30 via-background to-muted/20 py-14 sm:py-20 relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <AnimSection className="text-center max-w-3xl mx-auto mb-6">
-              <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
-                <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
-              </Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
-                {get("features_title", "Everything for Online & Offline Business")}
-              </h2>
-              <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-                {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
-              </p>
-            </AnimSection>
-          </div>
-        </div>
+      {show("features") && <section id="features" className="py-16 sm:py-24 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.06),transparent_70%)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-16">
+            <Badge variant="outline" className="mb-5 text-primary border-primary/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm bg-card/50">
+              <Layers className="h-3.5 w-3.5 mr-1.5" /> {get("features_badge", "Core Features")}
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-black tracking-tight mb-6 leading-[1.1]">
+              {get("features_title", "Everything for Online & Offline Business")}
+            </h2>
+            <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
+              {get("features_subtitle", "From e-commerce orders to walk-in POS billing — one platform handles it all. Switch between online and offline mode anytime.")}
+            </p>
+          </AnimSection>
 
-        {/* Stacked Scroll Cards - Desktop */}
-        <div className="hidden lg:block relative">
-          {[1, 2, 3, 4, 5, 6].map((i) => {
-            const title = get(`feature_${i}_title`);
-            const desc = get(`feature_${i}_desc`);
-            const img = get(`feature_${i}_image`);
-            const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
-            const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
-            if (!title && !img) return null;
+          <div className="space-y-8 lg:space-y-14">
+            {[1, 2, 3, 4, 5, 6].map((i) => {
+              const title = get(`feature_${i}_title`);
+              const desc = get(`feature_${i}_desc`);
+              const img = get(`feature_${i}_image`);
+              const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
+              const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
+              if (!title && !img) return null;
+              const isEven = i % 2 === 0;
 
-            return (
-              <FeatureStickyCard
-                key={i}
-                index={i}
-                title={title || `Feature ${i}`}
-                desc={desc}
-                img={img}
-                Icon={Icon}
-                bullets={bullets}
-                badge={get(`feature_${i}_badge`, `Feature ${i}`)}
-              />
-            );
-          })}
-          <div className="h-[30vh]" />
-        </div>
-
-        {/* Mobile: Simplified stacked cards */}
-        <div className="lg:hidden px-4 sm:px-6 space-y-6 pb-10">
-          {[1, 2, 3, 4, 5, 6].map((i) => {
-            const title = get(`feature_${i}_title`);
-            const desc = get(`feature_${i}_desc`);
-            const img = get(`feature_${i}_image`);
-            const Icon = FEATURE_ICONS[(i - 1) % FEATURE_ICONS.length];
-            const bullets = get(`feature_${i}_bullets`, "").split("|").filter(Boolean);
-            if (!title && !img) return null;
-
-            return (
-              <AnimItem key={i} delay={(i - 1) * 0.08}>
-                <div className="rounded-2xl border border-border/50 bg-card shadow-lg overflow-hidden">
-                  {img && (
-                    <div className="relative bg-muted/30 p-4">
-                      <div className="rounded-lg overflow-hidden border border-border/30 shadow-sm">
-                        <div className="flex items-center gap-1 px-2.5 py-1.5 bg-muted/50 border-b border-border/20">
-                          <div className="w-2 h-2 rounded-full bg-destructive/40" />
-                          <div className="w-2 h-2 rounded-full bg-warning/40" />
-                          <div className="w-2 h-2 rounded-full bg-primary/30" />
+              return (
+                <AnimItem key={i} delay={(i - 1) * 0.05}>
+                  <div className="group rounded-2xl lg:rounded-3xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500">
+                    <div className="grid lg:grid-cols-2 gap-0">
+                      {/* Text Side */}
+                      <div className={`p-6 sm:p-8 lg:p-12 flex flex-col justify-center space-y-5 ${isEven ? 'lg:order-2' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 group-hover:scale-110 transition-all duration-300">
+                            <Icon className="h-5 w-5 text-primary" />
+                          </div>
+                          <Badge variant="outline" className="text-primary border-primary/30 px-3 py-1 text-xs font-semibold bg-card/50">
+                            {get(`feature_${i}_badge`, `Feature ${i}`)}
+                          </Badge>
+                          <span className="text-xs font-bold text-muted-foreground/40 ml-auto">0{i}</span>
                         </div>
-                        <img src={img} alt={title || ""} className="w-full" loading="lazy" />
+                        <h3 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-[1.15]">{title || `Feature ${i}`}</h3>
+                        <p className="text-muted-foreground text-sm lg:text-base leading-relaxed">{desc}</p>
+                        {bullets.length > 0 && (
+                          <ul className="space-y-2.5 pt-2">
+                            {bullets.map((b, j) => (
+                              <li key={j} className="flex items-center gap-3 text-sm">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
+                                  <Check className="h-3 w-3 text-primary" />
+                                </div>
+                                <span className="text-foreground/80">{b.trim()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                    </div>
-                  )}
-                  <div className="p-5 space-y-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <Badge variant="outline" className="text-primary border-primary/30 px-2.5 py-0.5 text-[10px] font-semibold">
-                        {get(`feature_${i}_badge`, `Feature ${i}`)}
-                      </Badge>
-                    </div>
-                    <h3 className="text-xl font-black tracking-tight leading-tight">{title || `Feature ${i}`}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
-                    {bullets.length > 0 && (
-                      <ul className="space-y-2 pt-1">
-                        {bullets.map((b, j) => (
-                          <li key={j} className="flex items-center gap-2 text-xs">
-                            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <Check className="h-2.5 w-2.5 text-primary" />
+                      {/* Image Side */}
+                      <div className={`relative bg-muted/20 flex items-center justify-center p-5 sm:p-6 lg:p-8 min-h-[240px] lg:min-h-[360px] ${isEven ? 'lg:order-1' : ''}`}>
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.03),transparent_70%)]" />
+                        {img ? (
+                          <div className="relative w-full group-hover:-translate-y-1 transition-transform duration-500">
+                            <div className="rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card">
+                              <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/30">
+                                <div className="w-2.5 h-2.5 rounded-full bg-destructive/50" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-warning/50" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-primary/40" />
+                                <div className="flex-1 mx-3">
+                                  <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground text-center font-mono">app.evixpos.com</div>
+                                </div>
+                              </div>
+                              <img src={img} alt={title || ""} className="w-full" loading="lazy" />
                             </div>
-                            <span className="text-foreground/80">{b.trim()}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" />
+                            <Icon className="h-24 w-24 text-primary/20 relative" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </AnimItem>
-            );
-          })}
+                </AnimItem>
+              );
+            })}
+          </div>
         </div>
       </section>}
 
