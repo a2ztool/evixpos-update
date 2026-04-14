@@ -340,7 +340,7 @@ const NotificationCenterTab = () => {
     toast.success(`${selected.size} marked as read`);
   };
 
-  const cfg = (type: string) => typeConfig[type] || typeConfig.info;
+  const cfg = (type: string) => getCategoryColor(type);
 
   return (
     <div className="space-y-4">
