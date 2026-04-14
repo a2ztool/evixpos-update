@@ -291,7 +291,12 @@ const SettingsPage = () => {
     if (!user || !activeStore) return;
     const load = async () => {
       const uid = effectiveUserId || user.id;
-      const { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
+      let { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
+      // Fallback: try finding by store_id only (in case record was created with different user_id)
+      if (!s) {
+        const { data: fallback } = await supabase.from("business_settings").select("*").eq("store_id", activeStore.id).maybeSingle();
+        s = fallback;
+      }
       if (s) {
         setSettings({
           id: s.id, business_name: s.business_name, business_email: s.business_email,
