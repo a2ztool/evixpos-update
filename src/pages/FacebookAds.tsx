@@ -271,7 +271,7 @@ const FacebookAds = () => {
               </div>
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
+              <div className="hidden sm:block flex items-center gap-2.5">
                 <h1 className="text-2xl font-bold text-foreground">Facebook & Instagram Ads</h1>
                 <Badge variant="outline" className="text-xs font-medium gap-1 border-primary/30 text-primary">
                   <Plug className="h-3 w-3" /> Integration

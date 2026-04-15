@@ -207,7 +207,7 @@ const WooCommercePage = () => {
     <DashboardLayout>
       <div className="mb-6">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <ShoppingBag className="h-8 w-8" />
               WooCommerce Integration

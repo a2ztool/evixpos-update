@@ -98,7 +98,7 @@ const PendingOrders = () => {
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
-        <div>
+        <div className="hidden sm:block">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Clock className="h-6 w-6 text-amber-500" />
             Pending Orders

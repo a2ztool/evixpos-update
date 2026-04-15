@@ -256,7 +256,7 @@ const Reports = () => {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
               <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Reports & Analytics
             </h1>

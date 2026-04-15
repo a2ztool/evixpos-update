@@ -603,7 +603,7 @@ const fetchProducts = async () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Orders</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>

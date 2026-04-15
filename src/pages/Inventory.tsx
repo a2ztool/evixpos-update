@@ -301,7 +301,7 @@ const Inventory = () => {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" /> Inventory Management
             </h1>
