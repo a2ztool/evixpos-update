@@ -86,9 +86,9 @@ const NotificationCenter = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="space-y-4 sm:space-y-6 pb-24 sm:pb-6">
+        {/* Header - hidden on mobile (DashboardLayout shows it) */}
+        <div className="hidden sm:flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
               <Bell className="h-7 w-7 text-primary" />
@@ -107,6 +107,24 @@ const NotificationCenter = () => {
             {notifications.length > 0 && (
               <Button variant="outline" size="sm" onClick={handleClearAll} className="text-destructive hover:text-destructive">
                 <Trash2 className="h-4 w-4 mr-1" /> Clear All
+              </Button>
+            )}
+          </div>
+        </div>
+        {/* Mobile subtitle + actions */}
+        <div className="sm:hidden space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}` : "All caught up! ✨"}
+          </p>
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button variant="outline" size="sm" className="text-xs" onClick={markAllRead}>
+                <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark All Read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button variant="outline" size="sm" className="text-xs text-destructive hover:text-destructive" onClick={handleClearAll}>
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Clear All
               </Button>
             )}
           </div>
