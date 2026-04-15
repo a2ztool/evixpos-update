@@ -247,7 +247,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Mobile bottom nav
-import { LayoutDashboard, Monitor, ShoppingCart, Package, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Monitor, ShoppingCart, CreditCard, Package, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon, MessageSquare } from "lucide-react";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { motion, AnimatePresence } from "framer-motion";
 
