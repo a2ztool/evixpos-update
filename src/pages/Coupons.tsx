@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { validateWithToast, couponSchema } from "@/lib/validations";
 import { Plus, Tag, Search, Trash2, Pencil, Copy } from "lucide-react";
 
 interface Coupon {
@@ -68,8 +69,10 @@ const Coupons = () => {
 
   const handleSave = async () => {
     if (!user || !activeStore) return;
-    if (!code.trim()) { toast.error("Coupon code is required"); return; }
-    if (!value || parseFloat(value) <= 0) { toast.error("Discount value is required"); return; }
+    const parsed = validateWithToast(couponSchema, {
+      code: code.toUpperCase(), type, value, minOrder: minOrder, maxUses: maxUses,
+    }, toast.error);
+    if (!parsed) return;
 
     const payload = {
       code: code.toUpperCase(), type, value: parseFloat(value),
