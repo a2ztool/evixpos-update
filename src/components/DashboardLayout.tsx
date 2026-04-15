@@ -17,6 +17,7 @@ import {
   Crown, Command, Keyboard, Smartphone,
 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -113,6 +114,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {/* Left: trigger + store + title */}
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <SidebarTrigger className="text-muted-foreground hover:text-foreground flex-shrink-0 h-8 w-8" />
+                <BackButton />
                 <StoreSwitcher />
                 <div className="hidden md:block h-5 w-px bg-border/50" />
                 {/* Desktop page title */}
@@ -244,7 +246,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
 
           {/* Mobile page title bar */}
-          <div className="sm:hidden px-4 pt-3 pb-1">
+          <div className="sm:hidden px-4 pt-3 pb-1 flex items-center gap-2">
+            <BackButton className="sm:hidden" />
             <h1 className="text-lg font-bold text-foreground">{pageTitle}</h1>
           </div>
 

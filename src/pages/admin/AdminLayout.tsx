@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
 import AdminBottomNav from "@/components/AdminBottomNav";
+import BackButton from "@/components/BackButton";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
@@ -155,9 +156,12 @@ const AdminLayout = () => {
             </div>
             <span className="font-semibold text-white text-sm">Admin</span>
           </div>
-          <span className="text-xs text-slate-400 font-medium">
-            {NAV_ITEMS.find(n => n.path === location.pathname)?.label || "Dashboard"}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <BackButton className="text-slate-400 hover:text-white" />
+            <span className="text-xs text-slate-400 font-medium">
+              {NAV_ITEMS.find(n => n.path === location.pathname)?.label || "Dashboard"}
+            </span>
+          </div>
         </div>
       </div>
 
