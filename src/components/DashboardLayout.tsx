@@ -353,63 +353,14 @@ const MobileNav = () => {
                 />
               )}
 
-              {/* More */}
-              <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-                <SheetTrigger asChild>
-                  <div>
-                    <NavItem
-                      icon={MoreHorizontal}
-                      label="More"
-                      path="__more__"
-                      navigate={() => {}}
-                      location={location}
-                      isMore
-                      isMoreActive={isMoreActive}
-                    />
-                  </div>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="rounded-t-3xl pb-safe border-t-0" style={{
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(248,248,252,0.98) 100%)",
-                  backdropFilter: "blur(20px)",
-                }}>
-                  <div className="w-10 h-1 rounded-full bg-border/60 mx-auto mb-5" />
-                  <SheetTitle className="text-xs font-bold tracking-widest uppercase text-muted-foreground/70 mb-5 px-1">
-                    More Options
-                  </SheetTitle>
-                  <div className="grid grid-cols-4 gap-3 pb-4">
-                    {moreMenuItems.map((item, idx) => {
-                      const active = location.pathname.startsWith(item.path);
-                      return (
-                        <motion.button
-                          key={item.path}
-                          initial={{ opacity: 0, y: 24, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ delay: idx * 0.035, type: "spring", stiffness: 350, damping: 25 }}
-                          whileTap={{ scale: 0.92 }}
-                          onClick={() => { navigate(item.path); setMoreOpen(false); }}
-                          onMouseEnter={() => prefetchRoute(item.path)}
-                          className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl transition-all duration-200 ${
-                            active
-                              ? "bg-primary/8 text-primary"
-                              : "text-muted-foreground hover:bg-muted/40"
-                          }`}
-                        >
-                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                            active
-                              ? "bg-primary/12 shadow-sm shadow-primary/10"
-                              : "bg-muted/60"
-                          }`}>
-                            <item.icon className="h-5 w-5" strokeWidth={active ? 2.2 : 1.7} />
-                          </div>
-                          <span className={`text-[10px] text-center leading-tight ${active ? "font-bold" : "font-medium"}`}>
-                            {item.label}
-                          </span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </SheetContent>
-              </Sheet>
+              {/* Settings (replaces More) */}
+              <NavItem
+                icon={Settings}
+                label="Settings"
+                path="/settings"
+                navigate={navigate}
+                location={location}
+              />
             </div>
           </div>
         </div>
