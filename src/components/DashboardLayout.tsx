@@ -292,7 +292,7 @@ const MobileNav = () => {
         <div className="relative">
           {/* Premium glossy glass bar */}
           <div
-            className="rounded-[26px] border border-white/40 dark:border-white/[0.08] overflow-hidden"
+            className="rounded-[26px] border border-white/40 dark:border-white/[0.08]"
             style={{
               background: "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
               backdropFilter: "blur(40px) saturate(200%)",
