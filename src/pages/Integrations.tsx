@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { validateWithToast, whatsappSchema, woocommerceSchema, sendWhatsAppSchema } from "@/lib/validations";
 import { Plug, ShoppingBag, MessageCircle, Copy, Send, Power, PowerOff } from "lucide-react";
 
 interface Integration {
@@ -53,6 +54,8 @@ const Integrations = () => {
     : "";
 
   const saveWooCommerce = async () => {
+    const parsed = validateWithToast(woocommerceSchema, wcForm, toast.error);
+    if (!parsed) return;
     if (wc) {
       const { error } = await supabase.from("integrations").update({ api_key: wcForm.api_key, status: "active" }).eq("id", wc.id);
       if (error) toast.error(error.message);
@@ -68,6 +71,8 @@ const Integrations = () => {
   };
 
   const saveWhatsApp = async () => {
+    const parsed = validateWithToast(whatsappSchema, waForm, toast.error);
+    if (!parsed) return;
     if (wa) {
       const { error } = await supabase.from("integrations").update({ api_key: waForm.api_key, phone_number: waForm.phone_number, status: "active" }).eq("id", wa.id);
       if (error) toast.error(error.message);
@@ -90,8 +95,9 @@ const Integrations = () => {
   };
 
   const sendWhatsApp = async () => {
+    const parsed = validateWithToast(sendWhatsAppSchema, sendForm, toast.error);
+    if (!parsed) return;
     setSending(true);
-    try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke("send-whatsapp", {
         body: { phone: sendForm.phone, message: sendForm.message },
