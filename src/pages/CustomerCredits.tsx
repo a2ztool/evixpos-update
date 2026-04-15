@@ -153,9 +153,9 @@ const CustomerCredits = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="hidden sm:block">
             <h1 className="text-2xl font-bold">Customer Credits</h1>
             <p className="text-sm text-muted-foreground">Track customer dues and collect payments</p>
           </div>
@@ -172,11 +172,11 @@ const CustomerCredits = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Due</p><p className="text-2xl font-bold text-destructive">{format(totalDue)}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Customers with Due</p><p className="text-2xl font-bold">{customersWithDue}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Collected</p><p className="text-2xl font-bold text-green-600">{format(totalCollected)}</p></CardContent></Card>
-          <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Credit Accounts</p><p className="text-2xl font-bold">{credits.length}</p></CardContent></Card>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <Card><CardContent className="pt-3 sm:pt-4"><p className="text-xs sm:text-sm text-muted-foreground">Total Due</p><p className="text-lg sm:text-2xl font-bold text-destructive">{format(totalDue)}</p></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4"><p className="text-xs sm:text-sm text-muted-foreground">Customers with Due</p><p className="text-lg sm:text-2xl font-bold">{customersWithDue}</p></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4"><p className="text-xs sm:text-sm text-muted-foreground">Total Collected</p><p className="text-lg sm:text-2xl font-bold text-green-600">{format(totalCollected)}</p></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4"><p className="text-xs sm:text-sm text-muted-foreground">Credit Accounts</p><p className="text-lg sm:text-2xl font-bold">{credits.length}</p></CardContent></Card>
         </div>
 
         <div className="relative max-w-sm">
@@ -194,7 +194,7 @@ const CustomerCredits = () => {
               ) : filtered.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">No credit records</p>
               ) : filtered.map((c: any) => (
-                <div key={c.id} className="border rounded-lg p-3 space-y-2">
+                <div key={c.id} className="bg-card rounded-2xl border border-border/40 p-3.5 space-y-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{c.customers?.name}</p>

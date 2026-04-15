@@ -113,9 +113,9 @@ const LoyaltyPoints = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="hidden sm:block">
             <h1 className="text-2xl font-bold">Loyalty Points</h1>
             <p className="text-sm text-muted-foreground">Track customer loyalty and reward repeat purchases</p>
           </div>
@@ -126,11 +126,11 @@ const LoyaltyPoints = () => {
           ]} />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-4 flex items-center gap-3"><Star className="h-8 w-8 text-yellow-500" /><div><p className="text-sm text-muted-foreground">Total Issued</p><p className="text-2xl font-bold">{totalPoints}</p></div></CardContent></Card>
-          <Card><CardContent className="pt-4 flex items-center gap-3"><Gift className="h-8 w-8 text-primary" /><div><p className="text-sm text-muted-foreground">Redeemed</p><p className="text-2xl font-bold">{totalRedeemed}</p></div></CardContent></Card>
-          <Card><CardContent className="pt-4 flex items-center gap-3"><TrendingUp className="h-8 w-8 text-green-600" /><div><p className="text-sm text-muted-foreground">Available</p><p className="text-2xl font-bold text-green-600">{totalAvailable}</p></div></CardContent></Card>
-          <Card><CardContent className="pt-4 flex items-center gap-3"><Star className="h-8 w-8 text-amber-500" /><div><p className="text-sm text-muted-foreground">Members</p><p className="text-2xl font-bold">{loyaltyRecords.length}</p></div></CardContent></Card>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <Card><CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3"><Star className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 flex-shrink-0" /><div><p className="text-xs sm:text-sm text-muted-foreground">Total Issued</p><p className="text-lg sm:text-2xl font-bold">{totalPoints}</p></div></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3"><Gift className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" /><div><p className="text-xs sm:text-sm text-muted-foreground">Redeemed</p><p className="text-lg sm:text-2xl font-bold">{totalRedeemed}</p></div></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3"><TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0" /><div><p className="text-xs sm:text-sm text-muted-foreground">Available</p><p className="text-lg sm:text-2xl font-bold text-green-600">{totalAvailable}</p></div></CardContent></Card>
+          <Card><CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3"><Star className="h-6 w-6 sm:h-8 sm:w-8 text-amber-500 flex-shrink-0" /><div><p className="text-xs sm:text-sm text-muted-foreground">Members</p><p className="text-lg sm:text-2xl font-bold">{loyaltyRecords.length}</p></div></CardContent></Card>
         </div>
 
         <div className="relative max-w-sm">
@@ -150,7 +150,7 @@ const LoyaltyPoints = () => {
               ) : filtered.map((r: any) => {
                 const available = Number(r.total_points) - Number(r.redeemed_points);
                 return (
-                  <div key={r.id} className="border rounded-lg p-3">
+                  <div key={r.id} className="bg-card rounded-2xl border border-border/40 p-3.5">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium">{r.customers?.name}</p>

@@ -154,9 +154,9 @@ const DueCustomers = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="hidden sm:block">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <AlertTriangle className="h-6 w-6 text-destructive" />
               Due Customers
@@ -168,31 +168,31 @@ const DueCustomers = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-destructive" />
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-3">
+              <DollarSign className="h-7 w-7 sm:h-8 sm:w-8 text-destructive" />
               <div>
-                <p className="text-sm text-muted-foreground">Total Outstanding</p>
-                <p className="text-2xl font-bold text-destructive">{format(totalDue)}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Outstanding</p>
+                <p className="text-lg sm:text-2xl font-bold text-destructive">{format(totalDue)}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-3">
+              <Users className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Due Customers</p>
-                <p className="text-2xl font-bold">{dueCustomers.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Due Customers</p>
+                <p className="text-lg sm:text-2xl font-bold">{dueCustomers.length}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <TrendingDown className="h-8 w-8 text-amber-500" />
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-3">
+              <TrendingDown className="h-7 w-7 sm:h-8 sm:w-8 text-amber-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Highest Due</p>
-                <p className="text-lg font-bold">{highestDue ? `${highestDue.customers?.name}: ${format(Number(highestDue.total_due))}` : "—"}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Highest Due</p>
+                <p className="text-sm sm:text-lg font-bold">{highestDue ? `${highestDue.customers?.name}: ${format(Number(highestDue.total_due))}` : "—"}</p>
               </div>
             </CardContent>
           </Card>
@@ -239,7 +239,7 @@ const DueCustomers = () => {
               ) : filtered.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">No due customers 🎉</p>
               ) : filtered.map((c: any) => (
-                <div key={c.id} className="border rounded-lg p-3 space-y-2">
+                <div key={c.id} className="bg-card rounded-2xl border border-border/40 p-3.5 space-y-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{c.customers?.name}</p>
