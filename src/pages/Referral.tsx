@@ -368,37 +368,67 @@ const Referral = () => {
               <p className="text-sm text-muted-foreground mt-1">Share your referral link to start earning commissions.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Referred Email</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Commission</TableHead>
-                  <TableHead>Paid</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3">
                 {filteredReferrals.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-sm">{format(new Date(r.created_at), "MMM dd, yyyy")}</TableCell>
-                    <TableCell className="text-sm">{r.referred_email}</TableCell>
-                    <TableCell><Badge variant={r.plan === "free" ? "secondary" : "default"}>{r.plan}</Badge></TableCell>
-                    <TableCell>
+                  <div key={r.id} className="border rounded-2xl bg-card p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-sm">{r.referred_email}</p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(r.created_at), "MMM dd, yyyy")}</p>
+                      </div>
                       <div className="flex items-center gap-1.5">
                         {statusIcon(r.status)}
-                        <span className="text-sm capitalize">{r.status}</span>
+                        <span className="text-xs capitalize">{r.status}</span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">{fmtCurrency(r.commission_amount)}</TableCell>
-                    <TableCell>
-                      <Badge variant={r.is_paid ? "default" : "outline"}>{r.is_paid ? "Paid" : "Unpaid"}</Badge>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Plan: <Badge variant={r.plan === "free" ? "secondary" : "default"} className="text-[10px] h-5">{r.plan}</Badge></span>
+                      <span>Commission: <strong>{fmtCurrency(r.commission_amount)}</strong></span>
+                    </div>
+                    <div className="flex justify-end">
+                      <Badge variant={r.is_paid ? "default" : "outline"} className="text-[10px]">{r.is_paid ? "Paid" : "Unpaid"}</Badge>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Referred Email</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Commission</TableHead>
+                      <TableHead>Paid</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReferrals.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-sm">{format(new Date(r.created_at), "MMM dd, yyyy")}</TableCell>
+                        <TableCell className="text-sm">{r.referred_email}</TableCell>
+                        <TableCell><Badge variant={r.plan === "free" ? "secondary" : "default"}>{r.plan}</Badge></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {statusIcon(r.status)}
+                            <span className="text-sm capitalize">{r.status}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">{fmtCurrency(r.commission_amount)}</TableCell>
+                        <TableCell>
+                          <Badge variant={r.is_paid ? "default" : "outline"}>{r.is_paid ? "Paid" : "Unpaid"}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
