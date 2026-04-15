@@ -399,35 +399,49 @@ const NavItem = ({
       onClick={() => !isMore && navigate(path)}
       onMouseEnter={() => !isMore && prefetchRoute(path)}
       onFocus={() => !isMore && prefetchRoute(path)}
-      whileTap={{ scale: 0.85 }}
-      className="relative flex flex-col items-center gap-1 py-1 min-w-[56px]"
+      whileTap={{ scale: 0.82 }}
+      className="relative flex flex-col items-center gap-0.5 py-1 min-w-[56px]"
     >
-      {/* Icon container */}
+      {/* Icon container with glossy active state */}
       <motion.div
-        animate={active ? { y: -2, scale: 1.08 } : { y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 400, damping: 22 }}
-        className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-          active
-            ? "bg-primary/10 shadow-sm"
-            : "bg-transparent"
-        }`}
+        animate={active ? { y: -3, scale: 1.1 } : { y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 450, damping: 22 }}
+        className="relative"
       >
-        <Icon
-          className={`h-[22px] w-[22px] transition-colors duration-300 ${
-            active ? "text-primary" : "text-muted-foreground/70"
-          }`}
-          strokeWidth={active ? 2.4 : 1.7}
-        />
+        {/* Active glow backdrop */}
+        {active && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute inset-0 w-10 h-10 rounded-2xl bg-primary/12 dark:bg-primary/20 blur-[2px]"
+          />
+        )}
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+          active
+            ? "bg-primary/10 dark:bg-primary/15 shadow-[0_2px_12px_hsl(var(--primary)/0.15)]"
+            : "bg-transparent"
+        }`}>
+          {/* Inner glossy highlight on active */}
+          {active && (
+            <div className="absolute inset-[1px] rounded-[14px] bg-gradient-to-b from-white/40 dark:from-white/10 to-transparent pointer-events-none" />
+          )}
+          <Icon
+            className={`h-[21px] w-[21px] transition-all duration-300 relative z-10 ${
+              active ? "text-primary drop-shadow-[0_1px_2px_hsl(var(--primary)/0.3)]" : "text-muted-foreground/65"
+            }`}
+            strokeWidth={active ? 2.4 : 1.6}
+          />
+        </div>
       </motion.div>
 
       {/* Label */}
       <span className={`text-[10px] tracking-wide transition-all duration-300 ${
-        active ? "font-bold text-primary" : "font-medium text-muted-foreground/60"
+        active ? "font-bold text-primary" : "font-medium text-muted-foreground/55"
       }`}>
         {label}
       </span>
 
-      {/* Active indicator line */}
+      {/* Active indicator dot */}
       <AnimatePresence>
         {active && (
           <motion.div
@@ -435,7 +449,7 @@ const NavItem = ({
             animate={{ scaleX: 1, opacity: 1 }}
             exit={{ scaleX: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="w-5 h-[3px] rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+            className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5),0_0_3px_hsl(var(--primary)/0.3)]"
           />
         )}
       </AnimatePresence>
@@ -443,38 +457,49 @@ const NavItem = ({
   );
 };
 
-/** Center raised nav button */
+/** Center raised nav button — premium glossy */
 const CenterNavButton = ({
   icon: Icon, label, isActive, onClick
 }: {
   icon: any; label: string; isActive: boolean; onClick: () => void;
 }) => (
-  <div className="relative flex flex-col items-center -mt-5">
+  <div className="relative flex flex-col items-center -mt-6">
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.9 }}
+      whileTap={{ scale: 0.88 }}
       whileHover={{ scale: 1.05 }}
       className="relative"
     >
+      {/* Outer glow ring */}
       <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
-        isActive ? "bg-primary/20 scale-[1.35] blur-md" : "bg-transparent scale-100"
+        isActive ? "bg-primary/25 scale-[1.5] blur-lg" : "bg-primary/10 scale-[1.2] blur-md"
       }`} />
+      
       <motion.div
-        animate={isActive ? { y: -4 } : { y: 0 }}
+        animate={isActive ? { y: -5 } : { y: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-          isActive
-            ? "bg-primary shadow-[0_6px_24px_hsl(var(--primary)/0.45)]"
-            : "bg-gradient-to-br from-primary/90 to-primary shadow-[0_4px_16px_hsl(var(--primary)/0.3)]"
-        }`}
+        className="relative"
       >
-        <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/25 to-transparent" />
-        <Icon className="h-6 w-6 text-primary-foreground relative z-10" strokeWidth={2} />
+        {/* Main button */}
+        <div className={`relative w-[58px] h-[58px] rounded-full flex items-center justify-center transition-all duration-300 ${
+          isActive
+            ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.5),0_2px_8px_hsl(var(--primary)/0.3)]"
+            : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_6px_24px_hsl(var(--primary)/0.35),0_2px_6px_hsl(var(--primary)/0.2)]"
+        }`}>
+          {/* Top glossy shine */}
+          <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none" />
+          {/* Inner ring highlight */}
+          <div className="absolute inset-[3px] rounded-full border border-white/10 pointer-events-none" />
+          <Icon className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]" strokeWidth={2.2} />
+        </div>
+        
+        {/* Bottom reflection */}
+        <div className="absolute -bottom-1 left-3 right-3 h-2 rounded-full bg-primary/15 blur-sm" />
       </motion.div>
     </motion.button>
     <motion.span
       animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
-      className={`text-[10px] mt-1.5 font-semibold tracking-wide ${
+      className={`text-[10px] mt-2 font-bold tracking-wide ${
         isActive ? "text-primary" : "text-muted-foreground"
       }`}
     >
