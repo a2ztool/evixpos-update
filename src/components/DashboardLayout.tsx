@@ -288,24 +288,30 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-2 mb-[max(env(safe-area-inset-bottom),4px)]">
-        {/* Main bar */}
+      <div className="pointer-events-auto mx-3 mb-[max(env(safe-area-inset-bottom),6px)]">
         <div className="relative">
-          {/* Glass bar background */}
+          {/* Premium glossy glass bar */}
           <div
-            className="rounded-[28px] border border-white/30 dark:border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.12),0_2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+            className="rounded-[26px] border border-white/40 dark:border-white/[0.08] overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,245,250,0.78) 50%, rgba(255,255,255,0.82) 100%)",
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              background: "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
+              backdropFilter: "blur(40px) saturate(200%)",
+              WebkitBackdropFilter: "blur(40px) saturate(200%)",
+              boxShadow: "0 -2px 20px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)",
             }}
           >
+            {/* Top glossy shine line */}
+            <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+            
             {/* Dark mode override */}
-            <div className="hidden dark:block absolute inset-0 rounded-[28px]" style={{
-              background: "linear-gradient(135deg, rgba(30,30,40,0.88) 0%, rgba(20,20,30,0.82) 100%)",
+            <div className="hidden dark:block absolute inset-0 rounded-[26px]" style={{
+              background: "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(16,16,28,0.90) 40%, rgba(12,12,24,0.92) 100%)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
             }} />
+            {/* Dark mode top shine */}
+            <div className="hidden dark:block absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-            <div className="relative z-10 flex items-end justify-around px-2 pt-2 pb-2.5">
+            <div className="relative z-10 flex items-end justify-around px-1.5 pt-2.5 pb-3">
               {/* Home */}
               <NavItem
                 icon={LayoutDashboard}
@@ -331,7 +337,6 @@ const MobileNav = () => {
                   label="Chat"
                   isActive={false}
                   onClick={() => {
-                    // Dispatch custom event to toggle floating inbox
                     window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
                   }}
                 />
@@ -363,7 +368,7 @@ const MobileNav = () => {
                 />
               )}
 
-              {/* Settings (replaces More) */}
+              {/* Settings */}
               <NavItem
                 icon={Settings}
                 label="Settings"
