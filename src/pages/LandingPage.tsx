@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import VideoModal from "@/components/VideoModal";
 import LandingChatbot from "@/components/LandingChatbot";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 /* ─── static imports for assets ─── */
 import dashboardPreview from "@/assets/dashboard-preview.jpg";
@@ -233,6 +234,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const { get, loading } = useLandingContent();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [currency, setCurrency] = useState<Currency>("BDT");
@@ -937,8 +939,19 @@ const LandingPage = () => {
                 {get("app_download_ios") ? <a href={get("app_download_ios")} target="_blank" rel="noopener noreferrer"><Button size="lg" variant="outline" className="gap-2 h-12 px-6"><Apple className="h-5 w-5" /> App Store</Button></a> : null}
                 {!get("app_download_android") && !get("app_download_ios") && (
                   <>
-                    <Button size="lg" className="gap-2 h-12 px-6" onClick={() => navigate("/auth")}><Smartphone className="h-5 w-5" /> Use Web App</Button>
-                    <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-muted-foreground"><Download className="h-5 w-5" /> Coming Soon</Button>
+                    <Button size="lg" className="gap-2 h-12 px-6" onClick={() => { if (canInstall) { promptInstall(); } else { navigate("/auth"); } }}>
+                      <Smartphone className="h-5 w-5" /> {canInstall ? "Install App" : "Use Web App"}
+                    </Button>
+                    {!canInstall && !isInstalled && (
+                      <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-muted-foreground" onClick={() => navigate("/auth")}>
+                        <Download className="h-5 w-5" /> Open in Browser
+                      </Button>
+                    )}
+                    {isInstalled && (
+                      <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-primary border-primary/30" disabled>
+                        <Check className="h-5 w-5" /> App Installed
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
