@@ -91,21 +91,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top navbar */}
-          <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
-            <div className="flex items-center justify-between h-14 px-3 sm:px-4 lg:px-6">
+          {/* Top navbar — compact on mobile */}
+          <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/40 pt-safe">
+            <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4 lg:px-6">
               {/* Left: trigger + store + title */}
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <SidebarTrigger className="text-muted-foreground hover:text-foreground flex-shrink-0" />
+                <SidebarTrigger className="text-muted-foreground hover:text-foreground flex-shrink-0 h-8 w-8" />
                 <StoreSwitcher />
                 <div className="hidden md:block h-5 w-px bg-border/50" />
-                {/* Mobile page title */}
-                <h1 className="text-sm font-semibold truncate md:block hidden">{pageTitle}</h1>
+                {/* Desktop page title */}
+                <h1 className="text-sm font-semibold truncate hidden md:block">{pageTitle}</h1>
                 <div className="hidden sm:block relative ml-2">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Search..."
-                    className="pl-9 w-56 lg:w-72 h-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring/30 rounded-lg text-sm"
+                    className="pl-9 w-56 lg:w-72 h-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring/30 rounded-xl text-sm"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-0.5">
                     <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border border-border/60 bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground flex">
@@ -115,9 +115,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </div>
               </div>
 
-              {/* Right: actions */}
+              {/* Right: actions — fewer items on mobile */}
               <div className="flex items-center gap-0.5 sm:gap-1">
-                {/* Keyboard Shortcuts */}
+                {/* Keyboard Shortcuts - desktop only */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hidden md:inline-flex">
@@ -127,7 +127,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <TooltipContent side="bottom"><p className="text-xs">Keyboard shortcuts</p></TooltipContent>
                 </Tooltip>
 
-                {/* Language Switcher - hidden on small mobile */}
+                {/* Language - hidden on mobile */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground gap-1.5 hidden sm:inline-flex">
@@ -146,7 +146,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Dark Mode Toggle */}
+                {/* Dark Mode */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={toggleDark}>
@@ -174,12 +174,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 {/* Notifications */}
                 <NotificationBell />
 
-                {/* User Avatar Dropdown */}
+                {/* User Avatar */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-0.5 sm:ml-1">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-0.5">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold">{initials}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -218,8 +218,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          {/* Main content - add bottom padding for mobile nav */}
-          <main className="flex-1 p-3 sm:p-4 lg:p-8 animate-fade-in pb-24 sm:pb-4 lg:pb-8">
+          {/* Mobile page title bar */}
+          <div className="sm:hidden px-4 pt-3 pb-1">
+            <h1 className="text-lg font-bold text-foreground">{pageTitle}</h1>
+          </div>
+
+          {/* Main content — proper bottom padding for mobile nav */}
+          <main className="flex-1 px-3 py-2 sm:p-4 lg:p-8 animate-fade-in pb-24 sm:pb-4 lg:pb-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>

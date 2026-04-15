@@ -146,12 +146,12 @@ const AdminLayout = () => {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-800/95 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="flex items-center justify-between h-14 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+      {/* Mobile top bar — compact app-style */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-800/95 backdrop-blur-xl border-b border-slate-700/50" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="flex items-center justify-between h-12 px-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600/20 flex items-center justify-center">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
             </div>
             <span className="font-semibold text-white text-sm">Admin</span>
           </div>
@@ -163,7 +163,7 @@ const AdminLayout = () => {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
-        <div className="p-4 md:p-6 pt-[72px] md:pt-6 pb-20 md:pb-6">
+        <div className="px-3 py-3 md:p-6 pt-16 md:pt-6 pb-24 md:pb-6">
           <Outlet />
         </div>
       </main>
