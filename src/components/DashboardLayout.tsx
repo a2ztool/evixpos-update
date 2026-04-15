@@ -269,11 +269,8 @@ const staffMoreMenuItems = [
 const MobileNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [moreOpen, setMoreOpen] = useState(false);
   const { isStaff } = useStaff();
 
-  const moreMenuItems = isStaff ? staffMoreMenuItems : ownerMoreMenuItems;
-  const isMoreActive = moreMenuItems.some(i => location.pathname.startsWith(i.path));
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
