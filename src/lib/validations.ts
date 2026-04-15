@@ -11,18 +11,21 @@ export const nameField = (label = "Name") =>
     .refine(v => !/^\d+$/.test(v), `${label} cannot be only numbers`);
 
 export const emailField = (required = true) => {
-  const base = z.string().trim().max(255, "Email must be under 255 characters");
-  return required
-    ? base.min(1, "Email is required").email("Invalid email format")
-    : base.refine(v => v === "" || z.string().email().safeParse(v).success, "Invalid email format");
+  if (required) {
+    return z.string().trim().min(1, "Email is required").max(255, "Email must be under 255 characters").email("Invalid email format");
+  }
+  return z.string().trim().max(255, "Email must be under 255 characters")
+    .refine(v => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Invalid email format");
 };
 
 export const phoneField = (required = false) => {
   const regex = /^(\+?\d{7,15})?$/;
-  const base = z.string().trim().max(20, "Phone number too long");
-  return required
-    ? base.min(1, "Phone number is required").regex(regex, "Invalid phone number (7-15 digits, optional + prefix)")
-    : base.refine(v => v === "" || regex.test(v), "Invalid phone number (7-15 digits, optional + prefix)");
+  if (required) {
+    return z.string().trim().min(1, "Phone number is required").max(20, "Phone number too long")
+      .regex(regex, "Invalid phone number (7-15 digits, optional + prefix)");
+  }
+  return z.string().trim().max(20, "Phone number too long")
+    .refine(v => v === "" || regex.test(v), "Invalid phone number (7-15 digits, optional + prefix)");
 };
 
 export const passwordField = z.string()
@@ -41,10 +44,11 @@ export const requiredPositiveNumber = (label = "Value") =>
     .refine(v => Number(v) > 0, `${label} must be greater than 0`);
 
 export const urlField = (required = false) => {
-  const base = z.string().trim().max(2048, "URL too long");
-  return required
-    ? base.min(1, "URL is required").url("Invalid URL format")
-    : base.refine(v => v === "" || z.string().url().safeParse(v).success, "Invalid URL format");
+  if (required) {
+    return z.string().trim().min(1, "URL is required").max(2048, "URL too long").url("Invalid URL format");
+  }
+  return z.string().trim().max(2048, "URL too long")
+    .refine(v => v === "" || /^https?:\/\/.+/.test(v), "Invalid URL format");
 };
 
 export const textField = (label = "Field", maxLen = 500) =>
@@ -194,11 +198,12 @@ export const adminPasswordSchema = z.object({
 
 export type ValidationErrors = Record<string, string>;
 
-export function validate<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: ValidationErrors } {
+export function validate<T>(schema: z.ZodType<T>, data: unknown): { success: true; data: T } | { success: false; errors: ValidationErrors } {
   const result = schema.safeParse(data);
   if (result.success) return { success: true, data: result.data };
   const errors: ValidationErrors = {};
-  result.error.errors.forEach((e) => {
+  const issues = result.error?.issues || [];
+  issues.forEach((e) => {
     const path = e.path.join(".");
     if (!errors[path]) errors[path] = e.message;
   });
@@ -208,9 +213,10 @@ export function validate<T>(schema: z.ZodSchema<T>, data: unknown): { success: t
 /**
  * Validate and show first error as toast. Returns parsed data or null.
  */
-export function validateWithToast<T>(schema: z.ZodSchema<T>, data: unknown, toast: (msg: string) => void): T | null {
+export function validateWithToast<T>(schema: z.ZodType<T>, data: unknown, toastFn: (msg: string) => void): T | null {
   const result = schema.safeParse(data);
   if (result.success) return result.data;
-  toast(result.error.errors[0]?.message || "Validation failed");
+  const issues = result.error?.issues || [];
+  toastFn(issues[0]?.message || "Validation failed");
   return null;
 }
