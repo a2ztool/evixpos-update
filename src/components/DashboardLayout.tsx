@@ -288,24 +288,30 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-2 mb-[max(env(safe-area-inset-bottom),4px)]">
-        {/* Main bar */}
+      <div className="pointer-events-auto mx-3 mb-[max(env(safe-area-inset-bottom),6px)]">
         <div className="relative">
-          {/* Glass bar background */}
+          {/* Premium glossy glass bar */}
           <div
-            className="rounded-[28px] border border-white/30 dark:border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.12),0_2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+            className="rounded-[26px] border border-white/40 dark:border-white/[0.08] overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,245,250,0.78) 50%, rgba(255,255,255,0.82) 100%)",
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              background: "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
+              backdropFilter: "blur(40px) saturate(200%)",
+              WebkitBackdropFilter: "blur(40px) saturate(200%)",
+              boxShadow: "0 -2px 20px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)",
             }}
           >
+            {/* Top glossy shine line */}
+            <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+            
             {/* Dark mode override */}
-            <div className="hidden dark:block absolute inset-0 rounded-[28px]" style={{
-              background: "linear-gradient(135deg, rgba(30,30,40,0.88) 0%, rgba(20,20,30,0.82) 100%)",
+            <div className="hidden dark:block absolute inset-0 rounded-[26px]" style={{
+              background: "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(16,16,28,0.90) 40%, rgba(12,12,24,0.92) 100%)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
             }} />
+            {/* Dark mode top shine */}
+            <div className="hidden dark:block absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-            <div className="relative z-10 flex items-end justify-around px-2 pt-2 pb-2.5">
+            <div className="relative z-10 flex items-end justify-around px-1.5 pt-2.5 pb-3">
               {/* Home */}
               <NavItem
                 icon={LayoutDashboard}
@@ -331,7 +337,6 @@ const MobileNav = () => {
                   label="Chat"
                   isActive={false}
                   onClick={() => {
-                    // Dispatch custom event to toggle floating inbox
                     window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
                   }}
                 />
@@ -363,7 +368,7 @@ const MobileNav = () => {
                 />
               )}
 
-              {/* Settings (replaces More) */}
+              {/* Settings */}
               <NavItem
                 icon={Settings}
                 label="Settings"
@@ -394,35 +399,49 @@ const NavItem = ({
       onClick={() => !isMore && navigate(path)}
       onMouseEnter={() => !isMore && prefetchRoute(path)}
       onFocus={() => !isMore && prefetchRoute(path)}
-      whileTap={{ scale: 0.85 }}
-      className="relative flex flex-col items-center gap-1 py-1 min-w-[56px]"
+      whileTap={{ scale: 0.82 }}
+      className="relative flex flex-col items-center gap-0.5 py-1 min-w-[56px]"
     >
-      {/* Icon container */}
+      {/* Icon container with glossy active state */}
       <motion.div
-        animate={active ? { y: -2, scale: 1.08 } : { y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 400, damping: 22 }}
-        className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-          active
-            ? "bg-primary/10 shadow-sm"
-            : "bg-transparent"
-        }`}
+        animate={active ? { y: -3, scale: 1.1 } : { y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 450, damping: 22 }}
+        className="relative"
       >
-        <Icon
-          className={`h-[22px] w-[22px] transition-colors duration-300 ${
-            active ? "text-primary" : "text-muted-foreground/70"
-          }`}
-          strokeWidth={active ? 2.4 : 1.7}
-        />
+        {/* Active glow backdrop */}
+        {active && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute inset-0 w-10 h-10 rounded-2xl bg-primary/12 dark:bg-primary/20 blur-[2px]"
+          />
+        )}
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+          active
+            ? "bg-primary/10 dark:bg-primary/15 shadow-[0_2px_12px_hsl(var(--primary)/0.15)]"
+            : "bg-transparent"
+        }`}>
+          {/* Inner glossy highlight on active */}
+          {active && (
+            <div className="absolute inset-[1px] rounded-[14px] bg-gradient-to-b from-white/40 dark:from-white/10 to-transparent pointer-events-none" />
+          )}
+          <Icon
+            className={`h-[21px] w-[21px] transition-all duration-300 relative z-10 ${
+              active ? "text-primary drop-shadow-[0_1px_2px_hsl(var(--primary)/0.3)]" : "text-muted-foreground/65"
+            }`}
+            strokeWidth={active ? 2.4 : 1.6}
+          />
+        </div>
       </motion.div>
 
       {/* Label */}
       <span className={`text-[10px] tracking-wide transition-all duration-300 ${
-        active ? "font-bold text-primary" : "font-medium text-muted-foreground/60"
+        active ? "font-bold text-primary" : "font-medium text-muted-foreground/55"
       }`}>
         {label}
       </span>
 
-      {/* Active indicator line */}
+      {/* Active indicator dot */}
       <AnimatePresence>
         {active && (
           <motion.div
@@ -430,7 +449,7 @@ const NavItem = ({
             animate={{ scaleX: 1, opacity: 1 }}
             exit={{ scaleX: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="w-5 h-[3px] rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+            className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5),0_0_3px_hsl(var(--primary)/0.3)]"
           />
         )}
       </AnimatePresence>
@@ -438,38 +457,49 @@ const NavItem = ({
   );
 };
 
-/** Center raised nav button */
+/** Center raised nav button — premium glossy */
 const CenterNavButton = ({
   icon: Icon, label, isActive, onClick
 }: {
   icon: any; label: string; isActive: boolean; onClick: () => void;
 }) => (
-  <div className="relative flex flex-col items-center -mt-5">
+  <div className="relative flex flex-col items-center -mt-6">
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.9 }}
+      whileTap={{ scale: 0.88 }}
       whileHover={{ scale: 1.05 }}
       className="relative"
     >
+      {/* Outer glow ring */}
       <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
-        isActive ? "bg-primary/20 scale-[1.35] blur-md" : "bg-transparent scale-100"
+        isActive ? "bg-primary/25 scale-[1.5] blur-lg" : "bg-primary/10 scale-[1.2] blur-md"
       }`} />
+      
       <motion.div
-        animate={isActive ? { y: -4 } : { y: 0 }}
+        animate={isActive ? { y: -5 } : { y: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-          isActive
-            ? "bg-primary shadow-[0_6px_24px_hsl(var(--primary)/0.45)]"
-            : "bg-gradient-to-br from-primary/90 to-primary shadow-[0_4px_16px_hsl(var(--primary)/0.3)]"
-        }`}
+        className="relative"
       >
-        <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/25 to-transparent" />
-        <Icon className="h-6 w-6 text-primary-foreground relative z-10" strokeWidth={2} />
+        {/* Main button */}
+        <div className={`relative w-[58px] h-[58px] rounded-full flex items-center justify-center transition-all duration-300 ${
+          isActive
+            ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.5),0_2px_8px_hsl(var(--primary)/0.3)]"
+            : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_6px_24px_hsl(var(--primary)/0.35),0_2px_6px_hsl(var(--primary)/0.2)]"
+        }`}>
+          {/* Top glossy shine */}
+          <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none" />
+          {/* Inner ring highlight */}
+          <div className="absolute inset-[3px] rounded-full border border-white/10 pointer-events-none" />
+          <Icon className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]" strokeWidth={2.2} />
+        </div>
+        
+        {/* Bottom reflection */}
+        <div className="absolute -bottom-1 left-3 right-3 h-2 rounded-full bg-primary/15 blur-sm" />
       </motion.div>
     </motion.button>
     <motion.span
       animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
-      className={`text-[10px] mt-1.5 font-semibold tracking-wide ${
+      className={`text-[10px] mt-2 font-bold tracking-wide ${
         isActive ? "text-primary" : "text-muted-foreground"
       }`}
     >
