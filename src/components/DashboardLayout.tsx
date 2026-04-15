@@ -246,8 +246,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
 
           {/* Mobile page title bar */}
-          <div className="sm:hidden px-4 pt-3 pb-1 flex items-center gap-2">
-            <BackButton className="sm:hidden" />
+          <div className="sm:hidden px-4 pt-3 pb-1">
             <h1 className="text-lg font-bold text-foreground">{pageTitle}</h1>
           </div>
 
