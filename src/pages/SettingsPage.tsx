@@ -1331,7 +1331,7 @@ const SettingsPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6">
-        <h1 className="text-xl sm:text-2xl font-bold">{t.settings}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold hidden sm:block">{t.settings}</h1>
 
         {/* Mobile: horizontal scrollable tab bar */}
         <div className="lg:hidden overflow-x-auto scrollbar-hide -mx-3 px-3">

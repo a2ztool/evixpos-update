@@ -260,7 +260,6 @@ const ownerMoreMenuItems = [
   { icon: Plug, path: "/integrations/notifications", label: "Integrations" },
   { icon: CrownIcon, path: "/my-plan", label: "My Plan" },
   { icon: SupportIcon, path: "/support", label: "Support" },
-  { icon: Settings, path: "/settings", label: "Settings" },
 ];
 
 const staffMoreMenuItems = [
