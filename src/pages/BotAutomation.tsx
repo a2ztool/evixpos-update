@@ -531,7 +531,7 @@ const BotAutomation = () => {
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between mb-6">
-        <div>
+        <div className="hidden sm:block">
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
             <Bot className="h-7 w-7 sm:h-8 sm:w-8" /> Bot Automation
           </h1>

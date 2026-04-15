@@ -215,7 +215,7 @@ const OrderForms = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Order Forms</h1>
         <Button
           size="sm"

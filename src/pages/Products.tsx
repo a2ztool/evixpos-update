@@ -321,7 +321,7 @@ const Products = () => {
   return (
     <DashboardLayout>
       <UsageWarningBanner type="products" />
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Products</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-2 hidden sm:inline-flex">

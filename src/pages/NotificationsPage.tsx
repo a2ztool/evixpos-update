@@ -599,7 +599,7 @@ const NotificationsPage = () => {
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Bell className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-2xl sm:text-3xl font-bold">Notifications</h1>
             <p className="text-muted-foreground text-sm">Manage notification preferences, view alerts & delivery logs</p>
           </div>

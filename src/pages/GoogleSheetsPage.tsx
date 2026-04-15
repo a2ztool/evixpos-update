@@ -220,7 +220,7 @@ const GoogleSheetsPage = () => {
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
               <FileSpreadsheet className="h-6 w-6 text-white" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-2xl font-bold tracking-tight">Google Sheets Integration</h1>
               <p className="text-sm text-muted-foreground">
                 Auto-sync POS orders to Google Sheets • Store: <span className="font-medium text-foreground">{activeStore?.name || "—"}</span>

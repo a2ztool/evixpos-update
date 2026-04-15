@@ -330,7 +330,7 @@ const Subscriptions = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-primary/10">
                 <RefreshCw className="h-6 w-6 text-primary" />
