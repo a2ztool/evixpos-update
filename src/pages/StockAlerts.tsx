@@ -131,9 +131,9 @@ const StockAlerts = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+      <div className="space-y-3 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="hidden sm:block">
             <h1 className="text-2xl font-bold">Stock Alerts</h1>
             <p className="text-sm text-muted-foreground">Monitor inventory levels, detect dead stock, and prevent stockouts</p>
           </div>
@@ -153,29 +153,29 @@ const StockAlerts = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <Card className="border-yellow-500/30">
-            <CardContent className="pt-4 flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-yellow-500" />
-              <div><p className="text-sm text-muted-foreground">Low Stock</p><p className="text-2xl font-bold text-yellow-600">{lowCount}</p></div>
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3">
+              <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+              <div><p className="text-xs text-muted-foreground">Low Stock</p><p className="text-lg sm:text-2xl font-bold text-yellow-600">{lowCount}</p></div>
             </CardContent>
           </Card>
           <Card className="border-destructive/30">
-            <CardContent className="pt-4 flex items-center gap-3">
-              <Package className="h-8 w-8 text-destructive" />
-              <div><p className="text-sm text-muted-foreground">Out of Stock</p><p className="text-2xl font-bold text-destructive">{outOfStock}</p></div>
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3">
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
+              <div><p className="text-xs text-muted-foreground">Out of Stock</p><p className="text-lg sm:text-2xl font-bold text-destructive">{outOfStock}</p></div>
             </CardContent>
           </Card>
           <Card className="border-orange-500/30">
-            <CardContent className="pt-4 flex items-center gap-3">
-              <Skull className="h-8 w-8 text-orange-500" />
-              <div><p className="text-sm text-muted-foreground">Dead Stock</p><p className="text-2xl font-bold text-orange-600">{deadCount}</p></div>
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3">
+              <Skull className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
+              <div><p className="text-xs text-muted-foreground">Dead Stock</p><p className="text-lg sm:text-2xl font-bold text-orange-600">{deadCount}</p></div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <TrendingDown className="h-8 w-8 text-muted-foreground" />
-              <div><p className="text-sm text-muted-foreground">Dead Value</p><p className="text-2xl font-bold">{format(deadStockValue)}</p></div>
+            <CardContent className="pt-3 sm:pt-4 flex items-center gap-2 sm:gap-3">
+              <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+              <div><p className="text-xs text-muted-foreground">Dead Value</p><p className="text-lg sm:text-2xl font-bold">{format(deadStockValue)}</p></div>
             </CardContent>
           </Card>
         </div>
