@@ -67,6 +67,7 @@ const ResetPassword = lazyPage(() => import("./pages/ResetPassword"));
 const PublicOrderForm = lazyPage(() => import("./pages/PublicOrderForm"));
 const FacebookCallback = lazyPage(() => import("./pages/FacebookCallback"));
 const Integrations = lazyPage(() => import("./pages/Integrations"));
+const AppEntry = lazyPage(() => import("./pages/AppEntry"));
 
 // Admin pages (lazy)
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
@@ -150,6 +151,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/app" element={<AppEntry />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/f/:slug" element={<PublicOrderForm />} />

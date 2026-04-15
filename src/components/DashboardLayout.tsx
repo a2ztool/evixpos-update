@@ -14,8 +14,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Search, Download, Moon, Sun, Globe, LogOut, Settings, User,
-  Crown, Command, Keyboard,
+  Crown, Command, Keyboard, Smartphone,
 } from "lucide-react";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -76,6 +77,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
   const initials = isStaff && staffInfo
@@ -221,6 +223,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <DropdownMenuItem onClick={() => navigate("/my-plan")}>
                         <Crown className="h-4 w-4 mr-2" /> My Plan
                       </DropdownMenuItem>
+                    )}
+                    {(canInstall || !isInstalled) && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={promptInstall} disabled={!canInstall}>
+                          <Smartphone className="h-4 w-4 mr-2" />
+                          {isInstalled ? "✓ App Installed" : "Install App"}
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
