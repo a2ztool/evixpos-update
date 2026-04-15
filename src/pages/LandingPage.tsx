@@ -234,6 +234,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const { get, loading } = useLandingContent();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [currency, setCurrency] = useState<Currency>("BDT");
