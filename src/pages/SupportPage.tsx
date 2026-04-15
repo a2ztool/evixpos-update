@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
+import { validateWithToast, supportTicketSchema } from "@/lib/validations";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Ticket, Plus, Search, Filter, Clock, CheckCircle2, AlertCircle, XCircle,
@@ -196,7 +197,9 @@ const SupportPage = () => {
   };
 
   const handleCreateTicket = async () => {
-    if (!user || !form.subject.trim()) { toast.error("Subject is required"); return; }
+    if (!user) return;
+    const parsed = validateWithToast(supportTicketSchema, form, toast.error);
+    if (!parsed) return;
     
     // Generate auto ticket ID: EVX-XXXX
     const ticketCount = tickets.length;

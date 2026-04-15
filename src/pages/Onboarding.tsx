@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Store, ArrowRight, Shield, Zap, Sparkles, Link2, User, Languages, Coins, Globe, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { validateWithToast, onboardingSchema } from "@/lib/validations";
 
 const LANGUAGES = [
   { code: "en", label: "🇺🇸 English" },
@@ -63,10 +64,8 @@ const Onboarding = () => {
   };
 
   const handleCreate = async () => {
-    if (!storeName.trim()) {
-      toast.error("Please enter a store name");
-      return;
-    }
+    const parsed = validateWithToast(onboardingSchema, { storeName, fullName }, toast.error);
+    if (!parsed) return;
     setCreating(true);
 
     // Update profile name if provided

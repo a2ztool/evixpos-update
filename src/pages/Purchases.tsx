@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
+import { validateWithToast, purchaseSchema } from "@/lib/validations";
 import { format as formatDate } from "date-fns";
 
 const Purchases = () => {
@@ -70,6 +71,8 @@ const Purchases = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      const parsed = validateWithToast(purchaseSchema, form, toast.error);
+      if (!parsed) throw new Error("Validation failed");
       const total = Number(form.total_amount) || 0;
       const paid = Number(form.paid_amount) || 0;
       const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
