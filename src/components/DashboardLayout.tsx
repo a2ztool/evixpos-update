@@ -46,6 +46,8 @@ const routeTitles: Record<string, string> = {
   "/integrations/woocommerce": "WooCommerce",
   "/integrations/bot-automation": "Bot Automation",
   "/integrations/whatsapp": "WhatsApp",
+  "/integrations/google-sheets": "Google Sheets",
+  "/finance/facebook-ads": "Facebook Ads",
   "/referral": "Referral",
   "/my-plan": "My Plan",
   "/support": "Support & Guide",
