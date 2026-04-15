@@ -98,6 +98,7 @@ const Integrations = () => {
     const parsed = validateWithToast(sendWhatsAppSchema, sendForm, toast.error);
     if (!parsed) return;
     setSending(true);
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke("send-whatsapp", {
         body: { phone: sendForm.phone, message: sendForm.message },
