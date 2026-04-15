@@ -369,7 +369,7 @@ const WhatsAppPage = () => {
               </svg>
             </div>
             <div>
-              <div className="hidden sm:block flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 <h1 className="text-2xl font-bold">WhatsApp Business</h1>
                 {wa && (
                   <Badge variant={wa.status === "active" ? "default" : "secondary"} className="text-xs">
@@ -378,7 +378,7 @@ const WhatsAppPage = () => {
                 )}
                 {!wa && <Badge variant="outline" className="text-xs">Not Connected</Badge>}
               </div>
-              <p className="text-sm text-muted-foreground">WhatsApp Business API দিয়ে কাস্টমারদের মেসেজ পাঠান</p>
+              <p className="text-sm text-muted-foreground hidden sm:block">WhatsApp Business API দিয়ে কাস্টমারদের মেসেজ পাঠান</p>
             </div>
           </div>
           <div className="flex gap-2">
