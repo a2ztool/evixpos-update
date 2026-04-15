@@ -150,7 +150,7 @@ const LoyaltyPoints = () => {
               ) : filtered.map((r: any) => {
                 const available = Number(r.total_points) - Number(r.redeemed_points);
                 return (
-                  <div key={r.id} className="border rounded-lg p-3">
+                  <div key={r.id} className="bg-card rounded-2xl border border-border/40 p-3.5">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium">{r.customers?.name}</p>

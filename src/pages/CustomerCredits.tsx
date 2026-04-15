@@ -194,7 +194,7 @@ const CustomerCredits = () => {
               ) : filtered.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">No credit records</p>
               ) : filtered.map((c: any) => (
-                <div key={c.id} className="border rounded-lg p-3 space-y-2">
+                <div key={c.id} className="bg-card rounded-2xl border border-border/40 p-3.5 space-y-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{c.customers?.name}</p>
