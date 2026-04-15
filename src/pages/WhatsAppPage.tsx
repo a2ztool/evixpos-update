@@ -378,7 +378,7 @@ const WhatsAppPage = () => {
                 )}
                 {!wa && <Badge variant="outline" className="text-xs">Not Connected</Badge>}
               </div>
-              <p className="text-sm text-muted-foreground">WhatsApp Business API দিয়ে কাস্টমারদের মেসেজ পাঠান</p>
+              <p className="text-sm text-muted-foreground hidden sm:block">WhatsApp Business API দিয়ে কাস্টমারদের মেসেজ পাঠান</p>
             </div>
           </div>
           <div className="flex gap-2">
