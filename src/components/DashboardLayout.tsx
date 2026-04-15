@@ -52,6 +52,18 @@ const routeTitles: Record<string, string> = {
   "/settings": "Settings",
   "/transactions": "Finance",
   "/notification-center": "Notification Center",
+  "/inventory": "Inventory",
+  "/offline/suppliers": "Suppliers",
+  "/offline/purchases": "Purchases",
+  "/offline/cash-register": "Cash Register",
+  "/offline/customer-credits": "Customer Credits",
+  "/offline/loyalty": "Loyalty Points",
+  "/offline/due-customers": "Due Customers",
+  "/offline/stock-alerts": "Stock Alerts",
+  "/offline/daily-report": "Daily Report",
+  "/offline/profit-loss": "Profit & Loss",
+  "/offline/staff-performance": "Staff Performance",
+  "/staff-inbox": "Staff Inbox",
 };
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
