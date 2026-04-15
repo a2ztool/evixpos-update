@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { validateWithToast, transactionSchema } from "@/lib/validations";
 import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, Filter, DollarSign, Wallet, PiggyBank, BarChart3,
@@ -209,10 +210,10 @@ const IncomeExpense = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.amount || Number(form.amount) <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    const parsed = validateWithToast(transactionSchema, {
+      type: form.type, amount: form.amount, category: form.category, note: form.note,
+    }, toast.error);
+    if (!parsed) return;
     const payload = {
       type: form.type,
       amount: Number(form.amount),

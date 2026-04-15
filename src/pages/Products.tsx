@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { validateWithToast, productSchema } from "@/lib/validations";
 import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -165,7 +166,12 @@ const Products = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { toast.error("Product name is required"); return; }
+    const parsed = validateWithToast(productSchema, {
+      name: form.name, sku: form.sku, category: form.category,
+      image_url: form.image_url, description: form.description,
+      base_cost: form.base_cost, price: form.price, stock: form.stock,
+    }, toast.error);
+    if (!parsed) return;
     setSaving(true);
     const payload = {
       name: form.name,

@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { validateWithToast, dueSchema } from "@/lib/validations";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, TrendingDown, Clock, DollarSign, Users, Calendar,
@@ -273,10 +274,10 @@ const DueBook = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.amount || Number(form.amount) <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    const parsed = validateWithToast(dueSchema, {
+      type: form.type, amount: form.amount, category: form.category, note: form.note,
+    }, toast.error);
+    if (!parsed) return;
     const payload = {
       type: form.type as "income" | "expense",
       amount: Number(form.amount),

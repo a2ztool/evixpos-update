@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
+import { validateWithToast, supplierSchema } from "@/lib/validations";
 import { format as formatDate } from "date-fns";
 
 const Suppliers = () => {
@@ -61,6 +62,8 @@ const Suppliers = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const parsed = validateWithToast(supplierSchema, form, toast.error);
+      if (!parsed) throw new Error("Validation failed");
       if (editId) {
         const { error } = await supabase.from("suppliers").update({
           name: form.name, phone: form.phone, email: form.email,

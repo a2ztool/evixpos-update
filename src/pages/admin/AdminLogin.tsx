@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { validateWithToast, loginSchema } from "@/lib/validations";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -15,10 +16,12 @@ const AdminLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = validateWithToast(loginSchema, { email, password }, toast.error);
+    if (!parsed) return;
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.email, password: parsed.password });
       if (error) throw error;
 
       // Check admin role in user_roles table

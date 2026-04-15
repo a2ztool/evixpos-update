@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { validateWithToast, customerSchema } from "@/lib/validations";
 import { Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna, Star, CreditCard, ShoppingBag } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import CustomerDNAProfile from "@/components/CustomerDNAProfile";
@@ -145,6 +146,8 @@ const Customers = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = validateWithToast(customerSchema, form, toast.error);
+    if (!parsed) return;
     if (editId) {
       const { error } = await supabase.from("customers").update(form).eq("id", editId);
       if (error) toast.error(error.message);
