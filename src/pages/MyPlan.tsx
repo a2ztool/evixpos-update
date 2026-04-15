@@ -256,9 +256,9 @@ const MyPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-8 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 hidden sm:flex">
           <h1 className="text-2xl font-bold">Packages & Subscription</h1>
         </div>
 
