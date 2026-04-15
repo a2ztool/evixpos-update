@@ -138,49 +138,80 @@ const PendingOrders = () => {
           <Button variant="outline" onClick={() => navigate("/orders")}>View All Orders</Button>
         </div>
       ) : (
-        <div className="premium-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((o) => (
-                <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}...</TableCell>
-                  <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
-                  <TableCell className="font-semibold">{o.payment_currency} {Number(o.total_amount).toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge className={paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"}>{o.payment_status}</Badge>
-                  </TableCell>
-                  <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
-                  <TableCell className="capitalize text-sm">{o.source}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => viewDetails(o)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => updateStatus(o.id, "completed")}>
-                        Complete
-                      </Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => updateStatus(o.id, "cancelled")}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </TableCell>
+        <div>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filtered.map((o) => (
+              <div key={o.id} className="border rounded-2xl bg-card p-3 space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium text-sm">{o.customers?.name ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{o.id.slice(0, 8)}...</p>
+                  </div>
+                  <Badge className={paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"}>{o.payment_status}</Badge>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Amount: <strong>{o.payment_currency} {Number(o.total_amount).toFixed(2)}</strong></span>
+                  <span className="capitalize">{o.payment_method}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="capitalize">{o.source}</span>
+                  <span>{new Date(o.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="flex gap-1.5">
+                  <Button size="sm" variant="default" className="h-7 text-xs flex-1" onClick={() => updateStatus(o.id, "completed")}>Complete</Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs flex-1 text-destructive" onClick={() => updateStatus(o.id, "cancelled")}>Cancel</Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => viewDetails(o)}><Eye className="h-3.5 w-3.5" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block premium-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((o) => (
+                  <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
+                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}...</TableCell>
+                    <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
+                    <TableCell className="font-semibold">{o.payment_currency} {Number(o.total_amount).toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge className={paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"}>{o.payment_status}</Badge>
+                    </TableCell>
+                    <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
+                    <TableCell className="capitalize text-sm">{o.source}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => viewDetails(o)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => updateStatus(o.id, "completed")}>
+                          Complete
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => updateStatus(o.id, "cancelled")}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
