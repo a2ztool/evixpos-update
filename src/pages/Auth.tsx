@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { validateWithToast, loginSchema, signupSchema } from "@/lib/validations";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ShieldCheck, Zap, BarChart3, Package, Users, Clock,
@@ -53,8 +54,10 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = validateWithToast(loginSchema, { email, password }, toast.error);
+    if (!parsed) return;
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.email, password: parsed.password });
     if (error) {
       toast.error(error.message);
     } else if (data.user) {
@@ -76,6 +79,8 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = validateWithToast(signupSchema, { name, email, password, referralCode: referralCode || undefined }, toast.error);
+    if (!parsed) return;
     setLoading(true);
 
     // Validate referral code if provided

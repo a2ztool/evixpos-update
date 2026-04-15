@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KeyRound, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { validateWithToast, resetPasswordSchema } from "@/lib/validations";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -32,16 +33,8 @@ const ResetPassword = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+    const parsed = validateWithToast(resetPasswordSchema, { password, confirmPassword }, toast.error);
+    if (!parsed) return;
 
     setLoading(true);
     try {

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { validateWithToast, adminEmailSchema, adminPasswordSchema } from "@/lib/validations";
 import { Loader2 } from "lucide-react";
 
 const AdminSettings = () => {
@@ -14,7 +15,8 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(false);
 
   const updateEmail = async () => {
-    if (!newEmail) return;
+    const parsed = validateWithToast(adminEmailSchema, { email: newEmail }, toast.error);
+    if (!parsed) return;
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     setLoading(false);
@@ -24,10 +26,8 @@ const AdminSettings = () => {
   };
 
   const updatePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+    const parsed = validateWithToast(adminPasswordSchema, { password: newPassword }, toast.error);
+    if (!parsed) return;
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setLoading(false);
