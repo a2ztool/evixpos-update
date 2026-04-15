@@ -14,8 +14,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Search, Download, Moon, Sun, Globe, LogOut, Settings, User,
-  Crown, Command, Keyboard,
+  Crown, Command, Keyboard, Smartphone,
 } from "lucide-react";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
