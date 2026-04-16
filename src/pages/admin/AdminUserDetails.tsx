@@ -30,10 +30,10 @@ const planColor = (plan: string) => {
   return "bg-slate-600/20 text-slate-400 border-slate-500/30";
 };
 
-const PLAN_LIMITS: Record<string, { products: number; customers: number }> = {
-  free: { products: 25, customers: 50 },
-  pro: { products: 100, customers: 1000 },
-  business: { products: 500, customers: 5000 },
+const PLAN_LIMITS: Record<string, { products: number; customers: number; stores: number }> = {
+  free: { products: 25, customers: 50, stores: 1 },
+  pro: { products: 100, customers: 1000, stores: 3 },
+  business: { products: 500, customers: 5000, stores: 10 },
 };
 
 const AdminUserDetails = () => {
@@ -131,62 +131,72 @@ const AdminUserDetails = () => {
         </Card>
       )}
 
+      {/* Global Usage (across all stores) */}
+      {(() => {
+        const userPlan = plan_info?.plan || "free";
+        const globalLimits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.free;
+        const globalProducts = stores.reduce((s, st) => s + st.productCount, 0);
+        const globalCustomers = stores.reduce((s, st) => s + st.customerCount, 0);
+        const globalStores = stores.length;
+        const prodPct = Math.min(100, Math.round((globalProducts / globalLimits.products) * 100));
+        const custPct = Math.min(100, Math.round((globalCustomers / globalLimits.customers) * 100));
+        const storePct = Math.min(100, Math.round((globalStores / globalLimits.stores) * 100));
+
+        return (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base">Global Usage ({userPlan} plan)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { label: "Products", current: globalProducts, max: globalLimits.products, pct: prodPct },
+                { label: "Customers", current: globalCustomers, max: globalLimits.customers, pct: custPct },
+                { label: "Stores", current: globalStores, max: globalLimits.stores, pct: storePct },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-400">{item.label} (Global Limit)</span>
+                    <span className="text-slate-300">{item.current}/{item.max}</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${item.pct >= 90 ? "bg-red-500" : item.pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${item.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Store cards */}
       <h2 className="text-lg font-semibold text-white">Stores</h2>
       <div className="grid md:grid-cols-2 gap-4">
-        {stores.map((store) => {
-          const limits = PLAN_LIMITS[store.plan] || PLAN_LIMITS.free;
-          const prodPct = Math.min(100, Math.round((store.productCount / limits.products) * 100));
-          const custPct = Math.min(100, Math.round((store.customerCount / limits.customers) * 100));
-
-          return (
-            <Card key={store.id} className="bg-slate-800 border-slate-700">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white text-base flex items-center gap-2">
-                    <Store className="h-4 w-4 text-slate-400" />
-                    {store.name}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={planColor(store.plan)}>{store.plan}</Badge>
-                    <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/stores/${store.id}`)} className="text-emerald-400 hover:text-emerald-300 h-7 px-2 text-xs">
-                      <Eye className="h-3 w-3 mr-1" /> View
-                    </Button>
-                  </div>
+        {stores.map((store) => (
+          <Card key={store.id} className="bg-slate-800 border-slate-700">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white text-base flex items-center gap-2">
+                  <Store className="h-4 w-4 text-slate-400" />
+                  {store.name}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={planColor(store.plan)}>{store.plan}</Badge>
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/stores/${store.id}`)} className="text-emerald-400 hover:text-emerald-300 h-7 px-2 text-xs">
+                    <Eye className="h-3 w-3 mr-1" /> View
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div><p className="text-lg font-bold text-white">{store.orderCount}</p><p className="text-xs text-slate-400">Orders</p></div>
-                  <div><p className="text-lg font-bold text-white">৳{store.revenue.toLocaleString()}</p><p className="text-xs text-slate-400">Revenue</p></div>
-                  <div><p className="text-lg font-bold text-white">{store.productCount}</p><p className="text-xs text-slate-400">Products</p></div>
-                </div>
-
-                {/* Usage bars */}
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-400">Products</span>
-                      <span className="text-slate-300">{store.productCount}/{limits.products}</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${prodPct >= 90 ? "bg-red-500" : prodPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${prodPct}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-400">Customers</span>
-                      <span className="text-slate-300">{store.customerCount}/{limits.customers}</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${custPct >= 90 ? "bg-red-500" : custPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${custPct}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-3 text-center">
+                <div><p className="text-lg font-bold text-white">{store.orderCount}</p><p className="text-xs text-slate-400">Orders</p></div>
+                <div><p className="text-lg font-bold text-white">৳{store.revenue.toLocaleString()}</p><p className="text-xs text-slate-400">Revenue</p></div>
+                <div><p className="text-lg font-bold text-white">{store.productCount}</p><p className="text-xs text-slate-400">Products</p></div>
+                <div><p className="text-lg font-bold text-white">{store.customerCount}</p><p className="text-xs text-slate-400">Customers</p></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
         {stores.length === 0 && <p className="text-slate-500">No stores.</p>}
       </div>
     </div>
