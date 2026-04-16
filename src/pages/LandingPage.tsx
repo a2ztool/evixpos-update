@@ -1016,9 +1016,10 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("pricing") && <section id="pricing" className="py-10 sm:py-14 relative overflow-hidden">
+      {show("pricing") && <section id="pricing" className="py-12 sm:py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,hsl(var(--primary)/0.08),transparent)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          {/* Header */}
           <AnimSection className="text-center max-w-3xl mx-auto mb-8">
             <Badge variant="outline" className="mb-4 text-primary border-primary/30 px-3 py-1.5">
               <CreditCard className="h-3 w-3 mr-1.5" /> {get("pricing_badge", "Pricing")}
@@ -1026,51 +1027,187 @@ const LandingPage = () => {
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
               {get("pricing_title", "Plans That Scale With You")}
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free with online or offline. Upgrade when you're ready. No hidden fees.")}</p>
+            <p className="text-muted-foreground text-lg leading-relaxed">{get("pricing_subtitle", "Start free. Upgrade when you're ready. No hidden fees.")}</p>
           </AnimSection>
-          <AnimSection delay={0.1} className="flex justify-center mb-8">
+
+          {/* Currency Toggle */}
+          <AnimSection delay={0.1} className="flex justify-center mb-6">
             <div className="inline-flex bg-card rounded-xl border border-border/50 p-1 shadow-sm">
               {CURRENCIES.map((c) => (
                 <button key={c.key} onClick={() => setCurrency(c.key)} className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${currency === c.key ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>{c.symbol} {c.label}</button>
               ))}
             </div>
           </AnimSection>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+          {/* Volume Slider */}
+          <AnimSection delay={0.15} className="max-w-lg mx-auto mb-6">
+            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" /> Customer Volume
+                </span>
+                <motion.span
+                  key={selectedVolume}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-xl font-black text-primary"
+                >
+                  {formatVolume(selectedVolume)}
+                </motion.span>
+              </div>
+              <Slider
+                value={volumeIndex}
+                onValueChange={setVolumeIndex}
+                min={0}
+                max={VOLUME_STEPS.length - 1}
+                step={1}
+                className="my-3"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l) => (
+                  <span key={l}>{l}</span>
+                ))}
+              </div>
+            </div>
+          </AnimSection>
+
+          {/* Monthly / Yearly Toggle */}
+          <AnimSection delay={0.2} className="flex justify-center items-center gap-3 mb-10">
+            <div className="inline-flex bg-card rounded-xl border border-border/50 p-1 shadow-sm">
+              <button onClick={() => setYearly(false)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${!yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>Monthly</button>
+              <button onClick={() => setYearly(true)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>Yearly</button>
+            </div>
+            {yearly && (
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-bold">
+                  <Sparkles className="h-3 w-3 mr-1" /> Save 20%
+                </Badge>
+              </motion.div>
+            )}
+          </AnimSection>
+
+          {/* Plan Cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
             {[
-              { name: "Free", key: "free", highlight: false },
-              { name: "Pro", key: "pro", highlight: true },
-              { name: "Business", key: "business", highlight: false },
+              {
+                name: "Free", key: "free", icon: Zap, tagline: "Forever free",
+                gradient: "from-muted/50 to-muted/20",
+                stores: "1", products: "25", customers: "50",
+                features: PLAN_FEATURES_LIST.free,
+              },
+              {
+                name: "Pro", key: "pro", icon: Crown, tagline: "Best for growing businesses",
+                popular: true, gradient: "from-primary/10 to-primary/5",
+                stores: "3", products: "100", customers: formatVolume(selectedVolume),
+                features: PLAN_FEATURES_LIST.pro,
+              },
+              {
+                name: "Business", key: "business", icon: Shield, tagline: "For scaling teams",
+                bestValue: true, gradient: "from-orange-500/10 to-orange-500/5",
+                stores: "10", products: "500", customers: formatVolume(selectedVolume),
+                features: PLAN_FEATURES_LIST.business,
+              },
+              {
+                name: "Custom", key: "custom", icon: Star, tagline: "For large businesses",
+                gradient: "from-violet-500/10 to-violet-500/5",
+                stores: "Unlimited", products: "Unlimited", customers: "Unlimited",
+                features: ["Everything in Business", "Custom Integrations", "Dedicated Account Manager", "SLA Guarantee"],
+              },
             ].map((plan, idx) => {
-              const price = get(`plan_${plan.key}_price_${currency.toLowerCase()}`, get(`plan_${plan.key}_price`, "0"));
-              const features = get(`plan_${plan.key}_features`, "").split("|").filter(Boolean);
+              const price = getLandingPrice(plan.key);
+              const origPrice = getOriginalPrice(plan.key);
+              const isPro = plan.key === "pro";
+              const isBiz = plan.key === "business";
               return (
-                <AnimItem key={plan.name} delay={idx * 0.12}>
-                  <Card className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl group h-full ${plan.highlight ? "border-primary shadow-xl shadow-primary/10 scale-[1.02] lg:scale-105" : "border-border/50 hover:-translate-y-1"}`}>
-                    {plan.highlight && (
-                      <>
-                        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary/40" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-                      </>
-                    )}
-                    <CardContent className="p-6 sm:p-8 relative">
-                      {plan.highlight && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4 border border-primary/20">
-                          <Star className="h-3 w-3 fill-current" /> {get("pricing_popular_badge", "Most Popular")}
+                <AnimItem key={plan.key} delay={idx * 0.1}>
+                  <Card className={`relative overflow-hidden transition-all duration-500 hover:shadow-2xl group h-full ${
+                    isPro ? "border-primary/60 shadow-xl shadow-primary/10 ring-1 ring-primary/20" :
+                    isBiz ? "border-orange-400/40 shadow-lg" :
+                    "border-border/50 hover:-translate-y-1"
+                  }`}>
+                    {/* Top accent */}
+                    {isPro && <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary/40" />}
+                    {isBiz && <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-red-400" />}
+                    <div className={`absolute inset-0 bg-gradient-to-b ${plan.gradient} pointer-events-none`} />
+
+                    <CardContent className="p-6 relative flex flex-col h-full">
+                      {/* Badges */}
+                      {isPro && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3 border border-primary/20 w-fit">
+                          <Star className="h-3 w-3 fill-current" /> POPULAR
                         </div>
                       )}
-                      <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                      <div className="flex items-baseline gap-1 mb-1">
-                        <span className="text-4xl sm:text-5xl font-black">{curSymbol}{price}</span>
-                        <span className="text-muted-foreground text-sm">/{plan.key === "free" ? "forever" : "month"}</span>
+                      {isBiz && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 text-xs font-bold mb-3 border border-orange-500/20 w-fit">
+                          <Award className="h-3 w-3" /> BEST VALUE
+                        </div>
+                      )}
+
+                      {/* Plan name & limits */}
+                      <h3 className="text-lg font-bold mb-0.5">{plan.name}</h3>
+                      <p className="text-xs text-muted-foreground mb-3">{plan.tagline}</p>
+
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4 flex-wrap">
+                        <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {plan.stores} stores</span>
+                        <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {plan.customers}</span>
+                        <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {plan.products} products</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mb-6">{currency !== "BDT" && `≈ ৳${get(`plan_${plan.key}_price_bdt`, get(`plan_${plan.key}_price`, "0"))}/mo`}</div>
-                      <ul className="space-y-3 mb-6">
-                        {features.map((f) => (
-                          <li key={f} className="flex items-center gap-2.5 text-sm"><CheckCircle2 className="h-4 w-4 text-primary shrink-0" />{f}</li>
+
+                      {/* Pricing */}
+                      {plan.key === "free" ? (
+                        <div className="mb-5">
+                          <span className="text-3xl font-black text-foreground">Free</span>
+                          <span className="text-sm text-muted-foreground ml-1">/forever</span>
+                        </div>
+                      ) : plan.key === "custom" ? (
+                        <div className="mb-5">
+                          <span className="text-3xl font-black text-violet-600">Custom</span>
+                          <p className="text-xs text-muted-foreground mt-1">Contact for pricing</p>
+                        </div>
+                      ) : (
+                        <div className="mb-5">
+                          {origPrice && (
+                            <span className="text-sm text-muted-foreground line-through mr-2">
+                              {CUR_SYMBOLS[currency]}{origPrice}
+                            </span>
+                          )}
+                          <motion.span
+                            key={`${plan.key}-${selectedVolume}-${currency}-${yearly}`}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`text-3xl font-black ${isPro ? "text-primary" : "text-orange-600"}`}
+                          >
+                            {CUR_SYMBOLS[currency]}{price}
+                          </motion.span>
+                          <span className="text-sm text-muted-foreground">/{yearly ? "yr" : "mo"}</span>
+                          {yearly && (
+                            <div className="mt-1">
+                              <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 text-[10px]">20% OFF</Badge>
+                            </div>
+                          )}
+                          <p className="text-[11px] text-muted-foreground mt-1">Valid: {yearly ? "365" : "30"} days</p>
+                        </div>
+                      )}
+
+                      {/* Features */}
+                      <ul className="space-y-2 mb-6 flex-1">
+                        {plan.features.slice(0, 6).map((f) => (
+                          <li key={f} className="flex items-center gap-2 text-sm">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="text-muted-foreground">{f}</span>
+                          </li>
                         ))}
                       </ul>
-                      <Button className={`w-full h-11 font-semibold ${plan.highlight ? "shadow-lg shadow-primary/25" : ""}`} variant={plan.highlight ? "default" : "outline"} size="lg" onClick={() => navigate("/auth")}>
-                        {plan.key === "free" ? get("pricing_free_cta", "Start Free") : get("pricing_paid_cta", "Upgrade Now")} <ArrowRight className="h-4 w-4 ml-1" />
+
+                      {/* CTA */}
+                      <Button
+                        className={`w-full h-11 font-semibold ${isPro ? "shadow-lg shadow-primary/25" : ""}`}
+                        variant={isPro ? "default" : plan.key === "custom" ? "outline" : "outline"}
+                        size="lg"
+                        onClick={() => handlePricingCTA(plan.key)}
+                      >
+                        {plan.key === "free" ? "Start Free" : plan.key === "custom" ? "Contact Sales" : loggedInUser ? "Upgrade Now" : "Get Started"}
+                        <ArrowRight className="h-4 w-4 ml-1" />
                       </Button>
                     </CardContent>
                   </Card>
