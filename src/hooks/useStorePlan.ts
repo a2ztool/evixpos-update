@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
-
+import { type VolumeStep } from "@/lib/planConfig";
 export type FeatureKey =
   | "pos"
   | "integrations"
@@ -63,6 +63,7 @@ export const useStorePlan = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string | null>(null);
+  const [volume, setVolume] = useState<VolumeStep | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
