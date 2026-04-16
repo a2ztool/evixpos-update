@@ -117,6 +117,7 @@ const MyPlan = () => {
   const plan = rawPlan ?? "free";
   const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const { getPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
   const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
