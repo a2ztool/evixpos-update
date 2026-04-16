@@ -37,11 +37,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // /admin (index) is the login page — always render without checking admin
-  const isLoginPage = location.pathname === "/admin" || location.pathname === "/admin/";
-
   useEffect(() => {
-    if (isLoginPage) { setIsAdmin(false); return; }
     const checkAdmin = async () => {
       if (!session?.user) { setIsAdmin(false); return; }
       const { data } = await supabase
@@ -53,11 +49,11 @@ const AdminLayout = () => {
       setIsAdmin(!!data);
     };
     if (!authLoading) checkAdmin();
-  }, [session, authLoading, isLoginPage]);
+  }, [session, authLoading]);
 
   // Fetch pending payment count & unread chats
   useEffect(() => {
-    if (isLoginPage || !isAdmin) return;
+    if (!isAdmin) return;
     const fetchPending = async () => {
       try {
         const data = await adminCall("get_plan_payments");
@@ -77,9 +73,6 @@ const AdminLayout = () => {
     return () => clearInterval(interval);
   }, [isAdmin, isLoginPage]);
 
-  // Login page — just render the Outlet (AdminLogin)
-  if (isLoginPage) return <Outlet />;
-
   if (authLoading || isAdmin === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -88,11 +81,11 @@ const AdminLayout = () => {
     );
   }
 
-  if (!session || !isAdmin) return <Navigate to="/admin" replace />;
+  if (!session || !isAdmin) return <Navigate to="/sanjoy" replace />;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/admin");
+    navigate("/sanjoy");
   };
 
   return (

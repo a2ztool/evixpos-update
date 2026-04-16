@@ -199,9 +199,12 @@ const App = () => {
             <Route path="/offline/profit-loss" element={<P perm="reports.view"><OfflineProfitLoss /></P>} />
             <Route path="/offline/staff-performance" element={<P perm="reports.view"><StaffPerformance /></P>} />
 
+            {/* Admin login at /sanjoy */}
+            <Route path="/sanjoy" element={<AdminLogin />} />
+
             {/* Admin Panel — completely separate */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminLogin />} />
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="stores" element={<AdminStores />} />
