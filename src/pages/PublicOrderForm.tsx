@@ -295,6 +295,13 @@ const PublicOrderForm = () => {
         }
       }
 
+      // Notify store owner of new order form order
+      try {
+        const { notifyOrderFormOrder } = await import("@/lib/notificationTriggers");
+        const currency = businessSettings?.default_currency || "BDT";
+        await notifyOrderFormOrder(form.user_id, customerName || "Customer", `${currency} ${totalAmount.toFixed(2)}`);
+      } catch {}
+
       setSubmitted(true);
       toast.success("Order placed successfully!");
     } catch (err: any) {

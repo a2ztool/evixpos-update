@@ -218,7 +218,14 @@ const SupportPage = () => {
       if (!error) { toast.success("Ticket updated"); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Update failed");
     } else {
       const { error } = await supabase.from("support_tickets").insert(payload);
-      if (!error) { toast.success(`Ticket ${ticketId} created successfully!`); setSheetOpen(false); resetForm(); fetchTickets(); } else toast.error("Create failed");
+      if (!error) {
+        toast.success(`Ticket ${ticketId} created successfully!`);
+        try {
+          const { notifyAdminsNewTicket } = await import("@/lib/notificationTriggers");
+          await notifyAdminsNewTicket(ticketId, form.subject, user.email || undefined);
+        } catch {}
+        setSheetOpen(false); resetForm(); fetchTickets();
+      } else toast.error("Create failed");
     }
   };
 

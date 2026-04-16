@@ -169,6 +169,10 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
       }
       setSubmitted(true);
       toast.success("Payment submitted! Admin-কে notify করা হয়েছে। শীঘ্রই আপনার plan activate হবে।");
+      try {
+        const { notifyAdminsPlanPayment } = await import("@/lib/notificationTriggers");
+        await notifyAdminsPlanPayment(planKey, `${currency} ${amount}`, user.email || undefined);
+      } catch {}
     } catch (err: any) {
       toast.error(err.message || "Failed to submit payment");
     } finally {
