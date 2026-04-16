@@ -79,7 +79,7 @@ const AdminUserDetails = () => {
       {/* Global Usage (across all stores) */}
       {(() => {
         const userPlan = resolvedPlan;
-        const globalLimits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.free;
+        const globalLimits = getAdminLimits(userPlan, plan_info?.volume ?? null);
         const globalProducts = stores.reduce((s, st) => s + st.productCount, 0);
         const globalCustomers = stores.reduce((s, st) => s + st.customerCount, 0);
         const globalStores = stores.length;
