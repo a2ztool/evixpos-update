@@ -256,6 +256,7 @@ const LandingPage = () => {
   const [yearly, setYearly] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const { getPriceINR: dynamicGetPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
 
   const renderPolicyContent = (text: string) => {
     if (!text) return <p>Content coming soon.</p>;
