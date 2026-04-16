@@ -174,21 +174,23 @@ const Auth = () => {
 
       {/* ── Left: Visual Hub Section ── */}
       <div className="hidden lg:flex lg:w-[52%] relative items-center justify-center p-8">
-        <div className="relative flex flex-col items-center animate-fade-in">
+        <div className="relative flex flex-col items-center justify-center animate-fade-in w-full">
           {/* Title */}
-          <h1 className="text-3xl font-bold tracking-tight text-center mb-1.5 leading-tight">
-            Run Your Entire Business.
-            <br />
-            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              One Platform.
-            </span>
-          </h1>
-          <p className="text-muted-foreground text-sm mb-10 text-center max-w-sm">
-            Manage orders, customers, payments & automation — all in one POS.
-          </p>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold tracking-tight leading-tight">
+              Run Your Entire Business.
+              <br />
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                One Platform.
+              </span>
+            </h1>
+            <p className="text-muted-foreground text-sm mt-2 max-w-sm mx-auto">
+              Manage orders, customers, payments & automation — all in one POS.
+            </p>
+          </div>
 
           {/* Central Hub with Orbit — circle-centered layout */}
-          <div className="relative w-[420px] h-[420px]">
+          <div className="relative w-[420px] h-[420px] mx-auto">
             {/* Orbit rings — centered on logo */}
             <div className="absolute inset-[35px] rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
             <div className="absolute inset-[60px] rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
@@ -228,18 +230,19 @@ const Auth = () => {
             })}
           </div>
 
-          {/* Bottom stats — premium compact */}
-          <div className="flex gap-4 mt-8">
+          {/* Bottom stats — 4 cards, compact, centered */}
+          <div className="flex gap-3 mt-8 justify-center">
             {[
-              { value: "10K+", label: "Users" },
-              { value: "50K+", label: "Orders/Day" },
+              { value: "5K+", label: "Users" },
+              { value: "20K+", label: "Orders/Day" },
               { value: "99.9%", label: "Uptime" },
+              { value: "500+", label: "Stores" },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="bg-card/70 backdrop-blur-md border border-border/30 rounded-2xl px-6 py-3 text-center hover:bg-card/90 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-default group"
+                className="bg-card/70 backdrop-blur-md border border-border/30 rounded-[5px] px-5 py-2.5 text-center hover:bg-card/90 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-default group"
               >
-                <p className="text-lg font-bold text-primary group-hover:scale-105 transition-transform">{stat.value}</p>
+                <p className="text-base font-bold text-primary group-hover:scale-105 transition-transform">{stat.value}</p>
                 <p className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">{stat.label}</p>
               </div>
             ))}
