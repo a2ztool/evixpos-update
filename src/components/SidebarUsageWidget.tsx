@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
+import { type VolumeStep } from "@/lib/planConfig";
 import { Button } from "@/components/ui/button";
 import { Zap, ExternalLink, Store } from "lucide-react";
 import {
@@ -12,7 +13,7 @@ import {
 interface Props {
   navigate: (path: string) => void;
   plan: string;
-  volume?: number | null;
+  volume?: VolumeStep | null;
 }
 
 const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
