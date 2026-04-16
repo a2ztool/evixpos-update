@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getPlanLimits, formatVolume, type VolumeStep } from "@/lib/planConfig";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,10 +40,9 @@ const planColor = (plan: string) => {
   return "bg-slate-600/20 text-slate-400 border-slate-500/30";
 };
 
-const PLAN_LIMITS: Record<string, { products: number; customers: number; stores: number }> = {
-  free: { products: 25, customers: 50, stores: 1 },
-  pro: { products: 100, customers: 1000, stores: 3 },
-  business: { products: 500, customers: 5000, stores: 10 },
+const getAdminLimits = (plan: string, volume: number | null) => {
+  const limits = getPlanLimits(plan, (volume ?? 500) as VolumeStep);
+  return { products: limits.maxProducts, customers: limits.maxCustomers, stores: limits.maxStores };
 };
 
 const AdminUserDetails = () => {
