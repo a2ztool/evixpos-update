@@ -84,7 +84,7 @@ interface ReceiptData {
   storeName: string;
 }
 
-type PaymentMode = "none" | "discount" | "extra" | "due";
+type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
