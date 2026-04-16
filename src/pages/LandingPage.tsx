@@ -1103,7 +1103,7 @@ const LandingPage = () => {
               {
                 name: "Business", key: "business", icon: Shield, tagline: "For scaling teams",
                 bestValue: true, gradient: "from-orange-500/10 to-orange-500/5",
-                stores: "10", products: "500", customers: formatVolume(selectedVolume),
+                stores: "10", products: "500", customers: formatVolume(Math.max(selectedVolume, 1000)),
                 features: PLAN_FEATURES_LIST.business,
               },
               {
