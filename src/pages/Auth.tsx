@@ -176,35 +176,36 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-[52%] relative items-center justify-center p-8">
         <div className="relative flex flex-col items-center animate-fade-in">
           {/* Title */}
-          <h1 className="text-3xl font-bold tracking-tight text-center mb-2">
-            Your Business,{" "}
+          <h1 className="text-3xl font-bold tracking-tight text-center mb-1.5 leading-tight">
+            Run Your Entire Business.
+            <br />
             <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Unified.
+              One Platform.
             </span>
           </h1>
-          <p className="text-muted-foreground text-sm mb-10 text-center max-w-xs">
-            Everything you need to run, grow, and scale — in one platform.
+          <p className="text-muted-foreground text-sm mb-10 text-center max-w-sm">
+            Manage orders, customers, payments & automation — all in one POS.
           </p>
 
-          {/* Central Hub with Orbit */}
-          <div className="relative w-[400px] h-[400px]">
-            {/* Orbit rings */}
-            <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
-            <div className="absolute inset-6 rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
-            <div className="absolute inset-12 rounded-full border border-dashed border-primary/6" />
+          {/* Central Hub with Orbit — circle-centered layout */}
+          <div className="relative w-[420px] h-[420px]">
+            {/* Orbit rings — centered on logo */}
+            <div className="absolute inset-[35px] rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
+            <div className="absolute inset-[60px] rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
+            <div className="absolute inset-[85px] rounded-full border border-dashed border-primary/6" />
 
             {/* Soft glow behind logo */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-primary/10 blur-[60px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full bg-primary/10 blur-[60px]" />
 
-            {/* Center logo */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 shadow-2xl shadow-primary/15 flex items-center justify-center z-20">
-              <img src={evixIcon} alt="EvixPOS" className="h-20 w-20 rounded-full" />
+            {/* Center logo — circle center */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-card/90 backdrop-blur-xl border border-border/50 shadow-2xl shadow-primary/15 flex items-center justify-center z-20">
+              <img src={evixIcon} alt="EvixPOS" className="h-[80px] w-[80px] rounded-full" />
             </div>
 
-            {/* Orbit feature items */}
+            {/* Orbit feature items — positioned relative to circle center */}
             {orbitFeatures.map((feature, i) => {
               const angle = (360 / orbitFeatures.length) * i - 90;
-              const radius = 175;
+              const radius = 190;
               const x = Math.cos((angle * Math.PI) / 180) * radius;
               const y = Math.sin((angle * Math.PI) / 180) * radius;
               return (
@@ -227,8 +228,8 @@ const Auth = () => {
             })}
           </div>
 
-          {/* Bottom stats */}
-          <div className="flex gap-5 mt-10">
+          {/* Bottom stats — premium compact */}
+          <div className="flex gap-4 mt-8">
             {[
               { value: "10K+", label: "Users" },
               { value: "50K+", label: "Orders/Day" },
@@ -236,10 +237,10 @@ const Auth = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="bg-card/60 backdrop-blur-sm border border-border/30 rounded-xl px-5 py-2.5 text-center hover:bg-card/80 hover:border-border/50 transition-all duration-300 cursor-default"
+                className="bg-card/70 backdrop-blur-md border border-border/30 rounded-2xl px-6 py-3 text-center hover:bg-card/90 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-default group"
               >
-                <p className="text-base font-bold text-primary">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+                <p className="text-lg font-bold text-primary group-hover:scale-105 transition-transform">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">{stat.label}</p>
               </div>
             ))}
           </div>
