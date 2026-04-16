@@ -75,7 +75,60 @@ const AdminUserDetails = () => {
 
   return (
     <div className="space-y-6">
-...
+      {/* Plan Info Card */}
+      {plan_info && (
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-400" /> Subscription Plan
+              </CardTitle>
+              <Badge variant="outline" className={planColor(resolvedPlan)}>
+                {resolvedPlan.toUpperCase()}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-slate-400 text-xs">Plan</p>
+                <p className="text-white font-semibold">{resolvedPlan.charAt(0).toUpperCase() + resolvedPlan.slice(1)}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Volume</p>
+                <p className="text-white font-semibold">{plan_info.volume ? formatVolume(plan_info.volume) : "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Price</p>
+                <p className="text-white font-semibold">{plan_info.price ? `₹${plan_info.price}` : "Free"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Billing</p>
+                <p className="text-white font-semibold capitalize">{plan_info.billing_type || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Status</p>
+                <Badge variant="outline" className={plan_info.plan_status === "active" ? "text-emerald-400 border-emerald-500/30" : "text-red-400 border-red-500/30"}>
+                  {plan_info.plan_status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Expiry</p>
+                <p className="text-white font-semibold">
+                  {plan_info.end_date ? new Date(plan_info.end_date).toLocaleDateString() : "Lifetime"}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Days Left</p>
+                <p className={`font-semibold ${(plan_info.remaining_days ?? 999) <= 7 ? "text-amber-400" : "text-white"}`}>
+                  {plan_info.remaining_days !== null ? `${plan_info.remaining_days} days` : "∞"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Global Usage (across all stores) */}
       {(() => {
         const userPlan = resolvedPlan;
