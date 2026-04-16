@@ -116,8 +116,10 @@ const AdminUsers = () => {
                     <p className="text-sm font-semibold text-white truncate">{u.name || "—"}</p>
                     <p className="text-xs text-slate-400 truncate mt-0.5">{u.email}</p>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
-                </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
+                    <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
+                  </div>
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" />{u.storeCount}</span>
@@ -171,8 +173,9 @@ const AdminUsers = () => {
                     <TableHead className="text-slate-400">Name</TableHead>
                     <TableHead className="text-slate-400">Email</TableHead>
                     <TableHead className="text-slate-400">Stores</TableHead>
-                    <TableHead className="text-slate-400">Joined</TableHead>
-                    <TableHead className="text-slate-400">Actions</TableHead>
+                     <TableHead className="text-slate-400">Joined</TableHead>
+                     <TableHead className="text-slate-400">Plan Status</TableHead>
+                     <TableHead className="text-slate-400">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -191,6 +194,20 @@ const AdminUsers = () => {
                             </CollapsibleTrigger>
                           </TableCell>
                           <TableCell className="text-slate-400 text-sm">{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-slate-700 text-white border-slate-600">
+                                  {u.start_date && <p className="text-xs">Start: {new Date(u.start_date).toLocaleDateString()}</p>}
+                                  {u.end_date && <p className="text-xs">Expiry: {new Date(u.end_date).toLocaleDateString()}</p>}
+                                  {!u.end_date && u.plan === "free" && <p className="text-xs">Free plan — no expiry</p>}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className={planColor(u.plan)}>{u.plan}</Badge>
