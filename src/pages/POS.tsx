@@ -436,32 +436,60 @@ const POS = () => {
       await Promise.all(stockUpdates);
 
       if (!hasDue) {
-        // Fully paid
+        // Fully paid — split or single
+        if (splitMode && splitEntries.length > 1) {
+          await Promise.all(splitEntries.filter(e => e.amount > 0).map(e =>
+            supabase.from("transactions").insert({
+              user_id: effectiveUserId!,
+              store_id: activeStore?.id,
+              type: "income" as const,
+              amount: e.amount,
+              category: "sale",
+              note: `POS Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              is_paid: true,
+            })
+          ));
+        } else {
+          await supabase.from("transactions").insert({
+            user_id: effectiveUserId!,
+            store_id: activeStore?.id,
+            type: "income" as const,
+            amount: total,
+            category: "sale",
+            note: `POS Order #${order.id.slice(0, 8)}`,
+            is_paid: true,
+          });
+        }
+      } else if (effectivePaid > 0) {
+        // Partial paid
+        if (splitMode && splitEntries.length > 1) {
+          await Promise.all(splitEntries.filter(e => e.amount > 0).map(e =>
+            supabase.from("transactions").insert({
+              user_id: effectiveUserId!,
+              store_id: activeStore?.id,
+              type: "income" as const,
+              amount: e.amount,
+              category: "sale",
+              note: `POS Partial Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              is_paid: true,
+            })
+          ));
+        } else {
+          await supabase.from("transactions").insert({
+            user_id: effectiveUserId!,
+            store_id: activeStore?.id,
+            type: "income" as const,
+            amount: effectivePaid,
+            category: "sale",
+            note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
+            is_paid: true,
+          });
+        }
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
-          amount: total,
-          category: "sale",
-          note: `POS Order #${order.id.slice(0, 8)}`,
-          is_paid: true,
-        });
-      } else if (isPartial && paidAmountFinal > 0) {
-        // Partial: record paid portion as income, due portion as unpaid
-        await supabase.from("transactions").insert({
-          user_id: effectiveUserId!,
-          store_id: activeStore?.id,
-          type: "income" as const,
-          amount: paidAmountFinal,
-          category: "sale",
-          note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
-          is_paid: true,
-        });
-        await supabase.from("transactions").insert({
-          user_id: effectiveUserId!,
-          store_id: activeStore?.id,
-          type: "income" as const,
-          amount: dueAmount,
+          amount: effectiveDue,
           category: "sale",
           note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
           is_paid: false,
@@ -483,7 +511,7 @@ const POS = () => {
 
       // ─── Sync Customer Credits (due orders) ───
       if (hasDue && customerId && activeStore?.id) {
-        const creditAmount = dueAmount;
+        const creditAmount = effectiveDue;
         const { data: existingCredit } = await supabase
           .from("customer_credits")
           .select("id, total_due")
