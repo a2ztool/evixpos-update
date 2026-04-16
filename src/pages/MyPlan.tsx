@@ -353,7 +353,7 @@ const MyPlan = () => {
               <div>
                 <span className="text-muted-foreground">CUSTOMERS</span>
                 <span className="ml-2 font-semibold text-primary">
-                  {plan === "free" ? "50" : plan === "pro" ? formatVolume(volume[0]) : formatVolume(volume[0] * 2)}
+                  {plan === "free" ? "50" : formatVolume(subVolume ?? selectedVolume)}
                 </span>
               </div>
               <div>
@@ -452,25 +452,25 @@ const MyPlan = () => {
             </Button>
           ))}
           <span className="text-xs text-muted-foreground self-center ml-2">
-            (1 USD = {RATES.BDT} BDT = {RATES.INR} INR)
+            (1 INR ≈ {(RATES_FROM_INR.BDT).toFixed(2)} BDT ≈ {(RATES_FROM_INR.USD).toFixed(4)} USD)
           </span>
         </div>
 
         {/* Volume Slider */}
         <Card className="border-border/50">
           <CardContent className="pt-6">
-            <h3 className="text-center font-semibold text-lg">Select Customers & Orders Volume</h3>
+            <h3 className="text-center font-semibold text-lg">Select Customer Volume</h3>
             <p className="text-center text-sm text-muted-foreground mb-6">Price adjusts automatically based on volume</p>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Customers & Orders / mo</span>
+              <span className="text-sm text-muted-foreground">Customers / mo</span>
               <span className="text-xl font-bold text-primary">{volumeLabel}</span>
             </div>
             <Slider
-              value={volume}
-              onValueChange={setVolume}
-              min={500}
-              max={100000}
-              step={500}
+              value={volumeIndex}
+              onValueChange={setVolumeIndex}
+              min={0}
+              max={VOLUME_STEPS.length - 1}
+              step={1}
               className="my-4"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -535,19 +535,19 @@ const MyPlan = () => {
                   {/* Limits */}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {p.stores} stores</span>
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {p.customers === "volume" ? formatVolume(p.key === "pro" ? volume[0] : volume[0] * 2) : p.customers}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)}</span>
                     <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {p.products}</span>
                   </div>
 
                   {(() => {
-                    const dynamicUSD = getDynamicUSD(p);
-                    if (dynamicUSD === 0) return (
+                    const priceINR = getINRPrice(p.key);
+                    if (priceINR === 0) return (
                       <div className="my-4">
                         <span className={`text-3xl font-bold ${p.color}`}>Free</span>
                         <p className="text-sm text-muted-foreground">{p.tagline}</p>
                       </div>
                     );
-                    if (dynamicUSD === null) return (
+                    if (priceINR === null) return (
                       <div className="my-4">
                         <span className={`text-3xl font-bold ${p.color}`}>Custom</span>
                         <p className="text-sm text-muted-foreground">{p.tagline}</p>
@@ -555,13 +555,13 @@ const MyPlan = () => {
                     );
                     return (
                       <div className="my-4">
-                        {hasDiscount(dynamicUSD) && (
+                        {hasDiscount(p.key) && (
                           <span className="text-sm text-muted-foreground line-through mr-2">
-                            {originalPrice(dynamicUSD)}
+                            {originalPrice(p.key)}
                           </span>
                         )}
                         <span className={`text-3xl font-bold ${p.color}`}>
-                          {formatPrice(dynamicUSD)}
+                          {formatPrice(p.key)}
                         </span>
                         <span className="text-sm text-muted-foreground">/mo</span>
                         {(yearly || discountPct > 0 || discountFixed > 0) && (
@@ -586,13 +586,13 @@ const MyPlan = () => {
                     <Button variant="outline" className="w-full" disabled>
                       Current Plan
                     </Button>
-                  ) : getDynamicUSD(p) === null ? (
+                  ) : getINRPrice(p.key) === null ? (
                     <Button variant="outline" className="w-full">
                       Contact Sales
                     </Button>
                   ) : (
                     <Button className={`w-full bg-gradient-to-r ${p.gradient} text-white`} onClick={() => handleUpgrade(p)}>
-                      {getDynamicUSD(p) === 0 ? "Get Started" : "Upgrade Now"}
+                      {getINRPrice(p.key) === 0 ? "Get Started" : "Upgrade Now"}
                     </Button>
                   )}
                 </CardContent>
@@ -652,7 +652,7 @@ const MyPlan = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {getCompareFeatures(volume[0]).map((f, i) => {
+                  {getCompareFeatures(selectedVolume).map((f, i) => {
                     const Icon = f.icon;
                     return (
                       <tr key={f.name} className={`border-b border-border/50 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
