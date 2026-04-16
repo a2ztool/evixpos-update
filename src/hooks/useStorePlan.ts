@@ -166,6 +166,7 @@ export const useStorePlan = () => {
 
   const hasFeature = useCallback(
     (feature: FeatureKey): boolean => {
+      if (!plan) return false; // still loading
       const features = PLAN_FEATURES[plan] ?? PLAN_FEATURES.free;
       return features.includes(feature);
     },
