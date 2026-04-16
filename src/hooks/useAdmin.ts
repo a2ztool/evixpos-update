@@ -12,7 +12,7 @@ export const useAdmin = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Session expired. Please login again.");
-        window.location.href = "/admin";
+window.location.href = "/sanjoy";
         return null;
       }
 
@@ -26,7 +26,7 @@ export const useAdmin = () => {
           const { error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) {
             toast.error("Session expired. Please login again.");
-            window.location.href = "/admin";
+            window.location.href = "/sanjoy";
             return null;
           }
           // Retry once after refresh

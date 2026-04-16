@@ -38,8 +38,10 @@ const AdminLogin = () => {
         return;
       }
 
+      // Wait for session to be fully set before redirecting
+      await new Promise(resolve => setTimeout(resolve, 300));
       toast.success("Welcome, Admin!");
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Login failed");
     } finally {
