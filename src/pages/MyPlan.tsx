@@ -20,9 +20,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
+import {
+  VOLUME_STEPS, PRO_PRICES_INR, BUSINESS_PRICES_INR,
+  formatVolume, getPriceINR, snapToVolumeStep,
+  type VolumeStep,
+} from "@/lib/planConfig";
 
-// Exchange rates: 1 USD
-const RATES = { USD: 1, BDT: 122, INR: 84 };
+// Exchange rates from INR
+const RATES_FROM_INR = { INR: 1, USD: 1 / 84, BDT: 122 / 84 };
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BDT: "৳", INR: "₹" };
 
 interface PlanDef {
@@ -30,62 +35,51 @@ interface PlanDef {
   key: string;
   color: string;
   gradient: string;
-  baseUSD: number | null;
-  ratePerUnit: number; // USD per 1K volume above base
-  baseVolume: number; // included volume
   icon: any;
   tagline: string;
   popular?: boolean;
   stores: number | string;
-  customers: number | string;
   products: number | string;
   features: string[];
 }
-
-const formatVolume = (v: number) => {
-  if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`;
-  return v.toLocaleString();
-};
-
 
 const PLANS: PlanDef[] = [
   {
     name: "Free", key: "free",
     color: "text-primary", gradient: "from-primary to-primary/80",
-    baseUSD: 0, ratePerUnit: 0, baseVolume: 500,
     icon: Zap, tagline: "Lifetime",
-    stores: 1, customers: 50, products: 25,
+    stores: 1, products: 25,
     features: ["POS", "Orders", "Due Book", "Reports", "Subscriptions", "POS Terminal", "Customer CRM", "Expense Tracking"],
   },
   {
     name: "Pro", key: "pro",
     color: "text-emerald-600", gradient: "from-emerald-500 to-emerald-600",
-    baseUSD: 2.49, ratePerUnit: 0.50, baseVolume: 500,
     icon: Crown, tagline: "Best for growing businesses", popular: true,
-    stores: 3, customers: "volume", products: 100,
+    stores: 3, products: 100,
     features: ["Everything in Free", "WhatsApp Integration", "Bot Automation", "WooCommerce Sync", "Email Notifications", "Ad Cost Tracking", "Advanced Reports", "Priority Support"],
   },
   {
     name: "Business", key: "business",
     color: "text-orange-600", gradient: "from-orange-500 to-red-500",
-    baseUSD: 4.99, ratePerUnit: 0.30, baseVolume: 500,
     icon: Shield, tagline: "For scaling teams",
-    stores: 10, customers: "volume", products: 500,
+    stores: 10, products: 500,
     features: ["Everything in Pro", "Multi-store Management", "Team Roles & Access", "API Access", "Custom Branding", "Bulk Operations", "Dedicated Support", "Data Export"],
   },
   {
     name: "Custom", key: "custom",
     color: "text-violet-600", gradient: "from-violet-500 to-purple-600",
-    baseUSD: null, ratePerUnit: 0, baseVolume: 0,
     icon: Star, tagline: "For large businesses",
-    stores: "Unlimited", customers: "Unlimited", products: "Unlimited",
+    stores: "Unlimited", products: "Unlimited",
     features: ["Everything in Business", "Custom Integrations", "Dedicated Account Manager", "SLA Guarantee", "On-premise Option", "White Label", "Custom Development", "Training & Onboarding"],
   },
 ];
 
-const getCompareFeatures = (vol: number) => [
+/** Volume step index for slider (0-6) */
+const VOLUME_INDEX_MAP = VOLUME_STEPS.map((v, i) => ({ value: i, volume: v }));
+
+const getCompareFeatures = (vol: VolumeStep) => [
   { name: "Stores", icon: Store, free: "1", pro: "3", business: "10" },
-  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(vol * 2) },
+  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(vol) },
   { name: "Products", icon: Package, free: "25", pro: "100", business: "500" },
   { name: "POS", icon: Monitor, free: true, pro: true, business: true },
   { name: "Orders", icon: ShoppingCart, free: true, pro: true, business: true },
@@ -118,24 +112,25 @@ interface PlatformCoupon {
 }
 
 const MyPlan = () => {
-  const { plan: rawPlan, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
+  const { plan: rawPlan, volume: subVolume, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
   const plan = rawPlan ?? "free";
-  const usage = useUsageLimits(plan);
+  const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
+  const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
-  const [currency, setCurrency] = useState<"USD" | "BDT" | "INR">("BDT");
+  const [currency, setCurrency] = useState<"USD" | "BDT" | "INR">("INR");
   const [yearly, setYearly] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [activeBanner, setActiveBanner] = useState<PlatformCoupon | null>(null);
-  const [volume, setVolume] = useState([1000]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number }>({ open: false, planKey: "", planName: "", amount: 0 });
 
   const handleUpgrade = (planDef: PlanDef) => {
-    const dynamicUSD = getDynamicUSD(planDef);
-    if (dynamicUSD === null || dynamicUSD === 0) return;
-    let price = dynamicUSD * RATES[currency];
+    const priceINR = getINRPrice(planDef.key);
+    if (priceINR === null || priceINR === 0) return;
+    let price = priceINR * RATES_FROM_INR[currency];
     if (yearly) price = price * 0.8;
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
@@ -154,7 +149,6 @@ const MyPlan = () => {
       .then(({ data }) => {
         if (data) {
           const coupon = data as unknown as PlatformCoupon;
-          // Check expiry
           if (!coupon.expires_at || new Date(coupon.expires_at) >= new Date()) {
             setActiveBanner(coupon);
           }
@@ -182,33 +176,34 @@ const MyPlan = () => {
   const discountPct = appliedCoupon?.discount_type === "percentage" ? appliedCoupon.discount_value : 0;
   const discountFixed = appliedCoupon?.discount_type === "fixed" ? appliedCoupon.discount_value : 0;
 
-  /** Calculate dynamic USD price based on volume */
-  const getDynamicUSD = (p: PlanDef): number | null => {
-    if (p.baseUSD === null) return null;
-    if (p.baseUSD === 0) return 0;
-    const extraVolume = Math.max(0, volume[0] - p.baseVolume);
-    const extraCost = (extraVolume / 1000) * p.ratePerUnit;
-    return p.baseUSD + extraCost;
+  /** Get INR price for a plan based on selected volume */
+  const getINRPrice = (planKey: string): number | null => {
+    if (planKey === "free") return 0;
+    if (planKey === "custom") return null;
+    return getPriceINR(planKey, selectedVolume);
   };
 
-  const formatPrice = (usd: number | null) => {
-    if (usd === null) return "Custom";
-    if (usd === 0) return "Free";
-    let price = usd * RATES[currency];
+  const formatPrice = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null) return "Custom";
+    if (inr === 0) return "Free";
+    let price = inr * RATES_FROM_INR[currency];
     if (yearly) price = price * 0.8;
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
-    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 1)}`;
+    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
   };
 
-  const originalPrice = (usd: number | null) => {
-    if (usd === null || usd === 0) return null;
-    const price = usd * RATES[currency];
-    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 1)}`;
+  const originalPrice = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null || inr === 0) return null;
+    const price = inr * RATES_FROM_INR[currency];
+    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
   };
 
-  const hasDiscount = (usd: number | null) => {
-    if (usd === null || usd === 0) return false;
+  const hasDiscount = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null || inr === 0) return false;
     return yearly || discountPct > 0 || discountFixed > 0;
   };
 
@@ -249,11 +244,7 @@ const MyPlan = () => {
     toast.success(`Coupon ${code} applied! ${label} on your next purchase.`);
   };
 
-  const volumeLabel = useMemo(() => {
-    const v = volume[0];
-    if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`;
-    return v.toString();
-  }, [volume]);
+  const volumeLabel = useMemo(() => formatVolume(selectedVolume), [selectedVolume]);
 
   return (
     <DashboardLayout>
@@ -362,7 +353,7 @@ const MyPlan = () => {
               <div>
                 <span className="text-muted-foreground">CUSTOMERS</span>
                 <span className="ml-2 font-semibold text-primary">
-                  {plan === "free" ? "50" : plan === "pro" ? formatVolume(volume[0]) : formatVolume(volume[0] * 2)}
+                  {plan === "free" ? "50" : formatVolume(subVolume ?? selectedVolume)}
                 </span>
               </div>
               <div>
@@ -461,25 +452,25 @@ const MyPlan = () => {
             </Button>
           ))}
           <span className="text-xs text-muted-foreground self-center ml-2">
-            (1 USD = {RATES.BDT} BDT = {RATES.INR} INR)
+            (1 INR ≈ {(RATES_FROM_INR.BDT).toFixed(2)} BDT ≈ {(RATES_FROM_INR.USD).toFixed(4)} USD)
           </span>
         </div>
 
         {/* Volume Slider */}
         <Card className="border-border/50">
           <CardContent className="pt-6">
-            <h3 className="text-center font-semibold text-lg">Select Customers & Orders Volume</h3>
+            <h3 className="text-center font-semibold text-lg">Select Customer Volume</h3>
             <p className="text-center text-sm text-muted-foreground mb-6">Price adjusts automatically based on volume</p>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Customers & Orders / mo</span>
+              <span className="text-sm text-muted-foreground">Customers / mo</span>
               <span className="text-xl font-bold text-primary">{volumeLabel}</span>
             </div>
             <Slider
-              value={volume}
-              onValueChange={setVolume}
-              min={500}
-              max={100000}
-              step={500}
+              value={volumeIndex}
+              onValueChange={setVolumeIndex}
+              min={0}
+              max={VOLUME_STEPS.length - 1}
+              step={1}
               className="my-4"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -544,19 +535,19 @@ const MyPlan = () => {
                   {/* Limits */}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {p.stores} stores</span>
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {p.customers === "volume" ? formatVolume(p.key === "pro" ? volume[0] : volume[0] * 2) : p.customers}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)}</span>
                     <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {p.products}</span>
                   </div>
 
                   {(() => {
-                    const dynamicUSD = getDynamicUSD(p);
-                    if (dynamicUSD === 0) return (
+                    const priceINR = getINRPrice(p.key);
+                    if (priceINR === 0) return (
                       <div className="my-4">
                         <span className={`text-3xl font-bold ${p.color}`}>Free</span>
                         <p className="text-sm text-muted-foreground">{p.tagline}</p>
                       </div>
                     );
-                    if (dynamicUSD === null) return (
+                    if (priceINR === null) return (
                       <div className="my-4">
                         <span className={`text-3xl font-bold ${p.color}`}>Custom</span>
                         <p className="text-sm text-muted-foreground">{p.tagline}</p>
@@ -564,13 +555,13 @@ const MyPlan = () => {
                     );
                     return (
                       <div className="my-4">
-                        {hasDiscount(dynamicUSD) && (
+                        {hasDiscount(p.key) && (
                           <span className="text-sm text-muted-foreground line-through mr-2">
-                            {originalPrice(dynamicUSD)}
+                            {originalPrice(p.key)}
                           </span>
                         )}
                         <span className={`text-3xl font-bold ${p.color}`}>
-                          {formatPrice(dynamicUSD)}
+                          {formatPrice(p.key)}
                         </span>
                         <span className="text-sm text-muted-foreground">/mo</span>
                         {(yearly || discountPct > 0 || discountFixed > 0) && (
@@ -595,13 +586,13 @@ const MyPlan = () => {
                     <Button variant="outline" className="w-full" disabled>
                       Current Plan
                     </Button>
-                  ) : getDynamicUSD(p) === null ? (
+                  ) : getINRPrice(p.key) === null ? (
                     <Button variant="outline" className="w-full">
                       Contact Sales
                     </Button>
                   ) : (
                     <Button className={`w-full bg-gradient-to-r ${p.gradient} text-white`} onClick={() => handleUpgrade(p)}>
-                      {getDynamicUSD(p) === 0 ? "Get Started" : "Upgrade Now"}
+                      {getINRPrice(p.key) === 0 ? "Get Started" : "Upgrade Now"}
                     </Button>
                   )}
                 </CardContent>
@@ -661,7 +652,7 @@ const MyPlan = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {getCompareFeatures(volume[0]).map((f, i) => {
+                  {getCompareFeatures(selectedVolume).map((f, i) => {
                     const Icon = f.icon;
                     return (
                       <tr key={f.name} className={`border-b border-border/50 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>

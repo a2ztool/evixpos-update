@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
-
+import { type VolumeStep } from "@/lib/planConfig";
 export type FeatureKey =
   | "pos"
   | "integrations"
@@ -63,6 +63,7 @@ export const useStorePlan = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string | null>(null);
+  const [volume, setVolume] = useState<VolumeStep | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
@@ -94,10 +95,22 @@ export const useStorePlan = () => {
       .limit(1)
       .maybeSingle();
 
-    // Check if expired
+    // Separate query for volume (column may not exist yet)
+    const { data: volData } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", planUserId)
+      .eq("status", "active")
+      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const isExpired = data?.end_date && new Date(data.end_date) < new Date();
     const newPlan = isExpired ? "free" : (data?.plan ?? "free");
     setEndDate(isExpired ? null : (data?.end_date || null));
+    setVolume(isExpired ? null : ((volData as any)?.volume ?? null));
     
     setPlan(prev => {
       if (isRealtimeUpdate && initialLoadDone.current && prev !== newPlan) {
@@ -174,5 +187,5 @@ export const useStorePlan = () => {
   );
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
 
-  return { plan, loading, hasFeature, endDate, remainingDays };
+  return { plan, volume, loading, hasFeature, endDate, remainingDays };
 };
