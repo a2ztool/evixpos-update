@@ -32,7 +32,7 @@ export const PLAN_FEATURES: Record<string, string[]> = {
 export const useSubscription = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
-  const [plan, setPlan] = useState<string>("free");
+  const [plan, setPlan] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -99,7 +99,7 @@ export const useSubscription = () => {
     };
   }, [planUserId, fetchPlan]);
 
-  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+  const limits = PLAN_LIMITS[plan ?? "free"] ?? PLAN_LIMITS.free;
 
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const isExpiringSoon = remainingDays !== null && remainingDays <= 7 && remainingDays > 0;

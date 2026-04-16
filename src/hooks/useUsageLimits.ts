@@ -21,7 +21,7 @@ export interface UsageLimits {
   refetch: () => void;
 }
 
-export const useUsageLimits = (plan: string): UsageLimits => {
+export const useUsageLimits = (plan: string | null): UsageLimits => {
   const { user } = useAuth();
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);

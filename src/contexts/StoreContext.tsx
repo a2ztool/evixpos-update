@@ -53,10 +53,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState("free");
+  const [plan, setPlan] = useState<string | null>(null);
   const [isStaffStore, setIsStaffStore] = useState(false);
 
-  const storeLimit = PLAN_STORE_LIMITS[plan] ?? 1;
+  const storeLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
   const canCreateStore = !isStaffStore && stores.length < storeLimit;
 
   const fetchStores = useCallback(async () => {
@@ -113,15 +113,21 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     supabase
       .from("subscriptions")
-      .select("plan, status")
+      .select("plan, status, end_date")
       .eq("user_id", user.id)
       .eq("status", "active")
       .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setPlan(data.plan);
+        if (data) {
+          const isExpired = data.end_date && new Date(data.end_date) < new Date();
+          setPlan(isExpired ? "free" : data.plan);
+        } else {
+          setPlan("free");
+        }
       });
   }, [user]);
 
