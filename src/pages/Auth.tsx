@@ -161,51 +161,53 @@ const Auth = () => {
   };
 
   const floatingBadges = [
-    { label: "Inventory Tracking", icon: Package, color: "text-red-500", position: "top-[18%] left-[8%]" },
-    { label: "Smart Analytics", icon: BarChart3, color: "text-orange-500", position: "top-[32%] right-[12%]" },
-    { label: "Multi-Store Support", icon: Users, color: "text-blue-500", position: "top-[55%] right-[8%]" },
-    { label: "Real-time Reports", icon: Clock, color: "text-yellow-500", position: "bottom-[28%] left-[5%]" },
-    { label: "Secure & Fast", icon: ShieldCheck, color: "text-green-500", position: "bottom-[15%] right-[15%]" },
+    { label: "Inventory", icon: Package, position: "top-[10%] left-[10%]", delay: "0s" },
+    { label: "Analytics", icon: BarChart3, position: "top-[5%] right-[15%]", delay: "0.5s" },
+    { label: "Multi-Store", icon: Store, position: "bottom-[10%] left-[5%]", delay: "1s" },
+    { label: "Payments", icon: CreditCard, position: "bottom-[5%] right-[10%]", delay: "1.5s" },
+    { label: "Automation", icon: Bot, position: "top-[50%] right-[2%]", delay: "2s" },
   ];
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Left Side - Branding */}
+      {/* Left Side - Premium Hero */}
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-[#016B61]/5 via-background to-[#016B61]/10 flex-col justify-center items-center p-12">
-        {/* Decorative circles */}
-        <div className="absolute top-20 left-20 w-72 h-72 rounded-full bg-[#016B61]/5 blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full bg-[#016B61]/8 blur-3xl" />
+        {/* Background blur blobs */}
+        <div className="absolute top-10 left-10 w-80 h-80 rounded-full bg-[#016B61]/8 blur-[100px]" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#016B61]/6 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#016B61]/3 blur-[150px]" />
 
-        <div className="relative z-10 max-w-lg text-center">
-          {/* Brand Logo */}
-          <div className="inline-flex items-center gap-3 mb-10">
-            <img src={brandLogo} alt="EvixPOS" className="h-12 w-auto" />
-          </div>
-
+        <div className="relative z-10 max-w-lg text-center flex flex-col items-center">
+          {/* Headline */}
           <h1 className="text-4xl font-bold tracking-tight leading-tight mb-4">
-            Stop losing time to<br />
-            <span className="text-[#016B61]">messy operations.</span>
+            Run Your Entire Business.<br />
+            <span className="text-[#016B61]">One Platform.</span>
           </h1>
-          <p className="text-muted-foreground text-lg mb-12">
-            All-in-one POS solution for modern businesses. Manage orders, inventory, and customers effortlessly.
+          <p className="text-muted-foreground text-lg mb-14 max-w-md">
+            Manage orders, customers, payments & automation — all in one POS.
           </p>
 
-          {/* Floating Badges */}
-          <div className="relative h-80 w-full">
-            {/* Central illustration placeholder */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-[#016B61]/10 to-[#016B61]/5 border-2 border-[#016B61]/10 flex items-center justify-center">
-              <Zap className="h-16 w-16 text-[#016B61]/30" />
+          {/* Central badge with floating badges */}
+          <div className="relative w-80 h-80">
+            {/* Glowing ring */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full bg-gradient-to-br from-[#016B61]/20 to-[#016B61]/5 border border-[#016B61]/20 shadow-[0_0_60px_rgba(1,107,97,0.15)] animate-[spin_20s_linear_infinite]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 rounded-full border border-[#016B61]/10 animate-[spin_30s_linear_infinite_reverse]" />
+            
+            {/* Logo center */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-xl flex items-center justify-center z-10">
+              <img src={evixIcon} alt="EvixPOS" className="h-20 w-20 rounded-full" />
             </div>
 
+            {/* Floating badges */}
             {floatingBadges.map((badge, i) => (
               <div
                 key={i}
-                className={`absolute ${badge.position} animate-fade-in`}
-                style={{ animationDelay: `${i * 150}ms` }}
+                className={`absolute ${badge.position} z-10`}
+                style={{ animation: `floatBadge 3s ease-in-out ${badge.delay} infinite` }}
               >
-                <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 cursor-default">
-                  <div className={`h-2 w-2 rounded-full ${badge.color.replace("text-", "bg-")}`} />
-                  <span className="text-sm font-medium whitespace-nowrap">{badge.label}</span>
+                <div className="flex items-center gap-2 bg-background/70 backdrop-blur-md border border-border/40 rounded-full px-3.5 py-2 shadow-lg">
+                  <badge.icon className="h-4 w-4 text-[#016B61]" />
+                  <span className="text-xs font-semibold whitespace-nowrap">{badge.label}</span>
                 </div>
               </div>
             ))}
@@ -219,9 +221,9 @@ const Auth = () => {
             { value: "50K+", label: "Orders/Day" },
             { value: "99.9%", label: "Uptime" },
           ].map((stat) => (
-            <div key={stat.label}>
-              <p className="text-2xl font-bold text-[#016B61]">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+            <div key={stat.label} className="bg-background/60 backdrop-blur-sm border border-border/30 rounded-xl px-5 py-3">
+              <p className="text-xl font-bold text-[#016B61]">{stat.value}</p>
+              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
             </div>
           ))}
         </div>
