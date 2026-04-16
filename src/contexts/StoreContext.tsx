@@ -56,7 +56,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [plan, setPlan] = useState<string | null>(null);
   const [isStaffStore, setIsStaffStore] = useState(false);
 
-  const storeLimit = PLAN_STORE_LIMITS[plan] ?? 1;
+  const storeLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
   const canCreateStore = !isStaffStore && stores.length < storeLimit;
 
   const fetchStores = useCallback(async () => {
