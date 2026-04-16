@@ -245,7 +245,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
             <div className="flex justify-between items-center">
               <div>
                 <p className="font-semibold">{planName} Plan</p>
-                <p className="text-xs text-muted-foreground">Monthly subscription</p>
+                <p className="text-xs text-muted-foreground">{billingType === "yearly" ? "Yearly" : "Monthly"} subscription</p>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-primary">{currencySymbol}{amount.toFixed(2)}</p>
