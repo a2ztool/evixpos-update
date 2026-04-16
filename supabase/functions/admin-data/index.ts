@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (action === "get_users") {
       const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       const { data: allStores } = await supabase.from("stores").select("id, name, user_id");
-      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status, start_date, end_date").eq("status", "active").is("customer_id", null);
+      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status, start_date, end_date").eq("status", "active").in("plan", ["free", "pro", "business"]);
 
       const storeMap: Record<string, any[]> = {};
       (allStores || []).forEach((s: any) => {
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         .select("plan, start_date, end_date")
         .eq("user_id", userId)
         .eq("status", "active")
-        .is("customer_id", null)
+        .in("plan", ["free", "pro", "business"])
         .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle();
