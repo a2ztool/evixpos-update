@@ -343,8 +343,12 @@ const MyPlan = () => {
                 <Check className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="font-semibold text-base">{currentPlan} Plan Active</p>
-                <p className="text-sm text-muted-foreground">Lifetime access</p>
+                <p className="font-semibold text-base">{currentPlan} Plan {isExpiringSoon ? "⚠️" : "✅"}</p>
+                <p className="text-sm text-muted-foreground">
+                  {endDate
+                    ? `${remainingDays} days remaining · Expires ${new Date(endDate).toLocaleDateString()}`
+                    : plan === "free" ? "Lifetime access" : "Active"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-6 text-sm">
