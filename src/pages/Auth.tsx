@@ -161,53 +161,58 @@ const Auth = () => {
   };
 
   const floatingBadges = [
-    { label: "Inventory", icon: Package, position: "top-[10%] left-[10%]", delay: "0s" },
-    { label: "Analytics", icon: BarChart3, position: "top-[5%] right-[15%]", delay: "0.5s" },
-    { label: "Multi-Store", icon: Store, position: "bottom-[10%] left-[5%]", delay: "1s" },
-    { label: "Payments", icon: CreditCard, position: "bottom-[5%] right-[10%]", delay: "1.5s" },
-    { label: "Automation", icon: Bot, position: "top-[50%] right-[2%]", delay: "2s" },
+    { label: "Inventory", icon: Package, position: "top-[8%] left-[12%]", delay: "0s" },
+    { label: "Analytics", icon: BarChart3, position: "top-[5%] right-[12%]", delay: "0.4s" },
+    { label: "Multi-Store", icon: Store, position: "bottom-[8%] left-[8%]", delay: "0.8s" },
+    { label: "Payments", icon: CreditCard, position: "bottom-[5%] right-[8%]", delay: "1.2s" },
+    { label: "Automation", icon: Bot, position: "top-[45%] right-[1%]", delay: "1.6s" },
+    { label: "Customers", icon: Users, position: "top-[45%] left-[1%]", delay: "2s" },
+    { label: "Reports", icon: BarChart3, position: "top-[20%] left-[2%]", delay: "2.4s" },
+    { label: "Subscription", icon: CreditCard, position: "bottom-[20%] right-[2%]", delay: "2.8s" },
+    { label: "POS", icon: Zap, position: "bottom-[20%] left-[2%]", delay: "3.2s" },
   ];
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left Side - Premium Hero */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-[#016B61]/5 via-background to-[#016B61]/10 flex-col justify-center items-center p-12">
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-[#016B61]/5 via-background to-[#016B61]/10 flex-col justify-center items-center py-8 px-12">
         {/* Background blur blobs */}
         <div className="absolute top-10 left-10 w-80 h-80 rounded-full bg-[#016B61]/8 blur-[100px]" />
         <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#016B61]/6 blur-[120px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#016B61]/3 blur-[150px]" />
 
-        <div className="relative z-10 max-w-lg text-center flex flex-col items-center">
+        <div className="relative z-10 max-w-lg text-center flex flex-col items-center animate-fade-in">
           {/* Headline */}
-          <h1 className="text-4xl font-bold tracking-tight leading-tight mb-4">
+          <h1 className="text-4xl font-bold tracking-tight leading-tight mb-3">
             Run Your Entire Business.<br />
             <span className="text-[#016B61]">One Platform.</span>
           </h1>
-          <p className="text-muted-foreground text-lg mb-14 max-w-md">
+          <p className="text-muted-foreground text-lg mb-10 max-w-md">
             Manage orders, customers, payments & automation — all in one POS.
           </p>
 
           {/* Central badge with floating badges */}
-          <div className="relative w-80 h-80">
-            {/* Glowing ring */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full bg-gradient-to-br from-[#016B61]/20 to-[#016B61]/5 border border-[#016B61]/20 shadow-[0_0_60px_rgba(1,107,97,0.15)] animate-[spin_20s_linear_infinite]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 rounded-full border border-[#016B61]/10 animate-[spin_30s_linear_infinite_reverse]" />
+          <div className="relative w-[340px] h-[340px]">
+            {/* Glowing pulse ring */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-[#016B61]/20 to-[#016B61]/5 border border-[#016B61]/20 shadow-[0_0_60px_rgba(1,107,97,0.15)] animate-[spin_20s_linear_infinite]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full border border-[#016B61]/10 animate-[spin_30s_linear_infinite_reverse]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] rounded-full border border-[#016B61]/5 animate-[pulse_4s_ease-in-out_infinite]" />
             
             {/* Logo center */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-xl flex items-center justify-center z-10">
-              <img src={evixIcon} alt="EvixPOS" className="h-20 w-20 rounded-full" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-2xl shadow-[#016B61]/20 flex items-center justify-center z-10">
+              <img src={evixIcon} alt="EvixPOS" className="h-28 w-28 rounded-full" />
             </div>
 
             {/* Floating badges */}
             {floatingBadges.map((badge, i) => (
               <div
                 key={i}
-                className={`absolute ${badge.position} z-10`}
-                style={{ animation: `floatBadge 3s ease-in-out ${badge.delay} infinite` }}
+                className={`absolute ${badge.position} z-10 animate-fade-in`}
+                style={{ animation: `floatBadge 3.5s ease-in-out ${badge.delay} infinite, fade-in 0.5s ease-out ${badge.delay} both` }}
               >
-                <div className="flex items-center gap-2 bg-background/70 backdrop-blur-md border border-border/40 rounded-full px-3.5 py-2 shadow-lg">
-                  <badge.icon className="h-4 w-4 text-[#016B61]" />
-                  <span className="text-xs font-semibold whitespace-nowrap">{badge.label}</span>
+                <div className="flex items-center gap-1.5 bg-background/70 backdrop-blur-md border border-border/40 rounded-full px-3 py-1.5 shadow-lg hover:shadow-xl hover:bg-background/90 transition-all duration-300">
+                  <badge.icon className="h-3.5 w-3.5 text-[#016B61]" />
+                  <span className="text-[11px] font-semibold whitespace-nowrap">{badge.label}</span>
                 </div>
               </div>
             ))}
@@ -215,20 +220,19 @@ const Auth = () => {
         </div>
 
         {/* Bottom stats */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-12 text-center">
+        <div className="relative z-10 mt-8 flex justify-center gap-6 text-center">
           {[
             { value: "10K+", label: "Active Users" },
             { value: "50K+", label: "Orders/Day" },
             { value: "99.9%", label: "Uptime" },
           ].map((stat) => (
-            <div key={stat.label} className="bg-background/60 backdrop-blur-sm border border-border/30 rounded-xl px-5 py-3">
-              <p className="text-xl font-bold text-[#016B61]">{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+            <div key={stat.label} className="bg-background/60 backdrop-blur-sm border border-border/30 rounded-lg px-4 py-2.5 hover:bg-background/80 hover:border-border/50 hover:shadow-md transition-all duration-300 cursor-default">
+              <p className="text-lg font-bold text-[#016B61]">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
             </div>
           ))}
         </div>
       </div>
-
       {/* Right Side - Auth Form */}
       <div className="w-full lg:w-[45%] flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md animate-fade-in">
