@@ -812,6 +812,7 @@ const MyPlan = () => {
         amount={paymentModal.amount}
         currency={currency}
         currencySymbol={CURRENCY_SYMBOLS[currency]}
+        billingType={paymentModal.billingType}
       />
     </DashboardLayout>
   );
