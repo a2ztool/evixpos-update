@@ -4,7 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye } from "lucide-react";
+import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface StoreWithStats {
   id: string;
@@ -21,6 +21,7 @@ interface StoreWithStats {
 interface UserDetails {
   profile: { id: string; name: string; email: string; created_at: string };
   stores: StoreWithStats[];
+  plan_info?: { plan: string; start_date: string | null; end_date: string | null; remaining_days: number | null; plan_status: string };
 }
 
 const planColor = (plan: string) => {
@@ -55,7 +56,7 @@ const AdminUserDetails = () => {
 
   if (!data) return <p className="text-slate-400">User not found.</p>;
 
-  const { profile, stores } = data;
+  const { profile, stores, plan_info } = data;
   const totalRevenue = stores.reduce((s, st) => s + st.revenue, 0);
 
   return (
@@ -89,6 +90,46 @@ const AdminUserDetails = () => {
           </Card>
         ))}
       </div>
+
+      {/* Plan Info Card */}
+      {plan_info && (
+        <Card className="bg-slate-800 border-slate-700">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-slate-400" /> Plan Details
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-slate-700/40 rounded-lg p-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Plan</p>
+                <p className="text-sm font-bold text-white capitalize">{plan_info.plan}</p>
+              </div>
+              <div className="bg-slate-700/40 rounded-lg p-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Status</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  {plan_info.plan_status === "active" && <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />}
+                  {plan_info.plan_status === "expired" && <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
+                  {plan_info.plan_status === "lifetime" && <CheckCircle className="h-3.5 w-3.5 text-slate-400" />}
+                  <span className={`text-sm font-semibold capitalize ${plan_info.plan_status === "active" ? "text-emerald-400" : plan_info.plan_status === "expired" ? "text-red-400" : "text-slate-300"}`}>
+                    {plan_info.plan_status}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-slate-700/40 rounded-lg p-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Expiry Date</p>
+                <p className="text-sm font-bold text-white">
+                  {plan_info.end_date ? new Date(plan_info.end_date).toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+              <div className="bg-slate-700/40 rounded-lg p-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Remaining</p>
+                <p className={`text-sm font-bold ${plan_info.remaining_days !== null && plan_info.remaining_days <= 7 ? "text-amber-400" : "text-white"}`}>
+                  {plan_info.remaining_days !== null ? `${plan_info.remaining_days} days` : "∞"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Store cards */}
       <h2 className="text-lg font-semibold text-white">Stores</h2>
