@@ -120,7 +120,13 @@ const Auth = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      if (error.message?.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else if (error.status === 429) {
+        toast.error("Too many attempts. Please wait a moment and try again.");
+      } else {
+        toast.error(error.message || "Signup failed. Please try again.");
+      }
       setLoading(false);
       return;
     }
