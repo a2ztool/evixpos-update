@@ -266,24 +266,18 @@ export const notifyStaffTask = (receiverUserId: string, senderName: string, task
   });
 
 // ══════════════════════════════════════════════════════
-// Admin notifications — fan out to all admin users
+// Admin notifications — fan out to all admin users via edge function
+// (uses service role to bypass RLS on user_roles)
 // ══════════════════════════════════════════════════════
-let cachedAdminIds: string[] | null = null;
-let adminIdsCachedAt = 0;
-const ADMIN_CACHE_MS = 60_000;
-
-const fetchAdminIds = async (): Promise<string[]> => {
-  const now = Date.now();
-  if (cachedAdminIds && now - adminIdsCachedAt < ADMIN_CACHE_MS) return cachedAdminIds;
-  const { data } = await supabase.from("user_roles").select("user_id").eq("role", "admin" as any);
-  cachedAdminIds = (data || []).map((r: any) => r.user_id);
-  adminIdsCachedAt = now;
-  return cachedAdminIds;
-};
-
 const notifyAllAdmins = async (type: NotificationType, message: string) => {
-  const ids = await fetchAdminIds();
-  await Promise.all(ids.map((id) => triggerNotification({ userId: id, type, message })));
+  // Dedup at sender side too (5s window) so spam-clicks don't re-broadcast
+  const dedupKey = `admins:${type}:${message}`;
+  if (isDuplicate(dedupKey)) return;
+  try {
+    await supabase.functions.invoke("notify-admins", { body: { type, message } });
+  } catch (e) {
+    console.error("notify-admins failed:", e);
+  }
 };
 
 export const notifyAdminsNewTicket = (ticketId: string, subject: string, fromName?: string) =>
