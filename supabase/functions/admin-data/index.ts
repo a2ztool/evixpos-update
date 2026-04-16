@@ -492,6 +492,123 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── UPDATE PLANS CONFIG ───
+    if (action === "update_plans_config") {
+      const { configs: configRows } = params;
+      for (const row of configRows) {
+        const { id, plan_type, volume, price_inr, store_limit, product_limit, customer_limit } = row;
+        if (id) {
+          await supabase.from("plans_config").update({
+            price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+          }).eq("id", id);
+        } else {
+          await supabase.from("plans_config").upsert({
+            plan_type, volume, price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+          }, { onConflict: "plan_type,volume" });
+        }
+      }
+      return json({ success: true });
+    }
+
+    // ─── GET PLAN STATS ───
+    if (action === "get_plan_stats") {
+      const { data: subs } = await supabase.from("subscriptions").select("plan, status, end_date").eq("status", "active").in("plan", ["free", "pro", "business"]);
+      const { count: totalUsers } = await supabase.from("profiles").select("id", { count: "exact", head: true });
+      const breakdown = { free: 0, pro: 0, business: 0 };
+      let expiringSoon = 0;
+      const now = new Date();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      (subs || []).forEach((s: any) => {
+        if (s.plan in breakdown) breakdown[s.plan as keyof typeof breakdown]++;
+        if (s.end_date) {
+          const diff = new Date(s.end_date).getTime() - now.getTime();
+          if (diff > 0 && diff < sevenDays) expiringSoon++;
+        }
+      });
+      return json({ totalUsers: totalUsers || 0, planBreakdown: breakdown, expiringSoon, totalRevenue: 0 });
+    }
+
+    // ─── GET PLAN HISTORY ───
+    if (action === "get_plan_history") {
+      const { data } = await supabase.from("plan_history").select("*").order("created_at", { ascending: false }).limit(100);
+      // Enrich with user emails
+      const userIds = [...new Set((data || []).map((h: any) => h.user_id))];
+      const { data: profiles } = userIds.length > 0 ? await supabase.from("profiles").select("id, email").in("id", userIds) : { data: [] };
+      const emailMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { emailMap[p.id] = p.email; });
+      const result = (data || []).map((h: any) => ({ ...h, user_email: emailMap[h.user_id] || "" }));
+      return json(result);
+    }
+
+    // ─── ADMIN CHANGE USER PLAN (with history) ───
+    if (action === "admin_change_user_plan") {
+      const { user_id: targetUserId, new_plan, new_volume, billing_type, price, duration_days, notes } = params;
+      // Get current plan
+      const { data: currentSub } = await supabase.from("subscriptions").select("plan, volume")
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]).maybeSingle();
+      const oldPlan = currentSub?.plan || "free";
+      const oldVolume = (currentSub as any)?.volume || null;
+
+      // Deactivate existing
+      await supabase.from("subscriptions").update({ status: "expired" })
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]);
+
+      // Create new
+      const startDate = new Date();
+      const days = new_plan === "free" ? 0 : (billing_type === "yearly" ? 365 : (duration_days || 30));
+      const endDate = new_plan === "free" ? null : new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("subscriptions").insert({
+        user_id: targetUserId, plan: new_plan, status: "active",
+        product_name: `${new_plan.charAt(0).toUpperCase() + new_plan.slice(1)} Plan`,
+        price: price || 0, cost_price: 0, variation: "Admin Changed",
+        start_date: startDate.toISOString(), end_date: endDate, store_id: null,
+        volume: new_volume || null, billing_type: billing_type || "monthly",
+      });
+
+      // Log to plan_history
+      await supabase.from("plan_history").insert({
+        user_id: targetUserId, action: "admin_change",
+        old_plan: oldPlan, new_plan: new_plan,
+        old_volume: oldVolume, new_volume: new_volume || null,
+        changed_by: user.id, notes: notes || `Admin changed plan to ${new_plan}`,
+      });
+
+      // Notify user
+      const planLabel = new_plan.charAt(0).toUpperCase() + new_plan.slice(1);
+      await supabase.from("notifications").insert({
+        user_id: targetUserId, type: "success",
+        message: `🎉 Your plan has been changed to ${planLabel} by admin.`,
+      });
+
+      return json({ success: true });
+    }
+
+    // ─── ADMIN EXTEND USER PLAN ───
+    if (action === "admin_extend_plan") {
+      const { user_id: targetUserId, extend_days, notes } = params;
+      const { data: currentSub } = await supabase.from("subscriptions").select("id, plan, end_date, volume")
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["pro", "business"]).maybeSingle();
+      if (!currentSub) return json({ success: false, error: "No active paid plan found" });
+
+      const currentEnd = currentSub.end_date ? new Date(currentSub.end_date) : new Date();
+      const newEnd = new Date(currentEnd.getTime() + (extend_days || 30) * 24 * 60 * 60 * 1000);
+      await supabase.from("subscriptions").update({ end_date: newEnd.toISOString() }).eq("id", currentSub.id);
+
+      await supabase.from("plan_history").insert({
+        user_id: targetUserId, action: "extend",
+        old_plan: currentSub.plan, new_plan: currentSub.plan,
+        old_volume: (currentSub as any).volume, new_volume: (currentSub as any).volume,
+        changed_by: user.id, notes: notes || `Extended by ${extend_days} days`,
+      });
+
+      await supabase.from("notifications").insert({
+        user_id: targetUserId, type: "success",
+        message: `📅 Your plan has been extended by ${extend_days} days by admin.`,
+      });
+
+      return json({ success: true });
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
