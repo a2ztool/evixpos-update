@@ -361,8 +361,8 @@ const POS = () => {
     // Split payment validation
     if (splitMode) {
       const allocated = splitEntries.reduce((s, e) => s + e.amount, 0);
-      if (Math.abs(allocated - total) > 0.01) {
-        toast.error("Split payment amounts must equal the total");
+      if (allocated > total + 0.01) {
+        toast.error("Split payment total exceeds order total");
         return;
       }
     }
