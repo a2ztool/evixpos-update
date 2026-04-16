@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,47 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingRedirect, setPendingRedirect] = useState(false);
+  const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // If already logged in as admin and pending redirect, go to dashboard
+  useEffect(() => {
+    if (!pendingRedirect || authLoading || !session?.user) return;
+    
+    const verifyAndRedirect = async () => {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (roleData) {
+        navigate("/admin/dashboard", { replace: true });
+      }
+    };
+    verifyAndRedirect();
+  }, [pendingRedirect, session, authLoading, navigate]);
+
+  // Auto-redirect if admin is already logged in
+  useEffect(() => {
+    if (authLoading || !session?.user) return;
+    
+    const checkExisting = async () => {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (roleData) {
+        navigate("/admin/dashboard", { replace: true });
+      }
+    };
+    checkExisting();
+  }, [session, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +79,10 @@ const AdminLogin = () => {
         return;
       }
 
-      // Wait for session to be fully set before redirecting
-      await new Promise(resolve => setTimeout(resolve, 300));
       toast.success("Welcome, Admin!");
-      navigate("/admin/dashboard", { replace: true });
+      // Set pending redirect — the useEffect will handle navigation
+      // once AuthContext has updated its session state
+      setPendingRedirect(true);
     } catch (err: any) {
       toast.error(err.message || "Login failed");
     } finally {
@@ -77,8 +118,8 @@ const AdminLogin = () => {
               required
               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
             />
-            <Button type="submit" disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login as Admin"}
+            <Button type="submit" disabled={loading || pendingRedirect} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+              {loading || pendingRedirect ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login as Admin"}
             </Button>
           </form>
         </CardContent>
