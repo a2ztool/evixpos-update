@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreInfo { id: string; name: string; plan: string; }
 interface UserRow {
   id: string; name: string; email: string; created_at: string;
   plan: string; storeCount: number; stores: StoreInfo[];
+  start_date: string | null; end_date: string | null;
+  remaining_days: number | null; plan_status: string;
 }
 
 const ITEMS_PER_PAGE = 15;
