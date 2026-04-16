@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getPlanLimits, formatVolume, type VolumeStep } from "@/lib/planConfig";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle, Crown } from "lucide-react";
 
 interface StoreWithStats {
   id: string;
@@ -21,7 +22,16 @@ interface StoreWithStats {
 interface UserDetails {
   profile: { id: string; name: string; email: string; created_at: string };
   stores: StoreWithStats[];
-  plan_info?: { plan: string; start_date: string | null; end_date: string | null; remaining_days: number | null; plan_status: string };
+  plan_info?: {
+    plan: string;
+    start_date: string | null;
+    end_date: string | null;
+    remaining_days: number | null;
+    plan_status: string;
+    volume: number | null;
+    price: number | null;
+    billing_type: string | null;
+  };
 }
 
 const planColor = (plan: string) => {
@@ -30,10 +40,9 @@ const planColor = (plan: string) => {
   return "bg-slate-600/20 text-slate-400 border-slate-500/30";
 };
 
-const PLAN_LIMITS: Record<string, { products: number; customers: number; stores: number }> = {
-  free: { products: 25, customers: 50, stores: 1 },
-  pro: { products: 100, customers: 1000, stores: 3 },
-  business: { products: 500, customers: 5000, stores: 10 },
+const getAdminLimits = (plan: string, volume: number | null) => {
+  const limits = getPlanLimits(plan, (volume ?? 500) as VolumeStep);
+  return { products: limits.maxProducts, customers: limits.maxCustomers, stores: limits.maxStores };
 };
 
 const AdminUserDetails = () => {
@@ -66,11 +75,64 @@ const AdminUserDetails = () => {
 
   return (
     <div className="space-y-6">
-...
+      {/* Plan Info Card */}
+      {plan_info && (
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-400" /> Subscription Plan
+              </CardTitle>
+              <Badge variant="outline" className={planColor(resolvedPlan)}>
+                {resolvedPlan.toUpperCase()}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-slate-400 text-xs">Plan</p>
+                <p className="text-white font-semibold">{resolvedPlan.charAt(0).toUpperCase() + resolvedPlan.slice(1)}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Volume</p>
+                <p className="text-white font-semibold">{plan_info.volume ? formatVolume(plan_info.volume) : "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Price</p>
+                <p className="text-white font-semibold">{plan_info.price ? `₹${plan_info.price}` : "Free"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Billing</p>
+                <p className="text-white font-semibold capitalize">{plan_info.billing_type || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Status</p>
+                <Badge variant="outline" className={plan_info.plan_status === "active" ? "text-emerald-400 border-emerald-500/30" : "text-red-400 border-red-500/30"}>
+                  {plan_info.plan_status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Expiry</p>
+                <p className="text-white font-semibold">
+                  {plan_info.end_date ? new Date(plan_info.end_date).toLocaleDateString() : "Lifetime"}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs">Days Left</p>
+                <p className={`font-semibold ${(plan_info.remaining_days ?? 999) <= 7 ? "text-amber-400" : "text-white"}`}>
+                  {plan_info.remaining_days !== null ? `${plan_info.remaining_days} days` : "∞"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Global Usage (across all stores) */}
       {(() => {
         const userPlan = resolvedPlan;
-        const globalLimits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.free;
+        const globalLimits = getAdminLimits(userPlan, plan_info?.volume ?? null);
         const globalProducts = stores.reduce((s, st) => s + st.productCount, 0);
         const globalCustomers = stores.reduce((s, st) => s + st.customerCount, 0);
         const globalStores = stores.length;

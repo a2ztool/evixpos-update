@@ -88,11 +88,17 @@ export const useSubscription = () => {
   const isExpiringSoon = remainingDays !== null && remainingDays <= 7 && remainingDays > 0;
   const isExpired = remainingDays !== null && remainingDays <= 0;
 
-  const upgradeTo = async (newPlan: "free" | "pro" | "business", newVolume?: VolumeStep, price?: number) => {
+  const upgradeTo = async (
+    newPlan: "free" | "pro" | "business",
+    newVolume?: VolumeStep,
+    price?: number,
+    billingType: "monthly" | "yearly" = "monthly"
+  ) => {
     if (!planUserId) return;
     await supabase.from("subscriptions").update({ status: "inactive" } as any).eq("user_id", planUserId).eq("status", "active").in("plan", ["free", "pro", "business"]);
     const startDate = new Date();
-    const newEndDate = newPlan === "free" ? null : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const durationDays = newPlan === "free" ? 0 : billingType === "yearly" ? 365 : 30;
+    const newEndDate = newPlan === "free" ? null : new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
     await supabase.from("subscriptions").insert({
       user_id: planUserId,
       plan: newPlan,
@@ -100,6 +106,7 @@ export const useSubscription = () => {
       end_date: newEndDate,
       ...(newVolume ? { volume: newVolume } : {}),
       ...(price ? { price } : {}),
+      billing_type: billingType,
     } as any);
     setPlan(newPlan);
     setVolume(newVolume ?? null);
