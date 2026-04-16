@@ -120,6 +120,7 @@ const AdminUsers = () => {
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
                     <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
                   </div>
+                </div>
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" />{u.storeCount}</span>
