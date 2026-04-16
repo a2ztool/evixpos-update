@@ -56,7 +56,6 @@ export const useSubscription = () => {
         setVolume((volData as any)?.volume ?? null);
         setEndDate(data.end_date || null);
       }
-      }
     } else {
       setPlan("free");
       setVolume(null);
