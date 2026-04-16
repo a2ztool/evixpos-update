@@ -71,10 +71,14 @@ const POSSplitPayment = ({ total, paymentMethods, onChange, format, symbol }: Pr
 
       <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/50">
         <span>Allocated: {format(allocated)}</span>
-        {Math.abs(remaining) > 0.01 ? (
+        {remaining > 0.01 ? (
+          <Badge variant="outline" className="text-[10px] gap-1 border-orange-400 text-orange-600">
+            {format(remaining)} due
+          </Badge>
+        ) : remaining < -0.01 ? (
           <Badge variant="destructive" className="text-[10px] gap-1">
             <AlertTriangle className="h-3 w-3" />
-            {remaining > 0 ? `${format(remaining)} remaining` : `${format(Math.abs(remaining))} over`}
+            {format(Math.abs(remaining))} over
           </Badge>
         ) : (
           <Badge className="bg-green-500 text-white text-[10px]">Balanced ✓</Badge>
