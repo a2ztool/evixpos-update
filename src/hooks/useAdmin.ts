@@ -26,7 +26,7 @@ window.location.href = "/sanjoy";
           const { error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) {
             toast.error("Session expired. Please login again.");
-            window.location.href = "/admin";
+            window.location.href = "/sanjoy";
             return null;
           }
           // Retry once after refresh
