@@ -17,12 +17,13 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // Find all active platform subscriptions (customer_id IS NULL) that have expired
+    // Find all active platform subscriptions that have expired
     const { data: expiredSubs, error: fetchError } = await supabase
       .from("subscriptions")
-      .select("id, user_id, plan, end_date")
+      .select("id, user_id, plan, end_date, volume")
       .eq("status", "active")
       .is("customer_id", null)
+      .in("plan", ["pro", "business"])
       .not("end_date", "is", null)
       .lte("end_date", now);
 
@@ -35,10 +36,10 @@ Deno.serve(async (req) => {
     }
 
     let processed = 0;
-    const results: { user_id: string; old_plan: string; }[] = [];
+    const results: { user_id: string; old_plan: string }[] = [];
 
     for (const sub of expiredSubs) {
-      // Mark subscription as expired
+      // Mark expired
       const { error: updateError } = await supabase
         .from("subscriptions")
         .update({ status: "expired" })
@@ -49,7 +50,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Send notification to user
+      // Create free plan record so user stays on free
+      await supabase.from("subscriptions").insert({
+        user_id: sub.user_id,
+        plan: "free",
+        status: "active",
+        end_date: null,
+        volume: null,
+        price: 0,
+        billing_type: "monthly",
+      });
+
+      // Notify user
       await supabase.from("notifications").insert({
         user_id: sub.user_id,
         type: "warning",
@@ -60,8 +72,8 @@ Deno.serve(async (req) => {
       processed++;
     }
 
-    return new Response(JSON.stringify({ 
-      message: `Processed ${processed} expired subscriptions`, 
+    return new Response(JSON.stringify({
+      message: `Processed ${processed} expired subscriptions`,
       processed,
       details: results,
     }), {
