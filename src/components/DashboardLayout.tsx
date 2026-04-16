@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Search, Download, Moon, Sun, Globe, LogOut, Settings, User,
+  Search, Moon, Sun, Globe, LogOut, Settings, User,
   Crown, Command, Keyboard, Smartphone,
 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
