@@ -251,6 +251,10 @@ const LandingPage = () => {
   const [videoOpen, setVideoOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [volumeIndex, setVolumeIndex] = useState([2]); // default 5K
+  const [yearly, setYearly] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
+  const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
 
   const renderPolicyContent = (text: string) => {
     if (!text) return <p>Content coming soon.</p>;
