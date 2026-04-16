@@ -10,11 +10,12 @@ import {
   Download, Apple, MonitorSmartphone, Heart, ThumbsUp, Quote,
   Rocket, BarChart, Palette, Settings, AlertTriangle, Lightbulb,
   XCircle, ArrowDown, ChevronRight, Eye, Workflow, Database,
-  Timer, Repeat, FileText, Bot
+  Timer, Repeat, FileText, Bot, Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +23,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import VideoModal from "@/components/VideoModal";
 import LandingChatbot from "@/components/LandingChatbot";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  VOLUME_STEPS, formatVolume, getPriceINR,
+  PLAN_FEATURES_LIST, type VolumeStep,
+} from "@/lib/planConfig";
 
 /* ─── static imports for assets ─── */
 import dashboardPreview from "@/assets/dashboard-preview.jpg";
