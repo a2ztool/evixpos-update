@@ -247,7 +247,7 @@ const Subscriptions = () => {
       cost_price: Number(form.cost_price) || 0,
       notes: form.notes,
       status: "active",
-      plan: "free" as const,
+      plan: "customer" as any,
     };
     if (editId) {
       const { error } = await supabase.from("subscriptions").update(payload).eq("id", editId);
