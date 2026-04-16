@@ -57,7 +57,15 @@ const Auth = () => {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.email, password: parsed.password });
     if (error) {
-      toast.error(error.message);
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password. Please check and try again.");
+      } else if (error.message?.includes("Email not confirmed")) {
+        toast.error("Please verify your email before logging in.");
+      } else if (error.status === 429) {
+        toast.error("Too many login attempts. Please wait a moment and try again.");
+      } else {
+        toast.error(error.message || "Login failed. Please try again.");
+      }
     } else if (data.user) {
       const { data: roleData } = await supabase
         .from("user_roles")
@@ -112,7 +120,13 @@ const Auth = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      if (error.message?.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else if (error.status === 429) {
+        toast.error("Too many attempts. Please wait a moment and try again.");
+      } else {
+        toast.error(error.message || "Signup failed. Please try again.");
+      }
       setLoading(false);
       return;
     }
