@@ -247,3 +247,54 @@ export const notifyTicketReply = (userId: string, ticketId: string) =>
 // Stock
 export const notifyLowStock = (userId: string, productName: string, qty: number) =>
   triggerNotification({ userId, type: "low_stock", message: `Low stock alert: ${productName} (${qty} remaining)` });
+
+// ══════════════════════════════════════════════════════
+// Staff ↔ User messaging / tasks
+// ══════════════════════════════════════════════════════
+export const notifyStaffMessage = (receiverUserId: string, senderName: string, preview: string) =>
+  triggerNotification({
+    userId: receiverUserId,
+    type: "support_reply",
+    message: `💬 ${senderName}: ${preview.slice(0, 80)}${preview.length > 80 ? "…" : ""}`,
+  });
+
+export const notifyStaffTask = (receiverUserId: string, senderName: string, taskTitle: string) =>
+  triggerNotification({
+    userId: receiverUserId,
+    type: "support",
+    message: `📋 New task from ${senderName}: ${taskTitle}`,
+  });
+
+// ══════════════════════════════════════════════════════
+// Admin notifications — fan out to all admin users
+// ══════════════════════════════════════════════════════
+let cachedAdminIds: string[] | null = null;
+let adminIdsCachedAt = 0;
+const ADMIN_CACHE_MS = 60_000;
+
+const fetchAdminIds = async (): Promise<string[]> => {
+  const now = Date.now();
+  if (cachedAdminIds && now - adminIdsCachedAt < ADMIN_CACHE_MS) return cachedAdminIds;
+  const { data } = await supabase.from("user_roles").select("user_id").eq("role", "admin" as any);
+  cachedAdminIds = (data || []).map((r: any) => r.user_id);
+  adminIdsCachedAt = now;
+  return cachedAdminIds;
+};
+
+const notifyAllAdmins = async (type: NotificationType, message: string) => {
+  const ids = await fetchAdminIds();
+  await Promise.all(ids.map((id) => triggerNotification({ userId: id, type, message })));
+};
+
+export const notifyAdminsNewTicket = (ticketId: string, subject: string, fromName?: string) =>
+  notifyAllAdmins("support", `🎫 New support ticket #${ticketId}${fromName ? ` from ${fromName}` : ""}: ${subject.slice(0, 60)}`);
+
+export const notifyAdminsPlanPayment = (plan: string, amount: string, fromName?: string) =>
+  notifyAllAdmins("payment", `💳 New plan payment for ${plan} (${amount})${fromName ? ` from ${fromName}` : ""} — needs review`);
+
+export const notifyAdminsLandingMessage = (visitorName: string, preview: string) =>
+  notifyAllAdmins("info", `💬 New landing chat from ${visitorName}: ${preview.slice(0, 60)}${preview.length > 60 ? "…" : ""}`);
+
+// User-facing: order from public order form
+export const notifyOrderFormOrder = (userId: string, customerName: string, amount: string) =>
+  triggerNotification({ userId, type: "order", message: `🛒 New order form order from ${customerName} — ${amount}` });

@@ -163,6 +163,12 @@ const LandingChatbot = () => {
 
     await supabase.from("chat_sessions").update({ last_message_at: new Date().toISOString(), is_read: false }).eq("id", sid);
 
+    // Notify all admins of new landing chat (only first message in session triggers, dedup handles rest)
+    try {
+      const { notifyAdminsLandingMessage } = await import("@/lib/notificationTriggers");
+      await notifyAdminsLandingMessage("Visitor", msg);
+    } catch {}
+
     if (autoReplyEnabled && messages.filter((m) => m.sender_type === "visitor").length === 0) {
       setTyping(true);
       setTimeout(async () => {
