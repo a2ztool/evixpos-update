@@ -114,9 +114,10 @@ Deno.serve(async (req) => {
       const { data: stores } = await supabase.from("stores").select("*").eq("user_id", userId);
       const { data: sub } = await supabase
         .from("subscriptions")
-        .select("plan, start_date, end_date")
+        .select("plan, start_date, end_date, volume, price, billing_type")
         .eq("user_id", userId)
         .eq("status", "active")
+        .is("customer_id", null)
         .in("plan", ["free", "pro", "business"])
         .order("start_date", { ascending: false })
         .limit(1)
@@ -149,7 +150,20 @@ Deno.serve(async (req) => {
         })
       );
 
-      return json({ profile, stores: storesWithStats, plan_info: { plan: userPlan, start_date: sub?.start_date || null, end_date: sub?.end_date || null, remaining_days: remainingDays, plan_status: planStatus } });
+      return json({
+        profile,
+        stores: storesWithStats,
+        plan_info: {
+          plan: userPlan,
+          start_date: sub?.start_date || null,
+          end_date: sub?.end_date || null,
+          remaining_days: remainingDays,
+          plan_status: planStatus,
+          volume: sub?.volume || null,
+          price: sub?.price || null,
+          billing_type: sub?.billing_type || null,
+        },
+      });
     }
 
     // ─── GET STORES ───
