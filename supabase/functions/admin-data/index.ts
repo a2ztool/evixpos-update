@@ -369,7 +369,9 @@ Deno.serve(async (req) => {
           // Create new subscription with 30-day expiry
           if (payment.plan !== "free") {
             const startDate = new Date();
-            const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+            const billingType = payment.billing_type || "monthly";
+            const durationDays = billingType === "yearly" ? 365 : 30;
+            const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
             await supabase.from("subscriptions").insert({
               user_id: payment.user_id,
               plan: payment.plan,
@@ -381,6 +383,8 @@ Deno.serve(async (req) => {
               start_date: startDate.toISOString(),
               end_date: endDate.toISOString(),
               store_id: payment.store_id || null,
+              volume: payment.volume || null,
+              billing_type: billingType,
             });
           }
 
