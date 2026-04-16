@@ -187,5 +187,5 @@ export const useStorePlan = () => {
   );
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
 
-  return { plan, loading, hasFeature, endDate, remainingDays };
+  return { plan, volume, loading, hasFeature, endDate, remainingDays };
 };
