@@ -1,3 +1,4 @@
+// Admin-data edge function v2 — plans config, stats, history support
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
