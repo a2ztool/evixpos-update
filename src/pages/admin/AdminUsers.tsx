@@ -23,12 +23,19 @@ interface UserRow {
 const ITEMS_PER_PAGE = 15;
 
 const exportCSV = (users: UserRow[]) => {
-  const headers = ["Name", "Email", "Plan", "Stores", "Store Names", "Joined"];
-  const rows = users.map((u) => [u.name || "", u.email, u.plan, String(u.storeCount), u.stores.map((s) => s.name).join("; "), new Date(u.created_at).toLocaleDateString()]);
+  const headers = ["Name", "Email", "Plan", "Status", "Expiry", "Remaining Days", "Stores", "Store Names", "Joined"];
+  const rows = users.map((u) => [u.name || "", u.email, u.plan, u.plan_status, u.end_date ? new Date(u.end_date).toLocaleDateString() : "N/A", u.remaining_days !== null ? String(u.remaining_days) : "∞", String(u.storeCount), u.stores.map((s) => s.name).join("; "), new Date(u.created_at).toLocaleDateString()]);
   const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(url);
+};
+
+const PlanStatusBadge = ({ status, remainingDays }: { status: string; remainingDays: number | null }) => {
+  if (status === "lifetime") return <Badge variant="outline" className="text-[10px] bg-slate-600/20 text-slate-400 border-slate-500/30">Lifetime</Badge>;
+  if (status === "expired") return <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30 gap-0.5"><AlertTriangle className="h-2.5 w-2.5" />Expired</Badge>;
+  if (remainingDays !== null && remainingDays <= 7) return <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/30 gap-0.5"><Clock className="h-2.5 w-2.5" />{remainingDays}d left</Badge>;
+  return <Badge variant="outline" className="text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30 gap-0.5"><CheckCircle className="h-2.5 w-2.5" />{remainingDays}d left</Badge>;
 };
 
 const AdminUsers = () => {
