@@ -125,16 +125,25 @@ const MyPlan = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [activeBanner, setActiveBanner] = useState<PlatformCoupon | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number }>({ open: false, planKey: "", planName: "", amount: 0 });
+  const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
+    open: false, planKey: "", planName: "", amount: 0, volume: 500 as VolumeStep, billingType: "monthly",
+  });
 
   const handleUpgrade = (planDef: PlanDef) => {
     const priceINR = getINRPrice(planDef.key);
     if (priceINR === null || priceINR === 0) return;
-    let price = priceINR * RATES_FROM_INR[currency];
-    if (yearly) price = price * 0.8;
+    let monthlyPrice = priceINR * RATES_FROM_INR[currency];
+    let price = yearly ? monthlyPrice * 12 * 0.8 : monthlyPrice;
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
-    setPaymentModal({ open: true, planKey: planDef.key, planName: planDef.name, amount: Math.round(price * 100) / 100 });
+    setPaymentModal({
+      open: true,
+      planKey: planDef.key,
+      planName: planDef.name,
+      amount: Math.round(price * 100) / 100,
+      volume: selectedVolume,
+      billingType: yearly ? "yearly" : "monthly",
+    });
   };
 
   // Fetch active coupons for banner
