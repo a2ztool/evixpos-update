@@ -268,20 +268,38 @@ Deno.serve(async (req) => {
       // Insert new active subscription (user-level plan)
       if (new_plan !== "free") {
         const startDate = new Date();
-        const durationDays = params.duration_days || 30;
+        const durationDays = params.billing_type === "yearly" ? 365 : (params.duration_days || 30);
         const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
-        
+
         await supabase.from("subscriptions").insert({
           user_id: userId,
           plan: new_plan,
           status: "active",
           product_name: `${new_plan.charAt(0).toUpperCase() + new_plan.slice(1)} Plan`,
-          price: 0,
+          price: params.price || 0,
           cost_price: 0,
           variation: "Admin Assigned",
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           store_id: store_id || null,
+          volume: params.volume || null,
+          billing_type: params.billing_type || "monthly",
+        });
+      } else {
+        // Free plan — no expiry
+        await supabase.from("subscriptions").insert({
+          user_id: userId,
+          plan: "free",
+          status: "active",
+          product_name: "Free Plan",
+          price: 0,
+          cost_price: 0,
+          variation: "Admin Assigned",
+          start_date: new Date().toISOString(),
+          end_date: null,
+          store_id: store_id || null,
+          volume: null,
+          billing_type: "monthly",
         });
       }
 
