@@ -79,7 +79,7 @@ const VOLUME_INDEX_MAP = VOLUME_STEPS.map((v, i) => ({ value: i, volume: v }));
 
 const getCompareFeatures = (vol: VolumeStep) => [
   { name: "Stores", icon: Store, free: "1", pro: "3", business: "10" },
-  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(vol) },
+  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(Math.max(vol, 1000) as VolumeStep) },
   { name: "Products", icon: Package, free: "25", pro: "100", business: "500" },
   { name: "POS", icon: Monitor, free: true, pro: true, business: true },
   { name: "Orders", icon: ShoppingCart, free: true, pro: true, business: true },
