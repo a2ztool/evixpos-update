@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
         .update({ status: "expired" })
         .eq("user_id", userId)
         .eq("status", "active")
-        .is("customer_id", null);
+        .in("plan", ["free", "pro", "business"]);
 
       // Insert new active subscription (user-level plan)
       if (new_plan !== "free") {
@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
             .update({ status: "expired" })
             .eq("user_id", payment.user_id)
             .eq("status", "active")
-            .is("customer_id", null);
+            .in("plan", ["free", "pro", "business"]);
 
           // Create new subscription with 30-day expiry
           if (payment.plan !== "free") {

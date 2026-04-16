@@ -47,7 +47,7 @@ export const useSubscription = () => {
       .select("plan, status, end_date")
       .eq("user_id", planUserId)
       .eq("status", "active")
-      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -106,7 +106,7 @@ export const useSubscription = () => {
 
   const upgradeTo = async (newPlan: "free" | "pro" | "business") => {
     if (!planUserId) return;
-    await supabase.from("subscriptions").update({ status: "inactive" }).eq("user_id", planUserId).eq("status", "active").is("customer_id", null);
+    await supabase.from("subscriptions").update({ status: "inactive" }).eq("user_id", planUserId).eq("status", "active").in("plan", ["free", "pro", "business"]);
     const startDate = new Date();
     const newEndDate = newPlan === "free" ? null : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await supabase.from("subscriptions").insert({
