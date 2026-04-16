@@ -190,11 +190,11 @@ const Auth = () => {
           </div>
 
           {/* Central Hub with Orbit — circle-centered layout */}
-          <div className="relative w-[420px] h-[420px] mx-auto">
+          <div className="relative w-[500px] h-[500px] mx-auto">
             {/* Orbit rings — centered on logo */}
-            <div className="absolute inset-[35px] rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
-            <div className="absolute inset-[60px] rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
-            <div className="absolute inset-[85px] rounded-full border border-dashed border-primary/6" />
+            <div className="absolute inset-[55px] rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
+            <div className="absolute inset-[80px] rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
+            <div className="absolute inset-[105px] rounded-full border border-dashed border-primary/6" />
 
             {/* Soft glow behind logo */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full bg-primary/10 blur-[60px]" />
@@ -207,7 +207,7 @@ const Auth = () => {
             {/* Orbit feature items — positioned relative to circle center */}
             {orbitFeatures.map((feature, i) => {
               const angle = (360 / orbitFeatures.length) * i - 90;
-              const radius = 190;
+              const radius = 210;
               const x = Math.cos((angle * Math.PI) / 180) * radius;
               const y = Math.sin((angle * Math.PI) / 180) * radius;
               return (
