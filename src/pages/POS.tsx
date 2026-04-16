@@ -414,7 +414,8 @@ const POS = () => {
         .map((i) => supabase.from("products").update({ stock: i.product.stock - i.quantity }).eq("id", i.product.id));
       await Promise.all(stockUpdates);
 
-      if (!isDue) {
+      if (!hasDue) {
+        // Fully paid
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
@@ -424,7 +425,29 @@ const POS = () => {
           note: `POS Order #${order.id.slice(0, 8)}`,
           is_paid: true,
         });
+      } else if (isPartial && paidAmountFinal > 0) {
+        // Partial: record paid portion as income, due portion as unpaid
+        await supabase.from("transactions").insert({
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+          type: "income" as const,
+          amount: paidAmountFinal,
+          category: "sale",
+          note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
+          is_paid: true,
+        });
+        await supabase.from("transactions").insert({
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+          type: "income" as const,
+          amount: dueAmount,
+          category: "sale",
+          note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
+          is_paid: false,
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
       } else {
+        // Full due
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
@@ -438,8 +461,8 @@ const POS = () => {
       }
 
       // ─── Sync Customer Credits (due orders) ───
-      if (isDue && customerId && activeStore?.id) {
-        // Upsert customer_credits record
+      if (hasDue && customerId && activeStore?.id) {
+        const creditAmount = dueAmount;
         const { data: existingCredit } = await supabase
           .from("customer_credits")
           .select("id, total_due")
@@ -449,7 +472,7 @@ const POS = () => {
 
         if (existingCredit) {
           await supabase.from("customer_credits").update({
-            total_due: Number(existingCredit.total_due) + total,
+            total_due: Number(existingCredit.total_due) + creditAmount,
             updated_at: new Date().toISOString(),
           }).eq("id", existingCredit.id);
         } else {
@@ -457,7 +480,7 @@ const POS = () => {
             customer_id: customerId,
             store_id: activeStore.id,
             user_id: effectiveUserId!,
-            total_due: total,
+            total_due: creditAmount,
             credit_limit: 0,
           });
         }
