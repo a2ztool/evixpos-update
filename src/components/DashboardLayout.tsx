@@ -174,19 +174,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <TooltipContent side="bottom"><p className="text-xs">{darkMode ? "Light mode" : "Dark mode"}</p></TooltipContent>
                 </Tooltip>
 
-                {/* Backup - desktop only */}
+                {/* Install App - desktop only */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline" size="sm"
                       className="h-8 px-3 text-xs font-medium gap-1.5 border-primary/20 text-primary hover:bg-primary/5 hidden md:inline-flex"
-                      onClick={() => navigate("/settings?tab=backup")}
+                      onClick={promptInstall}
+                      disabled={isInstalled}
                     >
-                      <Download className="h-3.5 w-3.5" />
-                      Backup
+                      <Smartphone className="h-3.5 w-3.5" />
+                      {isInstalled ? "✓ Installed" : "Install App"}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p className="text-xs">Export your data</p></TooltipContent>
+                  <TooltipContent side="bottom"><p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p></TooltipContent>
                 </Tooltip>
 
                 {/* Notifications */}
@@ -225,15 +226,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <DropdownMenuItem onClick={() => navigate("/my-plan")}>
                         <Crown className="h-4 w-4 mr-2" /> My Plan
                       </DropdownMenuItem>
-                    )}
-                    {(canInstall || !isInstalled) && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={promptInstall} disabled={!canInstall}>
-                          <Smartphone className="h-4 w-4 mr-2" />
-                          {isInstalled ? "✓ App Installed" : "Install App"}
-                        </DropdownMenuItem>
-                      </>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
