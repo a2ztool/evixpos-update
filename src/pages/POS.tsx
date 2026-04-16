@@ -607,14 +607,14 @@ const POS = () => {
         discount: subtotal - total > 0 ? subtotal - total : 0,
         total,
         paymentMethod: payMethod,
-        paymentStatus: isDue ? "Unpaid (Due)" : isPartial && dueAmount > 0 ? `Partial (${format(paidAmountFinal)} paid)` : "Paid",
+        paymentStatus: computedPaymentStatus === "unpaid" ? "Unpaid (Due)" : computedPaymentStatus === "partial" ? `Partial (${format(effectivePaid)} paid)` : "Paid",
         currency: activeCurrency,
         notes: orderNotes,
         date: new Date().toLocaleString(),
         storeName: activeStore?.name || "Store",
       };
 
-      toast.success(isDue ? "Order added to due book!" : isPartial && dueAmount > 0 ? `Partial payment recorded! Due: ${format(dueAmount)}` : "Order completed!");
+      toast.success(computedPaymentStatus === "unpaid" ? "Order added to due book!" : computedPaymentStatus === "partial" ? `Partial payment recorded! Due: ${format(effectiveDue)}` : "Order completed!");
       if (subscriptionItems.length > 0) toast.success(`${subscriptionItems.length} subscription(s) auto-created!`);
 
       setCart([]);
