@@ -99,7 +99,7 @@ export const useSubscription = () => {
     };
   }, [planUserId, fetchPlan]);
 
-  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+  const limits = PLAN_LIMITS[plan ?? "free"] ?? PLAN_LIMITS.free;
 
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const isExpiringSoon = remainingDays !== null && remainingDays <= 7 && remainingDays > 0;
