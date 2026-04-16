@@ -352,6 +352,12 @@ const StaffInbox = () => {
       setReplyTo(null);
       const { error } = await supabase.from("staff_messages").insert(insertData);
       if (error) toast.error("Failed to send message");
+      else {
+        try {
+          const { notifyStaffMessage } = await import("@/lib/notificationTriggers");
+          await notifyStaffMessage(activeChat, "New message", msg);
+        } catch {}
+      }
     } else {
       const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
       if (replyTo) insertData.reply_to_id = replyTo.id;
@@ -375,6 +381,10 @@ const StaffInbox = () => {
         task_title: taskName.trim(), task_status: "pending",
       });
       if (error) { toast.error("Failed to send task"); return; }
+      try {
+        const { notifyStaffTask } = await import("@/lib/notificationTriggers");
+        await notifyStaffTask(activeChat, "Admin", taskName.trim());
+      } catch {}
     } else {
       await db.from("chat_group_messages").insert({
         group_id: activeChat, sender_id: myId, message: fullMessage, type: "task"
