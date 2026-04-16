@@ -1016,9 +1016,20 @@ const POS = () => {
               ))}
               {orderNotes && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Notes</span><span className="font-medium truncate max-w-[200px]">{orderNotes}</span></div>}
               {paymentMode === "discount" && parseFloat(discountValue) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>}
-              {paymentMode === "due" && <div className="flex justify-between text-sm text-amber-600"><span>Payment Status</span><span className="font-medium">Due (Unpaid)</span></div>}
-              {paymentMode === "partial" && <div className="flex justify-between text-sm text-orange-600"><span>Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>}
-              {paymentMode === "partial" && dueAmount > 0 && <div className="flex justify-between text-sm text-amber-600"><span>Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
+              {paymentMode === "due" && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
+              {paymentMode === "partial" && (
+                <>
+                  <div className="flex justify-between text-sm text-green-600"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>
+                  {dueAmount > 0 && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
+                </>
+              )}
+              {splitMode && splitEntries.length > 0 && (() => {
+                const splitTotal = splitEntries.reduce((s, e) => s + e.amount, 0);
+                const splitDue = Math.max(0, total - splitTotal);
+                return splitDue > 0.01 ? (
+                  <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Split Due</span><span className="font-medium">{format(splitDue)}</span></div>
+                ) : null;
+              })()}
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
             </div>
