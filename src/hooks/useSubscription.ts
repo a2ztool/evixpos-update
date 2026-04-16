@@ -83,6 +83,7 @@ export const useSubscription = () => {
     };
   }, [planUserId, fetchPlan]);
 
+  const { getPlanLimits } = usePlansConfig();
   const limits = getPlanLimits(plan ?? "free", volume ?? 500);
 
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
