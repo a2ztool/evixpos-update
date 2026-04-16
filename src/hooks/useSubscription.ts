@@ -47,6 +47,7 @@ export const useSubscription = () => {
       .select("plan, status, end_date")
       .eq("user_id", planUserId)
       .eq("status", "active")
+      .is("customer_id", null)
       .in("plan", ["free", "pro", "business"])
       .order("start_date", { ascending: false })
       .limit(1)
