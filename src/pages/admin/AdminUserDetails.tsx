@@ -58,82 +58,18 @@ const AdminUserDetails = () => {
 
   const { profile, stores, plan_info } = data;
   const totalRevenue = stores.reduce((s, st) => s + st.revenue, 0);
+  const resolvedPlan =
+    plan_info?.plan ||
+    stores.find((store) => store.plan && store.plan !== "free")?.plan ||
+    stores[0]?.plan ||
+    "free";
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-slate-400 hover:text-white">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">{profile.name || profile.email}</h1>
-          <p className="text-sm text-slate-400">{profile.email} · Joined {new Date(profile.created_at).toLocaleDateString()}</p>
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Stores", value: stores.length, icon: Store, color: "text-blue-400" },
-          { label: "Total Products", value: stores.reduce((s, st) => s + st.productCount, 0), icon: Package, color: "text-emerald-400" },
-          { label: "Total Customers", value: stores.reduce((s, st) => s + st.customerCount, 0), icon: Users, color: "text-purple-400" },
-          { label: "Total Revenue", value: `৳${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-amber-400" },
-        ].map((s) => (
-          <Card key={s.label} className="bg-slate-800 border-slate-700">
-            <CardContent className="p-4 flex items-center gap-3">
-              <s.icon className={`h-5 w-5 ${s.color}`} />
-              <div>
-                <p className="text-xs text-slate-400">{s.label}</p>
-                <p className="text-lg font-bold text-white">{s.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Plan Info Card */}
-      {plan_info && (
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" /> Plan Details
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-slate-700/40 rounded-lg p-3">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Plan</p>
-                <p className="text-sm font-bold text-white capitalize">{plan_info.plan}</p>
-              </div>
-              <div className="bg-slate-700/40 rounded-lg p-3">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Status</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {plan_info.plan_status === "active" && <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />}
-                  {plan_info.plan_status === "expired" && <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
-                  {plan_info.plan_status === "lifetime" && <CheckCircle className="h-3.5 w-3.5 text-slate-400" />}
-                  <span className={`text-sm font-semibold capitalize ${plan_info.plan_status === "active" ? "text-emerald-400" : plan_info.plan_status === "expired" ? "text-red-400" : "text-slate-300"}`}>
-                    {plan_info.plan_status}
-                  </span>
-                </div>
-              </div>
-              <div className="bg-slate-700/40 rounded-lg p-3">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Expiry Date</p>
-                <p className="text-sm font-bold text-white">
-                  {plan_info.end_date ? new Date(plan_info.end_date).toLocaleDateString() : "N/A"}
-                </p>
-              </div>
-              <div className="bg-slate-700/40 rounded-lg p-3">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Remaining</p>
-                <p className={`text-sm font-bold ${plan_info.remaining_days !== null && plan_info.remaining_days <= 7 ? "text-amber-400" : "text-white"}`}>
-                  {plan_info.remaining_days !== null ? `${plan_info.remaining_days} days` : "∞"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+...
       {/* Global Usage (across all stores) */}
       {(() => {
-        const userPlan = plan_info?.plan || "free";
+        const userPlan = resolvedPlan;
         const globalLimits = PLAN_LIMITS[userPlan] || PLAN_LIMITS.free;
         const globalProducts = stores.reduce((s, st) => s + st.productCount, 0);
         const globalCustomers = stores.reduce((s, st) => s + st.customerCount, 0);
