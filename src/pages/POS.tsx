@@ -361,8 +361,8 @@ const POS = () => {
     // Split payment validation
     if (splitMode) {
       const allocated = splitEntries.reduce((s, e) => s + e.amount, 0);
-      if (Math.abs(allocated - total) > 0.01) {
-        toast.error("Split payment amounts must equal the total");
+      if (allocated > total + 0.01) {
+        toast.error("Split payment total exceeds order total");
         return;
       }
     }
@@ -371,12 +371,33 @@ const POS = () => {
     try {
       const isDue = paymentMode === "due";
       const isPartial = paymentMode === "partial";
-      const hasDue = isDue || (isPartial && dueAmount > 0);
-      const computedPaymentStatus = isDue ? "unpaid" : isPartial && dueAmount > 0 ? "partial" : "paid";
+
+      // Calculate effective paid/due considering split mode
+      let effectivePaid = paidAmountFinal;
+      let effectiveDue = dueAmount;
+      if (splitMode) {
+        effectivePaid = splitEntries.reduce((s, e) => s + e.amount, 0);
+        effectiveDue = Math.max(total - effectivePaid, 0);
+      }
+
+      const hasDue = isDue || effectiveDue > 0.01;
+      const computedPaymentStatus = effectivePaid === 0 ? "unpaid" : effectiveDue > 0.01 ? "partial" : "paid";
       const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
         : selectedPaymentMethod;
+
+      const orderMeta: Record<string, unknown> = {
+        paid_amount: effectivePaid,
+        due_amount: effectiveDue,
+      };
+      if (splitMode && splitEntries.length > 0) {
+        orderMeta.split_payments = splitEntries.map(e => ({
+          method_id: e.methodId,
+          method_name: e.methodName,
+          amount: e.amount,
+        }));
+      }
 
       const { data: order, error: orderErr } = await supabase
         .from("orders")
@@ -393,8 +414,8 @@ const POS = () => {
           payment_currency: activeCurrency,
           status: "completed" as const,
           payment_status: computedPaymentStatus,
-          meta: { paid_amount: paidAmountFinal, due_amount: dueAmount },
-          notes: orderNotes || (isDue ? "Due order from POS" : isPartial ? `Partial payment: ${format(paidAmountFinal)} paid, ${format(dueAmount)} due` : ""),
+          meta: orderMeta as any,
+          notes: orderNotes || (isDue ? "Due order from POS" : hasDue ? `Partial payment: ${format(effectivePaid)} paid, ${format(effectiveDue)} due` : ""),
         })
         .select("id")
         .single();
@@ -415,32 +436,60 @@ const POS = () => {
       await Promise.all(stockUpdates);
 
       if (!hasDue) {
-        // Fully paid
+        // Fully paid — split or single
+        if (splitMode && splitEntries.length > 1) {
+          await Promise.all(splitEntries.filter(e => e.amount > 0).map(e =>
+            supabase.from("transactions").insert({
+              user_id: effectiveUserId!,
+              store_id: activeStore?.id,
+              type: "income" as const,
+              amount: e.amount,
+              category: "sale",
+              note: `POS Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              is_paid: true,
+            })
+          ));
+        } else {
+          await supabase.from("transactions").insert({
+            user_id: effectiveUserId!,
+            store_id: activeStore?.id,
+            type: "income" as const,
+            amount: total,
+            category: "sale",
+            note: `POS Order #${order.id.slice(0, 8)}`,
+            is_paid: true,
+          });
+        }
+      } else if (effectivePaid > 0) {
+        // Partial paid
+        if (splitMode && splitEntries.length > 1) {
+          await Promise.all(splitEntries.filter(e => e.amount > 0).map(e =>
+            supabase.from("transactions").insert({
+              user_id: effectiveUserId!,
+              store_id: activeStore?.id,
+              type: "income" as const,
+              amount: e.amount,
+              category: "sale",
+              note: `POS Partial Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              is_paid: true,
+            })
+          ));
+        } else {
+          await supabase.from("transactions").insert({
+            user_id: effectiveUserId!,
+            store_id: activeStore?.id,
+            type: "income" as const,
+            amount: effectivePaid,
+            category: "sale",
+            note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
+            is_paid: true,
+          });
+        }
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
           type: "income" as const,
-          amount: total,
-          category: "sale",
-          note: `POS Order #${order.id.slice(0, 8)}`,
-          is_paid: true,
-        });
-      } else if (isPartial && paidAmountFinal > 0) {
-        // Partial: record paid portion as income, due portion as unpaid
-        await supabase.from("transactions").insert({
-          user_id: effectiveUserId!,
-          store_id: activeStore?.id,
-          type: "income" as const,
-          amount: paidAmountFinal,
-          category: "sale",
-          note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
-          is_paid: true,
-        });
-        await supabase.from("transactions").insert({
-          user_id: effectiveUserId!,
-          store_id: activeStore?.id,
-          type: "income" as const,
-          amount: dueAmount,
+          amount: effectiveDue,
           category: "sale",
           note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
           is_paid: false,
@@ -462,7 +511,7 @@ const POS = () => {
 
       // ─── Sync Customer Credits (due orders) ───
       if (hasDue && customerId && activeStore?.id) {
-        const creditAmount = dueAmount;
+        const creditAmount = effectiveDue;
         const { data: existingCredit } = await supabase
           .from("customer_credits")
           .select("id, total_due")
@@ -558,14 +607,14 @@ const POS = () => {
         discount: subtotal - total > 0 ? subtotal - total : 0,
         total,
         paymentMethod: payMethod,
-        paymentStatus: isDue ? "Unpaid (Due)" : isPartial && dueAmount > 0 ? `Partial (${format(paidAmountFinal)} paid)` : "Paid",
+        paymentStatus: computedPaymentStatus === "unpaid" ? "Unpaid (Due)" : computedPaymentStatus === "partial" ? `Partial (${format(effectivePaid)} paid)` : "Paid",
         currency: activeCurrency,
         notes: orderNotes,
         date: new Date().toLocaleString(),
         storeName: activeStore?.name || "Store",
       };
 
-      toast.success(isDue ? "Order added to due book!" : isPartial && dueAmount > 0 ? `Partial payment recorded! Due: ${format(dueAmount)}` : "Order completed!");
+      toast.success(computedPaymentStatus === "unpaid" ? "Order added to due book!" : computedPaymentStatus === "partial" ? `Partial payment recorded! Due: ${format(effectiveDue)}` : "Order completed!");
       if (subscriptionItems.length > 0) toast.success(`${subscriptionItems.length} subscription(s) auto-created!`);
 
       setCart([]);
