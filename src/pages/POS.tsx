@@ -105,6 +105,7 @@ const POS = () => {
   const [discountValue, setDiscountValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [extraChargeValue, setExtraChargeValue] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
@@ -280,15 +281,21 @@ const POS = () => {
 
   const subtotal = cart.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
 
-  const { total, dueAmount } = useMemo(() => {
+  const { total, dueAmount, paidAmountFinal } = useMemo(() => {
     let t = subtotal;
     const disc = parseFloat(discountValue) || 0;
     const extra = parseFloat(extraChargeValue) || 0;
     if (paymentMode === "discount") t -= discountType === "percentage" ? (subtotal * disc) / 100 : disc;
     else if (paymentMode === "extra") t += extra;
     if (t < 0) t = 0;
-    return { total: t, dueAmount: paymentMode === "due" ? t : 0 };
-  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue]);
+
+    if (paymentMode === "due") return { total: t, dueAmount: t, paidAmountFinal: 0 };
+    if (paymentMode === "partial") {
+      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
+      return { total: t, dueAmount: t - paid, paidAmountFinal: paid };
+    }
+    return { total: t, dueAmount: 0, paidAmountFinal: t };
+  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue, paidAmount]);
 
   // ─── Hold Order ───
   const handleHoldOrder = useCallback(() => {
@@ -363,6 +370,9 @@ const POS = () => {
     setSubmitting(true);
     try {
       const isDue = paymentMode === "due";
+      const isPartial = paymentMode === "partial";
+      const hasDue = isDue || (isPartial && dueAmount > 0);
+      const computedPaymentStatus = isDue ? "unpaid" : isPartial && dueAmount > 0 ? "partial" : "paid";
       const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
@@ -382,8 +392,9 @@ const POS = () => {
           source: "pos",
           payment_currency: activeCurrency,
           status: "completed" as const,
-          payment_status: isDue ? "unpaid" : "paid",
-          notes: orderNotes || (isDue ? "Due order from POS" : ""),
+          payment_status: computedPaymentStatus,
+          meta: { paid_amount: paidAmountFinal, due_amount: dueAmount },
+          notes: orderNotes || (isDue ? "Due order from POS" : isPartial ? `Partial payment: ${format(paidAmountFinal)} paid, ${format(dueAmount)} due` : ""),
         })
         .select("id")
         .single();
