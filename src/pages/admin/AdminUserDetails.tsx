@@ -4,7 +4,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle, Crown } from "lucide-react";
 
 interface StoreWithStats {
   id: string;
@@ -21,7 +21,16 @@ interface StoreWithStats {
 interface UserDetails {
   profile: { id: string; name: string; email: string; created_at: string };
   stores: StoreWithStats[];
-  plan_info?: { plan: string; start_date: string | null; end_date: string | null; remaining_days: number | null; plan_status: string };
+  plan_info?: {
+    plan: string;
+    start_date: string | null;
+    end_date: string | null;
+    remaining_days: number | null;
+    plan_status: string;
+    volume: number | null;
+    price: number | null;
+    billing_type: string | null;
+  };
 }
 
 const planColor = (plan: string) => {
