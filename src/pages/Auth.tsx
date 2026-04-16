@@ -9,10 +9,11 @@ import { toast } from "sonner";
 import { validateWithToast, loginSchema, signupSchema } from "@/lib/validations";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  ShieldCheck, Zap, BarChart3, Package, Users, Clock,
-  Eye, EyeOff, ArrowRight, Gift,
+  ShieldCheck, Zap, BarChart3, Package, Users, CreditCard,
+  Eye, EyeOff, ArrowRight, Gift, Store, Bot,
 } from "lucide-react";
 import brandLogo from "@/assets/evixPos.png";
+import evixIcon from "@/assets/evixpos-icon.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
