@@ -37,8 +37,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const { isStaff, staffInfo } = useStaff();
-  const { plan: rawPlan, loading: planLoading } = useSubscription();
-  const plan = rawPlan ?? "free"; // safe fallback only for UI display after loading
+  const { plan: rawPlan, volume: subVolume, loading: planLoading } = useSubscription();
+  const plan = rawPlan ?? "free";
   const navigate = useNavigate();
   const [profileName, setProfileName] = useState("");
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -51,7 +51,9 @@ const Dashboard = () => {
     return "Good Evening";
   }, []);
 
-  const productLimit = plan === "free" ? 25 : plan === "pro" ? 100 : 500;
+  const { getPlanLimits } = await import("@/lib/planConfig");
+  const dashLimits = getPlanLimits(plan, (subVolume ?? 500) as any);
+  const productLimit = dashLimits.maxProducts;
   const productUsagePercent = productLimit > 0 ? Math.round((productCount / productLimit) * 100) : 0;
 
   const announcements = useMemo(() => {

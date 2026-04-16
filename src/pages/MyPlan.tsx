@@ -197,7 +197,7 @@ const MyPlan = () => {
     if (inr === null) return "Custom";
     if (inr === 0) return "Free";
     let price = inr * RATES_FROM_INR[currency];
-    if (yearly) price = price * 0.8;
+    if (yearly) price = price * 12 * 0.8; // yearly = monthly × 12 × 0.8
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
     return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
@@ -206,7 +206,7 @@ const MyPlan = () => {
   const originalPrice = (planKey: string) => {
     const inr = getINRPrice(planKey);
     if (inr === null || inr === 0) return null;
-    const price = inr * RATES_FROM_INR[currency];
+    const price = yearly ? inr * RATES_FROM_INR[currency] * 12 : inr * RATES_FROM_INR[currency];
     return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
   };
 
