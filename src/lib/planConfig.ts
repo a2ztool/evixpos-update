@@ -57,7 +57,7 @@ export const getPriceINR = (plan: string, volume: VolumeStep): number => {
 
 /** Snap an arbitrary number to the nearest valid volume step */
 export const snapToVolumeStep = (val: number): VolumeStep => {
-  let closest = VOLUME_STEPS[0];
+  let closest: VolumeStep = VOLUME_STEPS[0];
   let minDist = Math.abs(val - closest);
   for (const step of VOLUME_STEPS) {
     const dist = Math.abs(val - step);
