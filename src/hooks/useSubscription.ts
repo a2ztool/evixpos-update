@@ -27,7 +27,18 @@ export const useSubscription = () => {
     if (!planUserId) { setLoading(false); return; }
     const { data } = await supabase
       .from("subscriptions")
-      .select("plan, status, end_date, volume")
+      .select("plan, status, end_date")
+      .eq("user_id", planUserId)
+      .eq("status", "active")
+      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    // Also fetch volume from a separate query to handle column not existing yet
+    const { data: volData } = await supabase
+      .from("subscriptions")
+      .select("*")
       .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
