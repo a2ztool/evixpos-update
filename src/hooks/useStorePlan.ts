@@ -95,10 +95,22 @@ export const useStorePlan = () => {
       .limit(1)
       .maybeSingle();
 
-    // Check if expired
+    // Separate query for volume (column may not exist yet)
+    const { data: volData } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", planUserId)
+      .eq("status", "active")
+      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const isExpired = data?.end_date && new Date(data.end_date) < new Date();
     const newPlan = isExpired ? "free" : (data?.plan ?? "free");
     setEndDate(isExpired ? null : (data?.end_date || null));
+    setVolume(isExpired ? null : ((volData as any)?.volume ?? null));
     
     setPlan(prev => {
       if (isRealtimeUpdate && initialLoadDone.current && prev !== newPlan) {
