@@ -20,9 +20,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
+import {
+  VOLUME_STEPS, PRO_PRICES_INR, BUSINESS_PRICES_INR,
+  formatVolume, getPriceINR, snapToVolumeStep,
+  type VolumeStep,
+} from "@/lib/planConfig";
 
-// Exchange rates: 1 USD
-const RATES = { USD: 1, BDT: 122, INR: 84 };
+// Exchange rates from INR
+const RATES_FROM_INR = { INR: 1, USD: 1 / 84, BDT: 122 / 84 };
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BDT: "৳", INR: "₹" };
 
 interface PlanDef {
@@ -30,62 +35,51 @@ interface PlanDef {
   key: string;
   color: string;
   gradient: string;
-  baseUSD: number | null;
-  ratePerUnit: number; // USD per 1K volume above base
-  baseVolume: number; // included volume
   icon: any;
   tagline: string;
   popular?: boolean;
   stores: number | string;
-  customers: number | string;
   products: number | string;
   features: string[];
 }
-
-const formatVolume = (v: number) => {
-  if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`;
-  return v.toLocaleString();
-};
-
 
 const PLANS: PlanDef[] = [
   {
     name: "Free", key: "free",
     color: "text-primary", gradient: "from-primary to-primary/80",
-    baseUSD: 0, ratePerUnit: 0, baseVolume: 500,
     icon: Zap, tagline: "Lifetime",
-    stores: 1, customers: 50, products: 25,
+    stores: 1, products: 25,
     features: ["POS", "Orders", "Due Book", "Reports", "Subscriptions", "POS Terminal", "Customer CRM", "Expense Tracking"],
   },
   {
     name: "Pro", key: "pro",
     color: "text-emerald-600", gradient: "from-emerald-500 to-emerald-600",
-    baseUSD: 2.49, ratePerUnit: 0.50, baseVolume: 500,
     icon: Crown, tagline: "Best for growing businesses", popular: true,
-    stores: 3, customers: "volume", products: 100,
+    stores: 3, products: 100,
     features: ["Everything in Free", "WhatsApp Integration", "Bot Automation", "WooCommerce Sync", "Email Notifications", "Ad Cost Tracking", "Advanced Reports", "Priority Support"],
   },
   {
     name: "Business", key: "business",
     color: "text-orange-600", gradient: "from-orange-500 to-red-500",
-    baseUSD: 4.99, ratePerUnit: 0.30, baseVolume: 500,
     icon: Shield, tagline: "For scaling teams",
-    stores: 10, customers: "volume", products: 500,
+    stores: 10, products: 500,
     features: ["Everything in Pro", "Multi-store Management", "Team Roles & Access", "API Access", "Custom Branding", "Bulk Operations", "Dedicated Support", "Data Export"],
   },
   {
     name: "Custom", key: "custom",
     color: "text-violet-600", gradient: "from-violet-500 to-purple-600",
-    baseUSD: null, ratePerUnit: 0, baseVolume: 0,
     icon: Star, tagline: "For large businesses",
-    stores: "Unlimited", customers: "Unlimited", products: "Unlimited",
+    stores: "Unlimited", products: "Unlimited",
     features: ["Everything in Business", "Custom Integrations", "Dedicated Account Manager", "SLA Guarantee", "On-premise Option", "White Label", "Custom Development", "Training & Onboarding"],
   },
 ];
 
-const getCompareFeatures = (vol: number) => [
+/** Volume step index for slider (0-6) */
+const VOLUME_INDEX_MAP = VOLUME_STEPS.map((v, i) => ({ value: i, volume: v }));
+
+const getCompareFeatures = (vol: VolumeStep) => [
   { name: "Stores", icon: Store, free: "1", pro: "3", business: "10" },
-  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(vol * 2) },
+  { name: "Customers", icon: Users, free: "50", pro: formatVolume(vol), business: formatVolume(vol) },
   { name: "Products", icon: Package, free: "25", pro: "100", business: "500" },
   { name: "POS", icon: Monitor, free: true, pro: true, business: true },
   { name: "Orders", icon: ShoppingCart, free: true, pro: true, business: true },
