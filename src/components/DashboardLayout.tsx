@@ -207,7 +207,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{displayName}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {isStaff ? `Staff • ${staffInfo?.role}` : `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`}
+                          {isStaff ? `Staff • ${staffInfo?.role}` : `${(plan ?? "free").charAt(0).toUpperCase() + (plan ?? "free").slice(1)} Plan`}
                         </p>
                       </div>
                     </DropdownMenuLabel>
