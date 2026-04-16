@@ -57,7 +57,7 @@ const useExpiryTimer = (expiresAt: string | null) => {
   return { timeLeft, isExpired };
 };
 
-const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency, currencySymbol }: PaymentModalProps) => {
+const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency, currencySymbol, billingType = "monthly" }: PaymentModalProps) => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const [gateways, setGateways] = useState<PaymentGateway[]>([]);
