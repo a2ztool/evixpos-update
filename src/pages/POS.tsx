@@ -23,7 +23,7 @@ import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
   ChevronDown, RefreshCw, Clock, Percent, TrendingUp, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
