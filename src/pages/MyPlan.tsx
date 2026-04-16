@@ -244,11 +244,7 @@ const MyPlan = () => {
     toast.success(`Coupon ${code} applied! ${label} on your next purchase.`);
   };
 
-  const volumeLabel = useMemo(() => {
-    const v = volume[0];
-    if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`;
-    return v.toString();
-  }, [volume]);
+  const volumeLabel = useMemo(() => formatVolume(selectedVolume), [selectedVolume]);
 
   return (
     <DashboardLayout>
