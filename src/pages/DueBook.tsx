@@ -304,9 +304,41 @@ const DueBook = () => {
   };
 
   const markPaid = async (id: string) => {
-    const { error } = await supabase.from("transactions").update({ is_paid: true }).eq("id", id);
-    if (error) toast.error(error.message);
-    else toast.success("Marked as paid ✓");
+    const { data: txn, error } = await supabase.from("transactions").update({ is_paid: true }).eq("id", id).select("note").single();
+    if (error) { toast.error(error.message); return; }
+
+    // Sync order payment_status if this transaction came from POS
+    const orderMatch = txn?.note?.match(/POS.*Order #([a-f0-9]+)/i);
+    if (orderMatch) {
+      const orderIdPrefix = orderMatch[1];
+      const { data: orders } = await supabase.from("orders")
+        .select("id, total_amount, meta, payment_status")
+        .ilike("id", `${orderIdPrefix}%`)
+        .eq("store_id", activeStore?.id || "")
+        .limit(1);
+
+      if (orders?.[0]) {
+        const order = orders[0];
+        // Check if all related transactions are now paid
+        const { data: relatedTxns } = await supabase.from("transactions")
+          .select("is_paid, amount")
+          .ilike("note", `%${orderIdPrefix}%`)
+          .eq("store_id", activeStore?.id || "");
+
+        const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
+        const totalPaid = relatedTxns?.filter(t => t.is_paid).reduce((s, t) => s + Number(t.amount), 0) || 0;
+        const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
+
+        if (order.payment_status !== newStatus) {
+          await supabase.from("orders").update({
+            payment_status: newStatus,
+            meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
+          }).eq("id", order.id);
+        }
+      }
+    }
+
+    toast.success("Marked as paid ✓");
   };
 
   const handleDelete = async (id: string) => {
