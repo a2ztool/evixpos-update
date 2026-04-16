@@ -147,6 +147,7 @@ const App = () => {
     <LanguageProvider>
     <StoreProvider>
     <StaffProvider>
+    <PlansConfigProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
