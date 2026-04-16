@@ -25,6 +25,7 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  const { getPlanLimits } = usePlansConfig();
   const limits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
 
   const fetchUsage = useCallback(async () => {
