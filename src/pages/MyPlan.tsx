@@ -118,7 +118,8 @@ interface PlatformCoupon {
 }
 
 const MyPlan = () => {
-  const { plan, endDate, remainingDays, isExpiringSoon } = useSubscription();
+  const { plan: rawPlan, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
+  const plan = rawPlan ?? "free";
   const usage = useUsageLimits(plan);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
