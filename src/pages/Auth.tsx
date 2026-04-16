@@ -10,9 +10,8 @@ import { validateWithToast, loginSchema, signupSchema } from "@/lib/validations"
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ShieldCheck, Zap, BarChart3, Package, Users, CreditCard,
-  Eye, EyeOff, ArrowRight, Gift, Store, Bot,
+  Eye, EyeOff, ArrowRight, Gift, Store, Bot, ShoppingCart, FileText, Crown,
 } from "lucide-react";
-import brandLogo from "@/assets/evixPos.png";
 import evixIcon from "@/assets/evixpos-icon.png";
 
 const Auth = () => {
@@ -30,7 +29,6 @@ const Auth = () => {
 
   useEffect(() => {
     if (!session) return;
-    // Check if user is admin → redirect to admin panel
     const checkAdminRedirect = async () => {
       const { data: roleData } = await supabase
         .from("user_roles")
@@ -47,7 +45,6 @@ const Auth = () => {
     checkAdminRedirect();
   }, [session, navigate]);
 
-  // Pre-fill referral code from URL
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref) setReferralCode(ref);
@@ -62,7 +59,6 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else if (data.user) {
-      // Check if this user is admin
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
@@ -84,7 +80,6 @@ const Auth = () => {
     if (!parsed) return;
     setLoading(true);
 
-    // Validate referral code if provided
     let referrerId: string | null = null;
     if (referralCode.trim()) {
       const { data: refSettings } = await supabase
@@ -100,8 +95,7 @@ const Auth = () => {
       }
       referrerId = refSettings.user_id;
 
-      // Increment click count
-      await supabase.rpc("has_role" as any).then(() => {}); // no-op, just for type
+      await supabase.rpc("has_role" as any).then(() => {});
       await supabase
         .from("referral_settings")
         .update({ total_clicks: (refSettings as any).total_clicks + 1 })
@@ -123,7 +117,6 @@ const Auth = () => {
       return;
     }
 
-    // Create referral record if referral code was used
     if (referrerId && signupData.user) {
       await supabase.from("referrals").insert({
         referrer_id: referrerId,
@@ -160,107 +153,128 @@ const Auth = () => {
     else toast.success("Password reset link sent to your email!");
   };
 
-  const floatingBadges = [
-    { label: "Inventory", icon: Package, position: "top-[8%] left-[12%]", delay: "0s" },
-    { label: "Analytics", icon: BarChart3, position: "top-[5%] right-[12%]", delay: "0.4s" },
-    { label: "Multi-Store", icon: Store, position: "bottom-[8%] left-[8%]", delay: "0.8s" },
-    { label: "Payments", icon: CreditCard, position: "bottom-[5%] right-[8%]", delay: "1.2s" },
-    { label: "Automation", icon: Bot, position: "top-[45%] right-[1%]", delay: "1.6s" },
-    { label: "Customers", icon: Users, position: "top-[45%] left-[1%]", delay: "2s" },
-    { label: "Reports", icon: BarChart3, position: "top-[20%] left-[2%]", delay: "2.4s" },
-    { label: "Subscription", icon: CreditCard, position: "bottom-[20%] right-[2%]", delay: "2.8s" },
-    { label: "POS", icon: Zap, position: "bottom-[20%] left-[2%]", delay: "3.2s" },
+  const orbitFeatures = [
+    { label: "Orders", icon: ShoppingCart },
+    { label: "Inventory", icon: Package },
+    { label: "Analytics", icon: BarChart3 },
+    { label: "Payments", icon: CreditCard },
+    { label: "Customers", icon: Users },
+    { label: "Automation", icon: Bot },
+    { label: "Multi-Store", icon: Store },
+    { label: "Reports", icon: FileText },
+    { label: "POS", icon: Zap },
+    { label: "Plans", icon: Crown },
   ];
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Left Side - Premium Hero */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-[#016B61]/5 via-background to-[#016B61]/10 flex-col justify-center items-center py-8 px-12">
-        {/* Background blur blobs */}
-        <div className="absolute top-10 left-10 w-80 h-80 rounded-full bg-[#016B61]/8 blur-[100px]" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#016B61]/6 blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#016B61]/3 blur-[150px]" />
+    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/8">
+      {/* Global subtle background blobs */}
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[180px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-primary/4 blur-[150px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-lg text-center flex flex-col items-center animate-fade-in">
-          {/* Headline */}
-          <h1 className="text-4xl font-bold tracking-tight leading-tight mb-3">
-            Run Your Entire Business.<br />
-            <span className="text-[#016B61]">One Platform.</span>
+      {/* ── Left: Visual Hub Section ── */}
+      <div className="hidden lg:flex lg:w-[52%] relative items-center justify-center p-8">
+        <div className="relative flex flex-col items-center animate-fade-in">
+          {/* Title */}
+          <h1 className="text-3xl font-bold tracking-tight text-center mb-2">
+            Your Business,{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Unified.
+            </span>
           </h1>
-          <p className="text-muted-foreground text-lg mb-10 max-w-md">
-            Manage orders, customers, payments & automation — all in one POS.
+          <p className="text-muted-foreground text-sm mb-10 text-center max-w-xs">
+            Everything you need to run, grow, and scale — in one platform.
           </p>
 
-          {/* Central badge with floating badges */}
-          <div className="relative w-[340px] h-[340px]">
-            {/* Glowing pulse ring */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-[#016B61]/20 to-[#016B61]/5 border border-[#016B61]/20 shadow-[0_0_60px_rgba(1,107,97,0.15)] animate-[spin_20s_linear_infinite]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full border border-[#016B61]/10 animate-[spin_30s_linear_infinite_reverse]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] rounded-full border border-[#016B61]/5 animate-[pulse_4s_ease-in-out_infinite]" />
-            
-            {/* Logo center */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-2xl shadow-[#016B61]/20 flex items-center justify-center z-10">
-              <img src={evixIcon} alt="EvixPOS" className="h-28 w-28 rounded-full" />
+          {/* Central Hub with Orbit */}
+          <div className="relative w-[400px] h-[400px]">
+            {/* Orbit rings */}
+            <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_60s_linear_infinite]" />
+            <div className="absolute inset-6 rounded-full border border-primary/8 animate-[spin_45s_linear_infinite_reverse]" />
+            <div className="absolute inset-12 rounded-full border border-dashed border-primary/6" />
+
+            {/* Soft glow behind logo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-primary/10 blur-[60px]" />
+
+            {/* Center logo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 shadow-2xl shadow-primary/15 flex items-center justify-center z-20">
+              <img src={evixIcon} alt="EvixPOS" className="h-20 w-20 rounded-full" />
             </div>
 
-            {/* Floating badges */}
-            {floatingBadges.map((badge, i) => (
-              <div
-                key={i}
-                className={`absolute ${badge.position} z-10 animate-fade-in`}
-                style={{ animation: `floatBadge 3.5s ease-in-out ${badge.delay} infinite, fade-in 0.5s ease-out ${badge.delay} both` }}
-              >
-                <div className="flex items-center gap-1.5 bg-background/70 backdrop-blur-md border border-border/40 rounded-full px-3 py-1.5 shadow-lg hover:shadow-xl hover:bg-background/90 transition-all duration-300">
-                  <badge.icon className="h-3.5 w-3.5 text-[#016B61]" />
-                  <span className="text-[11px] font-semibold whitespace-nowrap">{badge.label}</span>
+            {/* Orbit feature items */}
+            {orbitFeatures.map((feature, i) => {
+              const angle = (360 / orbitFeatures.length) * i - 90;
+              const radius = 175;
+              const x = Math.cos((angle * Math.PI) / 180) * radius;
+              const y = Math.sin((angle * Math.PI) / 180) * radius;
+              return (
+                <div
+                  key={feature.label}
+                  className="absolute z-10"
+                  style={{
+                    left: `calc(50% + ${x}px)`,
+                    top: `calc(50% + ${y}px)`,
+                    transform: "translate(-50%, -50%)",
+                    animation: `floatBadge 4s ease-in-out ${i * 0.3}s infinite`,
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 bg-card/80 backdrop-blur-md border border-border/40 rounded-full px-3 py-1.5 shadow-md hover:shadow-lg hover:bg-card/95 transition-all duration-300 cursor-default">
+                    <feature.icon className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] font-semibold whitespace-nowrap text-foreground">{feature.label}</span>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom stats */}
+          <div className="flex gap-5 mt-10">
+            {[
+              { value: "10K+", label: "Users" },
+              { value: "50K+", label: "Orders/Day" },
+              { value: "99.9%", label: "Uptime" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-card/60 backdrop-blur-sm border border-border/30 rounded-xl px-5 py-2.5 text-center hover:bg-card/80 hover:border-border/50 transition-all duration-300 cursor-default"
+              >
+                <p className="text-base font-bold text-primary">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Bottom stats */}
-        <div className="relative z-10 mt-8 flex justify-center gap-6 text-center">
-          {[
-            { value: "10K+", label: "Active Users" },
-            { value: "50K+", label: "Orders/Day" },
-            { value: "99.9%", label: "Uptime" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-background/60 backdrop-blur-sm border border-border/30 rounded-lg px-4 py-2.5 hover:bg-background/80 hover:border-border/50 hover:shadow-md transition-all duration-300 cursor-default">
-              <p className="text-lg font-bold text-[#016B61]">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
-      {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-[45%] flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md animate-fade-in">
+
+      {/* ── Right: Auth Form ── */}
+      <div className="w-full lg:w-[48%] flex items-center justify-center p-5 sm:p-10">
+        <div className="w-full max-w-md animate-fade-in" style={{ animationDelay: "0.1s" }}>
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-2.5">
-              <div className="h-10 w-10 rounded-xl bg-[#016B61] flex items-center justify-center shadow-lg shadow-[#016B61]/25">
-                <Zap className="h-5 w-5 text-white" />
+              <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25">
+                <Zap className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-2xl font-bold tracking-tight">
-                evix<span className="text-[#016B61]">Pos</span>
+                evix<span className="text-primary">Pos</span>
               </span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-card shadow-xl shadow-black/5 p-8">
+          {/* Glassmorphism card */}
+          <div className="rounded-2xl border border-border/40 bg-card/70 backdrop-blur-xl shadow-2xl shadow-black/5 p-7 sm:p-8">
             {/* Header */}
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Enter your credentials to access your account
+                Enter your credentials to continue
               </p>
             </div>
 
             {/* Google Login */}
             <Button
               variant="outline"
-              className="w-full h-11 gap-3 font-medium mb-5 hover:bg-muted/50 transition-colors"
+              className="w-full h-11 gap-3 font-medium mb-5 rounded-xl bg-card/50 hover:bg-card/80 border-border/50 transition-all duration-200"
               onClick={handleGoogleLogin}
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -275,18 +289,18 @@ const Auth = () => {
             {/* Divider */}
             <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="w-full border-t border-border/50" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-3 text-muted-foreground font-medium">or continue with</span>
+                <span className="bg-card/70 backdrop-blur-sm px-3 text-muted-foreground font-medium">or</span>
               </div>
             </div>
 
             {/* Tabs */}
             <Tabs defaultValue={defaultTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-5 h-11 rounded-xl bg-muted/50">
-                <TabsTrigger value="login" className="rounded-lg font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Sign In</TabsTrigger>
-                <TabsTrigger value="signup" className="rounded-lg font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-5 h-11 rounded-xl bg-muted/40 backdrop-blur-sm">
+                <TabsTrigger value="login" className="rounded-lg font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="rounded-lg font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
               </TabsList>
 
               {/* Login */}
@@ -300,7 +314,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-11 rounded-xl"
+                      className="h-11 rounded-xl bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                       placeholder="name@example.com"
                     />
                   </div>
@@ -310,7 +324,7 @@ const Auth = () => {
                       <button
                         type="button"
                         onClick={handleForgotPassword}
-                        className="text-xs font-medium text-[#016B61] hover:underline"
+                        className="text-xs font-medium text-primary hover:underline"
                       >
                         Forgot password?
                       </button>
@@ -322,7 +336,7 @@ const Auth = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="h-11 rounded-xl pr-10"
+                        className="h-11 rounded-xl pr-10 bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                         placeholder="••••••••"
                       />
                       <button
@@ -336,7 +350,7 @@ const Auth = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full h-11 rounded-xl font-semibold bg-[#016B61] hover:bg-[#015a52] text-white gap-2 shadow-lg shadow-[#016B61]/20 transition-all hover:shadow-xl hover:shadow-[#016B61]/30"
+                    className="w-full h-11 rounded-xl font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground gap-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30"
                     disabled={loading}
                   >
                     {loading ? "Signing in..." : "Sign In"}
@@ -355,7 +369,7 @@ const Auth = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className="h-11 rounded-xl"
+                      className="h-11 rounded-xl bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                       placeholder="Your full name"
                     />
                   </div>
@@ -367,7 +381,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-11 rounded-xl"
+                      className="h-11 rounded-xl bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                       placeholder="name@example.com"
                     />
                   </div>
@@ -381,7 +395,7 @@ const Auth = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         minLength={6}
-                        className="h-11 rounded-xl pr-10"
+                        className="h-11 rounded-xl pr-10 bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                         placeholder="••••••••"
                       />
                       <button
@@ -395,7 +409,7 @@ const Auth = () => {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-referral" className="text-sm font-medium flex items-center gap-1.5">
-                      <Gift className="h-3.5 w-3.5 text-[#016B61]" />
+                      <Gift className="h-3.5 w-3.5 text-primary" />
                       Referral Code
                       <span className="text-muted-foreground font-normal">(optional)</span>
                     </Label>
@@ -403,14 +417,14 @@ const Auth = () => {
                       id="signup-referral"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      className="h-11 rounded-xl font-mono tracking-wider uppercase"
+                      className="h-11 rounded-xl font-mono tracking-wider uppercase bg-card/50 border-border/40 focus:border-primary/50 focus:bg-card/80 transition-all duration-200"
                       placeholder="XXXXXXXX"
                       maxLength={8}
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full h-11 rounded-xl font-semibold bg-[#016B61] hover:bg-[#015a52] text-white gap-2 shadow-lg shadow-[#016B61]/20 transition-all hover:shadow-xl hover:shadow-[#016B61]/30"
+                    className="w-full h-11 rounded-xl font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground gap-2 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30"
                     disabled={loading}
                   >
                     {loading ? "Creating account..." : "Create Account"}
@@ -423,13 +437,12 @@ const Auth = () => {
             {/* Footer */}
             <p className="text-center text-xs text-muted-foreground mt-6">
               By continuing, you agree to our{" "}
-              <a href="#" className="text-[#016B61] hover:underline font-medium">Terms of Service</a>
+              <a href="#" className="text-primary hover:underline font-medium">Terms of Service</a>
               {" "}and{" "}
-              <a href="#" className="text-[#016B61] hover:underline font-medium">Privacy Policy</a>
+              <a href="#" className="text-primary hover:underline font-medium">Privacy Policy</a>
             </p>
           </div>
 
-          {/* Powered by */}
           <p className="text-center text-xs text-muted-foreground mt-6">
             © {new Date().getFullYear()} EvixPOS. All rights reserved.
           </p>
