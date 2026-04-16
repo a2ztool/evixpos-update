@@ -371,12 +371,33 @@ const POS = () => {
     try {
       const isDue = paymentMode === "due";
       const isPartial = paymentMode === "partial";
-      const hasDue = isDue || (isPartial && dueAmount > 0);
-      const computedPaymentStatus = isDue ? "unpaid" : isPartial && dueAmount > 0 ? "partial" : "paid";
+
+      // Calculate effective paid/due considering split mode
+      let effectivePaid = paidAmountFinal;
+      let effectiveDue = dueAmount;
+      if (splitMode) {
+        effectivePaid = splitEntries.reduce((s, e) => s + e.amount, 0);
+        effectiveDue = Math.max(total - effectivePaid, 0);
+      }
+
+      const hasDue = isDue || effectiveDue > 0.01;
+      const computedPaymentStatus = effectivePaid === 0 ? "unpaid" : effectiveDue > 0.01 ? "partial" : "paid";
       const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
         : selectedPaymentMethod;
+
+      const orderMeta: Record<string, unknown> = {
+        paid_amount: effectivePaid,
+        due_amount: effectiveDue,
+      };
+      if (splitMode && splitEntries.length > 0) {
+        orderMeta.split_payments = splitEntries.map(e => ({
+          method_id: e.methodId,
+          method_name: e.methodName,
+          amount: e.amount,
+        }));
+      }
 
       const { data: order, error: orderErr } = await supabase
         .from("orders")
@@ -393,8 +414,8 @@ const POS = () => {
           payment_currency: activeCurrency,
           status: "completed" as const,
           payment_status: computedPaymentStatus,
-          meta: { paid_amount: paidAmountFinal, due_amount: dueAmount },
-          notes: orderNotes || (isDue ? "Due order from POS" : isPartial ? `Partial payment: ${format(paidAmountFinal)} paid, ${format(dueAmount)} due` : ""),
+          meta: orderMeta,
+          notes: orderNotes || (isDue ? "Due order from POS" : hasDue ? `Partial payment: ${format(effectivePaid)} paid, ${format(effectiveDue)} due` : ""),
         })
         .select("id")
         .single();
