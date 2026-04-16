@@ -71,6 +71,9 @@ const DueCustomers = () => {
         queryClient.invalidateQueries({ queryKey: ["payment-history-chart", storeId] });
         queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [storeId, queryClient]);
