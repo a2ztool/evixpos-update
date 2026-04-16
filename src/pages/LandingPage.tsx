@@ -342,7 +342,6 @@ const LandingPage = () => {
   }
 
   const bannerActive = get("banner_active", "true") === "true";
-  const curSymbol = CURRENCIES.find(c => c.key === currency)?.symbol || "৳";
 
   /* Section visibility from admin */
   const show = (section: string) => get(`section_${section}_visible`, "true") !== "false";
