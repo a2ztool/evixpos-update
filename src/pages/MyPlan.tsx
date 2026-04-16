@@ -572,7 +572,7 @@ const MyPlan = () => {
                         <span className={`text-3xl font-bold ${p.color}`}>
                           {formatPrice(p.key)}
                         </span>
-                        <span className="text-sm text-muted-foreground">/mo</span>
+                        <span className="text-sm text-muted-foreground">{yearly ? "/yr" : "/mo"}</span>
                         {(yearly || discountPct > 0 || discountFixed > 0) && (
                           <div className="flex items-center gap-1.5 mt-1">
                             {yearly && (
