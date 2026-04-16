@@ -32,7 +32,7 @@ export const PLAN_FEATURES: Record<string, string[]> = {
 export const useSubscription = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
-  const [plan, setPlan] = useState<string>("free");
+  const [plan, setPlan] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);

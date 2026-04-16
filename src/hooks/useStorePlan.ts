@@ -62,7 +62,7 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, string> = {
 export const useStorePlan = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
-  const [plan, setPlan] = useState<string>("free");
+  const [plan, setPlan] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
@@ -78,7 +78,7 @@ export const useStorePlan = () => {
 
   const fetchPlan = useCallback(async (isRealtimeUpdate = false) => {
     if (!planUserId) {
-      setPlan("free");
+      // No user yet — keep null, don't default to free
       setLoading(false);
       return;
     }
