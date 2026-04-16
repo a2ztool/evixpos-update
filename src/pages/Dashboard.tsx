@@ -37,7 +37,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const { isStaff, staffInfo } = useStaff();
-  const { plan } = useSubscription();
+  const { plan: rawPlan, loading: planLoading } = useSubscription();
+  const plan = rawPlan ?? "free"; // safe fallback only for UI display after loading
   const navigate = useNavigate();
   const [profileName, setProfileName] = useState("");
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
