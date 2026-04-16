@@ -71,7 +71,7 @@ const AdminLayout = () => {
     fetchUnread();
     const interval = setInterval(() => { fetchPending(); fetchUnread(); }, 15000);
     return () => clearInterval(interval);
-  }, [isAdmin, isLoginPage]);
+  }, [isAdmin]);
 
   if (authLoading || isAdmin === null) {
     return (
