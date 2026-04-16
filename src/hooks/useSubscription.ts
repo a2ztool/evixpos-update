@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
-import { getPlanLimits, PLAN_FEATURES_LIST, type VolumeStep } from "@/lib/planConfig";
+import { PLAN_FEATURES_LIST, type VolumeStep } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
-export { getPlanLimits, PLAN_FEATURES_LIST };
+export { PLAN_FEATURES_LIST };
 
 export const PLAN_PRICES: Record<string, number> = { free: 0, pro: 19, business: 49 };
 
