@@ -218,7 +218,7 @@ const AdminUsers = () => {
                         {u.stores.length > 0 && (
                           <CollapsibleContent asChild>
                             <TableRow className="border-slate-700/50 bg-slate-800/50">
-                              <TableCell colSpan={5} className="py-3">
+                              <TableCell colSpan={6} className="py-3">
                                 <div className="space-y-2 pl-4">
                                   <p className="text-xs text-slate-400 font-medium mb-2">Store Plans:</p>
                                   {u.stores.map((store) => (
@@ -246,7 +246,7 @@ const AdminUsers = () => {
                       </>
                     </Collapsible>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-slate-500 py-8">No users found.</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-8">No users found.</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
