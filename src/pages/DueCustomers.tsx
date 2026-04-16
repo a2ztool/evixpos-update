@@ -71,6 +71,9 @@ const DueCustomers = () => {
         queryClient.invalidateQueries({ queryKey: ["payment-history-chart", storeId] });
         queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `store_id=eq.${storeId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["due-customers", storeId] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [storeId, queryClient]);
@@ -110,6 +113,47 @@ const DueCustomers = () => {
       await supabase.from("customer_credits").update({
         total_due: newDue, last_payment_date: new Date().toISOString(),
       }).eq("id", payDialog.id);
+
+      // Sync related unpaid transactions for this customer
+      const { data: unpaidTxns } = await supabase.from("transactions")
+        .select("id, amount, note")
+        .eq("store_id", storeId!)
+        .eq("is_paid", false)
+        .ilike("note", "%POS%Due%")
+        .order("created_at", { ascending: true });
+
+      let remaining = amount;
+      for (const txn of (unpaidTxns || [])) {
+        if (remaining <= 0) break;
+        const txnAmount = Number(txn.amount);
+        if (remaining >= txnAmount) {
+          await supabase.from("transactions").update({ is_paid: true }).eq("id", txn.id);
+          remaining -= txnAmount;
+
+          // Update order status
+          const orderMatch = txn.note?.match(/POS.*Order #([a-f0-9]+)/i);
+          if (orderMatch) {
+            const prefix = orderMatch[1];
+            const { data: orders } = await supabase.from("orders")
+              .select("id, total_amount, meta")
+              .ilike("id", `${prefix}%`)
+              .eq("store_id", storeId!)
+              .limit(1);
+            if (orders?.[0]) {
+              const { data: relTxns } = await supabase.from("transactions")
+                .select("is_paid, amount")
+                .ilike("note", `%${prefix}%`)
+                .eq("store_id", storeId!);
+              const allPaid = relTxns?.every(t => t.is_paid) ?? false;
+              const totalPaid = relTxns?.filter(t => t.is_paid).reduce((s, t) => s + Number(t.amount), 0) || 0;
+              await supabase.from("orders").update({
+                payment_status: allPaid ? "paid" : "partial",
+                meta: { ...(orders[0].meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(orders[0].total_amount) - totalPaid) },
+              }).eq("id", orders[0].id);
+            }
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["due-customers"] });
