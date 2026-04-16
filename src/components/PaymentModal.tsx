@@ -29,6 +29,7 @@ interface PaymentModalProps {
   amount: number;
   currency: string;
   currencySymbol: string;
+  billingType?: "monthly" | "yearly";
 }
 
 // Expiry countdown hook
