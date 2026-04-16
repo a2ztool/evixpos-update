@@ -114,13 +114,18 @@ Deno.serve(async (req) => {
       const { data: stores } = await supabase.from("stores").select("*").eq("user_id", userId);
       const { data: sub } = await supabase
         .from("subscriptions")
-        .select("plan")
+        .select("plan, start_date, end_date")
         .eq("user_id", userId)
         .eq("status", "active")
+        .is("customer_id", null)
         .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle();
       const userPlan = sub?.plan || "free";
+      const now = new Date();
+      const endDate = sub?.end_date ? new Date(sub.end_date) : null;
+      const remainingDays = endDate ? Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null;
+      const planStatus = userPlan === "free" ? "lifetime" : endDate ? (remainingDays! > 0 ? "active" : "expired") : "active";
 
       const storesWithStats = await Promise.all(
         (stores || []).map(async (store: any) => {
@@ -248,6 +253,10 @@ Deno.serve(async (req) => {
 
       // Insert new active subscription (user-level plan)
       if (new_plan !== "free") {
+        const startDate = new Date();
+        const durationDays = params.duration_days || 30;
+        const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+        
         await supabase.from("subscriptions").insert({
           user_id: userId,
           plan: new_plan,
@@ -256,7 +265,8 @@ Deno.serve(async (req) => {
           price: 0,
           cost_price: 0,
           variation: "Admin Assigned",
-          start_date: new Date().toISOString(),
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
           store_id: store_id || null,
         });
       }
