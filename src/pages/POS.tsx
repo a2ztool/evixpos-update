@@ -592,7 +592,7 @@ const POS = () => {
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           status: "active",
-          plan: "customer" as const,
+          plan: "free" as const,
           renewals: 0,
           notes: `Auto-created from POS Order #${order.id.slice(0, 8)}`,
         });
