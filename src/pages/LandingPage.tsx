@@ -273,6 +273,50 @@ const LandingPage = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Check if user is logged in (for upgrade flow)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedInUser(data.session?.user?.id ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setLoggedInUser(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  /** Get formatted price from planConfig for any plan + current currency */
+  const getLandingPrice = (planKey: string): string => {
+    if (planKey === "free") return "0";
+    if (planKey === "custom") return "Custom";
+    const inr = getPriceINR(planKey, selectedVolume);
+    let price = inr * RATES_FROM_INR[currency];
+    if (yearly) price = price * 12 * 0.8;
+    return price.toFixed(currency === "USD" ? 2 : 0);
+  };
+
+  const getOriginalPrice = (planKey: string): string | null => {
+    if (planKey === "free" || planKey === "custom" || !yearly) return null;
+    const inr = getPriceINR(planKey, selectedVolume);
+    const price = inr * RATES_FROM_INR[currency] * 12;
+    return price.toFixed(currency === "USD" ? 2 : 0);
+  };
+
+  const handlePricingCTA = (planKey: string) => {
+    if (planKey === "free") {
+      navigate("/auth");
+      return;
+    }
+    if (planKey === "custom") {
+      window.open("mailto:support@evixpos.com?subject=Custom Plan Inquiry", "_blank");
+      return;
+    }
+    if (loggedInUser) {
+      navigate("/my-plan");
+    } else {
+      navigate("/auth", { state: { redirectTo: "/my-plan" } });
+    }
+  };
+
   // Auto-rotate screenshots
   const screenshots = useMemo(() => [
     { src: get("screenshot_1") || screenshotOrders, label: get("screenshot_1_label", "Order Management") },
