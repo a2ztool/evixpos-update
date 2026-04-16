@@ -233,6 +233,7 @@ const App = () => {
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+    </PlansConfigProvider>
     </StaffProvider>
     </StoreProvider>
     </LanguageProvider>
