@@ -84,7 +84,7 @@ interface ReceiptData {
   storeName: string;
 }
 
-type PaymentMode = "none" | "discount" | "extra" | "due";
+type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
@@ -105,6 +105,7 @@ const POS = () => {
   const [discountValue, setDiscountValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [extraChargeValue, setExtraChargeValue] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
@@ -280,15 +281,21 @@ const POS = () => {
 
   const subtotal = cart.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
 
-  const { total, dueAmount } = useMemo(() => {
+  const { total, dueAmount, paidAmountFinal } = useMemo(() => {
     let t = subtotal;
     const disc = parseFloat(discountValue) || 0;
     const extra = parseFloat(extraChargeValue) || 0;
     if (paymentMode === "discount") t -= discountType === "percentage" ? (subtotal * disc) / 100 : disc;
     else if (paymentMode === "extra") t += extra;
     if (t < 0) t = 0;
-    return { total: t, dueAmount: paymentMode === "due" ? t : 0 };
-  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue]);
+
+    if (paymentMode === "due") return { total: t, dueAmount: t, paidAmountFinal: 0 };
+    if (paymentMode === "partial") {
+      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
+      return { total: t, dueAmount: t - paid, paidAmountFinal: paid };
+    }
+    return { total: t, dueAmount: 0, paidAmountFinal: t };
+  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue, paidAmount]);
 
   // ─── Hold Order ───
   const handleHoldOrder = useCallback(() => {
@@ -363,6 +370,9 @@ const POS = () => {
     setSubmitting(true);
     try {
       const isDue = paymentMode === "due";
+      const isPartial = paymentMode === "partial";
+      const hasDue = isDue || (isPartial && dueAmount > 0);
+      const computedPaymentStatus = isDue ? "unpaid" : isPartial && dueAmount > 0 ? "partial" : "paid";
       const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
@@ -382,8 +392,9 @@ const POS = () => {
           source: "pos",
           payment_currency: activeCurrency,
           status: "completed" as const,
-          payment_status: isDue ? "unpaid" : "paid",
-          notes: orderNotes || (isDue ? "Due order from POS" : ""),
+          payment_status: computedPaymentStatus,
+          meta: { paid_amount: paidAmountFinal, due_amount: dueAmount },
+          notes: orderNotes || (isDue ? "Due order from POS" : isPartial ? `Partial payment: ${format(paidAmountFinal)} paid, ${format(dueAmount)} due` : ""),
         })
         .select("id")
         .single();
@@ -403,7 +414,8 @@ const POS = () => {
         .map((i) => supabase.from("products").update({ stock: i.product.stock - i.quantity }).eq("id", i.product.id));
       await Promise.all(stockUpdates);
 
-      if (!isDue) {
+      if (!hasDue) {
+        // Fully paid
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
@@ -413,7 +425,29 @@ const POS = () => {
           note: `POS Order #${order.id.slice(0, 8)}`,
           is_paid: true,
         });
+      } else if (isPartial && paidAmountFinal > 0) {
+        // Partial: record paid portion as income, due portion as unpaid
+        await supabase.from("transactions").insert({
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+          type: "income" as const,
+          amount: paidAmountFinal,
+          category: "sale",
+          note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
+          is_paid: true,
+        });
+        await supabase.from("transactions").insert({
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+          type: "income" as const,
+          amount: dueAmount,
+          category: "sale",
+          note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
+          is_paid: false,
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
       } else {
+        // Full due
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
@@ -427,8 +461,8 @@ const POS = () => {
       }
 
       // ─── Sync Customer Credits (due orders) ───
-      if (isDue && customerId && activeStore?.id) {
-        // Upsert customer_credits record
+      if (hasDue && customerId && activeStore?.id) {
+        const creditAmount = dueAmount;
         const { data: existingCredit } = await supabase
           .from("customer_credits")
           .select("id, total_due")
@@ -438,7 +472,7 @@ const POS = () => {
 
         if (existingCredit) {
           await supabase.from("customer_credits").update({
-            total_due: Number(existingCredit.total_due) + total,
+            total_due: Number(existingCredit.total_due) + creditAmount,
             updated_at: new Date().toISOString(),
           }).eq("id", existingCredit.id);
         } else {
@@ -446,14 +480,14 @@ const POS = () => {
             customer_id: customerId,
             store_id: activeStore.id,
             user_id: effectiveUserId!,
-            total_due: total,
+            total_due: creditAmount,
             credit_limit: 0,
           });
         }
       }
 
       // ─── Sync Loyalty Points (earned on completed paid orders) ───
-      if (!isDue && customerId && activeStore?.id) {
+      if (!hasDue && customerId && activeStore?.id) {
         const pointsEarned = Math.floor(total / 100); // 1 point per 100 currency
         if (pointsEarned > 0) {
           // Upsert loyalty_points summary
@@ -524,14 +558,14 @@ const POS = () => {
         discount: subtotal - total > 0 ? subtotal - total : 0,
         total,
         paymentMethod: payMethod,
-        paymentStatus: isDue ? "Unpaid (Due)" : "Paid",
+        paymentStatus: isDue ? "Unpaid (Due)" : isPartial && dueAmount > 0 ? `Partial (${format(paidAmountFinal)} paid)` : "Paid",
         currency: activeCurrency,
         notes: orderNotes,
         date: new Date().toLocaleString(),
         storeName: activeStore?.name || "Store",
       };
 
-      toast.success(isDue ? "Order added to due book!" : "Order completed!");
+      toast.success(isDue ? "Order added to due book!" : isPartial && dueAmount > 0 ? `Partial payment recorded! Due: ${format(dueAmount)}` : "Order completed!");
       if (subscriptionItems.length > 0) toast.success(`${subscriptionItems.length} subscription(s) auto-created!`);
 
       setCart([]);
@@ -539,6 +573,7 @@ const POS = () => {
       setPaymentMode("none");
       setDiscountValue("");
       setExtraChargeValue("");
+      setPaidAmount("");
       setOrderNotes("");
       setSelectedPaymentMethod("cash");
       setSplitMode(false);
@@ -572,7 +607,7 @@ const POS = () => {
                 quantity: totalQty,
                 total_amount: total,
                 currency: "BDT",
-                payment_status: isDue ? "unpaid" : "paid",
+                payment_status: computedPaymentStatus,
                 payment_method: payMethod,
                 order_date: new Date().toLocaleDateString(),
                 status: "completed",
@@ -613,7 +648,7 @@ const POS = () => {
   }, [products, search, activeCategory]);
 
   const selectedCustomer = customers.find(c => c.id === customerId);
-  const buttonLabel = paymentMode === "due" ? "Place Order (Add to Due)" : "Place Order";
+  const buttonLabel = paymentMode === "due" ? "Place Order (Add to Due)" : paymentMode === "partial" ? "Place Order (Partial)" : "Place Order";
   const receiptSymbol = receiptData ? (receiptData.currency === "BDT" ? "৳" : receiptData.currency === "INR" ? "₹" : "$") : symbol;
 
   const CHECKOUT_STEPS = [
@@ -689,6 +724,7 @@ const POS = () => {
               <RefreshCw className="h-4 w-4 text-amber-600" />
               <span className="font-medium text-amber-800 dark:text-amber-400">Advanced Payment</span>
               {paymentMode === "due" && <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">DUE</Badge>}
+              {paymentMode === "partial" && <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0">PARTIAL</Badge>}
               {paymentMode === "discount" && <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0">DISCOUNT</Badge>}
               {paymentMode === "extra" && <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0">EXTRA</Badge>}
             </div>
@@ -702,6 +738,7 @@ const POS = () => {
               <button onClick={() => setPaymentMode("discount")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "discount" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><Percent className="h-4 w-4" />Discount</button>
               <button onClick={() => setPaymentMode("extra")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "extra" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><TrendingUp className="h-4 w-4" />Extra Charge</button>
               <button onClick={() => setPaymentMode("due")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "due" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400" : "border-border text-muted-foreground hover:border-amber-400"}`}><Clock className="h-4 w-4" />Due / No Pay</button>
+              <button onClick={() => setPaymentMode("partial")} className={`col-span-2 flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "partial" ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400" : "border-border text-muted-foreground hover:border-orange-400"}`}><Split className="h-4 w-4" />Partial Payment</button>
             </div>
             {paymentMode === "discount" && (
               <div className="flex gap-2">
@@ -720,6 +757,37 @@ const POS = () => {
               <div className="flex gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3">
                 <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800 dark:text-amber-400">Customer pays <strong>nothing now</strong>. Full total recorded in <strong>Due Book</strong>.</p>
+              </div>
+            )}
+            {paymentMode === "partial" && (
+              <div className="space-y-2">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    placeholder={`Paid amount (max ${format(total)})`}
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    className="flex-1"
+                    max={total}
+                    min={0}
+                  />
+                </div>
+                <div className="rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 p-3 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-orange-700 dark:text-orange-400">Paid:</span>
+                    <span className="font-semibold text-orange-800 dark:text-orange-300">{format(paidAmountFinal)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-orange-700 dark:text-orange-400">Due:</span>
+                    <span className="font-semibold text-orange-800 dark:text-orange-300">{format(dueAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs pt-1 border-t border-orange-200 dark:border-orange-700">
+                    <span className="text-orange-700 dark:text-orange-400">Status:</span>
+                    <Badge className={`text-[10px] ${paidAmountFinal === 0 ? "bg-red-500" : paidAmountFinal >= total ? "bg-green-500" : "bg-orange-500"} text-white`}>
+                      {paidAmountFinal === 0 ? "Unpaid" : paidAmountFinal >= total ? "Paid" : "Partial"}
+                    </Badge>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -741,10 +809,16 @@ const POS = () => {
         <div className="flex justify-between text-sm text-blue-600"><span>Extra Charge</span><span>+{format(parseFloat(extraChargeValue) || 0)}</span></div>
       )}
       <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
-      {paymentMode === "due" && (
+      {(paymentMode === "due" || (paymentMode === "partial" && dueAmount > 0)) && (
         <div className="flex justify-between text-sm font-medium text-amber-600">
           <span className="flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />Due Amount</span>
           <span>{format(dueAmount)}</span>
+        </div>
+      )}
+      {paymentMode === "partial" && paidAmountFinal > 0 && (
+        <div className="flex justify-between text-sm font-medium text-green-600">
+          <span>Paid Amount</span>
+          <span>{format(paidAmountFinal)}</span>
         </div>
       )}
       <div className="space-y-1.5">
@@ -755,7 +829,7 @@ const POS = () => {
         </Select>
       </div>
       <Button
-        className={`w-full h-12 text-base font-semibold ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
+        className={`w-full h-12 text-base font-semibold ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600 text-white" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
         disabled={cart.length === 0 || submitting}
         onClick={openCheckout}
       >
@@ -867,6 +941,8 @@ const POS = () => {
               {orderNotes && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Notes</span><span className="font-medium truncate max-w-[200px]">{orderNotes}</span></div>}
               {paymentMode === "discount" && parseFloat(discountValue) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>}
               {paymentMode === "due" && <div className="flex justify-between text-sm text-amber-600"><span>Payment Status</span><span className="font-medium">Due (Unpaid)</span></div>}
+              {paymentMode === "partial" && <div className="flex justify-between text-sm text-orange-600"><span>Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>}
+              {paymentMode === "partial" && dueAmount > 0 && <div className="flex justify-between text-sm text-amber-600"><span>Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
             </div>
@@ -1070,7 +1146,7 @@ const POS = () => {
             {checkoutStep < 4 ? (
               <Button size="sm" onClick={() => setCheckoutStep(checkoutStep + 1)} disabled={!canProceed()} className="gap-1">Next <ArrowRight className="h-3.5 w-3.5" /></Button>
             ) : (
-              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600" : ""}`}>
+              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600" : ""}`}>
                 {submitting ? "Processing..." : "Confirm Order"} <Check className="h-3.5 w-3.5" />
               </Button>
             )}
