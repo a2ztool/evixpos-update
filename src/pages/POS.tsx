@@ -23,7 +23,7 @@ import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
   ChevronDown, RefreshCw, Clock, Percent, TrendingUp, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
@@ -857,19 +857,33 @@ const POS = () => {
       {paymentMode === "extra" && parseFloat(extraChargeValue) > 0 && (
         <div className="flex justify-between text-sm text-blue-600"><span>Extra Charge</span><span>+{format(parseFloat(extraChargeValue) || 0)}</span></div>
       )}
+      <Separator />
       <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
-      {(paymentMode === "due" || (paymentMode === "partial" && dueAmount > 0)) && (
-        <div className="flex justify-between text-sm font-medium text-amber-600">
-          <span className="flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" />Due Amount</span>
-          <span>{format(dueAmount)}</span>
+
+      {/* Payment breakdown */}
+      {(paymentMode === "partial" || paymentMode === "due" || (splitMode && splitEntries.length > 0)) && (
+        <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
+          <div className="flex justify-between text-sm">
+            <span className="flex items-center gap-1.5 text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Paid
+            </span>
+            <span className="font-semibold text-green-600">
+              {format(splitMode ? splitEntries.reduce((s, e) => s + e.amount, 0) : paidAmountFinal)}
+            </span>
+          </div>
+          {(paymentMode === "due" || dueAmount > 0) && (
+            <div className="flex justify-between text-sm">
+              <span className="flex items-center gap-1.5 text-destructive">
+                <AlertTriangle className="h-3.5 w-3.5" /> Due
+              </span>
+              <span className="font-semibold text-destructive">
+                {format(splitMode ? Math.max(0, total - splitEntries.reduce((s, e) => s + e.amount, 0)) : dueAmount)}
+              </span>
+            </div>
+          )}
         </div>
       )}
-      {paymentMode === "partial" && paidAmountFinal > 0 && (
-        <div className="flex justify-between text-sm font-medium text-green-600">
-          <span>Paid Amount</span>
-          <span>{format(paidAmountFinal)}</span>
-        </div>
-      )}
+
       <div className="space-y-1.5">
         <span className="text-sm font-medium">Currency</span>
         <Select value={activeCurrency} onValueChange={setActiveCurrency}>
@@ -877,6 +891,19 @@ const POS = () => {
           <SelectContent>{currencies.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}</SelectContent>
         </Select>
       </div>
+
+      {/* Add Payment Method shortcut */}
+      {!advancedOpen && paymentMode === "none" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5 text-xs border-dashed"
+          onClick={() => setAdvancedOpen(true)}
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Payment Method
+        </Button>
+      )}
+
       <Button
         className={`w-full h-12 text-base font-semibold ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600 text-white" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
         disabled={cart.length === 0 || submitting}
@@ -989,9 +1016,20 @@ const POS = () => {
               ))}
               {orderNotes && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Notes</span><span className="font-medium truncate max-w-[200px]">{orderNotes}</span></div>}
               {paymentMode === "discount" && parseFloat(discountValue) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>}
-              {paymentMode === "due" && <div className="flex justify-between text-sm text-amber-600"><span>Payment Status</span><span className="font-medium">Due (Unpaid)</span></div>}
-              {paymentMode === "partial" && <div className="flex justify-between text-sm text-orange-600"><span>Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>}
-              {paymentMode === "partial" && dueAmount > 0 && <div className="flex justify-between text-sm text-amber-600"><span>Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
+              {paymentMode === "due" && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
+              {paymentMode === "partial" && (
+                <>
+                  <div className="flex justify-between text-sm text-green-600"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>
+                  {dueAmount > 0 && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
+                </>
+              )}
+              {splitMode && splitEntries.length > 0 && (() => {
+                const splitTotal = splitEntries.reduce((s, e) => s + e.amount, 0);
+                const splitDue = Math.max(0, total - splitTotal);
+                return splitDue > 0.01 ? (
+                  <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Split Due</span><span className="font-medium">{format(splitDue)}</span></div>
+                ) : null;
+              })()}
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
             </div>
