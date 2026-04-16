@@ -12,11 +12,12 @@ import {
 interface Props {
   navigate: (path: string) => void;
   plan: string;
+  volume?: number | null;
 }
 
-const SidebarUsageWidget = ({ navigate, plan }: Props) => {
+const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
   const { user } = useAuth();
-  const usage = useUsageLimits(plan);
+  const usage = useUsageLimits(plan, volume);
 
   if (!user || usage.loading) return null;
 
