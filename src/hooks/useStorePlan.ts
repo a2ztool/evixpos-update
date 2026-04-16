@@ -63,6 +63,7 @@ export const useStorePlan = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string>("free");
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -84,7 +85,7 @@ export const useStorePlan = () => {
 
     const { data } = await supabase
       .from("subscriptions")
-      .select("plan, status")
+      .select("plan, status, end_date")
       .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
@@ -92,7 +93,10 @@ export const useStorePlan = () => {
       .limit(1)
       .maybeSingle();
 
-    const newPlan = data?.plan ?? "free";
+    // Check if expired
+    const isExpired = data?.end_date && new Date(data.end_date) < new Date();
+    const newPlan = isExpired ? "free" : (data?.plan ?? "free");
+    setEndDate(isExpired ? null : (data?.end_date || null));
     
     setPlan(prev => {
       if (isRealtimeUpdate && initialLoadDone.current && prev !== newPlan) {
@@ -166,6 +170,7 @@ export const useStorePlan = () => {
     },
     [plan]
   );
+  const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
 
-  return { plan, loading, hasFeature };
+  return { plan, loading, hasFeature, endDate, remainingDays };
 };

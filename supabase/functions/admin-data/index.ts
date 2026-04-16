@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (action === "get_users") {
       const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       const { data: allStores } = await supabase.from("stores").select("id, name, user_id");
-      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status").eq("status", "active");
+      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status, start_date, end_date").eq("status", "active");
 
       const storeMap: Record<string, any[]> = {};
       (allStores || []).forEach((s: any) => {
@@ -70,26 +70,37 @@ Deno.serve(async (req) => {
         storeMap[s.user_id].push(s);
       });
 
-      const planMap: Record<string, string> = {};
+      // Build plan map with expiry info
+      const planMap: Record<string, { plan: string; start_date: string | null; end_date: string | null }> = {};
       (allSubs || []).forEach((s: any) => {
+        // Only consider platform subscriptions (not customer subs)
         const current = planMap[s.user_id];
         const levels: Record<string, number> = { free: 0, pro: 1, business: 2 };
-        if (!current || (levels[s.plan] || 0) > (levels[current] || 0)) {
-          planMap[s.user_id] = s.plan;
+        if (!current || (levels[s.plan] || 0) > (levels[current.plan] || 0)) {
+          planMap[s.user_id] = { plan: s.plan, start_date: s.start_date, end_date: s.end_date };
         }
       });
 
+      const now = new Date();
       const result = (profiles || []).map((p: any) => {
         const userStores = storeMap[p.id] || [];
-        const userPlan = planMap[p.id] || "free";
+        const subInfo = planMap[p.id] || { plan: "free", start_date: null, end_date: null };
+        const endDate = subInfo.end_date ? new Date(subInfo.end_date) : null;
+        const remainingDays = endDate ? Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null;
+        const planStatus = subInfo.plan === "free" ? "lifetime" : endDate ? (remainingDays! > 0 ? "active" : "expired") : "active";
+
         return {
           id: p.id,
           name: p.name,
           email: p.email,
           created_at: p.created_at,
-          plan: userPlan,
+          plan: subInfo.plan,
+          start_date: subInfo.start_date,
+          end_date: subInfo.end_date,
+          remaining_days: remainingDays,
+          plan_status: planStatus,
           storeCount: userStores.length,
-          stores: userStores.map((s: any) => ({ id: s.id, name: s.name, plan: userPlan })),
+          stores: userStores.map((s: any) => ({ id: s.id, name: s.name, plan: subInfo.plan })),
         };
       });
 
@@ -103,13 +114,18 @@ Deno.serve(async (req) => {
       const { data: stores } = await supabase.from("stores").select("*").eq("user_id", userId);
       const { data: sub } = await supabase
         .from("subscriptions")
-        .select("plan")
+        .select("plan, start_date, end_date")
         .eq("user_id", userId)
         .eq("status", "active")
+        .is("customer_id", null)
         .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle();
       const userPlan = sub?.plan || "free";
+      const now = new Date();
+      const endDate = sub?.end_date ? new Date(sub.end_date) : null;
+      const remainingDays = endDate ? Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null;
+      const planStatus = userPlan === "free" ? "lifetime" : endDate ? (remainingDays! > 0 ? "active" : "expired") : "active";
 
       const storesWithStats = await Promise.all(
         (stores || []).map(async (store: any) => {
@@ -133,7 +149,7 @@ Deno.serve(async (req) => {
         })
       );
 
-      return json({ profile, stores: storesWithStats });
+      return json({ profile, stores: storesWithStats, plan_info: { plan: userPlan, start_date: sub?.start_date || null, end_date: sub?.end_date || null, remaining_days: remainingDays, plan_status: planStatus } });
     }
 
     // ─── GET STORES ───
@@ -237,6 +253,10 @@ Deno.serve(async (req) => {
 
       // Insert new active subscription (user-level plan)
       if (new_plan !== "free") {
+        const startDate = new Date();
+        const durationDays = params.duration_days || 30;
+        const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+        
         await supabase.from("subscriptions").insert({
           user_id: userId,
           plan: new_plan,
@@ -245,7 +265,8 @@ Deno.serve(async (req) => {
           price: 0,
           cost_price: 0,
           variation: "Admin Assigned",
-          start_date: new Date().toISOString(),
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
           store_id: store_id || null,
         });
       }
@@ -313,8 +334,10 @@ Deno.serve(async (req) => {
             .eq("status", "active")
             .is("customer_id", null);
 
-          // Create new subscription
+          // Create new subscription with 30-day expiry
           if (payment.plan !== "free") {
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
             await supabase.from("subscriptions").insert({
               user_id: payment.user_id,
               plan: payment.plan,
@@ -323,7 +346,8 @@ Deno.serve(async (req) => {
               price: payment.amount,
               cost_price: 0,
               variation: "Payment Approved",
-              start_date: new Date().toISOString(),
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
               store_id: payment.store_id || null,
             });
           }

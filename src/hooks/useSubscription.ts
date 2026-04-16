@@ -33,6 +33,7 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const { isStaff, staffInfo } = useStaff();
   const [plan, setPlan] = useState<string>("free");
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -43,15 +44,26 @@ export const useSubscription = () => {
     if (!planUserId) { setLoading(false); return; }
     const { data } = await supabase
       .from("subscriptions")
-      .select("plan, status")
+      .select("plan, status, end_date")
       .eq("user_id", planUserId)
       .eq("status", "active")
       .is("customer_id", null)
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (data) setPlan(data.plan);
-    else setPlan("free");
+    if (data) {
+      // Check if plan has expired
+      if (data.end_date && new Date(data.end_date) < new Date()) {
+        setPlan("free");
+        setEndDate(null);
+      } else {
+        setPlan(data.plan);
+        setEndDate(data.end_date || null);
+      }
+    } else {
+      setPlan("free");
+      setEndDate(null);
+    }
     setLoading(false);
   }, [planUserId]);
 
@@ -88,16 +100,24 @@ export const useSubscription = () => {
 
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 
+  const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
+  const isExpiringSoon = remainingDays !== null && remainingDays <= 7 && remainingDays > 0;
+  const isExpired = remainingDays !== null && remainingDays <= 0;
+
   const upgradeTo = async (newPlan: "free" | "pro" | "business") => {
     if (!planUserId) return;
     await supabase.from("subscriptions").update({ status: "inactive" }).eq("user_id", planUserId).eq("status", "active").is("customer_id", null);
+    const startDate = new Date();
+    const newEndDate = newPlan === "free" ? null : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await supabase.from("subscriptions").insert({
       user_id: planUserId,
       plan: newPlan,
       status: "active",
+      end_date: newEndDate,
     });
     setPlan(newPlan);
+    setEndDate(newEndDate);
   };
 
-  return { plan, limits, loading, upgradeTo };
+  return { plan, limits, loading, upgradeTo, endDate, remainingDays, isExpiringSoon, isExpired };
 };
