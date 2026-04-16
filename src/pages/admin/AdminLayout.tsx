@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useNotifications } from "@/hooks/useNotifications";
 import AdminBottomNav from "@/components/AdminBottomNav";
 import BackButton from "@/components/BackButton";
 
@@ -37,6 +38,8 @@ const AdminLayout = () => {
   const { adminCall } = useAdmin();
   const navigate = useNavigate();
   const location = useLocation();
+  // Mount realtime notifications + sound for admin (only when authenticated as admin)
+  useNotifications();
 
   useEffect(() => {
     const checkAdmin = async () => {
