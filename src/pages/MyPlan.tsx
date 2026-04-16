@@ -112,24 +112,25 @@ interface PlatformCoupon {
 }
 
 const MyPlan = () => {
-  const { plan: rawPlan, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
+  const { plan: rawPlan, volume: subVolume, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
   const plan = rawPlan ?? "free";
-  const usage = useUsageLimits(plan);
+  const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
+  const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
-  const [currency, setCurrency] = useState<"USD" | "BDT" | "INR">("BDT");
+  const [currency, setCurrency] = useState<"USD" | "BDT" | "INR">("INR");
   const [yearly, setYearly] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [activeBanner, setActiveBanner] = useState<PlatformCoupon | null>(null);
-  const [volume, setVolume] = useState([1000]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number }>({ open: false, planKey: "", planName: "", amount: 0 });
 
   const handleUpgrade = (planDef: PlanDef) => {
-    const dynamicUSD = getDynamicUSD(planDef);
-    if (dynamicUSD === null || dynamicUSD === 0) return;
-    let price = dynamicUSD * RATES[currency];
+    const priceINR = getINRPrice(planDef.key);
+    if (priceINR === null || priceINR === 0) return;
+    let price = priceINR * RATES_FROM_INR[currency];
     if (yearly) price = price * 0.8;
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
@@ -148,7 +149,6 @@ const MyPlan = () => {
       .then(({ data }) => {
         if (data) {
           const coupon = data as unknown as PlatformCoupon;
-          // Check expiry
           if (!coupon.expires_at || new Date(coupon.expires_at) >= new Date()) {
             setActiveBanner(coupon);
           }
@@ -176,33 +176,34 @@ const MyPlan = () => {
   const discountPct = appliedCoupon?.discount_type === "percentage" ? appliedCoupon.discount_value : 0;
   const discountFixed = appliedCoupon?.discount_type === "fixed" ? appliedCoupon.discount_value : 0;
 
-  /** Calculate dynamic USD price based on volume */
-  const getDynamicUSD = (p: PlanDef): number | null => {
-    if (p.baseUSD === null) return null;
-    if (p.baseUSD === 0) return 0;
-    const extraVolume = Math.max(0, volume[0] - p.baseVolume);
-    const extraCost = (extraVolume / 1000) * p.ratePerUnit;
-    return p.baseUSD + extraCost;
+  /** Get INR price for a plan based on selected volume */
+  const getINRPrice = (planKey: string): number | null => {
+    if (planKey === "free") return 0;
+    if (planKey === "custom") return null;
+    return getPriceINR(planKey, selectedVolume);
   };
 
-  const formatPrice = (usd: number | null) => {
-    if (usd === null) return "Custom";
-    if (usd === 0) return "Free";
-    let price = usd * RATES[currency];
+  const formatPrice = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null) return "Custom";
+    if (inr === 0) return "Free";
+    let price = inr * RATES_FROM_INR[currency];
     if (yearly) price = price * 0.8;
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
-    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 1)}`;
+    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
   };
 
-  const originalPrice = (usd: number | null) => {
-    if (usd === null || usd === 0) return null;
-    const price = usd * RATES[currency];
-    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 1)}`;
+  const originalPrice = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null || inr === 0) return null;
+    const price = inr * RATES_FROM_INR[currency];
+    return `${CURRENCY_SYMBOLS[currency]}${price.toFixed(currency === "USD" ? 2 : 0)}`;
   };
 
-  const hasDiscount = (usd: number | null) => {
-    if (usd === null || usd === 0) return false;
+  const hasDiscount = (planKey: string) => {
+    const inr = getINRPrice(planKey);
+    if (inr === null || inr === 0) return false;
     return yearly || discountPct > 0 || discountFixed > 0;
   };
 
