@@ -531,7 +531,7 @@ const fetchProducts = async () => {
           cost_price: parseFloat(formCostPrice) || 0,
           notes: `Created from order ${data.id}`,
           status: "active",
-          plan: "free",
+          plan: "customer" as any,
         });
       }
 
