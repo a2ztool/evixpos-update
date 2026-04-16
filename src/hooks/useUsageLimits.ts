@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlanLimits, type VolumeStep } from "@/lib/planConfig";
+import { type VolumeStep } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
 export interface UsageLimits {
   totalProducts: number;
@@ -24,6 +25,7 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  const { getPlanLimits } = usePlansConfig();
   const limits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
 
   const fetchUsage = useCallback(async () => {

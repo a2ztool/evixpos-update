@@ -25,9 +25,10 @@ import LandingChatbot from "@/components/LandingChatbot";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  VOLUME_STEPS, formatVolume, getPriceINR,
+  VOLUME_STEPS, formatVolume,
   PLAN_FEATURES_LIST, type VolumeStep,
 } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
 /* ─── static imports for assets ─── */
 import dashboardPreview from "@/assets/dashboard-preview.jpg";
@@ -255,6 +256,7 @@ const LandingPage = () => {
   const [yearly, setYearly] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const { getPriceINR: dynamicGetPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
 
   const renderPolicyContent = (text: string) => {
     if (!text) return <p>Content coming soon.</p>;
@@ -288,7 +290,7 @@ const LandingPage = () => {
   const getLandingPrice = (planKey: string): string => {
     if (planKey === "free") return "0";
     if (planKey === "custom") return "Custom";
-    const inr = getPriceINR(planKey, selectedVolume);
+    const inr = dynamicGetPriceINR(planKey, selectedVolume);
     let price = inr * RATES_FROM_INR[currency];
     if (yearly) price = price * 12 * 0.8;
     return price.toFixed(currency === "USD" ? 2 : 0);
@@ -296,7 +298,7 @@ const LandingPage = () => {
 
   const getOriginalPrice = (planKey: string): string | null => {
     if (planKey === "free" || planKey === "custom" || !yearly) return null;
-    const inr = getPriceINR(planKey, selectedVolume);
+    const inr = dynamicGetPriceINR(planKey, selectedVolume);
     const price = inr * RATES_FROM_INR[currency] * 12;
     return price.toFixed(currency === "USD" ? 2 : 0);
   };

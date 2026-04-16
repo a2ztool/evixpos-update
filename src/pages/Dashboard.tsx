@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { getPlanLimits } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -52,6 +52,7 @@ const Dashboard = () => {
     return "Good Evening";
   }, []);
 
+  const { getPlanLimits } = usePlansConfig();
   const dashLimits = getPlanLimits(plan, (subVolume ?? 500) as any);
   const productLimit = dashLimits.maxProducts;
   const productUsagePercent = productLimit > 0 ? Math.round((productCount / productLimit) * 100) : 0;

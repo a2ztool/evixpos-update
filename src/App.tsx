@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { StaffProvider } from "@/contexts/StaffContext";
+import { PlansConfigProvider } from "@/contexts/PlansConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OfflineBanner from "@/components/OfflineBanner";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -88,6 +89,7 @@ const AdminLandingEditor = lazyPage(() => import("./pages/admin/AdminLandingEdit
 const AdminInbox = lazyPage(() => import("./pages/admin/AdminInbox"));
 const AdminSupportTickets = lazyPage(() => import("./pages/admin/AdminSupportTickets"));
 const AdminReferrals = lazyPage(() => import("./pages/admin/AdminReferrals"));
+const AdminPlansPricing = lazyPage(() => import("./pages/admin/AdminPlansPricing"));
 
 // ─── QueryClient with aggressive caching for instant navigation ───
 const queryClient = new QueryClient({
@@ -145,6 +147,7 @@ const App = () => {
     <LanguageProvider>
     <StoreProvider>
     <StaffProvider>
+    <PlansConfigProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -223,12 +226,14 @@ const App = () => {
               <Route path="/admin/inbox" element={<AdminInbox />} />
               <Route path="/admin/support" element={<AdminSupportTickets />} />
               <Route path="/admin/referrals" element={<AdminReferrals />} />
+              <Route path="/admin/plans-pricing" element={<AdminPlansPricing />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+    </PlansConfigProvider>
     </StaffProvider>
     </StoreProvider>
     </LanguageProvider>

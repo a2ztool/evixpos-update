@@ -22,9 +22,10 @@ import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
 import {
   VOLUME_STEPS, PRO_PRICES_INR, BUSINESS_PRICES_INR,
-  formatVolume, getPriceINR, snapToVolumeStep,
+  formatVolume, snapToVolumeStep,
   type VolumeStep,
 } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
 // Exchange rates from INR
 const RATES_FROM_INR = { INR: 1, USD: 1 / 84, BDT: 122 / 84 };
@@ -116,6 +117,7 @@ const MyPlan = () => {
   const plan = rawPlan ?? "free";
   const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
+  const { getPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
   const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
