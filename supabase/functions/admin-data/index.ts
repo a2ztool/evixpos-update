@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (action === "get_users") {
       const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       const { data: allStores } = await supabase.from("stores").select("id, name, user_id");
-      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status").eq("status", "active");
+      const { data: allSubs } = await supabase.from("subscriptions").select("user_id, plan, status, start_date, end_date").eq("status", "active");
 
       const storeMap: Record<string, any[]> = {};
       (allStores || []).forEach((s: any) => {
@@ -70,26 +70,37 @@ Deno.serve(async (req) => {
         storeMap[s.user_id].push(s);
       });
 
-      const planMap: Record<string, string> = {};
+      // Build plan map with expiry info
+      const planMap: Record<string, { plan: string; start_date: string | null; end_date: string | null }> = {};
       (allSubs || []).forEach((s: any) => {
+        // Only consider platform subscriptions (not customer subs)
         const current = planMap[s.user_id];
         const levels: Record<string, number> = { free: 0, pro: 1, business: 2 };
-        if (!current || (levels[s.plan] || 0) > (levels[current] || 0)) {
-          planMap[s.user_id] = s.plan;
+        if (!current || (levels[s.plan] || 0) > (levels[current.plan] || 0)) {
+          planMap[s.user_id] = { plan: s.plan, start_date: s.start_date, end_date: s.end_date };
         }
       });
 
+      const now = new Date();
       const result = (profiles || []).map((p: any) => {
         const userStores = storeMap[p.id] || [];
-        const userPlan = planMap[p.id] || "free";
+        const subInfo = planMap[p.id] || { plan: "free", start_date: null, end_date: null };
+        const endDate = subInfo.end_date ? new Date(subInfo.end_date) : null;
+        const remainingDays = endDate ? Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null;
+        const planStatus = subInfo.plan === "free" ? "lifetime" : endDate ? (remainingDays! > 0 ? "active" : "expired") : "active";
+
         return {
           id: p.id,
           name: p.name,
           email: p.email,
           created_at: p.created_at,
-          plan: userPlan,
+          plan: subInfo.plan,
+          start_date: subInfo.start_date,
+          end_date: subInfo.end_date,
+          remaining_days: remainingDays,
+          plan_status: planStatus,
           storeCount: userStores.length,
-          stores: userStores.map((s: any) => ({ id: s.id, name: s.name, plan: userPlan })),
+          stores: userStores.map((s: any) => ({ id: s.id, name: s.name, plan: subInfo.plan })),
         };
       });
 
