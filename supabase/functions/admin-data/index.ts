@@ -1,10 +1,24 @@
-// Admin-data edge function v2 — plans config, stats, history support
+// Admin-data edge function v3 — full plans config, stats, history, user management
+// Force redeploy: 2026-04-16T13:15:00Z
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+function json(data: unknown) {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function errorResponse(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,10 +32,10 @@ Deno.serve(async (req) => {
 
     // Verify caller is admin
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Unauthorized");
+    if (!authHeader) return errorResponse("Unauthorized", 401);
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) throw new Error("Unauthorized");
+    if (authError || !user) return errorResponse("Unauthorized", 401);
 
     const { data: roleData } = await supabase
       .from("user_roles")
@@ -29,9 +43,11 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle();
-    if (!roleData) throw new Error("Not an admin");
+    if (!roleData) return errorResponse("Not an admin", 403);
 
-    const { action, params } = await req.json();
+    const body = await req.json();
+    const action = body.action;
+    const params = body.params || {};
 
     // ─── GET STATS ───
     if (action === "get_stats") {
@@ -59,6 +75,134 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── GET PLAN STATS ───
+    if (action === "get_plan_stats") {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan, status, end_date")
+        .eq("status", "active")
+        .in("plan", ["free", "pro", "business"]);
+      const { count: totalUsers } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true });
+      const breakdown = { free: 0, pro: 0, business: 0 };
+      let expiringSoon = 0;
+      const now = new Date();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      (subs || []).forEach((s: any) => {
+        if (s.plan in breakdown) breakdown[s.plan as keyof typeof breakdown]++;
+        if (s.end_date) {
+          const diff = new Date(s.end_date).getTime() - now.getTime();
+          if (diff > 0 && diff < sevenDays) expiringSoon++;
+        }
+      });
+      return json({ totalUsers: totalUsers || 0, planBreakdown: breakdown, expiringSoon, totalRevenue: 0 });
+    }
+
+    // ─── GET PLAN HISTORY ───
+    if (action === "get_plan_history") {
+      const { data } = await supabase
+        .from("plan_history")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      const userIds = [...new Set((data || []).map((h: any) => h.user_id))];
+      const { data: profiles } = userIds.length > 0
+        ? await supabase.from("profiles").select("id, email").in("id", userIds)
+        : { data: [] };
+      const emailMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { emailMap[p.id] = p.email; });
+      const result = (data || []).map((h: any) => ({ ...h, user_email: emailMap[h.user_id] || "" }));
+      return json(result);
+    }
+
+    // ─── UPDATE PLANS CONFIG ───
+    if (action === "update_plans_config") {
+      const { configs: configRows } = params;
+      for (const row of configRows) {
+        const { id, plan_type, volume, price_inr, store_limit, product_limit, customer_limit } = row;
+        if (id) {
+          await supabase.from("plans_config").update({
+            price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+          }).eq("id", id);
+        } else {
+          await supabase.from("plans_config").upsert({
+            plan_type, volume, price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+          }, { onConflict: "plan_type,volume" });
+        }
+      }
+      return json({ success: true });
+    }
+
+    // ─── ADMIN CHANGE USER PLAN (with history) ───
+    if (action === "admin_change_user_plan") {
+      const { user_id: targetUserId, new_plan, new_volume, billing_type, price, duration_days, notes } = params;
+      const { data: currentSub } = await supabase.from("subscriptions").select("plan, volume")
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]).maybeSingle();
+      const oldPlan = currentSub?.plan || "free";
+      const oldVolume = (currentSub as any)?.volume || null;
+
+      await supabase.from("subscriptions").update({ status: "expired" })
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]);
+
+      const startDate = new Date();
+      const days = new_plan === "free" ? 0 : (billing_type === "yearly" ? 365 : (duration_days || 30));
+      const endDate = new_plan === "free" ? null : new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("subscriptions").insert({
+        user_id: targetUserId, plan: new_plan, status: "active",
+        product_name: `${new_plan.charAt(0).toUpperCase() + new_plan.slice(1)} Plan`,
+        price: price || 0, cost_price: 0, variation: "Admin Changed",
+        start_date: startDate.toISOString(), end_date: endDate, store_id: null,
+        volume: new_volume || null, billing_type: billing_type || "monthly",
+      });
+
+      // Log to plan_history
+      try {
+        await supabase.from("plan_history").insert({
+          user_id: targetUserId, action: "admin_change",
+          old_plan: oldPlan, new_plan: new_plan,
+          old_volume: oldVolume, new_volume: new_volume || null,
+          changed_by: user.id,
+        });
+      } catch (_e) { /* plan_history table may not exist yet */ }
+
+      const planLabel = new_plan.charAt(0).toUpperCase() + new_plan.slice(1);
+      await supabase.from("notifications").insert({
+        user_id: targetUserId, type: "success",
+        message: `🎉 Your plan has been changed to ${planLabel} by admin.`,
+      });
+
+      return json({ success: true });
+    }
+
+    // ─── ADMIN EXTEND USER PLAN ───
+    if (action === "admin_extend_plan") {
+      const { user_id: targetUserId, extend_days } = params;
+      const { data: currentSub } = await supabase.from("subscriptions").select("id, plan, end_date, volume")
+        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["pro", "business"]).maybeSingle();
+      if (!currentSub) return json({ success: false, error: "No active paid plan found" });
+
+      const currentEnd = currentSub.end_date ? new Date(currentSub.end_date) : new Date();
+      const newEnd = new Date(currentEnd.getTime() + (extend_days || 30) * 24 * 60 * 60 * 1000);
+      await supabase.from("subscriptions").update({ end_date: newEnd.toISOString() }).eq("id", currentSub.id);
+
+      try {
+        await supabase.from("plan_history").insert({
+          user_id: targetUserId, action: "extend",
+          old_plan: currentSub.plan, new_plan: currentSub.plan,
+          old_volume: (currentSub as any).volume, new_volume: (currentSub as any).volume,
+          changed_by: user.id,
+        });
+      } catch (_e) { /* plan_history table may not exist yet */ }
+
+      await supabase.from("notifications").insert({
+        user_id: targetUserId, type: "success",
+        message: `📅 Your plan has been extended by ${extend_days} days by admin.`,
+      });
+
+      return json({ success: true });
+    }
+
     // ─── GET USERS ───
     if (action === "get_users") {
       const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
@@ -71,10 +215,8 @@ Deno.serve(async (req) => {
         storeMap[s.user_id].push(s);
       });
 
-      // Build plan map with expiry info
       const planMap: Record<string, { plan: string; start_date: string | null; end_date: string | null }> = {};
       (allSubs || []).forEach((s: any) => {
-        // Only consider platform subscriptions (not customer subs)
         const current = planMap[s.user_id];
         const levels: Record<string, number> = { free: 0, pro: 1, business: 2 };
         if (!current || (levels[s.plan] || 0) > (levels[current.plan] || 0)) {
@@ -91,15 +233,9 @@ Deno.serve(async (req) => {
         const planStatus = subInfo.plan === "free" ? "lifetime" : endDate ? (remainingDays! > 0 ? "active" : "expired") : "active";
 
         return {
-          id: p.id,
-          name: p.name,
-          email: p.email,
-          created_at: p.created_at,
-          plan: subInfo.plan,
-          start_date: subInfo.start_date,
-          end_date: subInfo.end_date,
-          remaining_days: remainingDays,
-          plan_status: planStatus,
+          id: p.id, name: p.name, email: p.email, created_at: p.created_at,
+          plan: subInfo.plan, start_date: subInfo.start_date, end_date: subInfo.end_date,
+          remaining_days: remainingDays, plan_status: planStatus,
           storeCount: userStores.length,
           stores: userStores.map((s: any) => ({ id: s.id, name: s.name, plan: subInfo.plan })),
         };
@@ -116,13 +252,9 @@ Deno.serve(async (req) => {
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("plan, start_date, end_date, volume, price, billing_type")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .is("customer_id", null)
+        .eq("user_id", userId).eq("status", "active").is("customer_id", null)
         .in("plan", ["free", "pro", "business"])
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("start_date", { ascending: false }).limit(1).maybeSingle();
       const userPlan = sub?.plan || "free";
       const now = new Date();
       const endDate = sub?.end_date ? new Date(sub.end_date) : null;
@@ -138,31 +270,19 @@ Deno.serve(async (req) => {
           ]);
           const revenue = (ords.data || []).reduce((s: number, o: any) => s + Number(o.total_amount), 0);
           return {
-            id: store.id,
-            name: store.name,
-            is_active: store.is_active,
-            created_at: store.created_at,
-            plan: userPlan,
-            productCount: prods.count || 0,
-            customerCount: custs.count || 0,
-            orderCount: (ords.data || []).length,
-            revenue,
+            id: store.id, name: store.name, is_active: store.is_active, created_at: store.created_at,
+            plan: userPlan, productCount: prods.count || 0, customerCount: custs.count || 0,
+            orderCount: (ords.data || []).length, revenue,
           };
         })
       );
 
       return json({
-        profile,
-        stores: storesWithStats,
+        profile, stores: storesWithStats,
         plan_info: {
-          plan: userPlan,
-          start_date: sub?.start_date || null,
-          end_date: sub?.end_date || null,
-          remaining_days: remainingDays,
-          plan_status: planStatus,
-          volume: sub?.volume || null,
-          price: sub?.price || null,
-          billing_type: sub?.billing_type || null,
+          plan: userPlan, start_date: sub?.start_date || null, end_date: sub?.end_date || null,
+          remaining_days: remainingDays, plan_status: planStatus,
+          volume: sub?.volume || null, price: sub?.price || null, billing_type: sub?.billing_type || null,
         },
       });
     }
@@ -191,18 +311,12 @@ Deno.serve(async (req) => {
       const { data: store } = await supabase.from("stores").select("*").eq("id", storeId).maybeSingle();
       if (!store) throw new Error("Store not found");
 
-      // Fetch owner profile separately
       const { data: ownerProfile } = await supabase.from("profiles").select("id, name, email").eq("id", store.user_id).maybeSingle();
       store.profiles = ownerProfile;
 
       const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("plan")
-        .eq("user_id", store.user_id)
-        .eq("status", "active")
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .from("subscriptions").select("plan").eq("user_id", store.user_id).eq("status", "active")
+        .order("start_date", { ascending: false }).limit(1).maybeSingle();
       const plan = sub?.plan || "free";
 
       const [prods, custs, ords, storeSubs] = await Promise.all([
@@ -213,23 +327,17 @@ Deno.serve(async (req) => {
       ]);
 
       const orders = ords.data || [];
-      const completedOrders = orders.filter((o: any) => o.status === "completed").length;
-      const totalRevenue = orders.reduce((s: number, o: any) => s + Number(o.total_amount), 0);
-      const totalProfit = orders.reduce((s: number, o: any) => s + (Number(o.total_amount) - Number(o.cost_price)), 0);
-
       return json({
         store, plan,
         stats: {
-          totalProducts: (prods.data || []).length,
-          totalCustomers: (custs.data || []).length,
+          totalProducts: (prods.data || []).length, totalCustomers: (custs.data || []).length,
           totalOrders: orders.length,
-          totalRevenue, totalProfit, completedOrders,
+          totalRevenue: orders.reduce((s: number, o: any) => s + Number(o.total_amount), 0),
+          totalProfit: orders.reduce((s: number, o: any) => s + (Number(o.total_amount) - Number(o.cost_price)), 0),
+          completedOrders: orders.filter((o: any) => o.status === "completed").length,
           pendingOrders: orders.filter((o: any) => o.status === "pending").length,
         },
-        products: prods.data || [],
-        customers: custs.data || [],
-        orders,
-        subscriptions: storeSubs.data || [],
+        products: prods.data || [], customers: custs.data || [], orders, subscriptions: storeSubs.data || [],
       });
     }
 
@@ -248,8 +356,6 @@ Deno.serve(async (req) => {
     // ─── CHANGE PLAN (with notification) ───
     if (action === "change_plan") {
       const { store_id, new_plan, user_id: targetUserId } = params;
-
-      // Determine user_id — either passed directly or from store
       let userId = targetUserId;
       if (!userId && store_id) {
         const { data: store } = await supabase.from("stores").select("user_id").eq("id", store_id).single();
@@ -258,68 +364,41 @@ Deno.serve(async (req) => {
       }
       if (!userId) throw new Error("No user_id or store_id provided");
 
-      // Deactivate existing active PLATFORM subscriptions for this user (not customer subs)
-      await supabase
-        .from("subscriptions")
-        .update({ status: "expired" })
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .in("plan", ["free", "pro", "business"]);
+      await supabase.from("subscriptions").update({ status: "expired" })
+        .eq("user_id", userId).eq("status", "active").in("plan", ["free", "pro", "business"]);
 
-      // Insert new active subscription (user-level plan)
       if (new_plan !== "free") {
         const startDate = new Date();
         const durationDays = params.billing_type === "yearly" ? 365 : (params.duration_days || 30);
         const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
         await supabase.from("subscriptions").insert({
-          user_id: userId,
-          plan: new_plan,
-          status: "active",
+          user_id: userId, plan: new_plan, status: "active",
           product_name: `${new_plan.charAt(0).toUpperCase() + new_plan.slice(1)} Plan`,
-          price: params.price || 0,
-          cost_price: 0,
-          variation: "Admin Assigned",
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          store_id: store_id || null,
-          volume: params.volume || null,
-          billing_type: params.billing_type || "monthly",
+          price: params.price || 0, cost_price: 0, variation: "Admin Assigned",
+          start_date: startDate.toISOString(), end_date: endDate.toISOString(),
+          store_id: store_id || null, volume: params.volume || null, billing_type: params.billing_type || "monthly",
         });
       } else {
-        // Free plan — no expiry
         await supabase.from("subscriptions").insert({
-          user_id: userId,
-          plan: "free",
-          status: "active",
-          product_name: "Free Plan",
-          price: 0,
-          cost_price: 0,
-          variation: "Admin Assigned",
-          start_date: new Date().toISOString(),
-          end_date: null,
-          store_id: store_id || null,
-          volume: null,
-          billing_type: "monthly",
+          user_id: userId, plan: "free", status: "active", product_name: "Free Plan",
+          price: 0, cost_price: 0, variation: "Admin Assigned",
+          start_date: new Date().toISOString(), end_date: null,
+          store_id: store_id || null, volume: null, billing_type: "monthly",
         });
       }
 
-      // Send notification to user
       const planLabel = new_plan.charAt(0).toUpperCase() + new_plan.slice(1);
       await supabase.from("notifications").insert({
-        user_id: userId,
-        type: "success",
+        user_id: userId, type: "success",
         message: `🎉 Your plan has been upgraded to ${planLabel}! New features are now unlocked.`,
       });
-
       return json({ success: true });
     }
 
     // ─── GET PLAN PAYMENTS ───
     if (action === "get_plan_payments") {
       const { data: payments } = await supabase
-        .from("plan_payments")
-        .select("*, payment_gateways:gateway_id(gateway_name)")
+        .from("plan_payments").select("*, payment_gateways:gateway_id(gateway_name)")
         .order("created_at", { ascending: false });
 
       const userIds = [...new Set((payments || []).map((p: any) => p.user_id))];
@@ -335,89 +414,59 @@ Deno.serve(async (req) => {
       (stores || []).forEach((s: any) => { storeMap[s.id] = s.name; });
 
       const result = (payments || []).map((p: any) => ({
-        ...p,
-        gateway_name: p.payment_gateways?.gateway_name || "",
-        user_name: profileMap[p.user_id]?.name || "",
-        user_email: profileMap[p.user_id]?.email || "",
+        ...p, gateway_name: p.payment_gateways?.gateway_name || "",
+        user_name: profileMap[p.user_id]?.name || "", user_email: profileMap[p.user_id]?.email || "",
         store_name: p.store_id ? storeMap[p.store_id] || "" : "",
       }));
-
       return json(result);
     }
 
     // ─── REVIEW PLAN PAYMENT ───
     if (action === "review_plan_payment") {
       const { payment_id, status, admin_notes } = params;
-
-      // Update payment status
-      await supabase
-        .from("plan_payments")
+      await supabase.from("plan_payments")
         .update({ status, admin_notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id })
         .eq("id", payment_id);
 
-      // If approved, activate the plan
       if (status === "approved") {
         const { data: payment } = await supabase.from("plan_payments").select("*").eq("id", payment_id).single();
         if (payment) {
-          // Deactivate existing platform subscriptions only
-          await supabase
-            .from("subscriptions")
-            .update({ status: "expired" })
-            .eq("user_id", payment.user_id)
-            .eq("status", "active")
-            .in("plan", ["free", "pro", "business"]);
-
-          // Create new subscription with 30-day expiry
+          await supabase.from("subscriptions").update({ status: "expired" })
+            .eq("user_id", payment.user_id).eq("status", "active").in("plan", ["free", "pro", "business"]);
           if (payment.plan !== "free") {
             const startDate = new Date();
             const billingType = payment.billing_type || "monthly";
             const durationDays = billingType === "yearly" ? 365 : 30;
             const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
             await supabase.from("subscriptions").insert({
-              user_id: payment.user_id,
-              plan: payment.plan,
-              status: "active",
+              user_id: payment.user_id, plan: payment.plan, status: "active",
               product_name: `${payment.plan.charAt(0).toUpperCase() + payment.plan.slice(1)} Plan`,
-              price: payment.amount,
-              cost_price: 0,
-              variation: "Payment Approved",
-              start_date: startDate.toISOString(),
-              end_date: endDate.toISOString(),
-              store_id: payment.store_id || null,
-              volume: payment.volume || null,
-              billing_type: billingType,
+              price: payment.amount, cost_price: 0, variation: "Payment Approved",
+              start_date: startDate.toISOString(), end_date: endDate.toISOString(),
+              store_id: payment.store_id || null, volume: payment.volume || null, billing_type: billingType,
             });
           }
-
-          // Send notification
           const planLabel = payment.plan.charAt(0).toUpperCase() + payment.plan.slice(1);
           await supabase.from("notifications").insert({
-            user_id: payment.user_id,
-            type: "success",
+            user_id: payment.user_id, type: "success",
             message: `🎉 Your payment has been approved! Plan upgraded to ${planLabel}.`,
           });
         }
       } else if (status === "rejected") {
-        // Notify rejection
         const { data: payment } = await supabase.from("plan_payments").select("user_id").eq("id", payment_id).single();
         if (payment) {
           await supabase.from("notifications").insert({
-            user_id: payment.user_id,
-            type: "error",
+            user_id: payment.user_id, type: "error",
             message: `Your plan payment was rejected.${admin_notes ? ` Reason: ${admin_notes}` : ""} Please contact support.`,
           });
         }
       }
-
       return json({ success: true });
     }
 
     // ─── GET PAYMENT GATEWAYS ───
     if (action === "get_payment_gateways") {
-      const { data } = await supabase
-        .from("payment_gateways")
-        .select("*")
-        .order("sort_order", { ascending: true });
+      const { data } = await supabase.from("payment_gateways").select("*").order("sort_order", { ascending: true });
       return json(data || []);
     }
 
@@ -451,20 +500,13 @@ Deno.serve(async (req) => {
 
     // ─── GET AUTO PAYMENT LOGS ───
     if (action === "get_auto_payment_logs") {
-      const { data } = await supabase
-        .from("auto_payment_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(500);
+      const { data } = await supabase.from("auto_payment_logs").select("*").order("created_at", { ascending: false }).limit(500);
       return json(data || []);
     }
 
     // ─── GET COUPONS ───
     if (action === "get_coupons") {
-      const { data } = await supabase
-        .from("platform_coupons")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("platform_coupons").select("*").order("created_at", { ascending: false });
       return json(data || []);
     }
 
@@ -493,134 +535,9 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // ─── UPDATE PLANS CONFIG ───
-    if (action === "update_plans_config") {
-      const { configs: configRows } = params;
-      for (const row of configRows) {
-        const { id, plan_type, volume, price_inr, store_limit, product_limit, customer_limit } = row;
-        if (id) {
-          await supabase.from("plans_config").update({
-            price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
-          }).eq("id", id);
-        } else {
-          await supabase.from("plans_config").upsert({
-            plan_type, volume, price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
-          }, { onConflict: "plan_type,volume" });
-        }
-      }
-      return json({ success: true });
-    }
-
-    // ─── GET PLAN STATS ───
-    if (action === "get_plan_stats") {
-      const { data: subs } = await supabase.from("subscriptions").select("plan, status, end_date").eq("status", "active").in("plan", ["free", "pro", "business"]);
-      const { count: totalUsers } = await supabase.from("profiles").select("id", { count: "exact", head: true });
-      const breakdown = { free: 0, pro: 0, business: 0 };
-      let expiringSoon = 0;
-      const now = new Date();
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      (subs || []).forEach((s: any) => {
-        if (s.plan in breakdown) breakdown[s.plan as keyof typeof breakdown]++;
-        if (s.end_date) {
-          const diff = new Date(s.end_date).getTime() - now.getTime();
-          if (diff > 0 && diff < sevenDays) expiringSoon++;
-        }
-      });
-      return json({ totalUsers: totalUsers || 0, planBreakdown: breakdown, expiringSoon, totalRevenue: 0 });
-    }
-
-    // ─── GET PLAN HISTORY ───
-    if (action === "get_plan_history") {
-      const { data } = await supabase.from("plan_history").select("*").order("created_at", { ascending: false }).limit(100);
-      // Enrich with user emails
-      const userIds = [...new Set((data || []).map((h: any) => h.user_id))];
-      const { data: profiles } = userIds.length > 0 ? await supabase.from("profiles").select("id, email").in("id", userIds) : { data: [] };
-      const emailMap: Record<string, string> = {};
-      (profiles || []).forEach((p: any) => { emailMap[p.id] = p.email; });
-      const result = (data || []).map((h: any) => ({ ...h, user_email: emailMap[h.user_id] || "" }));
-      return json(result);
-    }
-
-    // ─── ADMIN CHANGE USER PLAN (with history) ───
-    if (action === "admin_change_user_plan") {
-      const { user_id: targetUserId, new_plan, new_volume, billing_type, price, duration_days, notes } = params;
-      // Get current plan
-      const { data: currentSub } = await supabase.from("subscriptions").select("plan, volume")
-        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]).maybeSingle();
-      const oldPlan = currentSub?.plan || "free";
-      const oldVolume = (currentSub as any)?.volume || null;
-
-      // Deactivate existing
-      await supabase.from("subscriptions").update({ status: "expired" })
-        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["free", "pro", "business"]);
-
-      // Create new
-      const startDate = new Date();
-      const days = new_plan === "free" ? 0 : (billing_type === "yearly" ? 365 : (duration_days || 30));
-      const endDate = new_plan === "free" ? null : new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
-      await supabase.from("subscriptions").insert({
-        user_id: targetUserId, plan: new_plan, status: "active",
-        product_name: `${new_plan.charAt(0).toUpperCase() + new_plan.slice(1)} Plan`,
-        price: price || 0, cost_price: 0, variation: "Admin Changed",
-        start_date: startDate.toISOString(), end_date: endDate, store_id: null,
-        volume: new_volume || null, billing_type: billing_type || "monthly",
-      });
-
-      // Log to plan_history
-      await supabase.from("plan_history").insert({
-        user_id: targetUserId, action: "admin_change",
-        old_plan: oldPlan, new_plan: new_plan,
-        old_volume: oldVolume, new_volume: new_volume || null,
-        changed_by: user.id, notes: notes || `Admin changed plan to ${new_plan}`,
-      });
-
-      // Notify user
-      const planLabel = new_plan.charAt(0).toUpperCase() + new_plan.slice(1);
-      await supabase.from("notifications").insert({
-        user_id: targetUserId, type: "success",
-        message: `🎉 Your plan has been changed to ${planLabel} by admin.`,
-      });
-
-      return json({ success: true });
-    }
-
-    // ─── ADMIN EXTEND USER PLAN ───
-    if (action === "admin_extend_plan") {
-      const { user_id: targetUserId, extend_days, notes } = params;
-      const { data: currentSub } = await supabase.from("subscriptions").select("id, plan, end_date, volume")
-        .eq("user_id", targetUserId).eq("status", "active").in("plan", ["pro", "business"]).maybeSingle();
-      if (!currentSub) return json({ success: false, error: "No active paid plan found" });
-
-      const currentEnd = currentSub.end_date ? new Date(currentSub.end_date) : new Date();
-      const newEnd = new Date(currentEnd.getTime() + (extend_days || 30) * 24 * 60 * 60 * 1000);
-      await supabase.from("subscriptions").update({ end_date: newEnd.toISOString() }).eq("id", currentSub.id);
-
-      await supabase.from("plan_history").insert({
-        user_id: targetUserId, action: "extend",
-        old_plan: currentSub.plan, new_plan: currentSub.plan,
-        old_volume: (currentSub as any).volume, new_volume: (currentSub as any).volume,
-        changed_by: user.id, notes: notes || `Extended by ${extend_days} days`,
-      });
-
-      await supabase.from("notifications").insert({
-        user_id: targetUserId, type: "success",
-        message: `📅 Your plan has been extended by ${extend_days} days by admin.`,
-      });
-
-      return json({ success: true });
-    }
-
-    throw new Error(`Unknown action: ${action}`);
+    // ─── UNKNOWN ACTION ───
+    return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(err.message || "Internal error");
   }
 });
-
-function json(data: unknown) {
-  return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
