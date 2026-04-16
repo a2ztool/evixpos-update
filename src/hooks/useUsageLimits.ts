@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPlanLimits, type VolumeStep } from "@/lib/planConfig";
+import { type VolumeStep } from "@/lib/planConfig";
+import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
 export interface UsageLimits {
   totalProducts: number;
