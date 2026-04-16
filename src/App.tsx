@@ -71,6 +71,7 @@ const AppEntry = lazyPage(() => import("./pages/AppEntry"));
 
 // Admin pages (lazy)
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
+const AdminBlocked = lazyPage(() => import("./pages/admin/AdminBlocked"));
 const AdminLayout = lazyPage(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazyPage(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazyPage(() => import("./pages/admin/AdminUsers"));
@@ -202,24 +203,26 @@ const App = () => {
             {/* Admin login at /sanjoy */}
             <Route path="/sanjoy" element={<AdminLogin />} />
 
-            {/* Admin Panel — completely separate */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="stores" element={<AdminStores />} />
-              <Route path="stores/:storeId" element={<AdminStoreDetails />} />
-              <Route path="users/:userId" element={<AdminUserDetails />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="gateways" element={<AdminPaymentGateways />} />
-              <Route path="auto-payments" element={<AdminAutoPayments />} />
-              <Route path="reports" element={<AdminReports />} />
-              <Route path="coupons" element={<AdminCoupons />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="landing" element={<AdminLandingEditor />} />
-              <Route path="inbox" element={<AdminInbox />} />
-              <Route path="support" element={<AdminSupportTickets />} />
-              <Route path="referrals" element={<AdminReferrals />} />
+            {/* Admin route — blocked, no login */}
+            <Route path="/admin" element={<AdminBlocked />} />
+
+            {/* Admin Panel — protected routes */}
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/stores" element={<AdminStores />} />
+              <Route path="/admin/stores/:storeId" element={<AdminStoreDetails />} />
+              <Route path="/admin/users/:userId" element={<AdminUserDetails />} />
+              <Route path="/admin/payments" element={<AdminPayments />} />
+              <Route path="/admin/gateways" element={<AdminPaymentGateways />} />
+              <Route path="/admin/auto-payments" element={<AdminAutoPayments />} />
+              <Route path="/admin/reports" element={<AdminReports />} />
+              <Route path="/admin/coupons" element={<AdminCoupons />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/landing" element={<AdminLandingEditor />} />
+              <Route path="/admin/inbox" element={<AdminInbox />} />
+              <Route path="/admin/support" element={<AdminSupportTickets />} />
+              <Route path="/admin/referrals" element={<AdminReferrals />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
