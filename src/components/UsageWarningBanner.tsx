@@ -10,8 +10,8 @@ interface UsageWarningBannerProps {
 }
 
 const UsageWarningBanner = ({ type }: UsageWarningBannerProps) => {
-  const { plan } = useStorePlan();
-  const { totalProducts, totalCustomers, maxProducts, maxCustomers, loading } = useUsageLimits(plan ?? "free");
+  const { plan, volume } = useStorePlan();
+  const { totalProducts, totalCustomers, maxProducts, maxCustomers, loading } = useUsageLimits(plan ?? "free", volume);
   const { lang } = useLanguage();
   const navigate = useNavigate();
 
