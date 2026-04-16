@@ -285,7 +285,7 @@ const PublicOrderForm = () => {
                 product_name: p?.name || "",
                 variation: v.name,
                 price: v.price,
-                plan: "free" as any,
+                plan: "customer" as any,
                 status: "active",
                 start_date: new Date().toISOString(),
                 end_date: endDate.toISOString(),
