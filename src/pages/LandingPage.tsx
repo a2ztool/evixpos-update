@@ -65,13 +65,15 @@ const AnimItem = ({ children, className = "", delay = 0 }: { children: React.Rea
   );
 };
 
-/* ─── types ─── */
+/* ─── types & currency ─── */
 type Currency = "BDT" | "INR" | "USD";
 const CURRENCIES: { key: Currency; symbol: string; label: string }[] = [
   { key: "BDT", symbol: "৳", label: "BDT" },
   { key: "INR", symbol: "₹", label: "INR" },
   { key: "USD", symbol: "$", label: "USD" },
 ];
+const RATES_FROM_INR: Record<Currency, number> = { INR: 1, USD: 0.012, BDT: 1.3 };
+const CUR_SYMBOLS: Record<Currency, string> = { USD: "$", BDT: "৳", INR: "₹" };
 const DEFAULT_NAV_LINKS = [
   { href: "#about", labelKey: "nav_about", defaultLabel: "About" },
   { href: "#features", labelKey: "nav_features", defaultLabel: "Features" },
