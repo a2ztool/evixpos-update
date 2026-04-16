@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
         })
       );
 
-      return json({ profile, stores: storesWithStats });
+      return json({ profile, stores: storesWithStats, plan_info: { plan: userPlan, start_date: sub?.start_date || null, end_date: sub?.end_date || null, remaining_days: remainingDays, plan_status: planStatus } });
     }
 
     // ─── GET STORES ───
