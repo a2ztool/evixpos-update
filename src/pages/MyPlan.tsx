@@ -17,7 +17,9 @@ import {
   Store, Users, Package, Monitor, ShoppingCart, BookOpen,
   BarChart3, RefreshCw, MessageCircle, Bot, Megaphone,
   CreditCard, Copy, Gift, Sparkles, HelpCircle, ShieldCheck,
-  ChevronDown, ChevronUp, Headphones, Globe
+  ChevronDown, ChevronUp, Headphones, Globe, TrendingUp,
+  Calendar, Clock, Rocket, Lock, Award, BookMarked,
+  PlayCircle, Lightbulb, Target, ArrowRight, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
