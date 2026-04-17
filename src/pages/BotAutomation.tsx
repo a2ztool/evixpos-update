@@ -606,28 +606,28 @@ const BotAutomation = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 p-1.5 mb-6 overflow-x-auto shadow-sm">
-          <TabsList className="bg-transparent gap-1 h-auto p-0 flex-wrap">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500/15 data-[state=active]:to-violet-500/10 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Bot className="h-3.5 w-3.5" />Dashboard
+        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 p-1.5 mb-6 shadow-sm overflow-x-auto scrollbar-thin">
+          <TabsList className="bg-transparent gap-1 h-auto p-0 flex flex-nowrap md:flex-wrap w-max md:w-full min-w-full">
+            <TabsTrigger value="dashboard" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500/15 data-[state=active]:to-violet-500/10 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Bot className="h-3.5 w-3.5" /><span>Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="email-config" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500/15 data-[state=active]:to-teal-500/10 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Settings className="h-3.5 w-3.5" />Email Config
+            <TabsTrigger value="email-config" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500/15 data-[state=active]:to-teal-500/10 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Settings className="h-3.5 w-3.5" /><span className="sm:hidden">Email</span><span className="hidden sm:inline">Email Config</span>
             </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-sky-500/15 data-[state=active]:to-cyan-500/10 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <FileText className="h-3.5 w-3.5" />Templates
+            <TabsTrigger value="templates" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-sky-500/15 data-[state=active]:to-cyan-500/10 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <FileText className="h-3.5 w-3.5" /><span>Templates</span>
             </TabsTrigger>
-            <TabsTrigger value="branding" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500/15 data-[state=active]:to-fuchsia-500/10 data-[state=active]:text-violet-700 dark:data-[state=active]:text-violet-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Palette className="h-3.5 w-3.5" />Branding
+            <TabsTrigger value="branding" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500/15 data-[state=active]:to-fuchsia-500/10 data-[state=active]:text-violet-700 dark:data-[state=active]:text-violet-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Palette className="h-3.5 w-3.5" /><span>Branding</span>
             </TabsTrigger>
-            <TabsTrigger value="campaign" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/15 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Send className="h-3.5 w-3.5" />Campaign
+            <TabsTrigger value="campaign" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/15 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Send className="h-3.5 w-3.5" /><span>Campaign</span>
             </TabsTrigger>
-            <TabsTrigger value="marketing" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-500/15 data-[state=active]:to-pink-500/10 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Megaphone className="h-3.5 w-3.5" />Marketing
+            <TabsTrigger value="marketing" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-500/15 data-[state=active]:to-pink-500/10 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-300 data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Megaphone className="h-3.5 w-3.5" /><span>Marketing</span>
             </TabsTrigger>
-            <TabsTrigger value="tracking" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary/15 data-[state=active]:to-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-xl gap-1.5">
-              <Eye className="h-3.5 w-3.5" />Tracking
+            <TabsTrigger value="tracking" className="flex-shrink-0 md:flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary/15 data-[state=active]:to-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-xl gap-1.5 text-xs sm:text-sm whitespace-nowrap px-3">
+              <Eye className="h-3.5 w-3.5" /><span>Tracking</span>
             </TabsTrigger>
           </TabsList>
         </div>
