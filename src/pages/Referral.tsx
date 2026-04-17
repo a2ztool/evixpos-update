@@ -680,6 +680,7 @@ const Referral = () => {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </DashboardLayout>
   );
 };
