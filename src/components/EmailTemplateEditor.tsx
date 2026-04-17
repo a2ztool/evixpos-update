@@ -765,9 +765,9 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </div>
           </DialogHeader>
 
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
             {/* Left: Editor */}
-            <div className={`${mobilePreview ? "hidden" : "flex"} lg:flex w-full lg:w-1/2 lg:border-r flex-col overflow-hidden min-h-0`}>
+            <div className={`${mobilePreview ? "hidden" : "flex"} md:flex w-full md:w-1/2 md:border-r flex-col overflow-hidden min-h-0`}>
               {/* Subject */}
               <div className="px-3 sm:px-4 py-3 border-b bg-muted/20 shrink-0">
                 <Label className="text-xs text-muted-foreground">Subject Line</Label>
