@@ -606,15 +606,31 @@ const BotAutomation = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 flex-wrap">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="email-config">Email Config</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="branding" className="gap-1.5"><Palette className="h-3.5 w-3.5" />Branding</TabsTrigger>
-          <TabsTrigger value="campaign">Campaign</TabsTrigger>
-          <TabsTrigger value="marketing" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" />Marketing</TabsTrigger>
-          <TabsTrigger value="tracking">Tracking</TabsTrigger>
-        </TabsList>
+        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 p-1.5 mb-6 overflow-x-auto shadow-sm">
+          <TabsList className="bg-transparent gap-1 h-auto p-0 flex-wrap">
+            <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500/15 data-[state=active]:to-violet-500/10 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Bot className="h-3.5 w-3.5" />Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="email-config" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500/15 data-[state=active]:to-teal-500/10 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Settings className="h-3.5 w-3.5" />Email Config
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-sky-500/15 data-[state=active]:to-cyan-500/10 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <FileText className="h-3.5 w-3.5" />Templates
+            </TabsTrigger>
+            <TabsTrigger value="branding" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500/15 data-[state=active]:to-fuchsia-500/10 data-[state=active]:text-violet-700 dark:data-[state=active]:text-violet-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Palette className="h-3.5 w-3.5" />Branding
+            </TabsTrigger>
+            <TabsTrigger value="campaign" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/15 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Send className="h-3.5 w-3.5" />Campaign
+            </TabsTrigger>
+            <TabsTrigger value="marketing" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-500/15 data-[state=active]:to-pink-500/10 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Megaphone className="h-3.5 w-3.5" />Marketing
+            </TabsTrigger>
+            <TabsTrigger value="tracking" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary/15 data-[state=active]:to-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Eye className="h-3.5 w-3.5" />Tracking
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ─── DASHBOARD TAB ──────────────────────────── */}
         <TabsContent value="dashboard">
