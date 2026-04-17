@@ -78,6 +78,18 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           )}
+
+          <Suspense
+            fallback={
+              <Card className="bg-slate-800 border-slate-700">
+                <CardContent className="p-6 flex justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400" />
+                </CardContent>
+              </Card>
+            }
+          >
+            <AdminAnalyticsChart />
+          </Suspense>
         </>
       )}
     </div>
