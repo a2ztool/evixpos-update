@@ -322,31 +322,35 @@ const SupportPage = () => {
         </div>
 
         {/* KPI Cards — premium */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Tickets", value: stats.total, icon: Ticket, color: "text-primary", bg: "bg-primary/10", ring: "ring-primary/20" },
             { label: "Open", value: stats.open, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10", ring: "ring-blue-500/20" },
             { label: "In Progress", value: stats.inProgress, icon: Clock, color: "text-orange-600", bg: "bg-orange-500/10", ring: "ring-orange-500/20" },
             { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
           ].map((kpi, i) => (
-            <Card key={i} className="border-border/50 hover:shadow-md transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2.5">
+            <Card key={i} className="border-border/50 hover:shadow-md transition-all h-full">
+              <CardContent className="p-4 sm:p-5 h-full flex flex-col">
+                <div className="flex items-center justify-between mb-3">
                   <div className={`h-9 w-9 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
                     <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                   </div>
                   <span className="text-2xl font-bold tabular-nums">{kpi.value}</span>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                {i === 3 && (
-                  <div className="mt-2.5">
-                    <div className="flex justify-between text-[10px] mb-1">
-                      <span className="text-muted-foreground">Resolution Rate</span>
-                      <span className="font-semibold text-emerald-600">{stats.resolutionRate}%</span>
-                    </div>
-                    <Progress value={stats.resolutionRate} className="h-1.5" />
-                  </div>
-                )}
+                <div className="mt-auto pt-3">
+                  {i === 3 ? (
+                    <>
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className="text-muted-foreground">Resolution Rate</span>
+                        <span className="font-semibold text-emerald-600">{stats.resolutionRate}%</span>
+                      </div>
+                      <Progress value={stats.resolutionRate} className="h-1.5" />
+                    </>
+                  ) : (
+                    <div className="h-[22px]" aria-hidden />
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
