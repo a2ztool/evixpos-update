@@ -122,7 +122,27 @@ const MyPlan = () => {
   const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
+  const { activeStore } = useStore();
+  const { user } = useAuth();
   const [currency, setCurrency] = useState<"USD" | "BDT" | "INR">("INR");
+  const [currencyDetected, setCurrencyDetected] = useState(false);
+
+  useEffect(() => {
+    if (!user || !activeStore || currencyDetected) return;
+    supabase
+      .from("business_settings")
+      .select("default_currency")
+      .eq("user_id", user.id)
+      .eq("store_id", activeStore.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const cur = (data?.default_currency || "").toUpperCase();
+        if (cur === "USD" || cur === "BDT" || cur === "INR") {
+          setCurrency(cur);
+        }
+        setCurrencyDetected(true);
+      });
+  }, [user, activeStore, currencyDetected]);
   const [yearly, setYearly] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
