@@ -719,7 +719,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
 
       {/* ─── Editor Dialog (responsive: full screen on mobile) ─── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[1400px] w-screen sm:w-[96vw] h-[100dvh] sm:h-[92vh] max-h-[100dvh] sm:max-h-[92vh] flex flex-col p-0 gap-0 sm:rounded-2xl rounded-none overflow-hidden">
+        <DialogContent className="!max-w-[min(1400px,98vw)] w-[98vw] sm:w-[96vw] h-[100dvh] sm:h-[94vh] max-h-[100dvh] sm:max-h-[94vh] flex flex-col p-0 gap-0 sm:rounded-2xl rounded-none overflow-hidden translate-x-[-50%] translate-y-[-50%] left-1/2 top-1/2">
           <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0">
             <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-3 min-w-0 flex-1">
