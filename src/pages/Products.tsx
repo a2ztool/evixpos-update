@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { validateWithToast, productSchema } from "@/lib/validations";
 import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import ProductImageField from "@/components/ProductImageField";
 
 interface Product {
   id: string;
@@ -537,11 +539,13 @@ const Products = () => {
               </div>
             </div>
 
-            {/* Image URL */}
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
-            </div>
+            {/* Product Image — plan-gated */}
+            <ProductImageField
+              value={form.image_url}
+              onChange={(url) => setForm({ ...form, image_url: url })}
+              storeId={activeStore?.id}
+            />
+
 
             {/* Description */}
             <div className="space-y-2">
