@@ -7,7 +7,7 @@ type AdminCallOptions = { silent?: boolean };
 export const useAdmin = () => {
   const [loading, setLoading] = useState(false);
 
-  const adminCall = useCallback(async (action: string, params?: Record<string, unknown>) => {
+  const adminCall = useCallback(async (action: string, params?: Record<string, unknown>, options?: AdminCallOptions) => {
     setLoading(true);
     try {
       const {
