@@ -935,7 +935,7 @@ const MyPlan = () => {
 
         {/* Enterprise CTA */}
         <Card className="border-border/50 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20">
-          <CardContent className="py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
             <div className="h-14 w-14 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
               <Globe className="h-7 w-7 text-violet-600" />
             </div>
@@ -943,7 +943,11 @@ const MyPlan = () => {
               <h3 className="font-bold text-lg">Need a Custom Enterprise Plan?</h3>
               <p className="text-sm text-muted-foreground">Unlimited stores, custom integrations, SLA, and dedicated support for large-scale operations.</p>
             </div>
-            <Button variant="outline" className="gap-2 flex-shrink-0 border-violet-300 text-violet-700 dark:text-violet-400">
+            <Button
+              variant="outline"
+              className="gap-2 flex-shrink-0 border-violet-300 text-violet-700 dark:text-violet-400"
+              onClick={() => navigate("/support")}
+            >
               <Headphones className="h-4 w-4" /> Contact Sales
             </Button>
           </CardContent>
@@ -951,18 +955,19 @@ const MyPlan = () => {
 
         {/* WhatsApp Support */}
         <Card className="border-border/50">
-          <CardContent className="py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
-                <MessageCircle className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="font-semibold">Questions about payment?</p>
-                <p className="text-sm text-muted-foreground">Contact us on WhatsApp</p>
-              </div>
+          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="h-5 w-5 text-success" />
             </div>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="h-4 w-4 rotate-[135deg]" />
+            <div className="flex-1 text-center sm:text-left">
+              <p className="font-semibold">Questions about payment?</p>
+              <p className="text-sm text-muted-foreground">Chat with us on WhatsApp · +91 81019 49890</p>
+            </div>
+            <Button
+              onClick={openWhatsApp}
+              className="gap-2 bg-[#25D366] hover:bg-[#1ebe5a] text-white shadow-sm flex-shrink-0"
+            >
+              <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
             </Button>
           </CardContent>
         </Card>
