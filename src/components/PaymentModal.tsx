@@ -124,6 +124,13 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
       setLoading(false);
     };
     fetchData();
+
+    // Realtime sync — admin gateway changes appear instantly
+    const channel = supabase
+      .channel(`payment_gateways_${currency}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways", filter: `currency=eq.${currency}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [open, currency, user, planKey]);
 
   // Duplicate transaction ID check
