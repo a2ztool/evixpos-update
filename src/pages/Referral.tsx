@@ -344,17 +344,17 @@ const Referral = () => {
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
             <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all">
-              <CardContent className="p-3 sm:p-3.5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`h-9 w-9 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="h-4 w-4" />
+              <CardContent className="p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className={`h-7 w-7 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="h-3.5 w-3.5" />
                   </div>
                   {stat.trend && (
-                    <Badge variant="outline" className="text-[9px] h-5 px-1.5 font-semibold">{stat.trend}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold">{stat.trend}</Badge>
                   )}
                 </div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-                <p className="text-lg sm:text-xl font-bold tabular-nums leading-tight mt-0.5 truncate">{stat.value}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
+                <p className="text-base sm:text-lg font-bold tabular-nums leading-tight mt-0.5 truncate">{stat.value}</p>
               </CardContent>
             </Card>
           ))}
@@ -363,8 +363,8 @@ const Referral = () => {
         {/* ─── Referral Link + QR (premium) ─── */}
         <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
           <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3">
+            <CardContent className="p-5 pt-6">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
                   <LinkIcon className="h-4 w-4 text-primary" />
                 </div>
@@ -421,7 +421,7 @@ const Referral = () => {
 
         {/* ─── Share Channels Grid ─── */}
         <Card className="border-border/50">
-          <CardContent className="p-5">
+          <CardContent className="p-5 pt-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
