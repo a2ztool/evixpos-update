@@ -119,6 +119,7 @@ const AdminPaymentGateways = () => {
       mode: gw.mode || "manual",
       api_config: gw.api_config || {},
       icon_url: gw.icon_url || "",
+      required_fields: Array.isArray(gw.required_fields) ? gw.required_fields : [],
     });
     setQrFile(null);
     setDialogOpen(true);
