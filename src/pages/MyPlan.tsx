@@ -415,25 +415,30 @@ const MyPlan = () => {
           </div>
         )}
 
+        {/* Active Coupon Banner (info only — applied at checkout) */}
+        {activeBanner && (
+          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 rounded-xl px-4 py-3">
+            <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              Use code <code className="bg-amber-200/50 dark:bg-amber-800/50 px-2 py-0.5 rounded font-mono font-bold">{activeBanner.code}</code> at checkout for {activeBanner.discount_type === "percentage" ? `${activeBanner.discount_value}%` : `${CURRENCY_SYMBOLS[currency]}${activeBanner.discount_value}`} off!
+            </p>
+          </div>
+        )}
+
         {/* Special Offer Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 text-white p-6">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 text-white p-5 sm:p-6">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.15),transparent)] pointer-events-none" />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
               <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1">
                 <Sparkles className="h-3 w-3 mr-1" /> Special Offer
               </Badge>
-              {appliedCoupon && (
-                <div className="flex items-center gap-2">
-                  <code className="bg-white/10 px-3 py-1 rounded-lg text-sm font-mono">{appliedCoupon.code}</code>
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">
-                    <Check className="h-3 w-3 mr-1" /> Claimed
-                  </Badge>
-                </div>
-              )}
+              <div className="text-sm text-white/80 hidden sm:block">
+                Limited-time pricing on Pro & Business plans
+              </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-white/60">
-              <span>Expires in</span>
+              <span className="hidden sm:inline">Expires in</span>
               <div className="flex gap-1.5">
                 {[
                   { val: timeLeft.days, label: "Days" },
@@ -442,7 +447,7 @@ const MyPlan = () => {
                   { val: timeLeft.secs, label: "Secs" },
                 ].map((t) => (
                   <div key={t.label} className="bg-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-[40px]">
-                    <span className="text-white font-bold text-lg block leading-none">{String(t.val).padStart(2, "0")}</span>
+                    <span className="text-white font-bold text-base sm:text-lg block leading-none">{String(t.val).padStart(2, "0")}</span>
                     <span className="text-[9px] text-white/50 uppercase">{t.label}</span>
                   </div>
                 ))}
@@ -450,62 +455,6 @@ const MyPlan = () => {
             </div>
           </div>
         </div>
-
-        {/* Coupon Applied Message */}
-        {appliedCoupon && (
-          <div className="flex items-center justify-between bg-success/10 text-success border border-success/20 rounded-xl px-4 py-3 text-sm font-medium">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4" />
-              Coupon <code className="bg-success/10 px-2 py-0.5 rounded font-mono text-xs">{appliedCoupon.code}</code> applied! {appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}% OFF` : `${CURRENCY_SYMBOLS[currency]}${appliedCoupon.discount_value} OFF`} on your next purchase.
-            </div>
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => { setAppliedCoupon(null); setCouponCode(""); toast.info("Coupon removed"); }}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        )}
-
-        {/* Coupon Input */}
-        <div className="flex gap-3">
-          <Input
-            placeholder="DISCOUNT COUPON CODE"
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
-            className="flex-1 uppercase font-mono tracking-widest"
-          />
-          <Button onClick={applyCoupon} className="px-6">Apply</Button>
-        </div>
-
-        {/* Current Plan Status */}
-        <Card className="border-border/50">
-          <CardContent className="p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
-                <Check className="h-5 w-5 text-success" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-base">{currentPlan} Plan {isExpiringSoon ? "⚠️" : "✅"}</p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {endDate
-                    ? `${remainingDays} days remaining · Expires ${new Date(endDate).toLocaleDateString()}`
-                    : plan === "free" ? "Lifetime access" : "Active"}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 text-sm w-full lg:w-auto">
-              {[
-                { label: "Stores", val: plan === "free" ? "1" : plan === "pro" ? "3" : "10" },
-                { label: "Customers", val: plan === "free" ? "50" : formatVolume(subVolume ?? selectedVolume) },
-                { label: "Products", val: plan === "free" ? "25" : plan === "pro" ? "100" : "500" },
-              ].map((s) => (
-                <div key={s.label} className="flex flex-col sm:items-end">
-                  <span className="text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground">{s.label}</span>
-                  <span className="font-semibold text-primary text-base">{s.val}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Global Usage Summary */}
         {!usage.loading && (
