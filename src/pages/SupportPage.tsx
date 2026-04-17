@@ -276,51 +276,73 @@ const SupportPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="hidden sm:block">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Headphones className="h-4 w-4 text-primary" />
-              </div>
-              Support & Services
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">EvixPOS — Your Digital Growth Partner</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {(["en", "bn", "hi"] as Lang[]).map(l => (
-                <Button key={l} size="sm" variant={lang === l ? "default" : "outline"} onClick={() => setLang(l)} className="rounded-full px-3 text-xs h-7">
-                  {LANG_LABELS[l]}
+      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto">
+        {/* Premium Hero */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-2.5 min-w-0">
+              <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/20 gap-1.5">
+                <Headphones className="h-3 w-3" /> Support & Services
+              </Badge>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {lang === "bn" ? "আমরা আপনার সাথে আছি, ২৪/৭" : lang === "hi" ? "हम 24/7 आपके साथ हैं" : "We're here for you, 24/7"}
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-xl">
+                {lang === "bn" ? "টিকিট, সার্ভিস, গাইড ও সাপোর্ট — সব এক জায়গায়। গড় উত্তরের সময় ২ ঘণ্টা।" : lang === "hi" ? "टिकट, सेवाएं, गाइड और सहायता — सब एक जगह। औसत प्रतिक्रिया समय 2 घंटे।" : "Tickets, services, guides & live help — all in one place. Average response time 2 hours."}
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1.5">
+                <Button size="sm" onClick={() => { setActiveTab("tickets"); setSheetOpen(true); }} className="gap-1.5 rounded-full">
+                  <Plus className="h-3.5 w-3.5" /> New Ticket
                 </Button>
-              ))}
+                <a href="https://wa.me/918101949890" target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" variant="outline" className="gap-1.5 rounded-full bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20">
+                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                </a>
+                <Button size="sm" variant="outline" onClick={() => setActiveTab("guides")} className="gap-1.5 rounded-full">
+                  <BookOpen className="h-3.5 w-3.5" /> Browse Guides
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-col items-start lg:items-end gap-2 shrink-0">
+              <div className="flex gap-1 rounded-full bg-background/60 backdrop-blur p-1 border border-border/50">
+                {(["en", "bn", "hi"] as Lang[]).map(l => (
+                  <button key={l} onClick={() => setLang(l)} className={`px-3 py-1 text-xs rounded-full transition ${lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                    {LANG_LABELS[l]}
+                  </button>
+                ))}
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> All systems operational
+              </div>
             </div>
           </div>
         </div>
 
-        {/* KPI Cards */}
+        {/* KPI Cards — premium */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Tickets", value: stats.total, icon: Ticket, color: "text-primary", bg: "bg-primary/10" },
-            { label: "Open", value: stats.open, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10" },
-            { label: "In Progress", value: stats.inProgress, icon: Clock, color: "text-orange-600", bg: "bg-orange-500/10" },
-            { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+            { label: "Total Tickets", value: stats.total, icon: Ticket, color: "text-primary", bg: "bg-primary/10", ring: "ring-primary/20" },
+            { label: "Open", value: stats.open, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10", ring: "ring-blue-500/20" },
+            { label: "In Progress", value: stats.inProgress, icon: Clock, color: "text-orange-600", bg: "bg-orange-500/10", ring: "ring-orange-500/20" },
+            { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
           ].map((kpi, i) => (
-            <Card key={i} className="border-border/50">
+            <Card key={i} className="border-border/50 hover:shadow-md transition-all">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`h-8 w-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className={`h-9 w-9 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
                     <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                   </div>
-                  <span className="text-2xl font-bold">{kpi.value}</span>
+                  <span className="text-2xl font-bold tabular-nums">{kpi.value}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
                 {i === 3 && (
-                  <div className="mt-2">
-                    <div className="flex justify-between text-xs mb-1">
+                  <div className="mt-2.5">
+                    <div className="flex justify-between text-[10px] mb-1">
                       <span className="text-muted-foreground">Resolution Rate</span>
-                      <span className="font-medium">{stats.resolutionRate}%</span>
+                      <span className="font-semibold text-emerald-600">{stats.resolutionRate}%</span>
                     </div>
                     <Progress value={stats.resolutionRate} className="h-1.5" />
                   </div>
@@ -330,13 +352,34 @@ const SupportPage = () => {
           ))}
         </div>
 
+        {/* Quick Help strip */}
+        <Card className="border-border/50 bg-gradient-to-br from-background to-muted/30">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="h-4 w-4 text-primary" />
+              <p className="font-semibold text-sm">{lang === "bn" ? "জনপ্রিয় বিষয়" : lang === "hi" ? "लोकप्रिय विषय" : "Popular topics"}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {GUIDES.slice(0, 6).map(g => {
+                const Icon = g.icon;
+                return (
+                  <button key={g.id} onClick={() => { setActiveTab("guides"); setExpandedGuide(g.id); }} className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition">
+                    <Icon className="h-3 w-3 text-primary" />
+                    {g.title[lang]}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 h-10">
-            <TabsTrigger value="tickets" className="text-xs sm:text-sm gap-1"><Ticket className="h-3.5 w-3.5 hidden sm:inline" />Tickets</TabsTrigger>
-            <TabsTrigger value="services" className="text-xs sm:text-sm gap-1"><Zap className="h-3.5 w-3.5 hidden sm:inline" />Services</TabsTrigger>
-            <TabsTrigger value="guides" className="text-xs sm:text-sm gap-1"><BookOpen className="h-3.5 w-3.5 hidden sm:inline" />Guides</TabsTrigger>
-            <TabsTrigger value="faq" className="text-xs sm:text-sm gap-1"><HelpCircle className="h-3.5 w-3.5 hidden sm:inline" />FAQ</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 h-11 rounded-xl bg-muted/50 p-1">
+            <TabsTrigger value="tickets" className="text-xs sm:text-sm gap-1.5 rounded-lg data-[state=active]:shadow-sm"><Ticket className="h-3.5 w-3.5" /><span className="hidden sm:inline">Tickets</span></TabsTrigger>
+            <TabsTrigger value="services" className="text-xs sm:text-sm gap-1.5 rounded-lg data-[state=active]:shadow-sm"><Zap className="h-3.5 w-3.5" /><span className="hidden sm:inline">Services</span></TabsTrigger>
+            <TabsTrigger value="guides" className="text-xs sm:text-sm gap-1.5 rounded-lg data-[state=active]:shadow-sm"><BookOpen className="h-3.5 w-3.5" /><span className="hidden sm:inline">Guides</span></TabsTrigger>
+            <TabsTrigger value="faq" className="text-xs sm:text-sm gap-1.5 rounded-lg data-[state=active]:shadow-sm"><HelpCircle className="h-3.5 w-3.5" /><span className="hidden sm:inline">FAQ</span></TabsTrigger>
           </TabsList>
 
           {/* ===== TICKETS TAB ===== */}
@@ -482,15 +525,25 @@ const SupportPage = () => {
               {SERVICES.map((s, i) => {
                 const Icon = s.icon;
                 return (
-                  <Card key={i} className="border-border/50 hover:shadow-md transition-all group cursor-pointer">
+                  <Card key={i} className="border-border/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group overflow-hidden relative">
+                    <div className={`absolute top-0 left-0 right-0 h-0.5 ${s.bg.replace("/10", "/60")}`} />
                     <CardContent className="p-5">
-                      <div className={`h-11 w-11 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+                      <div className={`h-11 w-11 rounded-xl ${s.bg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                         <Icon className={`h-5 w-5 ${s.color}`} />
                       </div>
                       <h4 className="font-semibold text-sm">{s.title[lang]}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{s.desc[lang]}</p>
-                      <Button variant="ghost" size="sm" className="mt-3 h-7 text-xs gap-1 p-0 text-primary">
-                        Learn More <ArrowUpRight className="h-3 w-3" />
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]">{s.desc[lang]}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-3 h-7 text-xs gap-1 p-0 text-primary hover:bg-transparent hover:text-primary/80"
+                        onClick={() => {
+                          setForm({ subject: `Inquiry: ${s.title.en}`, description: `I'm interested in your ${s.title.en} service.\n\nDetails:\n${s.desc.en}\n\nPlease share more information.`, category: "other", priority: "medium" });
+                          setActiveTab("tickets");
+                          setSheetOpen(true);
+                        }}
+                      >
+                        Inquire Now <ArrowUpRight className="h-3 w-3" />
                       </Button>
                     </CardContent>
                   </Card>
