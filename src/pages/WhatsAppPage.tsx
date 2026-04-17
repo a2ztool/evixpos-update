@@ -524,28 +524,42 @@ const WhatsAppPage = () => {
           </TabsContent>
 
           {/* ─── Config Tab ─── */}
-          <TabsContent value="config" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>API Configuration</CardTitle>
-                    {wa && <Badge variant={wa.status === "active" ? "default" : "secondary"}>{wa.status}</Badge>}
+          <TabsContent value="config" className="space-y-5 mt-5">
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Card className="rounded-2xl border-border/50">
+                <CardHeader className="p-5 sm:p-6 pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">API Configuration</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">Meta Cloud API credentials</p>
+                      </div>
+                    </div>
+                    {wa && (
+                      <Badge className={wa.status === "active"
+                        ? "bg-green-500/15 text-green-600 border-green-500/30"
+                        : "bg-muted text-muted-foreground"}>
+                        {wa.status}
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-5 sm:p-6 pt-0">
                   <div className="space-y-2">
-                    <Label>Access Token</Label>
-                    <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder="EAAx..." />
-                    <p className="text-xs text-muted-foreground">Meta Developer Portal → WhatsApp → API Setup থেকে পাবেন</p>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Access Token</Label>
+                    <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder="EAAx..." className="font-mono text-sm" />
+                    <p className="text-xs text-muted-foreground">Meta Developer Portal → WhatsApp → API Setup</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Phone Number ID</Label>
-                    <Input value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} placeholder="123456789012345" />
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Phone Number ID</Label>
+                    <Input value={form.phone_number} onChange={(e) => setForm({ ...form, phone_number: e.target.value })} placeholder="123456789012345" className="font-mono text-sm" />
                     <p className="text-xs text-muted-foreground">WhatsApp Business Account-এর Phone Number ID</p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={save} className="flex-1" disabled={saving}>
+                  <div className="flex gap-2 pt-1">
+                    <Button onClick={save} className="flex-1 bg-green-600 hover:bg-green-700 text-white" disabled={saving}>
                       <Save className="h-4 w-4 mr-2" />{saving ? "Saving..." : wa ? "Update" : "Save & Connect"}
                     </Button>
                     {wa && (
@@ -553,85 +567,86 @@ const WhatsAppPage = () => {
                         <Button variant="outline" onClick={toggleStatus} title={wa.status === "active" ? "Deactivate" : "Activate"}>
                           {wa.status === "active" ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
                         </Button>
-                        <Button variant="outline" onClick={testConnection} disabled={testing}>
+                        <Button variant="outline" onClick={testConnection} disabled={testing} title="Test Connection">
                           <Zap className="h-4 w-4" />
                         </Button>
                       </>
                     )}
                   </div>
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                    <Lightbulb className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-foreground/80">
+                      Production-এ <strong>Permanent Token</strong> ব্যবহার করুন। Temporary token ২৪ ঘন্টা পর expire হয়।
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader><CardTitle>Connection Status</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">API Status</span>
-                      </div>
-                      <Badge variant={wa?.status === "active" ? "default" : "secondary"}>
-                        {wa?.status === "active" ? "Active" : "Inactive"}
-                      </Badge>
+              <Card className="rounded-2xl border-border/50">
+                <CardHeader className="p-5 sm:p-6 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                      <Activity className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Phone Number ID</span>
-                      </div>
-                      <span className="text-sm font-mono">{wa?.phone_number ? `...${wa.phone_number.slice(-6)}` : "—"}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Messages Sent</span>
-                      </div>
-                      <span className="text-sm font-bold">{stats.total}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Success Rate</span>
-                      </div>
-                      <span className="text-sm font-bold">
-                        {stats.total > 0 ? `${((stats.sent / stats.total) * 100).toFixed(1)}%` : "—"}
-                      </span>
+                    <div>
+                      <CardTitle className="text-base">Connection Status</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">লাইভ কানেকশন ও পারফরম্যান্স</p>
                     </div>
                   </div>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5 sm:p-6 pt-0">
+                  {[
+                    { icon: Globe, label: "API Status", value: <Badge className={wa?.status === "active" ? "bg-green-500/15 text-green-600 border-green-500/30" : "bg-muted text-muted-foreground"}>{wa?.status === "active" ? "Active" : "Inactive"}</Badge> },
+                    { icon: Phone, label: "Phone Number ID", value: <span className="text-sm font-mono">{wa?.phone_number ? `...${wa.phone_number.slice(-6)}` : "—"}</span> },
+                    { icon: BarChart3, label: "Messages Sent", value: <span className="text-sm font-bold tabular-nums">{stats.total}</span> },
+                    { icon: CheckCircle2, label: "Success Rate", value: <span className="text-sm font-bold tabular-nums text-green-600">{successRate > 0 ? `${successRate.toFixed(1)}%` : "—"}</span> },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-center justify-between p-3.5 rounded-xl bg-muted/40 border border-border/40">
+                      <div className="flex items-center gap-2.5">
+                        <row.icon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{row.label}</span>
+                      </div>
+                      {row.value}
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
           {/* ─── Templates Tab ─── */}
-          <TabsContent value="templates" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>📝 Message Templates</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  রেডিমেড টেমপ্লেট ব্যবহার করুন। <code className="bg-muted px-1 rounded">{"{name}"}</code> কাস্টমারের নাম দিয়ে অটো রিপ্লেস হবে।
-                </p>
+          <TabsContent value="templates" className="space-y-5 mt-5">
+            <Card className="rounded-2xl border-border/50">
+              <CardHeader className="p-5 sm:p-6 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Message Templates</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      রেডিমেড টেমপ্লেট। <code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{"{name}"}</code> অটো-রিপ্লেস হবে
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2">
+              <CardContent className="p-5 sm:p-6 pt-0">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {MESSAGE_TEMPLATES.map((t) => (
-                    <div key={t.id} className="p-4 border rounded-lg hover:border-primary/50 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-sm">{t.label}</span>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(t.text)} title="Copy">
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{t.text}</p>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { useTemplate(t, "single"); setSendOpen(true); }}>
-                          Use for Single
+                    <div key={t.id} className="p-4 border border-border/50 rounded-xl hover:border-primary/40 hover:shadow-sm transition-all bg-card flex flex-col gap-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-sm">{t.label}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(t.text)} title="Copy">
+                          <Copy className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { useTemplate(t, "bulk"); setBulkOpen(true); }}>
-                          Use for Bulk
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{t.text}</p>
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" variant="outline" className="text-xs h-7 flex-1" onClick={() => { useTemplate(t, "single"); setSendOpen(true); }}>
+                          Single
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs h-7 flex-1" onClick={() => { useTemplate(t, "bulk"); setBulkOpen(true); }}>
+                          Bulk
                         </Button>
                       </div>
                     </div>
@@ -642,18 +657,26 @@ const WhatsAppPage = () => {
           </TabsContent>
 
           {/* ─── Logs Tab ─── */}
-          <TabsContent value="logs" className="space-y-4">
-            <Card>
-              <CardHeader>
+          <TabsContent value="logs" className="space-y-5 mt-5">
+            <Card className="rounded-2xl border-border/50">
+              <CardHeader className="p-5 sm:p-6 pb-3">
                 <div className="flex items-center justify-between flex-wrap gap-3">
-                  <CardTitle>📋 Message Logs</CardTitle>
-                  <div className="flex gap-2">
-                    <div className="relative">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                      <Activity className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Message Logs</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">সর্বশেষ ১০০টি WhatsApp মেসেজ</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-initial">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input placeholder="Search..." value={logSearch} onChange={(e) => setLogSearch(e.target.value)} className="pl-8 h-8 w-48 text-sm" />
+                      <Input placeholder="Search..." value={logSearch} onChange={(e) => setLogSearch(e.target.value)} className="pl-8 h-9 sm:w-48 text-sm" />
                     </div>
                     <Select value={logFilter} onValueChange={setLogFilter}>
-                      <SelectTrigger className="h-8 w-28 text-sm">
+                      <SelectTrigger className="h-9 w-28 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -665,34 +688,41 @@ const WhatsAppPage = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5 sm:p-6 pt-0">
                 {filteredLogs.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8 text-sm">কোনো মেসেজ পাওয়া যায়নি।</p>
+                  <div className="text-center py-10">
+                    <Activity className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">কোনো মেসেজ পাওয়া যায়নি</p>
+                  </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Recipient</TableHead>
-                        <TableHead>Message</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLogs.slice(0, 50).map((l) => (
-                        <TableRow key={l.id}>
-                          <TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), "MMM dd, HH:mm")}</TableCell>
-                          <TableCell className="text-sm font-mono">{l.recipient}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground truncate max-w-[300px]">{l.message}</TableCell>
-                          <TableCell>
-                            <Badge variant={l.status === "sent" ? "default" : "destructive"} className="text-xs">
-                              {l.status === "sent" ? "✅ Sent" : "❌ Failed"}
-                            </Badge>
-                          </TableCell>
+                  <div className="overflow-x-auto rounded-xl border border-border/50">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="text-xs uppercase tracking-wider">Date</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider">Recipient</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider">Message</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider">Status</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLogs.slice(0, 50).map((l) => (
+                          <TableRow key={l.id} className="hover:bg-muted/30">
+                            <TableCell className="text-sm whitespace-nowrap text-muted-foreground">{format(new Date(l.created_at), "MMM dd, HH:mm")}</TableCell>
+                            <TableCell className="text-sm font-mono">{l.recipient}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground truncate max-w-[300px]">{l.message}</TableCell>
+                            <TableCell>
+                              <Badge className={l.status === "sent"
+                                ? "bg-green-500/15 text-green-600 border-green-500/30 text-xs"
+                                : "bg-red-500/15 text-red-600 border-red-500/30 text-xs"}>
+                                {l.status === "sent" ? "✓ Sent" : "✕ Failed"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
