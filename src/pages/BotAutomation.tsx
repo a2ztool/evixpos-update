@@ -26,6 +26,7 @@ import { format, differenceInDays } from "date-fns";
 import EmailTemplateEditor from "@/components/EmailTemplateEditor";
 import EmailBrandingTab from "@/components/EmailBrandingTab";
 import MarketingCampaignTab from "@/components/MarketingCampaignTab";
+import BotGuidePanel from "@/components/bot-automation/BotGuidePanel";
 
 // ─── Types ────────────────────────────────────────────────
 interface EmailConfig {
@@ -605,15 +606,31 @@ const BotAutomation = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 flex-wrap">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="email-config">Email Config</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="branding" className="gap-1.5"><Palette className="h-3.5 w-3.5" />Branding</TabsTrigger>
-          <TabsTrigger value="campaign">Campaign</TabsTrigger>
-          <TabsTrigger value="marketing" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" />Marketing</TabsTrigger>
-          <TabsTrigger value="tracking">Tracking</TabsTrigger>
-        </TabsList>
+        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 p-1.5 mb-6 overflow-x-auto shadow-sm">
+          <TabsList className="bg-transparent gap-1 h-auto p-0 flex-wrap">
+            <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500/15 data-[state=active]:to-violet-500/10 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Bot className="h-3.5 w-3.5" />Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="email-config" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500/15 data-[state=active]:to-teal-500/10 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Settings className="h-3.5 w-3.5" />Email Config
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-sky-500/15 data-[state=active]:to-cyan-500/10 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <FileText className="h-3.5 w-3.5" />Templates
+            </TabsTrigger>
+            <TabsTrigger value="branding" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500/15 data-[state=active]:to-fuchsia-500/10 data-[state=active]:text-violet-700 dark:data-[state=active]:text-violet-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Palette className="h-3.5 w-3.5" />Branding
+            </TabsTrigger>
+            <TabsTrigger value="campaign" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500/15 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Send className="h-3.5 w-3.5" />Campaign
+            </TabsTrigger>
+            <TabsTrigger value="marketing" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-500/15 data-[state=active]:to-pink-500/10 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-300 data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Megaphone className="h-3.5 w-3.5" />Marketing
+            </TabsTrigger>
+            <TabsTrigger value="tracking" className="data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary/15 data-[state=active]:to-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-xl gap-1.5">
+              <Eye className="h-3.5 w-3.5" />Tracking
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ─── DASHBOARD TAB ──────────────────────────── */}
         <TabsContent value="dashboard">
@@ -909,17 +926,29 @@ const BotAutomation = () => {
 
         {/* ─── EMAIL CONFIG TAB ───────────────────────── */}
         <TabsContent value="email-config">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" /> Email Provider
-                </CardTitle>
-                <CardDescription>Configure your email sending provider for this store</CardDescription>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Provider Card */}
+            <Card className="lg:col-span-2 overflow-hidden border-emerald-500/15">
+              <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+              <CardHeader className="bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                      <Settings className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Email Provider</CardTitle>
+                      <CardDescription>Configure your sending infrastructure for this store</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                    {providerLabels[emailForm.provider_type]}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 <div>
-                  <Label>Provider</Label>
+                  <Label>Provider Type</Label>
                   <Select
                     value={emailForm.provider_type}
                     onValueChange={(v) => {
@@ -942,7 +971,8 @@ const BotAutomation = () => {
                 </div>
 
                 {!isApiProvider && (
-                  <>
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMTP Credentials</div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>SMTP Host</Label>
@@ -958,83 +988,96 @@ const BotAutomation = () => {
                       <Input value={emailForm.smtp_user} onChange={(e) => setEmailForm({ ...emailForm, smtp_user: e.target.value })} />
                     </div>
                     <div>
-                      <Label>SMTP Password</Label>
+                      <Label>SMTP Password / App Password</Label>
                       <Input type="password" value={emailForm.smtp_pass} onChange={(e) => setEmailForm({ ...emailForm, smtp_pass: e.target.value })} />
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {isApiProvider && (
-                  <div>
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                     <Label>API Key</Label>
                     <Input type="password" value={emailForm.api_key} onChange={(e) => setEmailForm({ ...emailForm, api_key: e.target.value })} placeholder="Enter API key" />
+                    <p className="text-xs text-muted-foreground mt-1.5">Get this from your {providerLabels[emailForm.provider_type]} dashboard.</p>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Sender Email</Label>
-                    <Input value={emailForm.sender_email} onChange={(e) => setEmailForm({ ...emailForm, sender_email: e.target.value })} placeholder="noreply@store.com" />
-                  </div>
-                  <div>
-                    <Label>Sender Name</Label>
-                    <Input value={emailForm.sender_name} onChange={(e) => setEmailForm({ ...emailForm, sender_name: e.target.value })} placeholder="My Store" />
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sender Identity</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>From Email</Label>
+                      <Input value={emailForm.sender_email} onChange={(e) => setEmailForm({ ...emailForm, sender_email: e.target.value })} placeholder="noreply@store.com" />
+                    </div>
+                    <div>
+                      <Label>From Name</Label>
+                      <Input value={emailForm.sender_name} onChange={(e) => setEmailForm({ ...emailForm, sender_name: e.target.value })} placeholder="My Store" />
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <Label>Rate Limit (emails/min)</Label>
                   <Input type="number" value={emailForm.rate_limit_per_minute} onChange={(e) => setEmailForm({ ...emailForm, rate_limit_per_minute: Number(e.target.value) })} min={1} max={500} />
-                  <p className="text-xs text-muted-foreground mt-1">Controls email queue speed to avoid being flagged</p>
+                  <p className="text-xs text-muted-foreground mt-1">Throttles outbound queue to protect sender reputation.</p>
                 </div>
 
-                <Button className="w-full" onClick={saveEmailConfig}>
-                  <Shield className="h-4 w-4 mr-2" /> Save Email Config
+                <Button
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white shadow-md shadow-emerald-500/20"
+                  onClick={saveEmailConfig}
+                >
+                  <Shield className="h-4 w-4 mr-2" /> Save Email Configuration
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Connection Status & Test */}
+            {/* Side panels */}
             <div className="space-y-4">
-              <Card>
+              {/* Connection Status */}
+              <Card className="overflow-hidden">
+                <div className={`h-1 bg-gradient-to-r ${
+                  emailConfig?.connection_status === "connected"
+                    ? "from-emerald-500 to-teal-500"
+                    : emailConfig?.connection_status === "failed"
+                    ? "from-destructive to-red-500"
+                    : "from-muted-foreground/30 to-muted-foreground/10"
+                }`} />
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     {emailConfig?.connection_status === "connected" ? (
-                      <Wifi className="h-5 w-5 text-green-500" />
+                      <Wifi className="h-4 w-4 text-emerald-600" />
                     ) : emailConfig?.connection_status === "failed" ? (
-                      <WifiOff className="h-5 w-5 text-destructive" />
+                      <WifiOff className="h-4 w-4 text-destructive" />
                     ) : (
-                      <WifiOff className="h-5 w-5 text-muted-foreground" />
+                      <WifiOff className="h-4 w-4 text-muted-foreground" />
                     )}
                     Connection Status
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2 mb-4">
                     <Badge
                       variant={emailConfig?.connection_status === "connected" ? "default" : "destructive"}
-                      className={emailConfig?.connection_status === "connected" ? "bg-green-500" : ""}
+                      className={emailConfig?.connection_status === "connected" ? "bg-emerald-600 hover:bg-emerald-600" : ""}
                     >
-                      {emailConfig?.connection_status === "connected" ? "Connected" :
-                       emailConfig?.connection_status === "failed" ? "Failed" : "Not Connected"}
+                      {emailConfig?.connection_status === "connected" ? "✓ Connected" :
+                       emailConfig?.connection_status === "failed" ? "✗ Failed" : "○ Not Tested"}
                     </Badge>
                     {emailConfig?.last_tested_at && (
-                      <span className="text-xs text-muted-foreground">
-                        Last tested: {format(new Date(emailConfig.last_tested_at), "dd MMM HH:mm")}
+                      <span className="text-[11px] text-muted-foreground">
+                        {format(new Date(emailConfig.last_tested_at), "dd MMM HH:mm")}
                       </span>
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Test Email Address</Label>
-                      <Input
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        placeholder="test@example.com"
-                        type="email"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Send Test Email</Label>
+                    <Input
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="test@example.com"
+                      type="email"
+                    />
                     <Button
                       className="w-full"
                       variant="outline"
@@ -1046,66 +1089,208 @@ const BotAutomation = () => {
                       ) : (
                         <TestTube className="h-4 w-4 mr-2" />
                       )}
-                      Send Test Email
+                      Send Test
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Schedule */}
+              <Card className="overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4" /> Schedule Settings
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Clock className="h-4 w-4 text-indigo-600" /> Schedule
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <Label>Daily Run Time</Label>
+                    <Label className="text-xs">Daily Run Time</Label>
                     <Input
                       type="time"
                       value={autoConfig?.schedule_time || "09:00"}
                       onChange={(e) => saveScheduleTime(e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      System checks for expiring subscriptions daily at this time
-                    </p>
                   </div>
-                  <div>
-                    <Label>Reminder Days Before Expiry</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {(autoConfig?.reminder_days || [7, 3, 1]).join(", ")} days before expiry
-                    </p>
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs space-y-1">
+                    <div className="font-semibold text-foreground">Reminder Schedule</div>
+                    <div className="text-muted-foreground">Sends at <span className="font-mono text-foreground">{(autoConfig?.reminder_days || [7, 3, 1]).join(", ")}</span> days before expiry.</div>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Guide */}
+              <BotGuidePanel
+                title="Email Setup Guide"
+                subtitle="Follow these steps for the best deliverability"
+                accent="emerald"
+                steps={[
+                  { icon: Settings, title: "Pick a provider", desc: "Use SendGrid/Resend for high volume, Gmail for testing." },
+                  { icon: Shield, title: "Use App Passwords", desc: "For Gmail/Outlook, generate an app password — never your real password." },
+                  { icon: Mail, title: "Authenticate domain", desc: "Set SPF, DKIM & DMARC records on your sender domain to land in inbox." },
+                  { icon: TestTube, title: "Send a test", desc: "Always test before going live — check spam folder too." },
+                ]}
+                tip="A verified custom domain (you@yourstore.com) doubles deliverability vs free Gmail."
+              />
             </div>
           </div>
         </TabsContent>
 
         {/* ─── TEMPLATES TAB ──────────────────────────── */}
         <TabsContent value="templates">
-          <EmailTemplateEditor
-            templates={templates}
-            storeId={activeStore?.id || ""}
-            userId={user?.id || ""}
-            senderEmail={emailConfig?.sender_email || ""}
-            senderName={emailConfig?.sender_name || ""}
-            onSave={fetchAll}
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-sky-500/15 bg-gradient-to-br from-sky-500/5 via-card to-cyan-500/5 p-5 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center shadow-md shadow-sky-500/20">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold">Email Templates</div>
+                    <div className="text-xs text-muted-foreground">Customize reminder content with merge tags & inline CTAs</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30">
+                    {templates.filter(t => t.is_active).length} active
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {Object.keys(DEFAULT_TEMPLATES).length} types
+                  </Badge>
+                </div>
+              </div>
+              <EmailTemplateEditor
+                templates={templates}
+                storeId={activeStore?.id || ""}
+                userId={user?.id || ""}
+                senderEmail={emailConfig?.sender_email || ""}
+                senderName={emailConfig?.sender_name || ""}
+                onSave={fetchAll}
+              />
+            </div>
+            <div className="space-y-4">
+              <BotGuidePanel
+                title="Template Guide"
+                subtitle="Write reminder emails that convert"
+                accent="sky"
+                steps={[
+                  { icon: Pencil, title: "Use merge tags", desc: "Insert {{customer_name}}, {{product_name}}, {{expiry_date}}, {{store_name}} for personalization." },
+                  { icon: Send, title: "Add a clear CTA", desc: "Use [CTA:Renew Now|https://yourlink|#10b981] for branded buttons." },
+                  { icon: Eye, title: "Preview before save", desc: "Always preview to confirm formatting and link rendering." },
+                  { icon: CheckCircle2, title: "Toggle active", desc: "Inactive templates are skipped by the automation engine." },
+                ]}
+                tip="Short subject lines (<40 chars) get higher open rates on mobile."
+              />
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Available Merge Tags</div>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
+                  {["{{customer_name}}", "{{product_name}}", "{{expiry_date}}", "{{store_name}}"].map((t) => (
+                    <div key={t} className="rounded-md bg-background/70 border border-border/40 px-2 py-1 text-foreground/80">{t}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ─── BRANDING TAB ────────────────────────────── */}
         <TabsContent value="branding">
-          <EmailBrandingTab />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-500/5 via-card to-fuchsia-500/5 p-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-violet-500/20">
+                  <Palette className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Email Branding</div>
+                  <div className="text-xs text-muted-foreground">Logo, colors, footer & legal info shown on every outbound email</div>
+                </div>
+              </div>
+              <EmailBrandingTab />
+            </div>
+            <BotGuidePanel
+              title="Branding Guide"
+              subtitle="Make every email look on-brand"
+              accent="violet"
+              steps={[
+                { icon: Palette, title: "Upload logo", desc: "Use PNG with transparent background, ~200px wide for crisp display." },
+                { icon: Mail, title: "Brand colors", desc: "Match button & accent colors to your store theme." },
+                { icon: FileText, title: "Footer content", desc: "Include business address (CAN-SPAM compliance) & support contact." },
+                { icon: Eye, title: "Preview live", desc: "Use the live preview to verify before saving." },
+              ]}
+              tip="Consistent branding across all emails increases trust and reduces unsubscribes."
+            />
+          </div>
         </TabsContent>
 
         {/* ─── MARKETING CAMPAIGN TAB ─────────────────── */}
         <TabsContent value="marketing">
-          <MarketingCampaignTab />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-rose-500/15 bg-gradient-to-br from-rose-500/5 via-card to-pink-500/5 p-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20">
+                  <Megaphone className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Marketing Campaigns</div>
+                  <div className="text-xs text-muted-foreground">Promotional broadcasts to customer segments</div>
+                </div>
+              </div>
+              <MarketingCampaignTab />
+            </div>
+            <BotGuidePanel
+              title="Campaign Best Practices"
+              subtitle="Send smart, send less, send better"
+              accent="rose"
+              steps={[
+                { icon: Users, title: "Segment first", desc: "Target by purchase history or activity for higher engagement." },
+                { icon: FileText, title: "One clear message", desc: "One CTA per email — too many choices kill conversion." },
+                { icon: Clock, title: "Send timing", desc: "Tue–Thu, 9–11am local time generally performs best." },
+                { icon: TestTube, title: "A/B test subjects", desc: "Test 2 subject lines on a small sample before full send." },
+              ]}
+              tip="Limit broadcasts to ~2 per month. Frequency fatigue tanks open rates fast."
+            />
+          </div>
         </TabsContent>
 
         {/* ─── CAMPAIGN TAB ───────────────────────────── */}
         <TabsContent value="campaign">
+          {/* Premium Header + Guide */}
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
+            <div className="rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md shadow-amber-500/20">
+                    <Send className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold">Renewal Campaign</div>
+                    <div className="text-xs text-muted-foreground">One-off targeted send to selected customers</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                    {selectedCustomers.length} selected
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {totalUpcoming} eligible
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <BotGuidePanel
+              title="Campaign Guide"
+              accent="amber"
+              steps={[
+                { icon: FileText, title: "Pick a template", desc: "Select from your saved active templates." },
+                { icon: TestTube, title: "Send a test", desc: "Always test to your own email before bulk send." },
+                { icon: Users, title: "Pick recipients", desc: "Use Select All or check individual customers below." },
+                { icon: Send, title: "Hit Start", desc: "Or schedule for later — the engine handles delivery." },
+              ]}
+              tip="Use WhatsApp for high-priority reminders alongside email."
+            />
+          </div>
+
           {/* Template Selection & Settings */}
           <div className="grid gap-6 md:grid-cols-3 mb-6">
             {/* Template Selector */}
@@ -1393,73 +1578,148 @@ const BotAutomation = () => {
 
         {/* ─── TRACKING TAB ───────────────────────────── */}
         <TabsContent value="tracking">
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold">{reminderStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Sent</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-green-500">{reminderStats.sent}</p>
-                <p className="text-sm text-muted-foreground">Delivered</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-destructive">{reminderStats.failed}</p>
-                <p className="text-sm text-muted-foreground">Failed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-yellow-500">{reminderStats.pending}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </CardContent>
-            </Card>
+          {/* Header + Guide */}
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
+            <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/5 via-card to-indigo-500/5 p-5 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-md shadow-primary/20">
+                  <Eye className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Delivery Tracking</div>
+                  <div className="text-xs text-muted-foreground">Real-time status of every email leaving your store</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                  {deliverability}% delivered
+                </Badge>
+              </div>
+            </div>
+            <BotGuidePanel
+              title="Tracking Guide"
+              accent="indigo"
+              steps={[
+                { icon: CheckCircle2, title: "Delivered", desc: "Email accepted by recipient mail server." },
+                { icon: XCircle, title: "Failed", desc: "Bounced or rejected — check Error column for reason." },
+                { icon: Clock, title: "Pending", desc: "Queued and waiting to be sent (subject to rate limit)." },
+                { icon: AlertTriangle, title: "High failure?", desc: "Re-test connection in Email Config and check sender reputation." },
+              ]}
+              tip="Aim for ≥95% delivery rate — anything lower indicates auth or content issues."
+            />
           </div>
 
-          <Card>
+          {/* Premium KPI Cards */}
+          <div className="grid gap-4 md:grid-cols-4 mb-6">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-indigo-500/15 flex items-center justify-center">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Sent</div>
+              <div className="text-2xl font-bold mt-1">{reminderStats.total}</div>
+              <div className="text-xs text-muted-foreground mt-1">All time</div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center">
+                  <MailCheck className="h-5 w-5 text-emerald-600" />
+                </div>
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">{deliverability}%</span>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Delivered</div>
+              <div className="text-2xl font-bold mt-1 text-emerald-600">{reminderStats.sent}</div>
+              <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500" style={{ width: `${deliverability}%` }} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-destructive/20 bg-gradient-to-br from-card to-destructive/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-destructive/15 to-red-500/15 flex items-center justify-center">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Failed</div>
+              <div className="text-2xl font-bold mt-1 text-destructive">{reminderStats.failed}</div>
+              <div className="text-xs text-muted-foreground mt-1">Needs review</div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pending</div>
+              <div className="text-2xl font-bold mt-1 text-amber-600">{reminderStats.pending}</div>
+              <div className="text-xs text-muted-foreground mt-1">In queue</div>
+            </div>
+          </div>
+
+          {/* Email Logs */}
+          <Card className="overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-primary via-indigo-500 to-violet-500" />
             <CardHeader>
-              <CardTitle>Email Logs</CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-4 w-4 text-primary" /> Email Activity Log
+                  </CardTitle>
+                  <CardDescription>Last 100 outbound email events</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchAll}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-2" /> Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {reminders.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No emails sent yet.</p>
+                <div className="text-center py-12">
+                  <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Mail className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">No emails sent yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Configure email & run an automation to see activity here.</p>
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Sent At</TableHead>
-                      <TableHead>Error</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reminders.slice(0, 100).map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium text-sm">{r.recipient_name || "—"}</TableCell>
-                        <TableCell className="text-xs">{r.recipient_email || "—"}</TableCell>
-                        <TableCell className="text-sm">{r.product_name || "—"}</TableCell>
-                        <TableCell>{statusBadge(r.status)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">{r.reminder_type}</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {r.sent_at ? format(new Date(r.sent_at), "dd MMM HH:mm") : "—"}
-                        </TableCell>
-                        <TableCell className="text-xs text-destructive max-w-[200px] truncate">
-                          {r.error_message || "—"}
-                        </TableCell>
+                <div className="rounded-xl border border-border/60 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Sent At</TableHead>
+                        <TableHead>Error</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {reminders.slice(0, 100).map((r) => (
+                        <TableRow key={r.id} className="hover:bg-muted/20">
+                          <TableCell>
+                            <div className="font-medium text-sm">{r.recipient_name || "—"}</div>
+                            <div className="text-[11px] text-muted-foreground">{r.recipient_email || "—"}</div>
+                          </TableCell>
+                          <TableCell className="text-sm">{r.product_name || "—"}</TableCell>
+                          <TableCell>{statusBadge(r.status)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px]">{r.reminder_type}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {r.sent_at ? format(new Date(r.sent_at), "dd MMM HH:mm") : "—"}
+                          </TableCell>
+                          <TableCell className="text-[11px] text-destructive max-w-[200px] truncate">
+                            {r.error_message || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
