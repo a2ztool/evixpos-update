@@ -905,7 +905,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </div>
 
             {/* Right: Live Preview */}
-            <div className={`${mobilePreview ? "flex" : "hidden"} lg:flex w-full lg:w-1/2 flex-col bg-muted/20 overflow-hidden min-h-0`}>
+            <div className={`${mobilePreview ? "flex" : "hidden"} md:flex w-full md:w-1/2 flex-col bg-muted/20 overflow-hidden min-h-0`}>
               <div className="px-3 sm:px-4 py-2.5 border-b flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <Eye className="h-4 w-4 text-muted-foreground" />
