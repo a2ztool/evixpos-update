@@ -431,7 +431,7 @@ const MyPlan = () => {
 
         {/* Current Plan Status */}
         <Card className="border-border/50">
-          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
                 <Check className="h-5 w-5 text-success" />
