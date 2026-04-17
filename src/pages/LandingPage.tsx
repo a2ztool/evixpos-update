@@ -983,9 +983,10 @@ const LandingPage = () => {
                 <Download className="h-3 w-3 mr-1.5" /> {get("mobile_badge", "Mobile App")}
               </Badge>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
-               {get("app_download_title", "Manage Online & Offline Sales On The Go")}
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
+               {get("app_download_title", "Download EvixPOS App")}
              </h2>
-             <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Process POS sales, track online orders, and monitor your business from anywhere — all from your phone.")}</p>
+             <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Get the full power of EvixPOS on your mobile device. Available on all platforms.")}</p>
               <ul className="space-y-3 mb-8">
                 {(get("mobile_features", "Process walk-in POS sales from your phone|Track online orders in real-time|Manage inventory across all stores|View combined profit analytics")).split("|").map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm"><div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>{item.trim()}</li>
@@ -1134,7 +1135,7 @@ const LandingPage = () => {
                     <CardContent className="p-6 relative flex flex-col h-full">
                       {/* Badges */}
                       {isPro && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3 border border-primary/20 w-fit">
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3 border border-primary/20 w-fit px-[12px] py-[4px] text-center">
                           <Star className="h-3 w-3 fill-current" /> POPULAR
                         </div>
                       )}
@@ -1410,7 +1411,7 @@ const LandingPage = () => {
           </div>
           <div className="border-t border-border/40 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              {get("footer_copyright", `© ${new Date().getFullYear()} EvixPOS. All rights reserved.`)} Powered by{" "}
+              {get("footer_copyright", `© 2026 EvixPOS. All rights reserved.`)} Powered by{" "}
               <a href={get("footer_powered_url", "https://www.lifeaimit.in")} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{get("footer_powered_by", "LifeAim IT")}</a>
             </p>
             <div className="flex items-center gap-6 text-xs text-muted-foreground">
