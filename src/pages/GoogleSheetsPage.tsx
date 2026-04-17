@@ -93,7 +93,8 @@ const GoogleSheetsPage = () => {
         last_synced_at: data.last_synced_at,
       });
       if (data.status === "connected") setStep(4);
-      else if (data.credentials) setStep(3);
+      else if (data.credentials && data.sheet_id) setStep(3);
+      else if (data.credentials) setStep(2);
       else setStep(1);
     }
     setLoading(false);
@@ -129,7 +130,7 @@ const GoogleSheetsPage = () => {
         if (data) setConfig(prev => ({ ...prev, id: data.id }));
       }
       setConfig(prev => ({ ...prev, credentials: creds, status: "configured" }));
-      setStep(3);
+      setStep(2);
       toast.success("Credentials saved securely");
     } catch {
       toast.error("Invalid JSON format");
