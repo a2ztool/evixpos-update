@@ -670,25 +670,25 @@ const MarketingCampaignTab = () => {
                   <CardTitle className="text-base">Test & Send</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input placeholder="Test email address" value={testEmail} onChange={e => setTestEmail(e.target.value)} />
-                    <Button variant="outline" onClick={handleTestSend} disabled={testSending || !emailSubject} className="gap-1.5 shrink-0">
+                    <Button variant="outline" onClick={handleTestSend} disabled={testSending || !emailSubject} className="gap-1.5 shrink-0 w-full sm:w-auto">
                       <TestTube className="h-3.5 w-3.5" />{testSending ? "Sending..." : "Test"}
                     </Button>
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="text-sm">
                       <span className="font-medium">{selectedWithEmail.length}</span> recipients
                     </div>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 sm:flex gap-2">
                       <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!emailSubject} className="gap-1.5">
                         <Eye className="h-3.5 w-3.5" />Preview
                       </Button>
                       <Button onClick={runCampaign} disabled={campaignRunning || selectedWithEmail.length === 0 || !emailSubject} className="gap-1.5">
-                        <Play className="h-3.5 w-3.5" />{campaignRunning ? "Sending..." : (isScheduled ? "Schedule" : "Send Campaign")}
+                        <Play className="h-3.5 w-3.5" />{campaignRunning ? "Sending..." : (isScheduled ? "Schedule" : "Send")}
                       </Button>
                     </div>
                   </div>
