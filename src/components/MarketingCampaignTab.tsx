@@ -566,11 +566,6 @@ const MarketingCampaignTab = () => {
                   )}
                 </TableBody>
               </Table>
-            </ScrollArea>
-          </Card>
-        </TabsContent>
-
-              </Table>
               </div>
             </ScrollArea>
           </Card>
