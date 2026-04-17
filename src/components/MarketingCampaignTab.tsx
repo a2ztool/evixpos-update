@@ -489,16 +489,16 @@ const MarketingCampaignTab = () => {
           </div>
 
           {/* Selected Info */}
-          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2.5">
-            <span className="text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-muted/50 rounded-lg px-3 sm:px-4 py-2.5">
+            <span className="text-xs sm:text-sm">
               <span className="font-semibold text-primary">{selectedCustomers.length}</span> selected
               {" · "}
               <span className="font-semibold text-green-600">{selectedWithEmail.length}</span> with email
               {" · "}
-              Showing <span className="font-medium">{filteredCustomers.length}</span> of {customers.length}
+              <span className="hidden sm:inline">Showing </span><span className="font-medium">{filteredCustomers.length}</span> of {customers.length}
             </span>
             {selectedWithEmail.length > 0 && (
-              <Button size="sm" onClick={() => setSubTab("compose")} className="gap-1.5">
+              <Button size="sm" onClick={() => setSubTab("compose")} className="gap-1.5 w-full sm:w-auto">
                 Next: Compose <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             )}
@@ -507,6 +507,7 @@ const MarketingCampaignTab = () => {
           {/* Customer Table */}
           <Card>
             <ScrollArea className="max-h-[500px]">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
