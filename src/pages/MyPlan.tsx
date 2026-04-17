@@ -941,24 +941,6 @@ const MyPlan = () => {
           </CardContent>
         </Card>
 
-        {/* WhatsApp Support */}
-        <Card className="border-border/50">
-          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="h-5 w-5 text-success" />
-            </div>
-            <div className="flex-1 text-center sm:text-left">
-              <p className="font-semibold">Questions about payment?</p>
-              <p className="text-sm text-muted-foreground">Chat with us on WhatsApp · +91 81019 49890</p>
-            </div>
-            <Button
-              onClick={openWhatsApp}
-              className="gap-2 bg-[#25D366] hover:bg-[#1ebe5a] text-white shadow-sm flex-shrink-0"
-            >
-              <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Payment History */}
