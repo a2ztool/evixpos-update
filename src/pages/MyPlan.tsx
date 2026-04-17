@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStore } from "@/contexts/StoreContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { supabase } from "@/integrations/supabase/client";
