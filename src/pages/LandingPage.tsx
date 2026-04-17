@@ -983,7 +983,6 @@ const LandingPage = () => {
                 <Download className="h-3 w-3 mr-1.5" /> {get("mobile_badge", "Mobile App")}
               </Badge>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("app_download_title", "Download EvixPOS App")}
              </h2>
              <p className="text-muted-foreground text-lg leading-relaxed mb-8">{get("app_download_subtitle", "Get the full power of EvixPOS on your mobile device. Available on all platforms.")}</p>
