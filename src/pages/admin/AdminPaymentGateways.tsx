@@ -81,6 +81,7 @@ const AdminPaymentGateways = () => {
     mode: "manual" as string,
     api_config: {} as Record<string, string>,
     icon_url: "",
+    required_fields: [] as RequiredField[],
   });
   const [detailKey, setDetailKey] = useState("");
   const [detailValue, setDetailValue] = useState("");
@@ -100,7 +101,7 @@ const AdminPaymentGateways = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ currency: "BDT", gateway_name: "", gateway_type: "qr", qr_code_url: "", payment_details: {}, is_active: true, sort_order: 0, mode: "manual", api_config: {}, icon_url: "" });
+    setForm({ currency: "BDT", gateway_name: "", gateway_type: "qr", qr_code_url: "", payment_details: {}, is_active: true, sort_order: 0, mode: "manual", api_config: {}, icon_url: "", required_fields: [] });
     setQrFile(null);
     setDialogOpen(true);
   };
