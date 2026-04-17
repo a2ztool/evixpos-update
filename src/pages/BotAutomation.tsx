@@ -926,17 +926,29 @@ const BotAutomation = () => {
 
         {/* ─── EMAIL CONFIG TAB ───────────────────────── */}
         <TabsContent value="email-config">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" /> Email Provider
-                </CardTitle>
-                <CardDescription>Configure your email sending provider for this store</CardDescription>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Provider Card */}
+            <Card className="lg:col-span-2 overflow-hidden border-emerald-500/15">
+              <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+              <CardHeader className="bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                      <Settings className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Email Provider</CardTitle>
+                      <CardDescription>Configure your sending infrastructure for this store</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                    {providerLabels[emailForm.provider_type]}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 <div>
-                  <Label>Provider</Label>
+                  <Label>Provider Type</Label>
                   <Select
                     value={emailForm.provider_type}
                     onValueChange={(v) => {
@@ -959,7 +971,8 @@ const BotAutomation = () => {
                 </div>
 
                 {!isApiProvider && (
-                  <>
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMTP Credentials</div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>SMTP Host</Label>
@@ -975,83 +988,96 @@ const BotAutomation = () => {
                       <Input value={emailForm.smtp_user} onChange={(e) => setEmailForm({ ...emailForm, smtp_user: e.target.value })} />
                     </div>
                     <div>
-                      <Label>SMTP Password</Label>
+                      <Label>SMTP Password / App Password</Label>
                       <Input type="password" value={emailForm.smtp_pass} onChange={(e) => setEmailForm({ ...emailForm, smtp_pass: e.target.value })} />
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {isApiProvider && (
-                  <div>
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                     <Label>API Key</Label>
                     <Input type="password" value={emailForm.api_key} onChange={(e) => setEmailForm({ ...emailForm, api_key: e.target.value })} placeholder="Enter API key" />
+                    <p className="text-xs text-muted-foreground mt-1.5">Get this from your {providerLabels[emailForm.provider_type]} dashboard.</p>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Sender Email</Label>
-                    <Input value={emailForm.sender_email} onChange={(e) => setEmailForm({ ...emailForm, sender_email: e.target.value })} placeholder="noreply@store.com" />
-                  </div>
-                  <div>
-                    <Label>Sender Name</Label>
-                    <Input value={emailForm.sender_name} onChange={(e) => setEmailForm({ ...emailForm, sender_name: e.target.value })} placeholder="My Store" />
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sender Identity</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>From Email</Label>
+                      <Input value={emailForm.sender_email} onChange={(e) => setEmailForm({ ...emailForm, sender_email: e.target.value })} placeholder="noreply@store.com" />
+                    </div>
+                    <div>
+                      <Label>From Name</Label>
+                      <Input value={emailForm.sender_name} onChange={(e) => setEmailForm({ ...emailForm, sender_name: e.target.value })} placeholder="My Store" />
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <Label>Rate Limit (emails/min)</Label>
                   <Input type="number" value={emailForm.rate_limit_per_minute} onChange={(e) => setEmailForm({ ...emailForm, rate_limit_per_minute: Number(e.target.value) })} min={1} max={500} />
-                  <p className="text-xs text-muted-foreground mt-1">Controls email queue speed to avoid being flagged</p>
+                  <p className="text-xs text-muted-foreground mt-1">Throttles outbound queue to protect sender reputation.</p>
                 </div>
 
-                <Button className="w-full" onClick={saveEmailConfig}>
-                  <Shield className="h-4 w-4 mr-2" /> Save Email Config
+                <Button
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white shadow-md shadow-emerald-500/20"
+                  onClick={saveEmailConfig}
+                >
+                  <Shield className="h-4 w-4 mr-2" /> Save Email Configuration
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Connection Status & Test */}
+            {/* Side panels */}
             <div className="space-y-4">
-              <Card>
+              {/* Connection Status */}
+              <Card className="overflow-hidden">
+                <div className={`h-1 bg-gradient-to-r ${
+                  emailConfig?.connection_status === "connected"
+                    ? "from-emerald-500 to-teal-500"
+                    : emailConfig?.connection_status === "failed"
+                    ? "from-destructive to-red-500"
+                    : "from-muted-foreground/30 to-muted-foreground/10"
+                }`} />
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     {emailConfig?.connection_status === "connected" ? (
-                      <Wifi className="h-5 w-5 text-green-500" />
+                      <Wifi className="h-4 w-4 text-emerald-600" />
                     ) : emailConfig?.connection_status === "failed" ? (
-                      <WifiOff className="h-5 w-5 text-destructive" />
+                      <WifiOff className="h-4 w-4 text-destructive" />
                     ) : (
-                      <WifiOff className="h-5 w-5 text-muted-foreground" />
+                      <WifiOff className="h-4 w-4 text-muted-foreground" />
                     )}
                     Connection Status
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2 mb-4">
                     <Badge
                       variant={emailConfig?.connection_status === "connected" ? "default" : "destructive"}
-                      className={emailConfig?.connection_status === "connected" ? "bg-green-500" : ""}
+                      className={emailConfig?.connection_status === "connected" ? "bg-emerald-600 hover:bg-emerald-600" : ""}
                     >
-                      {emailConfig?.connection_status === "connected" ? "Connected" :
-                       emailConfig?.connection_status === "failed" ? "Failed" : "Not Connected"}
+                      {emailConfig?.connection_status === "connected" ? "✓ Connected" :
+                       emailConfig?.connection_status === "failed" ? "✗ Failed" : "○ Not Tested"}
                     </Badge>
                     {emailConfig?.last_tested_at && (
-                      <span className="text-xs text-muted-foreground">
-                        Last tested: {format(new Date(emailConfig.last_tested_at), "dd MMM HH:mm")}
+                      <span className="text-[11px] text-muted-foreground">
+                        {format(new Date(emailConfig.last_tested_at), "dd MMM HH:mm")}
                       </span>
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Test Email Address</Label>
-                      <Input
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        placeholder="test@example.com"
-                        type="email"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Send Test Email</Label>
+                    <Input
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="test@example.com"
+                      type="email"
+                    />
                     <Button
                       className="w-full"
                       variant="outline"
@@ -1063,38 +1089,49 @@ const BotAutomation = () => {
                       ) : (
                         <TestTube className="h-4 w-4 mr-2" />
                       )}
-                      Send Test Email
+                      Send Test
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Schedule */}
+              <Card className="overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4" /> Schedule Settings
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Clock className="h-4 w-4 text-indigo-600" /> Schedule
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <Label>Daily Run Time</Label>
+                    <Label className="text-xs">Daily Run Time</Label>
                     <Input
                       type="time"
                       value={autoConfig?.schedule_time || "09:00"}
                       onChange={(e) => saveScheduleTime(e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      System checks for expiring subscriptions daily at this time
-                    </p>
                   </div>
-                  <div>
-                    <Label>Reminder Days Before Expiry</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {(autoConfig?.reminder_days || [7, 3, 1]).join(", ")} days before expiry
-                    </p>
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs space-y-1">
+                    <div className="font-semibold text-foreground">Reminder Schedule</div>
+                    <div className="text-muted-foreground">Sends at <span className="font-mono text-foreground">{(autoConfig?.reminder_days || [7, 3, 1]).join(", ")}</span> days before expiry.</div>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Guide */}
+              <BotGuidePanel
+                title="Email Setup Guide"
+                subtitle="Follow these steps for the best deliverability"
+                accent="emerald"
+                steps={[
+                  { icon: Settings, title: "Pick a provider", desc: "Use SendGrid/Resend for high volume, Gmail for testing." },
+                  { icon: Shield, title: "Use App Passwords", desc: "For Gmail/Outlook, generate an app password — never your real password." },
+                  { icon: Mail, title: "Authenticate domain", desc: "Set SPF, DKIM & DMARC records on your sender domain to land in inbox." },
+                  { icon: TestTube, title: "Send a test", desc: "Always test before going live — check spam folder too." },
+                ]}
+                tip="A verified custom domain (you@yourstore.com) doubles deliverability vs free Gmail."
+              />
             </div>
           </div>
         </TabsContent>
