@@ -702,7 +702,7 @@ const MyPlan = () => {
                   <div className="space-y-1.5 mb-4 flex-1">
                     {[
                       { icon: Store, label: `${p.stores} ${typeof p.stores === "number" && p.stores > 1 ? "stores" : "store"}` },
-                      { icon: Users, label: `${p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)} customers` },
+                      { icon: Users, label: `${p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : p.key === "business" ? formatVolume(Math.max(selectedVolume, 1000) as VolumeStep) : formatVolume(selectedVolume)} customers` },
                       { icon: Package, label: `${p.products} products` },
                     ].map((l) => (
                       <div key={l.label} className="flex items-center gap-2 text-xs">
