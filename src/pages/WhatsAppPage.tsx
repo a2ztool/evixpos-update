@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import {
   MessageCircle, Send, Power, PowerOff, Save, Users, Copy, ExternalLink,
   ChevronDown, ChevronUp, CheckCircle2, BookOpen, Zap, FileText, Search,
-  RefreshCw, Clock, BarChart3, AlertCircle, Phone, Globe
+  RefreshCw, Clock, BarChart3, AlertCircle, Phone, Globe, Lightbulb,
+  TrendingUp, Sparkles, Activity, Shield, HelpCircle
 } from "lucide-react";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
