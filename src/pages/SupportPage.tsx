@@ -488,10 +488,10 @@ const SupportPage = () => {
                   const StatusIcon = statusConf.icon;
                   return (
                     <Card key={ticket.id} className="border-border/50 hover:shadow-md transition-all cursor-pointer group" onClick={() => openTicketDetail(ticket)}>
-                      <CardContent className="p-5">
+                      <CardContent className="p-5 sm:p-6">
                         <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                             <div className="flex items-center gap-2 mb-1">
+                          <div className="flex-1 min-w-0 space-y-2.5">
+                             <div className="flex items-center gap-2">
                                <StatusIcon className={`h-4 w-4 flex-shrink-0 ${statusConf.color}`} />
                                <h4 className="font-semibold text-sm truncate">{ticket.subject}</h4>
                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono">
@@ -499,7 +499,7 @@ const SupportPage = () => {
                                </Badge>
                              </div>
                              <p className="text-xs text-muted-foreground line-clamp-1 ml-6">{ticket.description.split("\n---")[0]}</p>
-                             <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                             <div className="flex items-center gap-2 ml-6 flex-wrap">
                                <Badge variant="secondary" className="text-[10px]">{CATEGORY_OPTIONS.find(c => c.value === ticket.category)?.label || ticket.category}</Badge>
                                <Badge variant="outline" className={`text-[10px] ${priorityConf.color}`}>{priorityConf.label}</Badge>
                                <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
