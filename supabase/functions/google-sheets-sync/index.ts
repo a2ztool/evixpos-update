@@ -1,4 +1,4 @@
-// Google Sheets Sync Edge Function
+// Google Sheets Sync Edge Function (public — verify_jwt=false in config.toml)
 // Reads google_sheets_config, fetches orders for the store, then writes them
 // to the configured Google Sheet using a service-account JWT against the
 // Google Sheets API v4.
