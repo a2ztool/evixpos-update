@@ -60,6 +60,8 @@ const Referral = () => {
   const [withdrawDetails, setWithdrawDetails] = useState<Record<string, string>>({});
   const [withdrawNotes, setWithdrawNotes] = useState("");
   const [filter, setFilter] = useState("all");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
