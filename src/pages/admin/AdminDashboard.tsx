@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Store, ShoppingCart, DollarSign, Crown } from "lucide-react";
 
 const AdminAnalyticsChart = lazy(() => import("@/components/admin/AdminAnalyticsChart"));
+const AdminTopStores = lazy(() => import("@/components/admin/AdminTopStores"));
+const AdminPaymentSuccessRate = lazy(() => import("@/components/admin/AdminPaymentSuccessRate"));
 
 interface Stats {
   totalUsers: number;
