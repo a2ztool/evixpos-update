@@ -643,7 +643,7 @@ const POS = () => {
         if (gsConfig?.is_auto_sync && gsConfig?.status === "connected") {
           const orderItems = cart.map(i => i.product.name).join(", ");
           const totalQty = cart.reduce((s, i) => s + i.quantity, 0);
-          supabase.functions.invoke("google-sheets-sync-v2", {
+          supabase.functions.invoke("google-sheets-sync", {
             body: {
               store_id: activeStore.id,
               action: "sync_single",
