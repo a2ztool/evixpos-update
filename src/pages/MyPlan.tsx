@@ -946,10 +946,12 @@ const MyPlan = () => {
           </CardContent>
         </Card>
 
+        {/* Payment History */}
+        <div className="pt-2">
+          <PaymentHistory />
+        </div>
       </div>
 
-      {/* Payment History */}
-      <PaymentHistory />
 
       <PaymentModal
         open={paymentModal.open}
