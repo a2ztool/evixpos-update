@@ -129,7 +129,7 @@ const GoogleSheetsPage = () => {
         if (data) setConfig(prev => ({ ...prev, id: data.id }));
       }
       setConfig(prev => ({ ...prev, credentials: creds, status: "configured" }));
-      setStep(3);
+      setStep(2);
       toast.success("Credentials saved securely");
     } catch {
       toast.error("Invalid JSON format");
