@@ -22,7 +22,8 @@ import {
   Settings as SettingsIcon, CreditCard, DollarSign, Languages, UsersRound,
   Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
   Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
-  QrCode, MessageSquare, Key, User as UserIcon
+  QrCode, MessageSquare, Key, User as UserIcon, Sparkles, BookOpen, HelpCircle, X, Lightbulb,
+  CheckCircle2, Zap, Lock
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
@@ -279,6 +280,8 @@ const SettingsPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [tabSearch, setTabSearch] = useState("");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as Tab;
@@ -1328,10 +1331,173 @@ const SettingsPage = () => {
     backup: renderBackup,
   };
 
+  // ─── Guide content per tab ───
+  const GUIDES: Record<Tab, { title: string; tip: string; steps: { title: string; desc: string }[] }> = {
+    general: {
+      title: lang === "bn" ? "জেনারেল সেটিংস গাইড" : "General Settings Guide",
+      tip: lang === "bn" ? "সঠিক ব্যবসার তথ্য রিসিট, ইনভয়েস ও কাস্টমার কমিউনিকেশনে দেখানো হবে।" : "Accurate business info appears on receipts, invoices, and customer comms.",
+      steps: [
+        { title: lang === "bn" ? "ব্যবসার নাম ও ইমেইল" : "Business name & email", desc: lang === "bn" ? "এটি ইনভয়েস এবং রিসিটে দেখানো হবে।" : "Shown on invoices and receipts." },
+        { title: lang === "bn" ? "Store Slug" : "Store slug", desc: lang === "bn" ? "পাবলিক অর্ডার ফর্ম URL এর জন্য ইউনিক হ্যান্ডেল।" : "Unique handle for your public order form URL." },
+        { title: lang === "bn" ? "লোগো আপলোড" : "Logo upload", desc: lang === "bn" ? "Pro/Business প্ল্যানে আপলোড করুন, অথবা URL পেস্ট করুন।" : "Upload on Pro/Business or paste a URL." },
+        { title: lang === "bn" ? "কারেন্সি ও ট্যাক্স" : "Currency & tax", desc: lang === "bn" ? "POS-এ অটো-অ্যাপ্লাই হবে।" : "Auto-applied across POS and orders." },
+      ],
+    },
+    payment: {
+      title: lang === "bn" ? "পেমেন্ট গেটওয়ে গাইড" : "Payment Gateway Guide",
+      tip: lang === "bn" ? "Personal ট্যাবে নম্বর/UPI দিন — কাস্টমার সেটি দেখবে। Merchant ট্যাব অটোমেটিক ভেরিফিকেশনের জন্য।" : "Use Personal tab for numbers customers see. Merchant tab is for auto-verification.",
+      steps: [
+        { title: lang === "bn" ? "গেটওয়ে যোগ করুন" : "Add a gateway", desc: lang === "bn" ? "অঞ্চল অনুযায়ী bKash, UPI, Stripe ইত্যাদি বেছে নিন।" : "Pick by region: bKash, UPI, Stripe, etc." },
+        { title: lang === "bn" ? "Personal কনফিগ" : "Personal config", desc: lang === "bn" ? "নম্বর / UPI ID / ব্যাংক বিস্তারিত যোগ করুন।" : "Add number, UPI ID, or bank details." },
+        { title: lang === "bn" ? "Merchant API" : "Merchant API", desc: lang === "bn" ? "অটো-ভেরিফিকেশনের জন্য API key দিন।" : "Add API keys for auto-verification." },
+        { title: lang === "bn" ? "QR ও ইনস্ট্রাকশন" : "QR & instructions", desc: lang === "bn" ? "QR কোড ও পেমেন্ট নির্দেশনা সেট করুন।" : "Set a QR image and payment instructions." },
+      ],
+    },
+    currencies: {
+      title: lang === "bn" ? "মাল্টি-কারেন্সি গাইড" : "Multi-Currency Guide",
+      tip: lang === "bn" ? "ডিফল্ট কারেন্সির রেট সবসময় 1 রাখুন।" : "Keep your default currency rate at 1.",
+      steps: [
+        { title: lang === "bn" ? "কারেন্সি যোগ করুন" : "Add currency", desc: lang === "bn" ? "কোড, সিম্বল ও কনভার্সন রেট দিন।" : "Provide code, symbol and conversion rate." },
+        { title: lang === "bn" ? "ডিফল্ট সেট করুন" : "Set default", desc: lang === "bn" ? "জেনারেল ট্যাব থেকে ডিফল্ট কারেন্সি বেছে নিন।" : "Choose default currency from General tab." },
+      ],
+    },
+    language: {
+      title: lang === "bn" ? "ভাষা গাইড" : "Language Guide",
+      tip: lang === "bn" ? "ভাষা পরিবর্তন তাৎক্ষণিক প্রযোজ্য হয়।" : "Language changes apply instantly across the app.",
+      steps: [
+        { title: lang === "bn" ? "ভাষা বেছে নিন" : "Pick a language", desc: "English / বাংলা / हिन्दी" },
+      ],
+    },
+    staff: {
+      title: lang === "bn" ? "স্টাফ ম্যানেজমেন্ট গাইড" : "Staff Management Guide",
+      tip: lang === "bn" ? "Role প্রিসেট দিয়ে দ্রুত পারমিশন দিন, পরে কাস্টমাইজ করুন।" : "Use role presets for quick permissions, then customize.",
+      steps: [
+        { title: lang === "bn" ? "স্টাফ যোগ করুন" : "Add staff", desc: lang === "bn" ? "নাম, ইমেইল, পাসওয়ার্ড দিন।" : "Provide name, email, and password." },
+        { title: lang === "bn" ? "Role বেছে নিন" : "Choose role", desc: "Admin / Manager / Staff / Viewer / Custom" },
+        { title: lang === "bn" ? "পারমিশন কাস্টমাইজ" : "Customize permissions", desc: lang === "bn" ? "মডিউল-ভিত্তিক চেকবক্স থেকে।" : "Module-level checkboxes." },
+      ],
+    },
+    stores: {
+      title: lang === "bn" ? "মাল্টি-স্টোর গাইড" : "Multi-Store Guide",
+      tip: lang === "bn" ? "প্রতিটি স্টোরের আলাদা ইনভেন্টরি, অর্ডার ও স্টাফ থাকে।" : "Each store has isolated inventory, orders, and staff.",
+      steps: [
+        { title: lang === "bn" ? "নতুন স্টোর তৈরি" : "Create store", desc: lang === "bn" ? "নাম, ঠিকানা, ফোন দিন।" : "Provide name, address, phone." },
+        { title: lang === "bn" ? "ডিফল্ট স্টোর সেট" : "Set default", desc: lang === "bn" ? "লগইনে কোন স্টোর প্রথমে খুলবে।" : "Which store opens first on login." },
+      ],
+    },
+    profile: {
+      title: lang === "bn" ? "প্রোফাইল ও সিকিউরিটি গাইড" : "Profile & Security Guide",
+      tip: lang === "bn" ? "শক্তিশালী পাসওয়ার্ড (১২+ অক্ষর) ব্যবহার করুন।" : "Use a strong password (12+ chars).",
+      steps: [
+        { title: lang === "bn" ? "নাম ও ইমেইল" : "Name & email", desc: lang === "bn" ? "অ্যাকাউন্ট তথ্য আপডেট করুন।" : "Keep your account info up to date." },
+        { title: lang === "bn" ? "পাসওয়ার্ড পরিবর্তন" : "Change password", desc: lang === "bn" ? "নিয়মিত পাসওয়ার্ড আপডেট নিরাপত্তার জন্য জরুরি।" : "Rotate passwords regularly." },
+      ],
+    },
+    backup: {
+      title: lang === "bn" ? "ব্যাকআপ গাইড" : "Backup Guide",
+      tip: lang === "bn" ? "মাসে কমপক্ষে একবার ব্যাকআপ ডাউনলোড করুন।" : "Download a backup at least once a month.",
+      steps: [
+        { title: lang === "bn" ? "এক্সপোর্ট" : "Export", desc: lang === "bn" ? "JSON ফাইলে সম্পূর্ণ ডেটা ডাউনলোড।" : "Download all data as JSON." },
+        { title: lang === "bn" ? "রিস্টোর" : "Restore", desc: lang === "bn" ? "সাবধান — বিদ্যমান ডেটা ওভাররাইট হতে পারে।" : "Caution — may overwrite existing data." },
+      ],
+    },
+  };
+
+  const q = tabSearch.trim().toLowerCase();
+  const filteredTabs = q
+    ? TABS.filter(tab => tab.label.toLowerCase().includes(q) || tab.sublabel.toLowerCase().includes(q))
+    : TABS;
+  const activeMeta = TABS.find(tab => tab.id === activeTab);
+  const guide = GUIDES[activeTab];
+
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6">
-        <h1 className="text-xl sm:text-2xl font-bold hidden sm:block">{t.settings}</h1>
+      <div className="space-y-5 sm:space-y-6 pb-8">
+        {/* Premium gradient header */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-6">
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                <SettingsIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t.settings}</h1>
+                  <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5">
+                    <Sparkles className="h-3 w-3" /> {plan === "free" ? "FREE" : (plan?.toUpperCase() || "")}
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+                  {lang === "bn" ? "আপনার স্টোর, পেমেন্ট, টিম ও সিকিউরিটি কনফিগার করুন" : "Configure your store, payments, team and security"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setGuideOpen(g => !g)} className="gap-1.5">
+                <BookOpen className="h-4 w-4" /> {lang === "bn" ? "গাইড" : "Guide"}
+              </Button>
+              <Button size="sm" onClick={saveSettings} disabled={loading} className="gap-1.5 shadow-sm">
+                <Save className="h-4 w-4" /> {t.save}
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick stats strip */}
+          <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-5">
+            {[
+              { icon: CheckCircle2, label: lang === "bn" ? "অ্যাক্টিভ গেটওয়ে" : "Active gateways", value: settings.payment_methods.filter(p => p.enabled).length, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+              { icon: UsersRound, label: lang === "bn" ? "টিম মেম্বার" : "Team members", value: staff.length, color: "text-blue-500", bg: "bg-blue-500/10" },
+              { icon: Store, label: lang === "bn" ? "স্টোর" : "Stores", value: stores.length, color: "text-purple-500", bg: "bg-purple-500/10" },
+              { icon: DollarSign, label: lang === "bn" ? "কারেন্সি" : "Currencies", value: settings.currencies.length, color: "text-amber-500", bg: "bg-amber-500/10" },
+            ].map((s, i) => (
+              <div key={i} className="flex items-center gap-2.5 rounded-xl bg-background/60 backdrop-blur-sm border border-border/40 px-3 py-2.5">
+                <div className={`h-8 w-8 rounded-lg ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>
+                  <s.icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide truncate">{s.label}</p>
+                  <p className="text-base font-bold leading-tight tabular-nums">{s.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Collapsible guide panel */}
+        {guideOpen && guide && (
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in slide-in-from-top-2 duration-300">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                    <Lightbulb className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">{guide.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{guide.tip}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setGuideOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {guide.steps.map((step, i) => (
+                  <div key={i} className="flex gap-2.5 p-3 rounded-lg bg-background/70 border border-border/40">
+                    <div className="h-6 w-6 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11px] font-bold shrink-0">
+                      {i + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Mobile: horizontal scrollable tab bar */}
         <div className="lg:hidden overflow-x-auto scrollbar-hide -mx-3 px-3">
@@ -1341,7 +1507,7 @@ const SettingsPage = () => {
               const active = activeTab === tab.id;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/50 text-muted-foreground"}`}>
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${active ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}>
                   <Icon className="h-4 w-4" />
                   {tab.label}
                 </button>
@@ -1350,23 +1516,84 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-          {/* Desktop sidebar tabs */}
-          <div className="hidden lg:block space-y-1">
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${active ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-muted/50 border border-transparent"}`}>
-                  <Icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
-                  <div className="flex-1 min-w-0"><p className={`text-sm font-medium ${active ? "text-primary" : ""}`}>{tab.label}</p><p className="text-[11px] text-muted-foreground truncate">{tab.sublabel}</p></div>
-                  {active && <ChevronRight className="h-4 w-4 text-primary" />}
-                </button>
-              );
-            })}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 lg:gap-6">
+          {/* Premium desktop sidebar */}
+          <div className="hidden lg:block">
+            <Card className="border-border/50 sticky top-4">
+              <CardContent className="p-3 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder={lang === "bn" ? "সেটিংস খুঁজুন..." : "Search settings..."}
+                    value={tabSearch}
+                    onChange={e => setTabSearch(e.target.value)}
+                    className="pl-9 h-9 text-sm bg-muted/30 border-border/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  {filteredTabs.map(tab => {
+                    const Icon = tab.icon;
+                    const active = activeTab === tab.id;
+                    return (
+                      <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-left transition-all group ${active ? "bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/20 shadow-sm" : "hover:bg-muted/50 border border-transparent"}`}>
+                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground group-hover:bg-muted"}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${active ? "text-foreground" : "text-foreground/80"}`}>{tab.label}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{tab.sublabel}</p>
+                        </div>
+                        {active && <ChevronRight className="h-4 w-4 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+                  {filteredTabs.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-6">
+                      {lang === "bn" ? "কোনো সেটিংস পাওয়া যায়নি" : "No settings found"}
+                    </p>
+                  )}
+                </div>
+
+                {plan === "free" && (
+                  <button onClick={() => navigate("/myplan")} className="w-full group">
+                    <div className="rounded-xl bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-500/20 p-3 text-left hover:border-amber-500/40 transition-all">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+                          <Crown className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <p className="text-xs font-bold">{lang === "bn" ? "Pro তে আপগ্রেড" : "Upgrade to Pro"}</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        {lang === "bn" ? "লোগো আপলোড, এডভান্সড ফিচার ও বেশি স্টোর আনলক করুন।" : "Unlock logo upload, advanced features and more stores."}
+                      </p>
+                    </div>
+                  </button>
+                )}
+              </CardContent>
+            </Card>
           </div>
-          <Card className="border-border/50"><CardContent className="p-4 sm:p-6">{tabContent[activeTab]()}</CardContent></Card>
+
+          {/* Content card with breadcrumb header */}
+          <Card className="border-border/50">
+            {activeMeta && (
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-border/40 bg-muted/20 rounded-t-2xl">
+                <div className="flex items-center gap-2 text-xs min-w-0">
+                  <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">{t.settings}</span>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                  <span className="font-semibold text-foreground truncate">{activeMeta.label}</span>
+                </div>
+                {!guideOpen && (
+                  <Button variant="ghost" size="sm" onClick={() => setGuideOpen(true)} className="h-7 gap-1 text-xs text-muted-foreground hover:text-primary shrink-0">
+                    <HelpCircle className="h-3.5 w-3.5" /> {lang === "bn" ? "সাহায্য" : "Help"}
+                  </Button>
+                )}
+              </div>
+            )}
+            <CardContent className="p-4 sm:p-6">{tabContent[activeTab]()}</CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
