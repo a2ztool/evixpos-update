@@ -92,8 +92,54 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const { timeLeft, isExpired } = useExpiryTimer(existingPayment?.expires_at || null);
+
+  // Calculate discounted amount
+  const discountedAmount = (() => {
+    if (!appliedCoupon) return amount;
+    if (appliedCoupon.discount_type === "percentage") {
+      return Math.max(0, amount * (1 - appliedCoupon.discount_value / 100));
+    }
+    return Math.max(0, amount - appliedCoupon.discount_value);
+  })();
+  const finalAmount = Math.round(discountedAmount * 100) / 100;
+  const savings = Math.round((amount - finalAmount) * 100) / 100;
+
+  const applyCoupon = async () => {
+    const code = couponCode.toUpperCase().trim();
+    if (!code) return;
+    setApplyingCoupon(true);
+    try {
+      const { data } = await supabase
+        .from("platform_coupons")
+        .select("*")
+        .eq("code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!data) {
+        toast.error("Invalid or expired coupon code");
+        return;
+      }
+      const coupon = data as unknown as PlatformCoupon;
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        toast.error("This coupon has expired");
+        return;
+      }
+      if (coupon.max_uses > 0 && coupon.used_count >= coupon.max_uses) {
+        toast.error("This coupon has reached its usage limit");
+        return;
+      }
+      setAppliedCoupon(coupon);
+      toast.success(`Coupon ${code} applied!`);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +151,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     setLoading(true);
     setDuplicateWarning(false);
     setFieldValues({});
+    setCouponCode("");
+    setAppliedCoupon(null);
 
     const fetchData = async () => {
       const { data: gw } = await supabase
