@@ -241,13 +241,13 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         user_id: user.id,
         store_id: activeStore?.id || null,
         plan: planKey,
-        amount,
+        amount: finalAmount,
         currency,
         gateway_id: selectedGateway.id,
         transaction_id: transactionId,
         proof_url: proofUrl,
         status: "pending",
-        payment_data: fieldValues,
+        payment_data: { ...fieldValues, ...(appliedCoupon ? { coupon_code: appliedCoupon.code, original_amount: amount, discount: savings } : {}) },
       } as any);
 
       if (error) {
