@@ -102,14 +102,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         .eq("currency", currency)
         .eq("is_active", true)
         .order("sort_order");
-      // Security: only show gateways that have admin-configured required_fields OR payment_details/qr (fully configured)
-      const configured = ((gw || []) as unknown as PaymentGateway[]).filter(g => {
-        const hasFields = Array.isArray(g.required_fields) && g.required_fields.length > 0;
-        const hasDetails = g.payment_details && Object.keys(g.payment_details).length > 0;
-        const hasQr = g.gateway_type === "qr" && !!g.qr_code_url;
-        return hasFields || hasDetails || hasQr;
-      });
-      setGateways(configured);
+      // Show all active gateways for the currency. Admin controls visibility via is_active.
+      setGateways(((gw || []) as unknown as PaymentGateway[]));
 
       if (user) {
         const { data: existing } = await supabase
