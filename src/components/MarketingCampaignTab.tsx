@@ -787,40 +787,27 @@ const MarketingCampaignTab = () => {
         {/* ─── HISTORY TAB ──────────────────────────────── */}
         <TabsContent value="history" className="space-y-4 mt-4">
           {/* Stats */}
-          <div className="grid gap-3 sm:gap-4 grid-cols-3">
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.sent}</p>
-                  <p className="text-xs text-muted-foreground">Delivered</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.failed}</p>
-                  <p className="text-xs text-muted-foreground">Failed</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.pending}</p>
-                  <p className="text-xs text-muted-foreground">Pending</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-2.5 sm:gap-4 grid-cols-3">
+            {[
+              { icon: CheckCircle2, label: "Delivered", value: campaignStats.sent, bg: "bg-green-500/10", color: "text-green-600" },
+              { icon: XCircle, label: "Failed", value: campaignStats.failed, bg: "bg-red-500/10", color: "text-red-600" },
+              { icon: Clock, label: "Pending", value: campaignStats.pending, bg: "bg-amber-500/10", color: "text-amber-600" },
+            ].map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <Card key={i}>
+                  <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.color}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-xl font-bold leading-tight truncate">{s.value}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* History Table */}
