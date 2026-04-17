@@ -525,22 +525,22 @@ const SupportPage = () => {
 
           {/* ===== SERVICES TAB ===== */}
           <TabsContent value="services" className="space-y-6 mt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
               {SERVICES.map((s, i) => {
                 const Icon = s.icon;
                 return (
-                  <Card key={i} className="border-border/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group overflow-hidden relative">
+                  <Card key={i} className="border-border/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group overflow-hidden relative h-full">
                     <div className={`absolute top-0 left-0 right-0 h-0.5 ${s.bg.replace("/10", "/60")}`} />
-                    <CardContent className="p-5">
+                    <CardContent className="p-5 sm:p-6 h-full flex flex-col">
                       <div className={`h-11 w-11 rounded-xl ${s.bg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                         <Icon className={`h-5 w-5 ${s.color}`} />
                       </div>
                       <h4 className="font-semibold text-sm">{s.title[lang]}</h4>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]">{s.desc[lang]}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{s.desc[lang]}</p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="mt-3 h-7 text-xs gap-1 p-0 text-primary hover:bg-transparent hover:text-primary/80"
+                        className="mt-auto pt-4 h-auto text-xs gap-1 p-0 justify-start text-primary hover:bg-transparent hover:text-primary/80 self-start"
                         onClick={() => {
                           setForm({ subject: `Inquiry: ${s.title.en}`, description: `I'm interested in your ${s.title.en} service.\n\nDetails:\n${s.desc.en}\n\nPlease share more information.`, category: "other", priority: "medium" });
                           setActiveTab("tickets");
