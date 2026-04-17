@@ -570,9 +570,15 @@ const MarketingCampaignTab = () => {
           </Card>
         </TabsContent>
 
+              </Table>
+              </div>
+            </ScrollArea>
+          </Card>
+        </TabsContent>
+
         {/* ─── COMPOSE TAB ──────────────────────────────── */}
         <TabsContent value="compose" className="space-y-4 mt-4">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Left: Config */}
             <div className="space-y-4">
               <Card>
