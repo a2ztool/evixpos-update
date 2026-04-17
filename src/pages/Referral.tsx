@@ -185,8 +185,6 @@ const Referral = () => {
     return <XCircle className="h-3.5 w-3.5 text-destructive" />;
   };
 
-  return (
-    <DashboardLayout>
   // ─── Advanced metrics ───
   const conversionRate = settings?.total_clicks ? Math.round((totalSignups / settings.total_clicks) * 100) : 0;
   const premiumConversion = totalSignups ? Math.round((premiumUsers / totalSignups) * 100) : 0;
