@@ -1138,24 +1138,119 @@ const BotAutomation = () => {
 
         {/* ─── TEMPLATES TAB ──────────────────────────── */}
         <TabsContent value="templates">
-          <EmailTemplateEditor
-            templates={templates}
-            storeId={activeStore?.id || ""}
-            userId={user?.id || ""}
-            senderEmail={emailConfig?.sender_email || ""}
-            senderName={emailConfig?.sender_name || ""}
-            onSave={fetchAll}
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-sky-500/15 bg-gradient-to-br from-sky-500/5 via-card to-cyan-500/5 p-5 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center shadow-md shadow-sky-500/20">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold">Email Templates</div>
+                    <div className="text-xs text-muted-foreground">Customize reminder content with merge tags & inline CTAs</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30">
+                    {templates.filter(t => t.is_active).length} active
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {Object.keys(DEFAULT_TEMPLATES).length} types
+                  </Badge>
+                </div>
+              </div>
+              <EmailTemplateEditor
+                templates={templates}
+                storeId={activeStore?.id || ""}
+                userId={user?.id || ""}
+                senderEmail={emailConfig?.sender_email || ""}
+                senderName={emailConfig?.sender_name || ""}
+                onSave={fetchAll}
+              />
+            </div>
+            <div className="space-y-4">
+              <BotGuidePanel
+                title="Template Guide"
+                subtitle="Write reminder emails that convert"
+                accent="sky"
+                steps={[
+                  { icon: Pencil, title: "Use merge tags", desc: "Insert {{customer_name}}, {{product_name}}, {{expiry_date}}, {{store_name}} for personalization." },
+                  { icon: Send, title: "Add a clear CTA", desc: "Use [CTA:Renew Now|https://yourlink|#10b981] for branded buttons." },
+                  { icon: Eye, title: "Preview before save", desc: "Always preview to confirm formatting and link rendering." },
+                  { icon: CheckCircle2, title: "Toggle active", desc: "Inactive templates are skipped by the automation engine." },
+                ]}
+                tip="Short subject lines (<40 chars) get higher open rates on mobile."
+              />
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Available Merge Tags</div>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
+                  {["{{customer_name}}", "{{product_name}}", "{{expiry_date}}", "{{store_name}}"].map((t) => (
+                    <div key={t} className="rounded-md bg-background/70 border border-border/40 px-2 py-1 text-foreground/80">{t}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ─── BRANDING TAB ────────────────────────────── */}
         <TabsContent value="branding">
-          <EmailBrandingTab />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-500/5 via-card to-fuchsia-500/5 p-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-violet-500/20">
+                  <Palette className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Email Branding</div>
+                  <div className="text-xs text-muted-foreground">Logo, colors, footer & legal info shown on every outbound email</div>
+                </div>
+              </div>
+              <EmailBrandingTab />
+            </div>
+            <BotGuidePanel
+              title="Branding Guide"
+              subtitle="Make every email look on-brand"
+              accent="violet"
+              steps={[
+                { icon: Palette, title: "Upload logo", desc: "Use PNG with transparent background, ~200px wide for crisp display." },
+                { icon: Mail, title: "Brand colors", desc: "Match button & accent colors to your store theme." },
+                { icon: FileText, title: "Footer content", desc: "Include business address (CAN-SPAM compliance) & support contact." },
+                { icon: Eye, title: "Preview live", desc: "Use the live preview to verify before saving." },
+              ]}
+              tip="Consistent branding across all emails increases trust and reduces unsubscribes."
+            />
+          </div>
         </TabsContent>
 
         {/* ─── MARKETING CAMPAIGN TAB ─────────────────── */}
         <TabsContent value="marketing">
-          <MarketingCampaignTab />
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-rose-500/15 bg-gradient-to-br from-rose-500/5 via-card to-pink-500/5 p-5 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20">
+                  <Megaphone className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Marketing Campaigns</div>
+                  <div className="text-xs text-muted-foreground">Promotional broadcasts to customer segments</div>
+                </div>
+              </div>
+              <MarketingCampaignTab />
+            </div>
+            <BotGuidePanel
+              title="Campaign Best Practices"
+              subtitle="Send smart, send less, send better"
+              accent="rose"
+              steps={[
+                { icon: Users, title: "Segment first", desc: "Target by purchase history or activity for higher engagement." },
+                { icon: FileText, title: "One clear message", desc: "One CTA per email — too many choices kill conversion." },
+                { icon: Clock, title: "Send timing", desc: "Tue–Thu, 9–11am local time generally performs best." },
+                { icon: TestTube, title: "A/B test subjects", desc: "Test 2 subject lines on a small sample before full send." },
+              ]}
+              tip="Limit broadcasts to ~2 per month. Frequency fatigue tanks open rates fast."
+            />
+          </div>
         </TabsContent>
 
         {/* ─── CAMPAIGN TAB ───────────────────────────── */}
