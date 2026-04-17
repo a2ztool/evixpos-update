@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Store, ShoppingCart, DollarSign, Crown } from "lucide-react";
 
 const AdminAnalyticsChart = lazy(() => import("@/components/admin/AdminAnalyticsChart"));
+const AdminTopStores = lazy(() => import("@/components/admin/AdminTopStores"));
+const AdminPaymentSuccessRate = lazy(() => import("@/components/admin/AdminPaymentSuccessRate"));
 
 interface Stats {
   totalUsers: number;
@@ -90,6 +92,15 @@ const AdminDashboard = () => {
           >
             <AdminAnalyticsChart />
           </Suspense>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <Suspense fallback={<Card className="bg-slate-800 border-slate-700 h-64" />}>
+              <AdminTopStores />
+            </Suspense>
+            <Suspense fallback={<Card className="bg-slate-800 border-slate-700 h-64" />}>
+              <AdminPaymentSuccessRate />
+            </Suspense>
+          </div>
         </>
       )}
     </div>
@@ -97,3 +108,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
