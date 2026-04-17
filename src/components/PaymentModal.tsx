@@ -336,17 +336,64 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
 
         {/* Order Summary */}
         <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-semibold">{planName} Plan</p>
+          <CardContent className="py-4 space-y-3">
+            <div className="flex justify-between items-start gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{planName} Plan</p>
                 <p className="text-xs text-muted-foreground">{billingType === "yearly" ? "Yearly" : "Monthly"} subscription</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-primary">{currencySymbol}{amount.toFixed(2)}</p>
+              <div className="text-right shrink-0">
+                {appliedCoupon && (
+                  <p className="text-xs text-muted-foreground line-through leading-none">
+                    {currencySymbol}{amount.toFixed(2)}
+                  </p>
+                )}
+                <p className="text-2xl font-bold text-primary leading-tight">
+                  {currencySymbol}{finalAmount.toFixed(2)}
+                </p>
                 <p className="text-xs text-muted-foreground">{currency}</p>
               </div>
             </div>
+
+            {/* Coupon Section */}
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between bg-success/10 border border-success/20 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 text-sm min-w-0">
+                  <Tag className="h-3.5 w-3.5 text-success shrink-0" />
+                  <span className="font-mono font-bold text-success truncate">{appliedCoupon.code}</span>
+                  <span className="text-xs text-success/80 truncate">
+                    -{appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}%` : `${currencySymbol}${appliedCoupon.discount_value}`}
+                    {savings > 0 && ` · Save ${currencySymbol}${savings.toFixed(2)}`}
+                  </span>
+                </div>
+                <button
+                  className="text-destructive hover:text-destructive/80 shrink-0"
+                  onClick={() => { setAppliedCoupon(null); setCouponCode(""); toast.info("Coupon removed"); }}
+                  aria-label="Remove coupon"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Discount coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
+                  className="h-9 text-sm uppercase font-mono tracking-wider"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={applyCoupon}
+                  disabled={!couponCode.trim() || applyingCoupon}
+                  className="h-9 shrink-0"
+                >
+                  {applyingCoupon ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
