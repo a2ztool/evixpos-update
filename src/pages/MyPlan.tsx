@@ -403,42 +403,47 @@ const MyPlan = () => {
           </CardContent>
         </Card>
 
-        {/* Active Coupon Banner */}
-        {activeBanner && !appliedCoupon && (
-          <div className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 rounded-xl px-4 py-3">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              🎉 Use code <code className="bg-amber-200/50 dark:bg-amber-800/50 px-2 py-0.5 rounded font-mono font-bold">{activeBanner.code}</code> and get {activeBanner.discount_type === "percentage" ? `${activeBanner.discount_value}%` : `${CURRENCY_SYMBOLS[currency]}${activeBanner.discount_value}`} discount!
-            </p>
-            <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 text-xs" onClick={() => { setCouponCode(activeBanner.code); }}>
-              Apply
-            </Button>
-          </div>
-        )}
-
-        {/* Active Coupon Banner (info only — applied at checkout) */}
-        {activeBanner && (
-          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 rounded-xl px-4 py-3">
-            <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              Use code <code className="bg-amber-200/50 dark:bg-amber-800/50 px-2 py-0.5 rounded font-mono font-bold">{activeBanner.code}</code> at checkout for {activeBanner.discount_type === "percentage" ? `${activeBanner.discount_value}%` : `${CURRENCY_SYMBOLS[currency]}${activeBanner.discount_value}`} off!
-            </p>
-          </div>
-        )}
-
-        {/* Special Offer Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 text-white p-5 sm:p-6">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.15),transparent)] pointer-events-none" />
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1">
-                <Sparkles className="h-3 w-3 mr-1" /> Special Offer
-              </Badge>
-              <div className="text-sm text-white/80 hidden sm:block">
-                Limited-time pricing on Pro & Business plans
+        {/* Special Offer Banner — merged with coupon */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white p-5 sm:p-6 shadow-lg">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.18),transparent_60%)] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_80%_50%,rgba(244,63,94,0.12),transparent_60%)] pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            {/* Left: Offer + coupon */}
+            <div className="flex flex-col gap-3 min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 shadow-sm">
+                  <Sparkles className="h-3 w-3 mr-1" /> Special Offer
+                </Badge>
+                <span className="text-sm text-white/80">Limited-time pricing on Pro & Business plans</span>
               </div>
+              {activeBanner && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-lg px-3 py-2">
+                    <Gift className="h-4 w-4 text-amber-300 shrink-0" />
+                    <span className="text-xs text-white/70">Use code</span>
+                    <code className="bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded font-mono font-bold text-sm tracking-wider">{activeBanner.code}</code>
+                    <span className="text-xs font-semibold text-emerald-300">
+                      {activeBanner.discount_type === "percentage" ? `${activeBanner.discount_value}% OFF` : `${CURRENCY_SYMBOLS[currency]}${activeBanner.discount_value} OFF`}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white/5 border-white/20 text-white hover:bg-white/15 hover:text-white gap-1.5 w-full sm:w-auto"
+                    onClick={() => {
+                      navigator.clipboard.writeText(activeBanner.code);
+                      toast.success(`Coupon ${activeBanner.code} copied! Apply at checkout.`);
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copy code
+                  </Button>
+                  <span className="text-[11px] text-white/50 sm:ml-1">Apply at checkout</span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2 text-sm text-white/60">
-              <span className="hidden sm:inline">Expires in</span>
+            {/* Right: Countdown */}
+            <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0">
+              <span className="text-[11px] text-white/50 uppercase tracking-wide">Expires in</span>
               <div className="flex gap-1.5">
                 {[
                   { val: timeLeft.days, label: "Days" },
@@ -446,7 +451,7 @@ const MyPlan = () => {
                   { val: timeLeft.mins, label: "Mins" },
                   { val: timeLeft.secs, label: "Secs" },
                 ].map((t) => (
-                  <div key={t.label} className="bg-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-[40px]">
+                  <div key={t.label} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-[44px]">
                     <span className="text-white font-bold text-base sm:text-lg block leading-none">{String(t.val).padStart(2, "0")}</span>
                     <span className="text-[9px] text-white/50 uppercase">{t.label}</span>
                   </div>
@@ -941,10 +946,12 @@ const MyPlan = () => {
           </CardContent>
         </Card>
 
+        {/* Payment History */}
+        <div className="pt-2">
+          <PaymentHistory />
+        </div>
       </div>
 
-      {/* Payment History */}
-      <PaymentHistory />
 
       <PaymentModal
         open={paymentModal.open}
