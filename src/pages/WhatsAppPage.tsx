@@ -512,13 +512,13 @@ const WhatsAppPage = () => {
                 { label: "Contacts", value: stats.contacts, icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
               ].map((s) => (
                 <Card key={s.label} className="border-border/50 hover:shadow-md transition-all rounded-2xl h-full">
-                  <CardContent className="p-5 h-full flex flex-col gap-3">
-                    <div className={`h-10 w-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}>
+                  <CardContent className="!p-3.5 sm:!p-4 h-full flex items-center gap-3">
+                    <div className={`h-9 w-9 shrink-0 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}>
                       <s.icon className="h-4 w-4" />
                     </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                      <p className="text-2xl font-bold tabular-nums leading-tight mt-1">{s.value}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
+                      <p className="text-xl font-bold tabular-nums leading-tight mt-0.5">{s.value}</p>
                     </div>
                   </CardContent>
                 </Card>
