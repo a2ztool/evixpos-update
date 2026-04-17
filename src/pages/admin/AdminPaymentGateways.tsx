@@ -488,6 +488,80 @@ const AdminPaymentGateways = () => {
                 </div>
               </div>
             </TabsContent>
+
+            <TabsContent value="fields" className="space-y-3 mt-4">
+              <div className="bg-slate-700/40 border border-slate-600 rounded-lg p-3">
+                <p className="text-xs text-slate-300 font-medium mb-1">Dynamic User Input Fields</p>
+                <p className="text-[11px] text-slate-400">When user selects this gateway during checkout, these fields will appear for them to fill (e.g. Phone, Transaction ID, Account Number).</p>
+              </div>
+
+              {form.required_fields.length === 0 && (
+                <p className="text-xs text-slate-500 text-center py-3">No fields added yet. Add one below.</p>
+              )}
+
+              {form.required_fields.map((f, idx) => (
+                <div key={idx} className="bg-slate-700 rounded-lg p-3 space-y-2 border border-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Field #{idx + 1}</span>
+                    <button
+                      onClick={() => setForm(s => ({ ...s, required_fields: s.required_fields.filter((_, i) => i !== idx) }))}
+                      className="text-red-400 hover:text-red-300 text-xs"
+                    >Remove</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      className="bg-slate-800 border-slate-600 text-xs h-8"
+                      placeholder="Key (e.g. phone)"
+                      value={f.key}
+                      onChange={e => setForm(s => ({ ...s, required_fields: s.required_fields.map((x, i) => i === idx ? { ...x, key: e.target.value.replace(/\s+/g, "_").toLowerCase() } : x) }))}
+                    />
+                    <Input
+                      className="bg-slate-800 border-slate-600 text-xs h-8"
+                      placeholder="Label (e.g. Your Phone)"
+                      value={f.label}
+                      onChange={e => setForm(s => ({ ...s, required_fields: s.required_fields.map((x, i) => i === idx ? { ...x, label: e.target.value } : x) }))}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={f.type}
+                      onValueChange={v => setForm(s => ({ ...s, required_fields: s.required_fields.map((x, i) => i === idx ? { ...x, type: v as RequiredField["type"] } : x) }))}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-600 text-xs h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="tel">Phone</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="textarea">Long Text</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      className="bg-slate-800 border-slate-600 text-xs h-8"
+                      placeholder="Placeholder"
+                      value={f.placeholder || ""}
+                      onChange={e => setForm(s => ({ ...s, required_fields: s.required_fields.map((x, i) => i === idx ? { ...x, placeholder: e.target.value } : x) }))}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-slate-300">
+                    <Switch
+                      checked={f.required}
+                      onCheckedChange={v => setForm(s => ({ ...s, required_fields: s.required_fields.map((x, i) => i === idx ? { ...x, required: v } : x) }))}
+                    />
+                    Required field
+                  </label>
+                </div>
+              ))}
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                onClick={() => setForm(s => ({ ...s, required_fields: [...s.required_fields, { key: "", label: "", type: "text", required: true, placeholder: "" }] }))}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add Field
+              </Button>
+            </TabsContent>
           </Tabs>
 
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700 mt-4" onClick={handleSave} disabled={adminLoading || uploading}>
