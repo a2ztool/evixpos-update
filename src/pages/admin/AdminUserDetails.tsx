@@ -67,11 +67,8 @@ const AdminUserDetails = () => {
 
   const { profile, stores, plan_info } = data;
   const totalRevenue = stores.reduce((s, st) => s + st.revenue, 0);
-  const resolvedPlan =
-    plan_info?.plan ||
-    stores.find((store) => store.plan && store.plan !== "free")?.plan ||
-    stores[0]?.plan ||
-    "free";
+  // Always trust user-level plan_info first; only fall back to "free" when no plan record exists
+  const resolvedPlan = plan_info?.plan || "free";
 
   return (
     <div className="space-y-6">
