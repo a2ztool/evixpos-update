@@ -725,7 +725,7 @@ const MyPlan = () => {
                       <Check className="h-3.5 w-3.5" /> Current Plan
                     </Button>
                   ) : priceINR === null ? (
-                    <Button variant="outline" className="w-full gap-1.5">
+                    <Button variant="outline" className="w-full gap-1.5" onClick={() => navigate("/support")}>
                       <Headphones className="h-3.5 w-3.5" /> Contact Sales
                     </Button>
                   ) : (
