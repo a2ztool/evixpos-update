@@ -334,6 +334,7 @@ const AdminPaymentGateways = () => {
               <TabsTrigger value="basic" className="flex-1 text-xs">Basic Info</TabsTrigger>
               <TabsTrigger value="mode" className="flex-1 text-xs">Mode & API</TabsTrigger>
               <TabsTrigger value="details" className="flex-1 text-xs">Details</TabsTrigger>
+              <TabsTrigger value="fields" className="flex-1 text-xs">User Fields</TabsTrigger>
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4 mt-4">
