@@ -26,6 +26,7 @@ import { format, differenceInDays } from "date-fns";
 import EmailTemplateEditor from "@/components/EmailTemplateEditor";
 import EmailBrandingTab from "@/components/EmailBrandingTab";
 import MarketingCampaignTab from "@/components/MarketingCampaignTab";
+import BotGuidePanel from "@/components/bot-automation/BotGuidePanel";
 
 // ─── Types ────────────────────────────────────────────────
 interface EmailConfig {
