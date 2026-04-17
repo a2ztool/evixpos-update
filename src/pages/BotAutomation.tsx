@@ -1578,73 +1578,148 @@ const BotAutomation = () => {
 
         {/* ─── TRACKING TAB ───────────────────────────── */}
         <TabsContent value="tracking">
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold">{reminderStats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Sent</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-green-500">{reminderStats.sent}</p>
-                <p className="text-sm text-muted-foreground">Delivered</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-destructive">{reminderStats.failed}</p>
-                <p className="text-sm text-muted-foreground">Failed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-3xl font-bold text-yellow-500">{reminderStats.pending}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </CardContent>
-            </Card>
+          {/* Header + Guide */}
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
+            <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/5 via-card to-indigo-500/5 p-5 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-md shadow-primary/20">
+                  <Eye className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <div className="text-base font-semibold">Delivery Tracking</div>
+                  <div className="text-xs text-muted-foreground">Real-time status of every email leaving your store</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                  {deliverability}% delivered
+                </Badge>
+              </div>
+            </div>
+            <BotGuidePanel
+              title="Tracking Guide"
+              accent="indigo"
+              steps={[
+                { icon: CheckCircle2, title: "Delivered", desc: "Email accepted by recipient mail server." },
+                { icon: XCircle, title: "Failed", desc: "Bounced or rejected — check Error column for reason." },
+                { icon: Clock, title: "Pending", desc: "Queued and waiting to be sent (subject to rate limit)." },
+                { icon: AlertTriangle, title: "High failure?", desc: "Re-test connection in Email Config and check sender reputation." },
+              ]}
+              tip="Aim for ≥95% delivery rate — anything lower indicates auth or content issues."
+            />
           </div>
 
-          <Card>
+          {/* Premium KPI Cards */}
+          <div className="grid gap-4 md:grid-cols-4 mb-6">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-indigo-500/15 flex items-center justify-center">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Sent</div>
+              <div className="text-2xl font-bold mt-1">{reminderStats.total}</div>
+              <div className="text-xs text-muted-foreground mt-1">All time</div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center">
+                  <MailCheck className="h-5 w-5 text-emerald-600" />
+                </div>
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">{deliverability}%</span>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Delivered</div>
+              <div className="text-2xl font-bold mt-1 text-emerald-600">{reminderStats.sent}</div>
+              <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500" style={{ width: `${deliverability}%` }} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-destructive/20 bg-gradient-to-br from-card to-destructive/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-destructive/15 to-red-500/15 flex items-center justify-center">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Failed</div>
+              <div className="text-2xl font-bold mt-1 text-destructive">{reminderStats.failed}</div>
+              <div className="text-xs text-muted-foreground mt-1">Needs review</div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 p-5 shadow-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pending</div>
+              <div className="text-2xl font-bold mt-1 text-amber-600">{reminderStats.pending}</div>
+              <div className="text-xs text-muted-foreground mt-1">In queue</div>
+            </div>
+          </div>
+
+          {/* Email Logs */}
+          <Card className="overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-primary via-indigo-500 to-violet-500" />
             <CardHeader>
-              <CardTitle>Email Logs</CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-4 w-4 text-primary" /> Email Activity Log
+                  </CardTitle>
+                  <CardDescription>Last 100 outbound email events</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchAll}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-2" /> Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {reminders.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No emails sent yet.</p>
+                <div className="text-center py-12">
+                  <div className="h-14 w-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Mail className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">No emails sent yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Configure email & run an automation to see activity here.</p>
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Sent At</TableHead>
-                      <TableHead>Error</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reminders.slice(0, 100).map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium text-sm">{r.recipient_name || "—"}</TableCell>
-                        <TableCell className="text-xs">{r.recipient_email || "—"}</TableCell>
-                        <TableCell className="text-sm">{r.product_name || "—"}</TableCell>
-                        <TableCell>{statusBadge(r.status)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">{r.reminder_type}</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {r.sent_at ? format(new Date(r.sent_at), "dd MMM HH:mm") : "—"}
-                        </TableCell>
-                        <TableCell className="text-xs text-destructive max-w-[200px] truncate">
-                          {r.error_message || "—"}
-                        </TableCell>
+                <div className="rounded-xl border border-border/60 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Sent At</TableHead>
+                        <TableHead>Error</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {reminders.slice(0, 100).map((r) => (
+                        <TableRow key={r.id} className="hover:bg-muted/20">
+                          <TableCell>
+                            <div className="font-medium text-sm">{r.recipient_name || "—"}</div>
+                            <div className="text-[11px] text-muted-foreground">{r.recipient_email || "—"}</div>
+                          </TableCell>
+                          <TableCell className="text-sm">{r.product_name || "—"}</TableCell>
+                          <TableCell>{statusBadge(r.status)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[10px]">{r.reminder_type}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {r.sent_at ? format(new Date(r.sent_at), "dd MMM HH:mm") : "—"}
+                          </TableCell>
+                          <TableCell className="text-[11px] text-destructive max-w-[200px] truncate">
+                            {r.error_message || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
