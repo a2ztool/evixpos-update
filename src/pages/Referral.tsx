@@ -187,138 +187,270 @@ const Referral = () => {
 
   return (
     <DashboardLayout>
-      <div className="hidden sm:block mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <Gift className="h-8 w-8" /> Referral Dashboard
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Earn <strong>{settings?.commission_rate || 20}%</strong> commission for every user who signs up via your link and purchases a premium plan.
-        </p>
-      </div>
+  // ─── Advanced metrics ───
+  const conversionRate = settings?.total_clicks ? Math.round((totalSignups / settings.total_clicks) * 100) : 0;
+  const premiumConversion = totalSignups ? Math.round((premiumUsers / totalSignups) * 100) : 0;
+  const tierThresholds = [
+    { name: "Bronze", min: 0, color: "from-orange-400 to-amber-600", icon: "🥉" },
+    { name: "Silver", min: 5, color: "from-slate-300 to-slate-500", icon: "🥈" },
+    { name: "Gold", min: 15, color: "from-yellow-400 to-amber-500", icon: "🥇" },
+    { name: "Platinum", min: 30, color: "from-cyan-300 to-blue-500", icon: "💎" },
+    { name: "Diamond", min: 50, color: "from-fuchsia-400 to-violet-600", icon: "👑" },
+  ];
+  const currentTierIndex = tierThresholds.reduce((acc, t, i) => premiumUsers >= t.min ? i : acc, 0);
+  const currentTier = tierThresholds[currentTierIndex];
+  const nextTier = tierThresholds[currentTierIndex + 1];
+  const tierProgress = nextTier ? Math.min(100, ((premiumUsers - currentTier.min) / (nextTier.min - currentTier.min)) * 100) : 100;
+  const referralsToNext = nextTier ? nextTier.min - premiumUsers : 0;
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
-        {[
-          { label: "TOTAL CLICKS", value: settings?.total_clicks || 0, icon: MousePointerClick, color: "text-red-500" },
-          { label: "TOTAL SIGNUPS", value: totalSignups, icon: UserPlus, color: "text-blue-500" },
-          { label: "ACTIVE REFERRALS", value: activeUsers, icon: UserCheck, color: "text-green-500" },
-          { label: "PREMIUM USERS", value: premiumUsers, icon: Star, color: "text-yellow-500" },
-          { label: "TOTAL EARNING", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-emerald-500" },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-1">{stat.value}</p>
+  const qrUrl = referralLink ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(referralLink)}` : "";
+
+  const shareChannels = [
+    { name: "WhatsApp", icon: MessageCircle, color: "bg-emerald-500", action: shareOnWhatsApp },
+    { name: "Facebook", icon: Facebook, color: "bg-blue-600", action: shareOnFacebook },
+    { name: "Twitter", icon: Twitter, color: "bg-sky-500", action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Grow your business with EvixPOS — sign up via my link: ${referralLink}`)}`, "_blank") },
+    { name: "LinkedIn", icon: Linkedin, color: "bg-blue-700", action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`, "_blank") },
+    { name: "Telegram", icon: Send, color: "bg-sky-600", action: () => window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Join EvixPOS — try this!")}`, "_blank") },
+    { name: "Email", icon: Mail, color: "bg-slate-600", action: () => window.open(`mailto:?subject=${encodeURIComponent("Try EvixPOS")}&body=${encodeURIComponent(`Sign up using my referral link: ${referralLink}`)}`) },
+  ];
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-5 sm:space-y-6 pb-8">
+        {/* ─── Premium Hero Header ─── */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-6">
+          <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+          <div className="absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                <Gift className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Referral Dashboard</h1>
+                  <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5">
+                    <Sparkles className="h-3 w-3" /> EARN {settings?.commission_rate || 20}%
+                  </Badge>
+                  <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30`}>
+                    <span>{currentTier.icon}</span> {currentTier.name} Tier
+                  </Badge>
                 </div>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Refer & earn <strong className="text-foreground">{settings?.commission_rate || 20}%</strong> commission on every premium signup
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setGuideOpen(g => !g)} className="gap-1.5">
+                <BookOpen className="h-4 w-4" /> Guide
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)} className="gap-1.5">
+                <History className="h-4 w-4" /> History
+              </Button>
+              <Button size="sm" onClick={() => { if (settings) { setWithdrawAmount(settings.pending_balance); setWithdrawOpen(true); } }} className="gap-1.5 shadow-sm">
+                <Wallet className="h-4 w-4" /> Withdraw
+              </Button>
+            </div>
+          </div>
+
+          {/* Tier progress strip */}
+          <div className="relative mt-5 rounded-xl bg-background/60 backdrop-blur-sm border border-border/40 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-500" />
+                <p className="text-xs font-semibold">Tier Progress</p>
+              </div>
+              {nextTier ? (
+                <p className="text-[11px] text-muted-foreground">
+                  <strong className="text-foreground">{referralsToNext}</strong> premium referrals to <span className="font-semibold">{nextTier.icon} {nextTier.name}</span>
+                </p>
+              ) : (
+                <Badge className="gap-1 text-[10px] bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white border-0">
+                  <Crown className="h-3 w-3" /> Max tier reached
+                </Badge>
+              )}
+            </div>
+            <div className="relative h-2.5 rounded-full bg-muted overflow-hidden">
+              <div className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${currentTier.color} transition-all duration-500`} style={{ width: `${tierProgress}%` }} />
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
+              {tierThresholds.map((tier, i) => (
+                <span key={tier.name} className={i <= currentTierIndex ? "font-semibold text-foreground" : ""}>
+                  {tier.icon} {tier.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Collapsible Guide Panel ─── */}
+        {guideOpen && (
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in slide-in-from-top-2 duration-300">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                    <Lightbulb className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">How the Referral Program Works</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Earn <strong>{settings?.commission_rate || 20}%</strong> commission lifetime. Min withdraw {fmtCurrency(settings?.min_withdraw || 500)}.
+                    </p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setGuideOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {STEPS.map((step, i) => (
+                  <div key={i} className="flex gap-2.5 p-3 rounded-lg bg-background/70 border border-border/40">
+                    <div className="h-7 w-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                      <step.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">Step {i + 1}: {step.title}</p>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <span className="text-muted-foreground"><strong className="text-foreground">Lifetime</strong> commissions</span>
+                </div>
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                  <Zap className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                  <span className="text-muted-foreground"><strong className="text-foreground">Instant</strong> tracking</span>
+                </div>
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  <span className="text-muted-foreground">Higher tier = <strong className="text-foreground">bonus rewards</strong></span>
+                </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        )}
 
-      {/* Referral Link */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5" />
-            <h2 className="font-semibold text-lg">Your Referral Link</h2>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-            <div className="flex-1 flex items-center gap-2 bg-muted/30 rounded-lg px-4 py-2.5 border min-w-0 w-full">
-              <Badge variant="default" className="shrink-0">Refer & Earn Money</Badge>
-              <Input value={referralLink} readOnly className="border-0 bg-transparent font-mono text-xs p-0 h-auto focus-visible:ring-0 shadow-none" />
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button onClick={copyLink} className="gap-2"><Copy className="h-4 w-4" />Copy</Button>
-              <Button variant="outline" onClick={() => {
-                if (!settings) return;
-                setWithdrawAmount(settings.pending_balance);
-                setWithdrawOpen(true);
-              }}>
-                <Wallet className="h-4 w-4 mr-2" />Withdraw Earning
-              </Button>
-              <Button variant="outline" onClick={() => setHistoryOpen(true)}>
-                <History className="h-4 w-4 mr-2" />History
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 mt-3">
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-            <p className="text-sm text-muted-foreground">
-              Your pending withdrawable balance: <strong className="text-foreground">{fmtCurrency(settings?.pending_balance || 0)}</strong>{" "}
-              (Min: {fmtCurrency(settings?.min_withdraw || 500)})
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Commission Info Cards */}
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
-        <Card className="border-green-200">
-          <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-green-600">{settings?.commission_rate || 20}%</p>
-            <p className="text-sm text-muted-foreground mt-1">Commission Rate</p>
-          </CardContent>
-        </Card>
-        <Card className="border-blue-200">
-          <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-blue-600">{fmtCurrency(settings?.min_withdraw || 500)}</p>
-            <p className="text-sm text-muted-foreground mt-1">Min. Withdraw</p>
-          </CardContent>
-        </Card>
-        <Card className="border-orange-200">
-          <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-orange-600">{settings?.referral_code || "..."}</p>
-            <p className="text-sm text-muted-foreground mt-1">Your Referral Code</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Share Section */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Share2 className="h-5 w-5" />Share Your Link</CardTitle>
-          <CardDescription>Share your referral link on social media to earn more.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={shareOnWhatsApp} className="bg-green-600 hover:bg-green-700 text-white">WhatsApp</Button>
-            <Button onClick={shareOnFacebook} className="bg-blue-600 hover:bg-blue-700 text-white">Facebook</Button>
-            <Button variant="outline" onClick={copyCode}><Copy className="h-4 w-4 mr-2" />Copy Code</Button>
-            <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" />Copy Link</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* How It Works */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5" />How It Works</CardTitle>
-          <CardDescription>Follow these simple steps to start earning.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, i) => (
-              <div key={i} className="relative flex flex-col items-center text-center p-4 rounded-xl bg-muted/30 border">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <step.icon className="h-5 w-5 text-primary" />
+        {/* ─── Stats Grid (premium) ─── */}
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+          {[
+            { label: "Total Clicks", value: settings?.total_clicks || 0, icon: MousePointerClick, color: "text-rose-500", bg: "bg-rose-500/10", trend: null },
+            { label: "Signups", value: totalSignups, icon: UserPlus, color: "text-blue-500", bg: "bg-blue-500/10", trend: `${conversionRate}% CR` },
+            { label: "Active", value: activeUsers, icon: UserCheck, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: null },
+            { label: "Premium", value: premiumUsers, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", trend: `${premiumConversion}%` },
+            { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
+          ].map((stat) => (
+            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all">
+              <CardContent className="p-3 sm:p-3.5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`h-9 w-9 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="h-4 w-4" />
+                  </div>
+                  {stat.trend && (
+                    <Badge variant="outline" className="text-[9px] h-5 px-1.5 font-semibold">{stat.trend}</Badge>
+                  )}
                 </div>
-                <span className="text-xs font-bold text-primary mb-1">Step {i + 1}</span>
-                <h4 className="font-semibold text-sm">{step.title}</h4>
-                <p className="text-xs text-muted-foreground mt-1">{step.desc}</p>
-                {i < STEPS.length - 1 && (
-                  <ArrowRight className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/40" />
-                )}
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                <p className="text-lg sm:text-xl font-bold tabular-nums leading-tight mt-0.5 truncate">{stat.value}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* ─── Referral Link + QR (premium) ─── */}
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+          <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <LinkIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm">Your Unique Referral Link</h2>
+                  <p className="text-[11px] text-muted-foreground">Share this everywhere — every signup tracks back to you</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2.5 border border-border/40 min-w-0">
+                  <Badge className="shrink-0 bg-primary/15 text-primary border-0 hover:bg-primary/20">CODE: {settings?.referral_code || "..."}</Badge>
+                  <Input value={referralLink} readOnly className="border-0 bg-transparent font-mono text-xs p-0 h-auto focus-visible:ring-0 shadow-none truncate" />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={copyLink} className="gap-1.5 shrink-0"><Copy className="h-3.5 w-3.5" /> Copy Link</Button>
+                  <Button variant="outline" onClick={copyCode} className="gap-1.5 shrink-0"><Copy className="h-3.5 w-3.5" /> Code</Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                  <Wallet className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Withdrawable</p>
+                    <p className="text-sm font-bold truncate">{fmtCurrency(settings?.pending_balance || 0)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                  <Target className="h-4 w-4 text-blue-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Min. Withdraw</p>
+                    <p className="text-sm font-bold truncate">{fmtCurrency(settings?.min_withdraw || 500)}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* QR Code card (desktop) */}
+          <Card className="hidden lg:block border-border/50 w-[200px]">
+            <CardContent className="p-4 flex flex-col items-center text-center">
+              <div className="flex items-center gap-1.5 mb-2">
+                <QrCode className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Scan QR</p>
+              </div>
+              {qrUrl && (
+                <img src={qrUrl} alt="Referral QR" className="w-[140px] h-[140px] rounded-lg bg-white p-1.5 border" />
+              )}
+              <p className="text-[10px] text-muted-foreground mt-2">Mobile-friendly sharing</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ─── Share Channels Grid ─── */}
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Share2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm">Share & Promote</h2>
+                  <p className="text-[11px] text-muted-foreground">One click to share via your favorite platform</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+              {shareChannels.map((ch) => (
+                <button
+                  key={ch.name}
+                  onClick={ch.action}
+                  className="group flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/40 hover:border-primary/40 hover:shadow-md transition-all bg-card"
+                >
+                  <div className={`h-10 w-10 rounded-xl ${ch.color} text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+                    <ch.icon className="h-4.5 w-4.5" />
+                  </div>
+                  <span className="text-[11px] font-medium">{ch.name}</span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Top Referrers / Leaderboard */}
       {referrals.length > 0 && (
