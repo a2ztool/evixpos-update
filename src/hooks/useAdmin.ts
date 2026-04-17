@@ -2,10 +2,12 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type AdminCallOptions = { silent?: boolean };
+
 export const useAdmin = () => {
   const [loading, setLoading] = useState(false);
 
-  const adminCall = useCallback(async (action: string, params?: Record<string, unknown>) => {
+  const adminCall = useCallback(async (action: string, params?: Record<string, unknown>, options?: AdminCallOptions) => {
     setLoading(true);
     try {
       const {
@@ -57,7 +59,7 @@ export const useAdmin = () => {
         }
       }
 
-      toast.error(message);
+      if (!options?.silent) toast.error(message);
       return null;
     } finally {
       setLoading(false);
