@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -9,27 +9,93 @@ import { TrendingUp } from "lucide-react";
 type Point = { date: string; orders: number; revenue: number };
 type Range = 7 | 30;
 
+type OrderRow = {
+  created_at: string;
+  total_amount: number | string | null;
+};
+
+const buildTrendData = (orders: OrderRow[], days: Range) => {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (days - 1));
+
+  const buckets: Record<string, Point> = {};
+  for (let i = 0; i < days; i++) {
+    const date = new Date(since);
+    date.setDate(since.getDate() + i);
+    const key = date.toISOString().slice(0, 10);
+    buckets[key] = { date: key, orders: 0, revenue: 0 };
+  }
+
+  orders.forEach((order) => {
+    const key = new Date(order.created_at).toISOString().slice(0, 10);
+    if (!buckets[key]) return;
+    buckets[key].orders += 1;
+    buckets[key].revenue += Number(order.total_amount) || 0;
+  });
+
+  return Object.values(buckets);
+};
+
 const AdminAnalyticsChart = () => {
   const { adminCall } = useAdmin();
   const [range, setRange] = useState<Range>(7);
   const [data, setData] = useState<Point[]>([]);
   const [loading, setLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+
+  const loadFromClient = useCallback(async (days: Range) => {
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    since.setDate(since.getDate() - (days - 1));
+
+    const { data: orders, error } = await supabase
+      .from("orders")
+      .select("created_at, total_amount")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return buildTrendData((orders ?? []) as OrderRow[], days);
+  }, []);
 
   const load = useCallback(
     async (days: Range) => {
       setLoading(true);
-      const res = await adminCall("get_analytics_trends", { days });
-      if (Array.isArray(res)) setData(res);
-      setLoading(false);
+      setUnavailable(false);
+
+      try {
+        const response = await adminCall("get_analytics_trends", { days });
+
+        if (Array.isArray(response)) {
+          setData(response as Point[]);
+          return;
+        }
+
+        const fallbackData = await loadFromClient(days);
+        setData(fallbackData);
+      } catch {
+        try {
+          const fallbackData = await loadFromClient(days);
+          setData(fallbackData);
+        } catch {
+          setData([]);
+          setUnavailable(true);
+        }
+      } finally {
+        setLoading(false);
+      }
     },
-    [adminCall],
+    [adminCall, loadFromClient],
   );
 
   useEffect(() => {
     load(range);
   }, [range, load]);
 
-  // Realtime: refresh on new orders
   useEffect(() => {
     const channel = supabase
       .channel("admin-analytics-orders")
@@ -37,73 +103,81 @@ const AdminAnalyticsChart = () => {
         load(range);
       })
       .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [range, load]);
 
-  const formatDate = (s: string) => {
-    const d = new Date(s);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const formatDate = (value: string) => {
+    const date = new Date(value);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const totalOrders = data.reduce((s, d) => s + d.orders, 0);
-  const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
+  const totalOrders = data.reduce((sum, item) => sum + item.orders, 0);
+  const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
 
   return (
     <Card className="bg-slate-800 border-slate-700">
-      <CardHeader className="p-4 md:p-6 flex-row items-center justify-between space-y-0 gap-3 flex-wrap">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0 p-4 md:p-6">
         <div>
-          <CardTitle className="text-white text-base md:text-lg flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base text-white md:text-lg">
             <TrendingUp className="h-5 w-5 text-emerald-400" />
             Realtime Analytics
           </CardTitle>
-          <div className="flex gap-4 mt-2 text-xs md:text-sm">
+          <div className="mt-2 flex gap-4 text-xs md:text-sm">
             <span className="text-slate-400">
-              Orders: <span className="text-white font-semibold">{totalOrders}</span>
+              Orders: <span className="font-semibold text-white">{totalOrders}</span>
             </span>
             <span className="text-slate-400">
-              Revenue: <span className="text-emerald-400 font-semibold">${totalRevenue.toLocaleString()}</span>
+              Revenue: <span className="font-semibold text-emerald-400">${totalRevenue.toLocaleString()}</span>
             </span>
           </div>
         </div>
-        <div className="flex gap-1 bg-slate-700/50 rounded-lg p-1">
-          {([7, 30] as Range[]).map((r) => (
+
+        <div className="flex gap-1 rounded-lg bg-slate-700/50 p-1">
+          {([7, 30] as const).map((value) => (
             <Button
-              key={r}
+              key={value}
               size="sm"
               variant="ghost"
-              onClick={() => setRange(r)}
+              onClick={() => setRange(value)}
               className={`h-7 px-3 text-xs ${
-                range === r
+                range === value
                   ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-400"
-                  : "text-slate-400 hover:text-white hover:bg-slate-700"
+                  : "text-slate-400 hover:bg-slate-700 hover:text-white"
               }`}
             >
-              {r}d
+              Last {value} days
             </Button>
           ))}
         </div>
       </CardHeader>
-      <CardContent className="p-2 md:p-4 pt-0">
+
+      <CardContent className="p-2 pt-0 md:p-4">
         <div className="h-[280px] w-full">
           {loading && data.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400" />
+            <div className="flex h-full items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-emerald-400" />
+            </div>
+          ) : unavailable ? (
+            <div className="flex h-full items-center justify-center text-sm text-slate-400">
+              Analytics data is temporarily unavailable.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 10, right: 16, left: -10, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(160 84% 45%)" stopOpacity={0.5} />
+                  <linearGradient id="admin-revenue-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(160 84% 45%)" stopOpacity={0.45} />
                     <stop offset="100%" stopColor="hsl(160 84% 45%)" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="ordGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.5} />
+                  <linearGradient id="admin-orders-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.35} />
                     <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
+
                 <CartesianGrid stroke="hsl(215 28% 25%)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -123,21 +197,24 @@ const AdminAnalyticsChart = () => {
                     fontSize: 12,
                   }}
                   labelFormatter={formatDate}
-                  formatter={(v: number, n: string) => [n === "revenue" ? `$${v.toLocaleString()}` : v, n === "revenue" ? "Revenue" : "Orders"]}
+                  formatter={(value: number, name: string) => [
+                    name === "revenue" ? `$${value.toLocaleString()}` : value,
+                    name === "revenue" ? "Revenue" : "Orders",
+                  ]}
                 />
                 <Area
                   type="monotone"
                   dataKey="revenue"
                   stroke="hsl(160 84% 45%)"
                   strokeWidth={2}
-                  fill="url(#revGrad)"
+                  fill="url(#admin-revenue-gradient)"
                 />
                 <Area
                   type="monotone"
                   dataKey="orders"
                   stroke="hsl(217 91% 60%)"
                   strokeWidth={2}
-                  fill="url(#ordGrad)"
+                  fill="url(#admin-orders-gradient)"
                 />
               </AreaChart>
             </ResponsiveContainer>
