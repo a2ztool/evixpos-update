@@ -10,7 +10,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { toast } from "sonner";
-import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer } from "lucide-react";
+import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer, Tag, X } from "lucide-react";
+
+interface PlatformCoupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  expires_at: string | null;
+  is_active: boolean;
+  max_uses: number;
+  used_count: number;
+}
 
 interface RequiredField {
   key: string;
