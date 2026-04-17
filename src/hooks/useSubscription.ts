@@ -87,7 +87,7 @@ export const useSubscription = () => {
   const limits = getPlanLimits(plan ?? "free", volume ?? 500);
 
   const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
-  const isExpiringSoon = remainingDays !== null && remainingDays <= 7 && remainingDays > 0;
+  const isExpiringSoon = remainingDays !== null && remainingDays <= 3 && remainingDays > 0;
   const isExpired = remainingDays !== null && remainingDays <= 0;
 
   const upgradeTo = async (
