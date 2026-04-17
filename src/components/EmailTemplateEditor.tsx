@@ -752,7 +752,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                 <Button
                   variant="outline"
                   size="sm"
-                  className="lg:hidden h-8 gap-1 text-xs"
+                  className="md:hidden h-8 gap-1 text-xs"
                   onClick={() => setMobilePreview(!mobilePreview)}
                 >
                   {mobilePreview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
