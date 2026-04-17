@@ -707,7 +707,7 @@ const MarketingCampaignTab = () => {
 
             {/* Right: Preview */}
             <div>
-              <Card className="sticky top-4">
+              <Card className="lg:sticky lg:top-4">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2"><Eye className="h-4 w-4" />Live Preview</CardTitle>
                 </CardHeader>
