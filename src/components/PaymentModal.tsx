@@ -303,7 +303,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                 {gateways.map((gw) => (
                   <button
                     key={gw.id}
-                    onClick={() => setSelectedGateway(gw)}
+                    onClick={() => { setSelectedGateway(gw); setFieldValues({}); }}
                     className={`p-3 rounded-xl border-2 transition-all text-left ${
                       selectedGateway?.id === gw.id
                         ? "border-primary bg-primary/5"
@@ -311,12 +311,19 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      {gw.gateway_type === "qr" ? (
+                      {gw.icon_url ? (
+                        <img
+                          src={gw.icon_url}
+                          alt={gw.gateway_name}
+                          className="h-6 w-6 rounded object-contain bg-white p-0.5"
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : gw.gateway_type === "qr" ? (
                         <QrCode className="h-4 w-4 text-primary" />
                       ) : (
                         <CreditCard className="h-4 w-4 text-primary" />
                       )}
-                      <span className="text-sm font-medium">{gw.gateway_name}</span>
+                      <span className="text-sm font-medium truncate">{gw.gateway_name}</span>
                     </div>
                     {selectedGateway?.id === gw.id && (
                       <Check className="h-3 w-3 text-primary mt-1" />
