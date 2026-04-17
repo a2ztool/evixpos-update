@@ -328,9 +328,9 @@ const MarketingCampaignTab = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Hero Stats */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
@@ -413,11 +413,11 @@ const MarketingCampaignTab = () => {
 
       {/* Sub Tabs */}
       <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
-          <TabsTrigger value="audience" className="gap-1.5"><Target className="h-3.5 w-3.5" />Audience</TabsTrigger>
-          <TabsTrigger value="compose" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Compose</TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" />Analytics</TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5"><Clock className="h-3.5 w-3.5" />History</TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full max-w-lg h-auto">
+          <TabsTrigger value="audience" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Target className="h-3.5 w-3.5" /><span>Audience</span></TabsTrigger>
+          <TabsTrigger value="compose" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Mail className="h-3.5 w-3.5" /><span>Compose</span></TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><BarChart3 className="h-3.5 w-3.5" /><span>Analytics</span></TabsTrigger>
+          <TabsTrigger value="history" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Clock className="h-3.5 w-3.5" /><span>History</span></TabsTrigger>
         </TabsList>
 
         {/* ─── AUDIENCE TAB ─────────────────────────────── */}
@@ -489,16 +489,16 @@ const MarketingCampaignTab = () => {
           </div>
 
           {/* Selected Info */}
-          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2.5">
-            <span className="text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-muted/50 rounded-lg px-3 sm:px-4 py-2.5">
+            <span className="text-xs sm:text-sm">
               <span className="font-semibold text-primary">{selectedCustomers.length}</span> selected
               {" · "}
               <span className="font-semibold text-green-600">{selectedWithEmail.length}</span> with email
               {" · "}
-              Showing <span className="font-medium">{filteredCustomers.length}</span> of {customers.length}
+              <span className="hidden sm:inline">Showing </span><span className="font-medium">{filteredCustomers.length}</span> of {customers.length}
             </span>
             {selectedWithEmail.length > 0 && (
-              <Button size="sm" onClick={() => setSubTab("compose")} className="gap-1.5">
+              <Button size="sm" onClick={() => setSubTab("compose")} className="gap-1.5 w-full sm:w-auto">
                 Next: Compose <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             )}
@@ -507,6 +507,7 @@ const MarketingCampaignTab = () => {
           {/* Customer Table */}
           <Card>
             <ScrollArea className="max-h-[500px]">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -565,13 +566,14 @@ const MarketingCampaignTab = () => {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </ScrollArea>
           </Card>
         </TabsContent>
 
         {/* ─── COMPOSE TAB ──────────────────────────────── */}
         <TabsContent value="compose" className="space-y-4 mt-4">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Left: Config */}
             <div className="space-y-4">
               <Card>
@@ -668,25 +670,25 @@ const MarketingCampaignTab = () => {
                   <CardTitle className="text-base">Test & Send</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input placeholder="Test email address" value={testEmail} onChange={e => setTestEmail(e.target.value)} />
-                    <Button variant="outline" onClick={handleTestSend} disabled={testSending || !emailSubject} className="gap-1.5 shrink-0">
+                    <Button variant="outline" onClick={handleTestSend} disabled={testSending || !emailSubject} className="gap-1.5 shrink-0 w-full sm:w-auto">
                       <TestTube className="h-3.5 w-3.5" />{testSending ? "Sending..." : "Test"}
                     </Button>
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="text-sm">
                       <span className="font-medium">{selectedWithEmail.length}</span> recipients
                     </div>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 sm:flex gap-2">
                       <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={!emailSubject} className="gap-1.5">
                         <Eye className="h-3.5 w-3.5" />Preview
                       </Button>
                       <Button onClick={runCampaign} disabled={campaignRunning || selectedWithEmail.length === 0 || !emailSubject} className="gap-1.5">
-                        <Play className="h-3.5 w-3.5" />{campaignRunning ? "Sending..." : (isScheduled ? "Schedule" : "Send Campaign")}
+                        <Play className="h-3.5 w-3.5" />{campaignRunning ? "Sending..." : (isScheduled ? "Schedule" : "Send")}
                       </Button>
                     </div>
                   </div>
@@ -705,7 +707,7 @@ const MarketingCampaignTab = () => {
 
             {/* Right: Preview */}
             <div>
-              <Card className="sticky top-4">
+              <Card className="lg:sticky lg:top-4">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2"><Eye className="h-4 w-4" />Live Preview</CardTitle>
                 </CardHeader>
@@ -794,6 +796,7 @@ const MarketingCampaignTab = () => {
             </CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[400px]">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -828,6 +831,7 @@ const MarketingCampaignTab = () => {
                     )}
                   </TableBody>
                 </Table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
@@ -836,7 +840,7 @@ const MarketingCampaignTab = () => {
         {/* ─── HISTORY TAB ──────────────────────────────── */}
         <TabsContent value="history" className="space-y-4 mt-4">
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-3">
             <Card>
               <CardContent className="pt-5 pb-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -880,6 +884,7 @@ const MarketingCampaignTab = () => {
             </CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[500px]">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -918,6 +923,7 @@ const MarketingCampaignTab = () => {
                     )}
                   </TableBody>
                 </Table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
@@ -926,7 +932,7 @@ const MarketingCampaignTab = () => {
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+        <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] max-h-[90vh] overflow-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5" />Email Preview</DialogTitle>
           </DialogHeader>
