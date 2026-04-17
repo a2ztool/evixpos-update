@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Store, ShoppingCart, DollarSign, Crown } from "lucide-react";
+
+const AdminAnalyticsChart = lazy(() => import("@/components/admin/AdminAnalyticsChart"));
 
 interface Stats {
   totalUsers: number;
