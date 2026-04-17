@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,14 @@ import { useStore } from "@/contexts/StoreContext";
 import { toast } from "sonner";
 import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer } from "lucide-react";
 
+interface RequiredField {
+  key: string;
+  label: string;
+  type: "text" | "number" | "tel" | "email" | "textarea";
+  required: boolean;
+  placeholder?: string;
+}
+
 interface PaymentGateway {
   id: string;
   currency: string;
@@ -19,6 +28,8 @@ interface PaymentGateway {
   qr_code_url: string;
   payment_details: Record<string, string>;
   is_active: boolean;
+  icon_url?: string | null;
+  required_fields?: RequiredField[];
 }
 
 interface PaymentModalProps {
