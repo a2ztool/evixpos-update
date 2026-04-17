@@ -527,35 +527,82 @@ const BotAutomation = () => {
   };
 
   const isApiProvider = emailForm.provider_type === "sendgrid" || emailForm.provider_type === "resend";
+  const deliverability = reminderStats.total > 0 ? Math.round((reminderStats.sent / reminderStats.total) * 100) : 0;
+  const totalUpcoming = renewalStats.upcoming.length + renewalStats.expiringSoon.length + renewalStats.expired.length;
+  const isAutoActive = !!autoConfig?.is_auto_mode;
+  const isEmailConfigured = !!emailConfig?.id && !!emailConfig?.sender_email;
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div className="hidden sm:block">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <Bot className="h-7 w-7 sm:h-8 sm:w-8" /> Bot Automation
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Renewal reminders, email campaigns & automation engine
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
-            <span className="text-sm font-medium">Auto Mode</span>
-            <Switch
-              checked={autoConfig?.is_auto_mode || false}
-              onCheckedChange={toggleAutoMode}
-            />
-            <Badge variant={autoConfig?.is_auto_mode ? "default" : "secondary"} className="text-xs">
-              {autoConfig?.is_auto_mode ? "ACTIVE" : "OFF"}
-            </Badge>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-indigo-500/5 p-6 shadow-card mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-gradient-to-br from-indigo-400/20 to-violet-500/20 blur-3xl" />
+        <div className="relative flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <Bot className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight">Bot Automation</h1>
+                <Badge variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px]">
+                  <Zap className="h-2.5 w-2.5 mr-1" /> AI ENGINE
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Renewal reminders, email campaigns & automation engine
+              </p>
+              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 ${isEmailConfigured ? "text-success" : "text-warning"}`}>
+                  {isEmailConfigured ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                  {isEmailConfigured ? "Email configured" : "Email not configured"}
+                </span>
+                <span>•</span>
+                <span>Daily at {autoConfig?.schedule_time || "09:00"}</span>
+              </div>
+            </div>
           </div>
-          <Button onClick={() => runAutomation("auto")} disabled={campaignRunning}>
-            <Play className="h-4 w-4 mr-2" />
-            Run Now
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 border transition-colors ${
+              isAutoActive ? "bg-success/5 border-success/30" : "bg-muted/30 border-border"
+            }`}>
+              <span className="text-xs font-medium">Auto Mode</span>
+              <Switch checked={isAutoActive} onCheckedChange={toggleAutoMode} />
+              <Badge variant="outline" className={`text-[10px] ${
+                isAutoActive ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground"
+              }`}>
+                {isAutoActive ? "ACTIVE" : "OFF"}
+              </Badge>
+            </div>
+            <Button
+              onClick={() => runAutomation("auto")}
+              disabled={campaignRunning}
+              className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 shadow-md shadow-indigo-500/20 text-white"
+            >
+              {campaignRunning ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+              Run Now
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Setup hint when email not configured */}
+      {!isEmailConfigured && activeTab === "dashboard" && (
+        <div className="rounded-xl border border-warning/30 bg-gradient-to-r from-warning/5 to-amber-500/5 p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-warning/15 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Email provider not configured</div>
+              <div className="text-xs text-muted-foreground">Set up SMTP or an API provider to start sending automated reminders.</div>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setActiveTab("email-config")}>
+            <Settings className="h-3.5 w-3.5 mr-2" /> Configure Email
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 flex-wrap">
@@ -570,124 +617,192 @@ const BotAutomation = () => {
 
         {/* ─── DASHBOARD TAB ──────────────────────────── */}
         <TabsContent value="dashboard">
-          {/* Automation Status Cards */}
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Automation Status</p>
-                  </div>
+          {/* Premium KPI Cards */}
+          <div className="grid gap-4 md:grid-cols-4 mb-6">
+            {/* Automation Status */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500/15 to-violet-500/15 flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-indigo-600" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  {autoConfig?.is_auto_mode ? (
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Sending emails automatically
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      <Clock className="h-3 w-3 mr-1" /> Manual mode
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Scheduled: Daily at {autoConfig?.schedule_time || "09:00"} AM
-                </p>
-              </CardContent>
-            </Card>
+                <Badge variant="outline" className={`text-[10px] ${
+                  isAutoActive
+                    ? "bg-success/10 text-success border-success/30"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {isAutoActive ? "LIVE" : "PAUSED"}
+                </Badge>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Automation</div>
+              <div className="text-2xl font-bold mt-1">{isAutoActive ? "Active" : "Manual"}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Daily at {autoConfig?.schedule_time || "09:00"}
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Send className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Delivery Performance (30 Days)</p>
-                  </div>
+            {/* Delivery */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center">
+                  <MailCheck className="h-5 w-5 text-emerald-600" />
                 </div>
-                <p className="text-3xl font-bold">{reminderStats.sent}</p>
-                <p className="text-xs text-muted-foreground">
-                  ~{reminderStats.total > 0 ? Math.round((reminderStats.sent / reminderStats.total) * 100) : 0}% Deliverability
-                </p>
-              </CardContent>
-            </Card>
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">
+                  {deliverability}%
+                </span>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Delivered (30d)</div>
+              <div className="text-2xl font-bold mt-1">{reminderStats.sent}</div>
+              <div className="mt-2">
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                    style={{ width: `${deliverability}%` }}
+                  />
+                </div>
+              </div>
+            </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Upcoming Renewals</p>
-                    </div>
-                  </div>
+            {/* Pending */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600" />
                 </div>
-                <p className="text-3xl font-bold">
-                  {renewalStats.upcoming.length + renewalStats.expiringSoon.length + renewalStats.expired.length}
-                </p>
-                <p className="text-xs text-muted-foreground">Pending within 30 days</p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Queue</div>
+              <div className="text-2xl font-bold mt-1">{reminderStats.pending}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {reminderStats.failed > 0 ? (
+                  <span className="text-destructive">{reminderStats.failed} failed</span>
+                ) : "All clean"}
+              </div>
+            </div>
+
+            {/* Upcoming Renewals */}
+            <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-indigo-500/5 p-5 shadow-card hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500/15 to-purple-500/15 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-indigo-600" />
+                </div>
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Renewals (30d)</div>
+              <div className="text-2xl font-bold mt-1">{totalUpcoming}</div>
+              <div className="text-xs text-muted-foreground mt-1">Across all stages</div>
+            </div>
           </div>
 
-          {/* Renewal Lists */}
+          {/* Renewal Pipeline */}
           <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card className="border-l-4 border-l-red-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Expired</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-destructive">{renewalStats.expired.length}</p>
-                <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                  {renewalStats.expired.slice(0, 5).map((s) => (
-                    <div key={s.id} className="text-xs flex justify-between">
-                      <span className="truncate">{(s.customers as any)?.name || "—"}</span>
-                      <span className="text-muted-foreground">{s.product_name}</span>
+            {[
+              {
+                title: "Expired",
+                count: renewalStats.expired.length,
+                items: renewalStats.expired,
+                gradient: "from-destructive/10 to-red-500/5",
+                accent: "from-destructive to-red-600",
+                textColor: "text-destructive",
+                borderColor: "border-destructive/20",
+                icon: XCircle,
+              },
+              {
+                title: "Critical (≤2 days)",
+                count: renewalStats.expiringSoon.length,
+                items: renewalStats.expiringSoon,
+                gradient: "from-warning/10 to-amber-500/5",
+                accent: "from-warning to-orange-500",
+                textColor: "text-warning",
+                borderColor: "border-warning/20",
+                icon: AlertTriangle,
+              },
+              {
+                title: "Upcoming (≤30 days)",
+                count: renewalStats.upcoming.length,
+                items: renewalStats.upcoming,
+                gradient: "from-primary/10 to-indigo-500/5",
+                accent: "from-primary to-indigo-500",
+                textColor: "text-primary",
+                borderColor: "border-primary/20",
+                icon: Clock,
+              },
+            ].map((p) => {
+              const Icon = p.icon;
+              return (
+                <div
+                  key={p.title}
+                  className={`relative overflow-hidden rounded-2xl border ${p.borderColor} bg-gradient-to-br ${p.gradient} p-5 shadow-card`}
+                >
+                  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${p.accent}`} />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-background/60 flex items-center justify-center">
+                        <Icon className={`h-4 w-4 ${p.textColor}`} />
+                      </div>
+                      <div className="text-sm font-semibold">{p.title}</div>
                     </div>
-                  ))}
+                    <div className={`text-2xl font-bold ${p.textColor}`}>{p.count}</div>
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {p.items.length === 0 ? (
+                      <div className="text-xs text-muted-foreground text-center py-3">No items</div>
+                    ) : p.items.slice(0, 5).map((s) => (
+                      <div key={s.id} className="flex items-center justify-between gap-2 text-xs bg-background/60 rounded-lg px-2.5 py-1.5">
+                        <span className="font-medium truncate">{(s.customers as any)?.name || "—"}</span>
+                        <span className="text-muted-foreground truncate text-[10px]">{s.product_name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {p.items.length > 5 && (
+                    <div className="text-[10px] text-muted-foreground mt-2 text-center">
+                      +{p.items.length - 5} more
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              );
+            })}
+          </div>
 
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Expiring Soon (≤2 days)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-yellow-500">{renewalStats.expiringSoon.length}</p>
-                <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                  {renewalStats.expiringSoon.slice(0, 5).map((s) => (
-                    <div key={s.id} className="text-xs flex justify-between">
-                      <span className="truncate">{(s.customers as any)?.name || "—"}</span>
-                      <span className="text-muted-foreground">{s.end_date}</span>
+          {/* Quick Start Guide */}
+          <div className="rounded-2xl border border-indigo-500/15 bg-gradient-to-br from-indigo-500/5 via-card to-violet-500/5 p-5 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+                <Zap className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold">Quick Start Guide</div>
+                <div className="text-xs text-muted-foreground">Get your automation running in 4 steps</div>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-4 gap-3">
+              {[
+                { n: 1, title: "Configure Email", desc: "Connect SMTP or API provider (SendGrid, Resend).", action: "Go to Email Config", tab: "email-config", icon: Settings },
+                { n: 2, title: "Customize Templates", desc: "Edit reminder templates with merge tags & CTAs.", action: "Edit Templates", tab: "templates", icon: FileText },
+                { n: 3, title: "Set Branding", desc: "Add logo, colors, and footer for branded emails.", action: "Open Branding", tab: "branding", icon: Palette },
+                { n: 4, title: "Enable Auto Mode", desc: "Toggle Auto Mode in the header — done!", action: null, tab: null, icon: Play },
+              ].map((g) => {
+                const Icon = g.icon;
+                return (
+                  <div key={g.n} className="rounded-xl bg-background/60 border border-border/50 p-3 flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                        {g.n}
+                      </div>
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Upcoming (≤30 days)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-blue-500">{renewalStats.upcoming.length}</p>
-                <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
-                  {renewalStats.upcoming.slice(0, 5).map((s) => (
-                    <div key={s.id} className="text-xs flex justify-between">
-                      <span className="truncate">{(s.customers as any)?.name || "—"}</span>
-                      <span className="text-muted-foreground">{s.end_date}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="text-sm font-semibold">{g.title}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 flex-1">{g.desc}</div>
+                    {g.action && g.tab && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab(g.tab!)}
+                        className="text-[11px] text-primary hover:underline mt-2 text-left font-medium"
+                      >
+                        {g.action} →
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Reminder Tracking Table */}
