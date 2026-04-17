@@ -165,7 +165,7 @@ const GoogleSheetsPage = () => {
     if (!storeId) return;
     setSyncing(true);
     try {
-      const res = await supabase.functions.invoke("google-sheets-sync", {
+      const res = await supabase.functions.invoke("google-sheets-sync-v2", {
         body: { store_id: storeId, action: "sync_all" },
       });
       const result: any = res.data;
