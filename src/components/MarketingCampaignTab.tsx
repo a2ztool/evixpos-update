@@ -840,7 +840,7 @@ const MarketingCampaignTab = () => {
         {/* ─── HISTORY TAB ──────────────────────────────── */}
         <TabsContent value="history" className="space-y-4 mt-4">
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-3">
             <Card>
               <CardContent className="pt-5 pb-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -884,6 +884,7 @@ const MarketingCampaignTab = () => {
             </CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[500px]">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -930,7 +931,7 @@ const MarketingCampaignTab = () => {
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+        <DialogContent className="max-w-2xl w-[calc(100vw-1.5rem)] max-h-[90vh] overflow-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5" />Email Preview</DialogTitle>
           </DialogHeader>
