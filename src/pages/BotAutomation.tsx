@@ -1225,7 +1225,7 @@ const BotAutomation = () => {
 
         {/* ─── MARKETING CAMPAIGN TAB ─────────────────── */}
         <TabsContent value="marketing">
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
             <div className="space-y-4 min-w-0">
               <div className="rounded-2xl border border-rose-500/15 bg-gradient-to-br from-rose-500/5 via-card to-pink-500/5 p-3 sm:p-5 flex items-center gap-3">
                 <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
