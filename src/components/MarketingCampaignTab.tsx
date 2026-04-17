@@ -796,6 +796,7 @@ const MarketingCampaignTab = () => {
             </CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[400px]">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
