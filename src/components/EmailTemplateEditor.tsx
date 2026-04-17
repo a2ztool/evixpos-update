@@ -719,7 +719,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
 
       {/* ─── Editor Dialog (responsive: full screen on mobile) ─── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-6xl w-[100vw] sm:w-[95vw] h-[100dvh] sm:h-[90vh] max-h-[100dvh] sm:max-h-[90vh] flex flex-col p-0 gap-0 sm:rounded-lg rounded-none">
+        <DialogContent className="max-w-[1400px] w-screen sm:w-[96vw] h-[100dvh] sm:h-[92vh] max-h-[100dvh] sm:max-h-[92vh] flex flex-col p-0 gap-0 sm:rounded-2xl rounded-none overflow-hidden">
           <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0">
             <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -752,7 +752,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                 <Button
                   variant="outline"
                   size="sm"
-                  className="lg:hidden h-8 gap-1 text-xs"
+                  className="md:hidden h-8 gap-1 text-xs"
                   onClick={() => setMobilePreview(!mobilePreview)}
                 >
                   {mobilePreview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -765,9 +765,9 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </div>
           </DialogHeader>
 
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
             {/* Left: Editor */}
-            <div className={`${mobilePreview ? "hidden" : "flex"} lg:flex w-full lg:w-1/2 lg:border-r flex-col overflow-hidden min-h-0`}>
+            <div className={`${mobilePreview ? "hidden" : "flex"} md:flex w-full md:w-1/2 md:border-r flex-col overflow-hidden min-h-0`}>
               {/* Subject */}
               <div className="px-3 sm:px-4 py-3 border-b bg-muted/20 shrink-0">
                 <Label className="text-xs text-muted-foreground">Subject Line</Label>
@@ -905,7 +905,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </div>
 
             {/* Right: Live Preview */}
-            <div className={`${mobilePreview ? "flex" : "hidden"} lg:flex w-full lg:w-1/2 flex-col bg-muted/20 overflow-hidden min-h-0`}>
+            <div className={`${mobilePreview ? "flex" : "hidden"} md:flex w-full md:w-1/2 flex-col bg-muted/20 overflow-hidden min-h-0`}>
               <div className="px-3 sm:px-4 py-2.5 border-b flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <Eye className="h-4 w-4 text-muted-foreground" />
