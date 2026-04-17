@@ -431,39 +431,31 @@ const MyPlan = () => {
 
         {/* Current Plan Status */}
         <Card className="border-border/50">
-          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
+          <CardContent className="p-5 sm:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
                 <Check className="h-5 w-5 text-success" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-semibold text-base">{currentPlan} Plan {isExpiringSoon ? "⚠️" : "✅"}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   {endDate
                     ? `${remainingDays} days remaining · Expires ${new Date(endDate).toLocaleDateString()}`
                     : plan === "free" ? "Lifetime access" : "Active"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-6 text-sm">
-              <div>
-                <span className="text-muted-foreground">STORES</span>
-                <span className="ml-2 font-semibold text-primary">
-                  {plan === "free" ? "1" : plan === "pro" ? "3" : "10"}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">CUSTOMERS</span>
-                <span className="ml-2 font-semibold text-primary">
-                  {plan === "free" ? "50" : formatVolume(subVolume ?? selectedVolume)}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">PRODUCTS</span>
-                <span className="ml-2 font-semibold text-primary">
-                  {plan === "free" ? "25" : plan === "pro" ? "100" : "500"}
-                </span>
-              </div>
+            <div className="grid grid-cols-3 gap-3 sm:gap-6 text-sm w-full lg:w-auto">
+              {[
+                { label: "Stores", val: plan === "free" ? "1" : plan === "pro" ? "3" : "10" },
+                { label: "Customers", val: plan === "free" ? "50" : formatVolume(subVolume ?? selectedVolume) },
+                { label: "Products", val: plan === "free" ? "25" : plan === "pro" ? "100" : "500" },
+              ].map((s) => (
+                <div key={s.label} className="flex flex-col sm:items-end">
+                  <span className="text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground">{s.label}</span>
+                  <span className="font-semibold text-primary text-base">{s.val}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
