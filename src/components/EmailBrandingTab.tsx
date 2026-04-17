@@ -609,14 +609,14 @@ const EmailBrandingTab = () => {
         </div>
 
         {/* ─── Live Preview Panel ─────────────────────── */}
-        <div className="lg:col-span-3">
-          <Card className="sticky top-4">
+        <div className="lg:col-span-3 min-w-0">
+          <Card className="lg:sticky lg:top-4">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Eye className="h-4 w-4 text-primary" /> Live Preview
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {/* Dark/Light toggle */}
                   <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
                     <Button variant={previewTheme === "light" ? "default" : "ghost"} size="sm" className="h-7 w-7 p-0" onClick={() => setPreviewTheme("light")}>
@@ -628,24 +628,24 @@ const EmailBrandingTab = () => {
                   </div>
                   {/* Device toggle */}
                   <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
-                    <Button variant={previewMode === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2.5 text-xs gap-1" onClick={() => setPreviewMode("desktop")}>
-                      <Monitor className="h-3.5 w-3.5" /> Desktop
+                    <Button variant={previewMode === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPreviewMode("desktop")}>
+                      <Monitor className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">Desktop</span>
                     </Button>
-                    <Button variant={previewMode === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2.5 text-xs gap-1" onClick={() => setPreviewMode("mobile")}>
-                      <Smartphone className="h-3.5 w-3.5" /> Mobile
+                    <Button variant={previewMode === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPreviewMode("mobile")}>
+                      <Smartphone className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">Mobile</span>
                     </Button>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`rounded-xl p-4 transition-all duration-300 ${
+              <div className={`rounded-xl p-2 sm:p-4 transition-all duration-300 overflow-x-auto ${
                 previewTheme === "dark" ? "bg-slate-900" : "bg-muted/30"
               } ${previewMode === "mobile" ? "max-w-[375px] mx-auto" : ""}`}>
                 {/* Email client chrome */}
                 <div className={`rounded-lg border shadow-sm overflow-hidden ${previewTheme === "dark" ? "bg-slate-800 border-slate-700" : "bg-background"}`}>
-                  <div className={`px-4 py-2.5 border-b flex items-center gap-3 ${previewTheme === "dark" ? "bg-slate-800/50 border-slate-700" : "bg-muted/50"}`}>
-                    <div className="flex gap-1.5">
+                  <div className={`px-3 sm:px-4 py-2.5 border-b flex items-center gap-2 sm:gap-3 ${previewTheme === "dark" ? "bg-slate-800/50 border-slate-700" : "bg-muted/50"}`}>
+                    <div className="flex gap-1.5 shrink-0">
                       <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
                       <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
                       <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
@@ -659,12 +659,12 @@ const EmailBrandingTab = () => {
                       </p>
                     </div>
                   </div>
-                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                 </div>
               </div>
 
               {/* Info bar */}
-              <div className="mt-3 flex items-center justify-between px-1">
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-1">
                 <p className="text-[10px] text-muted-foreground">
                   {previewMode === "desktop" ? "600px" : "375px"} width • {previewTheme === "dark" ? "Dark" : "Light"} mode • {activeSocials.length} social link{activeSocials.length !== 1 ? "s" : ""}
                 </p>
