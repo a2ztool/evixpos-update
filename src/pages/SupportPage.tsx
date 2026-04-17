@@ -321,7 +321,7 @@ const SupportPage = () => {
           </div>
         </div>
 
-        {/* KPI Cards — premium */}
+        {/* KPI Cards — premium, compact */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Tickets", value: stats.total, icon: Ticket, color: "text-primary", bg: "bg-primary/10", ring: "ring-primary/20" },
@@ -330,26 +330,21 @@ const SupportPage = () => {
             { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
           ].map((kpi, i) => (
             <Card key={i} className="border-border/50 hover:shadow-md transition-all h-full">
-              <CardContent className="p-3.5 sm:p-4 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`h-9 w-9 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
-                    <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                  </div>
-                  <span className="text-2xl font-bold tabular-nums">{kpi.value}</span>
+              <CardContent className="p-3 sm:p-3.5 h-full flex items-center gap-3">
+                <div className={`h-10 w-10 shrink-0 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                <div className="mt-auto pt-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-[11px] text-muted-foreground font-medium truncate">{kpi.label}</p>
+                    <span className="text-xl font-bold tabular-nums leading-none">{kpi.value}</span>
+                  </div>
                   {i === 3 ? (
-                    <>
-                      <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-muted-foreground">Resolution Rate</span>
-                        <span className="font-semibold text-emerald-600">{stats.resolutionRate}%</span>
-                      </div>
-                      <Progress value={stats.resolutionRate} className="h-1.5" />
-                    </>
-                  ) : (
-                    <div className="h-[18px]" aria-hidden />
-                  )}
+                    <div className="mt-1.5">
+                      <Progress value={stats.resolutionRate} className="h-1" />
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">{stats.resolutionRate}% resolved</p>
+                    </div>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
