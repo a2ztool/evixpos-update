@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp } from "lucide-react";
@@ -38,69 +37,46 @@ const buildTrendData = (orders: OrderRow[], days: Range) => {
 };
 
 const AdminAnalyticsChart = () => {
-  const { adminCall } = useAdmin();
   const [range, setRange] = useState<Range>(7);
   const [data, setData] = useState<Point[]>([]);
   const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
 
-  const loadFromClient = useCallback(async (days: Range) => {
-    const since = new Date();
-    since.setHours(0, 0, 0, 0);
-    since.setDate(since.getDate() - (days - 1));
+  const load = useCallback(async (days: Range) => {
+    setLoading(true);
+    setUnavailable(false);
 
-    const { data: orders, error } = await supabase
-      .from("orders")
-      .select("created_at, total_amount")
-      .gte("created_at", since.toISOString())
-      .order("created_at", { ascending: true });
+    try {
+      const since = new Date();
+      since.setHours(0, 0, 0, 0);
+      since.setDate(since.getDate() - (days - 1));
 
-    if (error) {
-      throw error;
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select("created_at, total_amount")
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setData(buildTrendData((orders ?? []) as OrderRow[], days));
+    } catch {
+      setData([]);
+      setUnavailable(true);
+    } finally {
+      setLoading(false);
     }
-
-    return buildTrendData((orders ?? []) as OrderRow[], days);
   }, []);
 
-  const load = useCallback(
-    async (days: Range) => {
-      setLoading(true);
-      setUnavailable(false);
-
-      try {
-        const response = await adminCall("get_analytics_trends", { days }, { silent: true });
-
-        if (Array.isArray(response)) {
-          setData(response as Point[]);
-          return;
-        }
-
-        const fallbackData = await loadFromClient(days);
-        setData(fallbackData);
-      } catch {
-        try {
-          const fallbackData = await loadFromClient(days);
-          setData(fallbackData);
-        } catch {
-          setData([]);
-          setUnavailable(true);
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [adminCall, loadFromClient],
-  );
-
   useEffect(() => {
-    load(range);
+    void load(range);
   }, [range, load]);
 
   useEffect(() => {
     const channel = supabase
       .channel("admin-analytics-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        load(range);
+        void load(range);
       })
       .subscribe();
 
