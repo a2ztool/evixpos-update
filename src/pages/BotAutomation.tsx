@@ -1257,24 +1257,66 @@ const BotAutomation = () => {
         <TabsContent value="campaign">
           {/* Premium Header + Guide */}
           <div className="grid gap-4 lg:grid-cols-[1fr_320px] lg:items-start mb-6">
-            <div className="rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 p-5">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md shadow-amber-500/20">
-                    <Send className="h-5 w-5 text-white" />
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 p-4 sm:p-5">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm sm:text-base font-semibold truncate">Renewal Campaign</div>
+                      <div className="text-xs text-muted-foreground truncate">One-off targeted send to selected customers</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-base font-semibold">Renewal Campaign</div>
-                    <div className="text-xs text-muted-foreground">One-off targeted send to selected customers</div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                      {selectedCustomers.length} selected
+                    </Badge>
+                    <Badge variant="outline" className="bg-muted/50">
+                      {totalUpcoming} eligible
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
-                    {selectedCustomers.length} selected
-                  </Badge>
-                  <Badge variant="outline" className="bg-muted/50">
-                    {totalUpcoming} eligible
-                  </Badge>
+              </div>
+
+              {/* Quick Campaign KPI Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                <div className="rounded-xl border border-border/60 bg-card p-3 flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <Users className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight">{totalUpcoming}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">Eligible</div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-card p-3 flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight">{selectedCustomers.length}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">Selected</div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-card p-3 flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight">{templates.filter(t => t.is_active).length}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">Templates</div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-card p-3 flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <MailCheck className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight">{reminderStats.sent}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">Total Sent</div>
+                  </div>
                 </div>
               </div>
             </div>
