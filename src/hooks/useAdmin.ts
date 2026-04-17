@@ -2,6 +2,8 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type AdminCallOptions = { silent?: boolean };
+
 export const useAdmin = () => {
   const [loading, setLoading] = useState(false);
 
