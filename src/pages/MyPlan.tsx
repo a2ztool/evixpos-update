@@ -463,7 +463,7 @@ const MyPlan = () => {
         {/* Global Usage Summary */}
         {!usage.loading && (
           <Card className="border-border/50">
-            <CardContent className="p-4 sm:p-6 space-y-4">
+            <CardContent className="p-5 sm:p-6 space-y-4">
               <h3 className="font-semibold text-base flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
                 Usage Summary (All Stores)
@@ -552,7 +552,7 @@ const MyPlan = () => {
 
         {/* Volume Slider */}
         <Card className="border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="p-5 sm:p-6">
             <h3 className="text-center font-semibold text-lg">Select Customer Volume</h3>
             <p className="text-center text-sm text-muted-foreground mb-6">Price adjusts automatically based on volume</p>
             <div className="flex items-center justify-between mb-2">
@@ -601,7 +601,7 @@ const MyPlan = () => {
         </div>
 
         {/* Plan Cards — Premium SaaS Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 items-stretch">
           {PLANS.map((p) => {
             const isActive = p.name === currentPlan;
             const Icon = p.icon;
@@ -612,7 +612,7 @@ const MyPlan = () => {
             return (
               <Card
                 key={p.name}
-                className={`group relative overflow-hidden border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                className={`group relative overflow-hidden border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col h-full ${
                   p.popular ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""
                 }`}
               >
@@ -635,7 +635,7 @@ const MyPlan = () => {
                   </Badge>
                 )}
 
-                <CardContent className="pt-5 pb-5 relative">
+                <CardContent className="p-5 sm:p-6 relative flex flex-col flex-1">
                   {/* Icon + Name */}
                   <div className="flex items-center gap-2.5 mb-1">
                     <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center shadow-sm`}>
@@ -698,7 +698,7 @@ const MyPlan = () => {
                   })()}
 
                   {/* Limits chips */}
-                  <div className="space-y-1.5 mb-4">
+                  <div className="space-y-1.5 mb-4 flex-1">
                     {[
                       { icon: Store, label: `${p.stores} ${typeof p.stores === "number" && p.stores > 1 ? "stores" : "store"}` },
                       { icon: Users, label: `${p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)} customers` },
@@ -771,7 +771,7 @@ const MyPlan = () => {
 
         {/* Features of Current Plan */}
         <Card className="border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="p-5 sm:p-6">
             <h3 className="font-bold text-lg mb-4">
               <span className="text-primary">🔥</span> {currentPlan} <span className="font-normal">Features of</span>
             </h3>
@@ -789,7 +789,7 @@ const MyPlan = () => {
 
         {/* Compare Features Table */}
         <Card className="border-border/50 overflow-hidden">
-          <CardContent className="pt-6">
+          <CardContent className="p-5 sm:p-6">
             <h3 className="text-center font-bold text-xl mb-1">Compare Features</h3>
             <p className="text-center text-sm text-muted-foreground mb-6">
               See exactly what's included in each plan to find your perfect fit.
@@ -867,7 +867,7 @@ const MyPlan = () => {
 
         {/* Money-Back Guarantee */}
         <Card className="border-border/50 bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardContent className="py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <ShieldCheck className="h-7 w-7 text-primary" />
             </div>
@@ -880,7 +880,7 @@ const MyPlan = () => {
 
         {/* Referral CTA */}
         <Card className="border-border/50">
-          <CardContent className="py-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
             <div className="h-14 w-14 rounded-2xl bg-success/10 flex items-center justify-center flex-shrink-0">
               <Gift className="h-7 w-7 text-success" />
             </div>
@@ -896,7 +896,7 @@ const MyPlan = () => {
 
         {/* FAQ Section */}
         <Card className="border-border/50">
-          <CardContent className="pt-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <HelpCircle className="h-5 w-5 text-primary" />
               <h3 className="font-bold text-xl">Frequently Asked Questions</h3>
@@ -947,7 +947,7 @@ const MyPlan = () => {
 
         {/* WhatsApp Support */}
         <Card className="border-border/50">
-          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
               <MessageCircle className="h-5 w-5 text-success" />
             </div>
