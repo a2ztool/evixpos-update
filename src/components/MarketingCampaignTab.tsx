@@ -413,11 +413,11 @@ const MarketingCampaignTab = () => {
 
       {/* Sub Tabs */}
       <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
-          <TabsTrigger value="audience" className="gap-1.5"><Target className="h-3.5 w-3.5" />Audience</TabsTrigger>
-          <TabsTrigger value="compose" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Compose</TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" />Analytics</TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5"><Clock className="h-3.5 w-3.5" />History</TabsTrigger>
+        <TabsList className="grid grid-cols-4 w-full max-w-lg h-auto">
+          <TabsTrigger value="audience" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Target className="h-3.5 w-3.5" /><span>Audience</span></TabsTrigger>
+          <TabsTrigger value="compose" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Mail className="h-3.5 w-3.5" /><span>Compose</span></TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><BarChart3 className="h-3.5 w-3.5" /><span>Analytics</span></TabsTrigger>
+          <TabsTrigger value="history" className="gap-1 sm:gap-1.5 px-1 sm:px-3 text-xs sm:text-sm flex-col sm:flex-row py-1.5 sm:py-1.5"><Clock className="h-3.5 w-3.5" /><span>History</span></TabsTrigger>
         </TabsList>
 
         {/* ─── AUDIENCE TAB ─────────────────────────────── */}
