@@ -22,6 +22,7 @@ import { validateWithToast, productSchema } from "@/lib/validations";
 import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import ProductImageField from "@/components/ProductImageField";
 
 interface Product {
   id: string;
