@@ -15,6 +15,14 @@ import { Plus, Pencil, Trash2, QrCode, CreditCard, Upload, Loader2, Zap, Hand, S
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+interface RequiredField {
+  key: string;
+  label: string;
+  type: "text" | "number" | "tel" | "email" | "textarea";
+  required: boolean;
+  placeholder?: string;
+}
+
 interface Gateway {
   id: string;
   currency: string;
@@ -27,6 +35,7 @@ interface Gateway {
   mode: string;
   api_config: Record<string, string>;
   icon_url: string;
+  required_fields: RequiredField[];
 }
 
 const CURRENCIES = ["BDT", "INR", "USD"];
