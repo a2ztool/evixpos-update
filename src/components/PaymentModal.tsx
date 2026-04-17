@@ -145,6 +145,16 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
       toast.error("এই Transaction ID আগে ব্যবহার করা হয়েছে!");
       return;
     }
+
+    // Validate dynamic required fields
+    const dynFields = selectedGateway.required_fields || [];
+    for (const f of dynFields) {
+      if (f.required && !(fieldValues[f.key] || "").trim()) {
+        toast.error(`${f.label} is required`);
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
@@ -170,7 +180,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         transaction_id: transactionId,
         proof_url: proofUrl,
         status: "pending",
-      });
+        payment_data: fieldValues,
+      } as any);
 
       if (error) {
         if (error.message?.includes("idx_plan_payments_unique_txn")) {
