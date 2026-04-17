@@ -14,6 +14,7 @@ interface PlanPayment {
   id: string; user_id: string; store_id: string | null; plan: string; amount: number; currency: string;
   gateway_name: string; transaction_id: string; proof_url: string; status: string; admin_notes: string;
   user_email: string; user_name: string; store_name: string; created_at: string; expires_at: string | null;
+  payment_data?: Record<string, string> | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -171,6 +172,19 @@ const AdminPayments = () => {
                 <div><p className="text-slate-400 text-xs">Txn ID</p><p className="font-medium font-mono text-[11px] text-white">{selectedPayment.transaction_id || "N/A"}</p></div>
                 <div><p className="text-slate-400 text-xs">Expires</p><p className="font-medium text-[11px] text-white">{selectedPayment.expires_at ? (new Date(selectedPayment.expires_at) < new Date() ? <span className="text-red-400 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Expired</span> : new Date(selectedPayment.expires_at).toLocaleString()) : "N/A"}</p></div>
               </div>
+
+              {/* Submitted user fields (dynamic) */}
+              {selectedPayment.payment_data && Object.keys(selectedPayment.payment_data).length > 0 && (
+                <div className="bg-slate-700/40 rounded-xl p-3 space-y-1.5">
+                  <p className="text-slate-400 text-xs font-medium mb-1">Submitted Information</p>
+                  {Object.entries(selectedPayment.payment_data).map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-3 text-xs">
+                      <span className="text-slate-400 capitalize">{k.replace(/_/g, " ")}</span>
+                      <span className="text-white font-mono break-all text-right">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Duplicate Transaction Warning */}
               {selectedPayment.transaction_id && (
