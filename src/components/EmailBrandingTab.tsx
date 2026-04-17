@@ -598,9 +598,9 @@ const EmailBrandingTab = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="your@email.com" type="email" className="flex-1 h-9" />
-                <Button size="sm" onClick={handleTestEmail} disabled={testSending || !testEmail} className="h-9 px-4">
+                <Button size="sm" onClick={handleTestEmail} disabled={testSending || !testEmail} className="h-9 px-4 w-full sm:w-auto">
                   {testSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <><Send className="h-3.5 w-3.5 mr-1.5" />Send</>}
                 </Button>
               </div>
