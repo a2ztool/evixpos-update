@@ -1255,6 +1255,42 @@ const BotAutomation = () => {
 
         {/* ─── CAMPAIGN TAB ───────────────────────────── */}
         <TabsContent value="campaign">
+          {/* Premium Header + Guide */}
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px] mb-6">
+            <div className="rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md shadow-amber-500/20">
+                    <Send className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold">Renewal Campaign</div>
+                    <div className="text-xs text-muted-foreground">One-off targeted send to selected customers</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                    {selectedCustomers.length} selected
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted/50">
+                    {totalUpcoming} eligible
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <BotGuidePanel
+              title="Campaign Guide"
+              accent="amber"
+              steps={[
+                { icon: FileText, title: "Pick a template", desc: "Select from your saved active templates." },
+                { icon: TestTube, title: "Send a test", desc: "Always test to your own email before bulk send." },
+                { icon: Users, title: "Pick recipients", desc: "Use Select All or check individual customers below." },
+                { icon: Send, title: "Hit Start", desc: "Or schedule for later — the engine handles delivery." },
+              ]}
+              tip="Use WhatsApp for high-priority reminders alongside email."
+            />
+          </div>
+
           {/* Template Selection & Settings */}
           <div className="grid gap-6 md:grid-cols-3 mb-6">
             {/* Template Selector */}
