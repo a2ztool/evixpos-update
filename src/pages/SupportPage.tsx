@@ -276,7 +276,7 @@ const SupportPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto">
+      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto pb-8 sm:pb-12">
         {/* Premium Hero */}
         <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
           <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
@@ -330,15 +330,15 @@ const SupportPage = () => {
             { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
           ].map((kpi, i) => (
             <Card key={i} className="border-border/50 hover:shadow-md transition-all h-full">
-              <CardContent className="p-4 sm:p-5 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-3">
+              <CardContent className="p-3.5 sm:p-4 h-full flex flex-col">
+                <div className="flex items-center justify-between mb-2">
                   <div className={`h-9 w-9 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
                     <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                   </div>
                   <span className="text-2xl font-bold tabular-nums">{kpi.value}</span>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                <div className="mt-auto pt-3">
+                <div className="mt-auto pt-2">
                   {i === 3 ? (
                     <>
                       <div className="flex justify-between text-[10px] mb-1">
@@ -348,7 +348,7 @@ const SupportPage = () => {
                       <Progress value={stats.resolutionRate} className="h-1.5" />
                     </>
                   ) : (
-                    <div className="h-[22px]" aria-hidden />
+                    <div className="h-[18px]" aria-hidden />
                   )}
                 </div>
               </CardContent>
@@ -486,14 +486,14 @@ const SupportPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredTickets.map(ticket => {
                   const statusConf = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
                   const priorityConf = PRIORITY_CONFIG[ticket.priority] || PRIORITY_CONFIG.medium;
                   const StatusIcon = statusConf.icon;
                   return (
                     <Card key={ticket.id} className="border-border/50 hover:shadow-md transition-all cursor-pointer group" onClick={() => openTicketDetail(ticket)}>
-                      <CardContent className="p-4">
+                      <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2 mb-1">
