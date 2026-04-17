@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import {
   Gift, Copy, Wallet, History, MousePointerClick, UserPlus, UserCheck, Star,
   DollarSign, TrendingUp, Share2, Users, Clock, CheckCircle, XCircle, Link as LinkIcon,
-  Trophy, BookOpen, ArrowRight,
+  Trophy, BookOpen, ArrowRight, Sparkles, Lightbulb, X, Target, Crown, QrCode,
+  Zap, Award, Mail, MessageCircle, Send, Twitter, Linkedin, Facebook,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { WITHDRAW_METHODS, getMethodById, getGroupedMethods } from "@/lib/withdrawMethods";
 
