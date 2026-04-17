@@ -68,7 +68,7 @@ const AdminAnalyticsChart = () => {
       setUnavailable(false);
 
       try {
-        const response = await adminCall("get_analytics_trends", { days });
+        const response = await adminCall("get_analytics_trends", { days }, { silent: true });
 
         if (Array.isArray(response)) {
           setData(response as Point[]);

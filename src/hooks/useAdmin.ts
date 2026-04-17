@@ -59,7 +59,7 @@ export const useAdmin = () => {
         }
       }
 
-      toast.error(message);
+      if (!options?.silent) toast.error(message);
       return null;
     } finally {
       setLoading(false);
