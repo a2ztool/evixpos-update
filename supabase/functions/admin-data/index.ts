@@ -1,5 +1,5 @@
-// Admin-data edge function v4 — added get_analytics_trends
-// Force redeploy: 2026-04-17T02:05:00Z
+// Admin-data edge function v5 — added get_analytics_trends and forced redeploy
+// Force redeploy: 2026-04-17T02:18:00Z
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
