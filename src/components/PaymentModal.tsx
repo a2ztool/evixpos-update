@@ -80,6 +80,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
   const [existingPayment, setExistingPayment] = useState<{ status: string; expires_at?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
   const { timeLeft, isExpired } = useExpiryTimer(existingPayment?.expires_at || null);
 
@@ -92,6 +93,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     setExistingPayment(null);
     setLoading(true);
     setDuplicateWarning(false);
+    setFieldValues({});
 
     const fetchData = async () => {
       const { data: gw } = await supabase
