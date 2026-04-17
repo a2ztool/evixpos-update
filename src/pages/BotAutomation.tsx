@@ -1622,20 +1622,72 @@ const BotAutomation = () => {
         <TabsContent value="tracking">
           {/* Header + Guide */}
           <div className="grid gap-4 lg:grid-cols-[1fr_320px] lg:items-start mb-6">
-            <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/5 via-card to-indigo-500/5 p-5 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-md shadow-primary/20">
-                  <Eye className="h-5 w-5 text-primary-foreground" />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/5 via-card to-indigo-500/5 p-4 sm:p-5 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm sm:text-base font-semibold truncate">Delivery Tracking</div>
+                    <div className="text-xs text-muted-foreground truncate">Real-time status of every email leaving your store</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-base font-semibold">Delivery Tracking</div>
-                  <div className="text-xs text-muted-foreground">Real-time status of every email leaving your store</div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                    {deliverability}% delivered
+                  </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                  {deliverability}% delivered
-                </Badge>
+
+              {/* Premium KPI Cards — moved into left column to fill gap */}
+              <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-2xl border border-border bg-card p-3 sm:p-5 shadow-card hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-primary/15 to-indigo-500/15 flex items-center justify-center">
+                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Sent</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1">{reminderStats.total}</div>
+                  <div className="text-xs text-muted-foreground mt-1">All time</div>
+                </div>
+
+                <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5 p-3 sm:p-5 shadow-card">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center">
+                      <MailCheck className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">{deliverability}%</span>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Delivered</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1 text-emerald-600">{reminderStats.sent}</div>
+                  <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500" style={{ width: `${deliverability}%` }} />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-destructive/20 bg-gradient-to-br from-card to-destructive/5 p-3 sm:p-5 shadow-card">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-destructive/15 to-red-500/15 flex items-center justify-center">
+                      <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+                    </div>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Failed</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1 text-destructive">{reminderStats.failed}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Needs review</div>
+                </div>
+
+                <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 p-3 sm:p-5 shadow-card">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+                    </div>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pending</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1 text-amber-600">{reminderStats.pending}</div>
+                  <div className="text-xs text-muted-foreground mt-1">In queue</div>
+                </div>
               </div>
             </div>
             <BotGuidePanel
@@ -1649,56 +1701,6 @@ const BotAutomation = () => {
               ]}
               tip="Aim for ≥95% delivery rate — anything lower indicates auth or content issues."
             />
-          </div>
-
-          {/* Premium KPI Cards */}
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-indigo-500/15 flex items-center justify-center">
-                  <Mail className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total Sent</div>
-              <div className="text-2xl font-bold mt-1">{reminderStats.total}</div>
-              <div className="text-xs text-muted-foreground mt-1">All time</div>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5 p-5 shadow-card">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center">
-                  <MailCheck className="h-5 w-5 text-emerald-600" />
-                </div>
-                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">{deliverability}%</span>
-              </div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Delivered</div>
-              <div className="text-2xl font-bold mt-1 text-emerald-600">{reminderStats.sent}</div>
-              <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500" style={{ width: `${deliverability}%` }} />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-destructive/20 bg-gradient-to-br from-card to-destructive/5 p-5 shadow-card">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-destructive/15 to-red-500/15 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-destructive" />
-                </div>
-              </div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Failed</div>
-              <div className="text-2xl font-bold mt-1 text-destructive">{reminderStats.failed}</div>
-              <div className="text-xs text-muted-foreground mt-1">Needs review</div>
-            </div>
-
-            <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5 p-5 shadow-card">
-              <div className="flex items-center justify-between mb-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                </div>
-              </div>
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pending</div>
-              <div className="text-2xl font-bold mt-1 text-amber-600">{reminderStats.pending}</div>
-              <div className="text-xs text-muted-foreground mt-1">In queue</div>
-            </div>
           </div>
 
           {/* Email Logs */}
