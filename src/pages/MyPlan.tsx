@@ -288,38 +288,85 @@ const MyPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto">
-        {/* Premium Hero Header */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
-          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="space-y-2">
+      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto">
+        {/* Premium Hero + Active Plan Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
+          {/* Hero */}
+          <div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
+            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+            <div className="relative space-y-2">
               <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/20 gap-1.5">
                 <Sparkles className="h-3 w-3" /> Packages & Subscription
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                 Power up your business with the right plan
               </h1>
-              <p className="text-sm text-muted-foreground max-w-2xl">
+              <p className="text-sm text-muted-foreground">
                 Flexible volume-based pricing. Upgrade, downgrade or cancel anytime — pay only for what you use.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:min-w-[360px]">
-              {[
-                { icon: Crown, label: "Current", value: currentPlan, color: "text-primary" },
-                { icon: Calendar, label: "Days left", value: endDate ? `${remainingDays}` : "∞", color: "text-emerald-600" },
-                { icon: Wallet, label: "Currency", value: currency, color: "text-orange-600" },
-              ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-background/70 backdrop-blur-sm border border-border/50 p-2.5 sm:p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    <s.icon className={`h-3 w-3 ${s.color}`} /> {s.label}
-                  </div>
-                  <div className="text-base sm:text-lg font-bold mt-0.5 truncate">{s.value}</div>
-                </div>
-              ))}
-            </div>
           </div>
+
+          {/* Active Plan Card */}
+          <Card className="lg:col-span-2 border-border/50 bg-gradient-to-br from-background to-muted/30">
+            <CardContent className="p-5 sm:p-6 flex flex-col h-full gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Crown className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-base truncate">{currentPlan} Plan</p>
+                      {isExpiringSoon ? (
+                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-0 text-[10px] px-1.5 py-0">Expiring</Badge>
+                      ) : (
+                        <Badge className="bg-success/15 text-success border-0 text-[10px] px-1.5 py-0">Active</Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {endDate ? `Expires ${new Date(endDate).toLocaleDateString()}` : plan === "free" ? "Lifetime access" : "Active"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Days left</div>
+                  <div className="text-lg font-bold text-primary leading-tight">{endDate ? remainingDays : "∞"}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                {[
+                  { label: "Stores", icon: Store, current: usage.totalStores, max: usage.maxStores },
+                  { label: "Customers", icon: Users, current: usage.totalCustomers, max: usage.maxCustomers },
+                  { label: "Products", icon: Package, current: usage.totalProducts, max: usage.maxProducts },
+                ].map((item) => {
+                  const pct = item.max > 0 ? Math.min((item.current / item.max) * 100, 100) : 0;
+                  const isHigh = pct >= 80;
+                  return (
+                    <div key={item.label} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <item.icon className="h-3 w-3" />
+                          {item.label}
+                        </span>
+                        <span className={`font-semibold ${isHigh ? "text-destructive" : "text-foreground"}`}>
+                          {usage.loading ? "…" : `${item.current} / ${item.max}`}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${isHigh ? "bg-destructive" : "bg-primary"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Guide Section */}
