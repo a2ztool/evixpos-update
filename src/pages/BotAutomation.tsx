@@ -527,35 +527,82 @@ const BotAutomation = () => {
   };
 
   const isApiProvider = emailForm.provider_type === "sendgrid" || emailForm.provider_type === "resend";
+  const deliverability = reminderStats.total > 0 ? Math.round((reminderStats.sent / reminderStats.total) * 100) : 0;
+  const totalUpcoming = renewalStats.upcoming.length + renewalStats.expiringSoon.length + renewalStats.expired.length;
+  const isAutoActive = !!autoConfig?.is_auto_mode;
+  const isEmailConfigured = !!emailConfig?.id && !!emailConfig?.sender_email;
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div className="hidden sm:block">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <Bot className="h-7 w-7 sm:h-8 sm:w-8" /> Bot Automation
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Renewal reminders, email campaigns & automation engine
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
-            <span className="text-sm font-medium">Auto Mode</span>
-            <Switch
-              checked={autoConfig?.is_auto_mode || false}
-              onCheckedChange={toggleAutoMode}
-            />
-            <Badge variant={autoConfig?.is_auto_mode ? "default" : "secondary"} className="text-xs">
-              {autoConfig?.is_auto_mode ? "ACTIVE" : "OFF"}
-            </Badge>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-indigo-500/5 p-6 shadow-card mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-gradient-to-br from-indigo-400/20 to-violet-500/20 blur-3xl" />
+        <div className="relative flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <Bot className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight">Bot Automation</h1>
+                <Badge variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px]">
+                  <Zap className="h-2.5 w-2.5 mr-1" /> AI ENGINE
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Renewal reminders, email campaigns & automation engine
+              </p>
+              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 ${isEmailConfigured ? "text-success" : "text-warning"}`}>
+                  {isEmailConfigured ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                  {isEmailConfigured ? "Email configured" : "Email not configured"}
+                </span>
+                <span>•</span>
+                <span>Daily at {autoConfig?.schedule_time || "09:00"}</span>
+              </div>
+            </div>
           </div>
-          <Button onClick={() => runAutomation("auto")} disabled={campaignRunning}>
-            <Play className="h-4 w-4 mr-2" />
-            Run Now
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 border transition-colors ${
+              isAutoActive ? "bg-success/5 border-success/30" : "bg-muted/30 border-border"
+            }`}>
+              <span className="text-xs font-medium">Auto Mode</span>
+              <Switch checked={isAutoActive} onCheckedChange={toggleAutoMode} />
+              <Badge variant="outline" className={`text-[10px] ${
+                isAutoActive ? "bg-success/10 text-success border-success/30" : "bg-muted text-muted-foreground"
+              }`}>
+                {isAutoActive ? "ACTIVE" : "OFF"}
+              </Badge>
+            </div>
+            <Button
+              onClick={() => runAutomation("auto")}
+              disabled={campaignRunning}
+              className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 shadow-md shadow-indigo-500/20 text-white"
+            >
+              {campaignRunning ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+              Run Now
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Setup hint when email not configured */}
+      {!isEmailConfigured && activeTab === "dashboard" && (
+        <div className="rounded-xl border border-warning/30 bg-gradient-to-r from-warning/5 to-amber-500/5 p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-warning/15 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">Email provider not configured</div>
+              <div className="text-xs text-muted-foreground">Set up SMTP or an API provider to start sending automated reminders.</div>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setActiveTab("email-config")}>
+            <Settings className="h-3.5 w-3.5 mr-2" /> Configure Email
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 flex-wrap">
