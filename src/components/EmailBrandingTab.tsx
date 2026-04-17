@@ -424,21 +424,21 @@ const EmailBrandingTab = () => {
                   {/* Colors */}
                   <div>
                     <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 block">Brand Colors</Label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <span className="text-[10px] font-medium text-muted-foreground">Primary</span>
                         <div className="flex gap-1.5 items-center">
-                          <div className="relative">
+                          <div className="relative shrink-0">
                             <Input type="color" className="h-9 w-9 p-0.5 cursor-pointer rounded-lg border-2" value={branding.brand_color} onChange={(e) => setBranding({ ...branding, brand_color: e.target.value })} />
                           </div>
-                          <Input value={branding.brand_color} onChange={(e) => setBranding({ ...branding, brand_color: e.target.value })} className="flex-1 font-mono text-xs h-9" />
+                          <Input value={branding.brand_color} onChange={(e) => setBranding({ ...branding, brand_color: e.target.value })} className="flex-1 min-w-0 font-mono text-xs h-9" />
                         </div>
                       </div>
                       <div className="space-y-1.5">
                         <span className="text-[10px] font-medium text-muted-foreground">Secondary</span>
                         <div className="flex gap-1.5 items-center">
-                          <Input type="color" className="h-9 w-9 p-0.5 cursor-pointer rounded-lg border-2" value={branding.secondary_color} onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })} />
-                          <Input value={branding.secondary_color} onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })} className="flex-1 font-mono text-xs h-9" />
+                          <Input type="color" className="h-9 w-9 p-0.5 cursor-pointer rounded-lg border-2 shrink-0" value={branding.secondary_color} onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })} />
+                          <Input value={branding.secondary_color} onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })} className="flex-1 min-w-0 font-mono text-xs h-9" />
                         </div>
                       </div>
                     </div>
