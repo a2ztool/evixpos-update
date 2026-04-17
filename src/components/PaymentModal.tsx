@@ -368,6 +368,37 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                   </Card>
                 )}
 
+                {/* Dynamic Required Fields (admin-defined per gateway) */}
+                {selectedGateway.required_fields && selectedGateway.required_fields.length > 0 && (
+                  <div className="space-y-3">
+                    {selectedGateway.required_fields.map((f) => (
+                      <div key={f.key} className="space-y-1.5">
+                        <Label htmlFor={`field-${f.key}`} className="text-sm">
+                          {f.label}
+                          {f.required && <span className="text-destructive ml-0.5">*</span>}
+                        </Label>
+                        {f.type === "textarea" ? (
+                          <Textarea
+                            id={`field-${f.key}`}
+                            placeholder={f.placeholder || ""}
+                            value={fieldValues[f.key] || ""}
+                            onChange={(e) => setFieldValues(v => ({ ...v, [f.key]: e.target.value }))}
+                            rows={3}
+                          />
+                        ) : (
+                          <Input
+                            id={`field-${f.key}`}
+                            type={f.type}
+                            placeholder={f.placeholder || ""}
+                            value={fieldValues[f.key] || ""}
+                            onChange={(e) => setFieldValues(v => ({ ...v, [f.key]: e.target.value }))}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Transaction ID with duplicate warning */}
                 <div className="space-y-2">
                   <Label htmlFor="txn-id" className="text-sm">Transaction ID (optional)</Label>
