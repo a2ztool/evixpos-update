@@ -1225,15 +1225,15 @@ const BotAutomation = () => {
 
         {/* ─── MARKETING CAMPAIGN TAB ─────────────────── */}
         <TabsContent value="marketing">
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-rose-500/15 bg-gradient-to-br from-rose-500/5 via-card to-pink-500/5 p-5 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20">
-                  <Megaphone className="h-5 w-5 text-white" />
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-4 min-w-0">
+              <div className="rounded-2xl border border-rose-500/15 bg-gradient-to-br from-rose-500/5 via-card to-pink-500/5 p-3 sm:p-5 flex items-center gap-3">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
+                  <Megaphone className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div>
-                  <div className="text-base font-semibold">Marketing Campaigns</div>
-                  <div className="text-xs text-muted-foreground">Promotional broadcasts to customer segments</div>
+                <div className="min-w-0">
+                  <div className="text-sm sm:text-base font-semibold truncate">Marketing Campaigns</div>
+                  <div className="text-xs text-muted-foreground truncate">Promotional broadcasts to customer segments</div>
                 </div>
               </div>
               <MarketingCampaignTab />
