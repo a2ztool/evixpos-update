@@ -471,7 +471,7 @@ const MyPlan = () => {
         {/* Global Usage Summary */}
         {!usage.loading && (
           <Card className="border-border/50">
-            <CardContent className="py-5 space-y-4">
+            <CardContent className="p-4 sm:p-6 space-y-4">
               <h3 className="font-semibold text-base flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" />
                 Usage Summary (All Stores)
