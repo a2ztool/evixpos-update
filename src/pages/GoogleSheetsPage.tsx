@@ -168,8 +168,19 @@ const GoogleSheetsPage = () => {
       const res = await supabase.functions.invoke("google-sheets-sync", {
         body: { store_id: storeId, action: "sync_all" },
       });
-      if (res.error) throw res.error;
-      const result = res.data;
+      const result: any = res.data;
+      if (res.error) {
+        let backendMsg: string | null = null;
+        try {
+          const ctx: any = (res.error as any).context;
+          if (ctx?.json) {
+            const j = await ctx.json();
+            backendMsg = j?.error || null;
+          }
+        } catch { /* ignore */ }
+        throw new Error(backendMsg || result?.error || res.error.message || "Sync failed");
+      }
+      if (result?.success === false) throw new Error(result.error || "Sync failed");
       toast.success(`Synced ${result?.rows_synced ?? 0} orders to Google Sheets`);
       await fetchConfig();
     } catch (e: any) {
