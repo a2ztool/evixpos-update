@@ -324,7 +324,7 @@ const MyPlan = () => {
 
         {/* Quick Guide Section */}
         <Card className="border-border/50 bg-gradient-to-br from-background to-muted/30">
-          <CardContent className="pt-5 pb-5">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Lightbulb className="h-4 w-4 text-primary" />
