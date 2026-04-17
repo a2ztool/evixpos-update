@@ -6,16 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Pencil, Eye, Send, Sparkles, Plus, Trash2, Type, MousePointerClick,
+  Pencil, Eye, Sparkles, Plus, Trash2, Type, MousePointerClick,
   Variable, TestTube, Copy, CheckCircle2, Palette, LayoutTemplate, GripVertical,
-  Bold, Italic, Link2, Image, AlignLeft, AlignCenter, ChevronDown, Mail
+  Bold, AlignLeft, Mail, X, FileText
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────
@@ -114,14 +113,22 @@ const BRAND_COLORS = [
   "#c026d3", "#dc2626", "#ea580c", "#16a34a",
 ];
 
-// ─── Helper: Parse body into blocks ───────────────────────
+// ─── Helpers ──────────────────────────────────────────────
+const isCustomType = (type: string) => type.startsWith("custom_");
+
+const getTemplateLabel = (type: string, tpl?: EmailTemplate) => {
+  if (templateLabels[type]) return templateLabels[type];
+  // Custom: use subject as label fallback or stripped id
+  return tpl?.subject?.slice(0, 40) || "Custom Template";
+};
+
+const getTemplateIcon = (type: string) => templateIcons[type] || "✉️";
+
 const parseBodyToBlocks = (body: string): TemplateBlock[] => {
   if (!body) return [{ id: crypto.randomUUID(), type: "text", content: "", align: "left" }];
-  
   const lines = body.split("\n");
   const blocks: TemplateBlock[] = [];
   let currentText = "";
-
   for (const line of lines) {
     if (line.startsWith("[CTA:")) {
       if (currentText.trim()) {
@@ -145,15 +152,12 @@ const parseBodyToBlocks = (body: string): TemplateBlock[] => {
       currentText += line + "\n";
     }
   }
-
   if (currentText.trim()) {
     blocks.push({ id: crypto.randomUUID(), type: "text", content: currentText.trim(), align: "left" });
   }
-
   return blocks.length > 0 ? blocks : [{ id: crypto.randomUUID(), type: "text", content: "", align: "left" }];
 };
 
-// ─── Helper: Serialize blocks to body ─────────────────────
 const serializeBlocks = (blocks: TemplateBlock[]): string => {
   return blocks
     .map((b) => {
@@ -185,32 +189,26 @@ const EmailPreview = ({ subject, blocks, senderName, accentColor }: {
       .replace(/\{\{support_link\}\}/g, "#");
 
   return (
-    <div className="bg-muted/50 rounded-xl p-4 h-full overflow-auto">
-      {/* Email client chrome */}
-      <div className="bg-card rounded-lg shadow-lg overflow-hidden border max-w-[480px] mx-auto">
-        {/* Header bar */}
-        <div className="px-4 py-3 border-b bg-muted/30">
+    <div className="bg-muted/50 rounded-xl p-2 sm:p-4 h-full overflow-auto">
+      <div className="bg-card rounded-lg shadow-lg overflow-hidden border w-full max-w-[480px] mx-auto">
+        <div className="px-3 sm:px-4 py-3 border-b bg-muted/30">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground" style={{ backgroundColor: accentColor }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0" style={{ backgroundColor: accentColor }}>
               {(senderName || "S")[0].toUpperCase()}
             </div>
-            <span className="text-xs font-semibold">{senderName || "Store Name"}</span>
+            <span className="text-xs font-semibold truncate">{senderName || "Store Name"}</span>
           </div>
-          <p className="text-sm font-semibold truncate">{replaceVars(subject) || "Subject line..."}</p>
+          <p className="text-sm font-semibold break-words">{replaceVars(subject) || "Subject line..."}</p>
         </div>
-
-        {/* Email body */}
         <div className="bg-white">
-          {/* Brand header strip */}
           <div className="h-1.5" style={{ backgroundColor: accentColor }} />
-          
-          <div className="px-6 py-6 space-y-4">
+          <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-4">
             {blocks.map((block) => {
               if (block.type === "text") {
                 return (
                   <div key={block.id} style={{ textAlign: block.align || "left" }}>
                     {replaceVars(block.content).split("\n").map((line, i) => (
-                      <p key={i} className="text-sm text-gray-700 leading-relaxed" style={{ minHeight: line ? undefined : "0.75em" }}>
+                      <p key={i} className="text-sm text-gray-700 leading-relaxed break-words" style={{ minHeight: line ? undefined : "0.75em" }}>
                         {line}
                       </p>
                     ))}
@@ -219,7 +217,7 @@ const EmailPreview = ({ subject, blocks, senderName, accentColor }: {
               }
               if (block.type === "heading") {
                 return (
-                  <h2 key={block.id} className="text-lg font-bold text-gray-900" style={{ textAlign: block.align || "left" }}>
+                  <h2 key={block.id} className="text-lg font-bold text-gray-900 break-words" style={{ textAlign: block.align || "left" }}>
                     {replaceVars(block.content)}
                   </h2>
                 );
@@ -231,7 +229,7 @@ const EmailPreview = ({ subject, blocks, senderName, accentColor }: {
                     <a
                       href="#"
                       onClick={(e) => e.preventDefault()}
-                      className="inline-block px-8 py-3 rounded-lg text-sm font-semibold transition-all"
+                      className="inline-block px-6 sm:px-8 py-3 rounded-lg text-sm font-semibold transition-all"
                       style={{
                         backgroundColor: isOutline ? "transparent" : (block.cta.color || accentColor),
                         color: isOutline ? (block.cta.color || accentColor) : "#ffffff",
@@ -253,9 +251,7 @@ const EmailPreview = ({ subject, blocks, senderName, accentColor }: {
               return null;
             })}
           </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-100">
             <p className="text-[11px] text-gray-400 text-center">
               Sent by {senderName || "Your Store"} • Powered by Mirror App
             </p>
@@ -267,20 +263,19 @@ const EmailPreview = ({ subject, blocks, senderName, accentColor }: {
 };
 
 // ─── Block Editor Item ────────────────────────────────────
-const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
+const BlockEditor = ({ block, onChange, onRemove }: {
   block: TemplateBlock;
   onChange: (block: TemplateBlock) => void;
   onRemove: () => void;
-  onInsertVariable: (variable: string) => void;
 }) => {
   if (block.type === "divider" || block.type === "spacer") {
     return (
       <div className="flex items-center gap-2 p-2 rounded-lg border border-dashed border-border bg-muted/30 group">
-        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+        <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
         <span className="text-xs text-muted-foreground flex-1">
           {block.type === "divider" ? "── Divider ──" : "⬜ Spacer"}
         </span>
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100" onClick={onRemove}>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRemove}>
           <Trash2 className="h-3 w-3 text-destructive" />
         </Button>
       </div>
@@ -291,16 +286,16 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
     return (
       <div className="rounded-lg border bg-card p-3 space-y-3 group">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-            <MousePointerClick className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium">CTA Button</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+            <MousePointerClick className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-xs font-medium truncate">CTA Button</span>
           </div>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100" onClick={onRemove}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" onClick={onRemove}>
             <Trash2 className="h-3 w-3 text-destructive" />
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
             <Label className="text-xs">Button Text</Label>
             <Input
@@ -320,9 +315,9 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Label className="text-xs">Color</Label>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {BRAND_COLORS.map((c) => (
               <button
                 key={c}
@@ -352,17 +347,16 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
     );
   }
 
-  // Text or Heading block
   return (
     <div className="rounded-lg border bg-card p-3 space-y-2 group">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-          {block.type === "heading" ? <Bold className="h-4 w-4 text-primary" /> : <Type className="h-4 w-4 text-muted-foreground" />}
-          <span className="text-xs font-medium">{block.type === "heading" ? "Heading" : "Text Block"}</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+          {block.type === "heading" ? <Bold className="h-4 w-4 text-primary shrink-0" /> : <Type className="h-4 w-4 text-muted-foreground shrink-0" />}
+          <span className="text-xs font-medium truncate">{block.type === "heading" ? "Heading" : "Text Block"}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="flex border rounded overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="hidden sm:flex border rounded overflow-hidden">
             {(["left", "center", "right"] as const).map((a) => (
               <button
                 key={a}
@@ -373,7 +367,7 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
               </button>
             ))}
           </div>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100" onClick={onRemove}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRemove}>
             <Trash2 className="h-3 w-3 text-destructive" />
           </Button>
         </div>
@@ -385,7 +379,6 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
         placeholder={block.type === "heading" ? "Enter heading..." : "Write your email content here..."}
         rows={block.type === "heading" ? 1 : 3}
       />
-      {/* Quick variable insert */}
       <div className="flex flex-wrap gap-1">
         {VARIABLES.slice(0, 4).map((v) => (
           <button
@@ -404,17 +397,24 @@ const BlockEditor = ({ block, onChange, onRemove, onInsertVariable }: {
 // ─── Main Component ───────────────────────────────────────
 const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderName, onSave }: EmailTemplateEditorProps) => {
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [editingLabel, setEditingLabel] = useState<string>("");
   const [blocks, setBlocks] = useState<TemplateBlock[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editorTab, setEditorTab] = useState<"visual" | "code">("visual");
-  const [previewMode, setPreviewMode] = useState(false);
   const [accentColor, setAccentColor] = useState("#006d5b");
   const [testEmail, setTestEmail] = useState("");
   const [sendingTest, setSendingTest] = useState(false);
   const [rawBody, setRawBody] = useState("");
+  const [mobilePreview, setMobilePreview] = useState(false);
 
-  const openEditor = (type: string) => {
-    const existing = templates.find((t) => t.template_type === type);
+  // Custom templates already saved
+  const customTemplates = useMemo(
+    () => templates.filter((t) => isCustomType(t.template_type)),
+    [templates]
+  );
+
+  const openEditor = (type: string, existingOverride?: EmailTemplate) => {
+    const existing = existingOverride || templates.find((t) => t.template_type === type);
     const tpl = existing || {
       store_id: storeId,
       user_id: userId,
@@ -424,12 +424,32 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
       is_active: true,
     };
     setEditingTemplate(tpl);
+    setEditingLabel(getTemplateLabel(tpl.template_type, tpl));
     const parsed = parseBodyToBlocks(tpl.body);
     setBlocks(parsed);
     setRawBody(tpl.body);
     setDialogOpen(true);
     setEditorTab("visual");
-    setPreviewMode(false);
+    setMobilePreview(false);
+  };
+
+  const createCustomTemplate = () => {
+    const newType = `custom_${crypto.randomUUID().slice(0, 8)}`;
+    const tpl: EmailTemplate = {
+      store_id: storeId,
+      user_id: userId,
+      template_type: newType,
+      subject: "My Custom Email Subject",
+      body: "Hi {{customer_name}},\n\nWrite your custom message here.\n\nThanks!",
+      is_active: true,
+    };
+    setEditingTemplate(tpl);
+    setEditingLabel("My Custom Template");
+    setBlocks(parseBodyToBlocks(tpl.body));
+    setRawBody(tpl.body);
+    setDialogOpen(true);
+    setEditorTab("visual");
+    setMobilePreview(false);
   };
 
   const updateBlock = (id: string, updated: TemplateBlock) => {
@@ -454,6 +474,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
   const saveTemplate = async () => {
     if (!editingTemplate) return;
     const body = editorTab === "visual" ? serializeBlocks(blocks) : rawBody;
+    // For custom templates, store the user-given label as a hidden marker in subject prefix? No—keep label in subject.
     const payload = {
       store_id: storeId,
       user_id: userId,
@@ -474,6 +495,17 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
     }
     setDialogOpen(false);
     onSave();
+  };
+
+  const deleteTemplate = async (tpl: EmailTemplate) => {
+    if (!tpl.id) return;
+    if (!confirm("Delete this custom template?")) return;
+    const { error } = await supabase.from("renewal_email_templates").delete().eq("id", tpl.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Template deleted");
+      onSave();
+    }
   };
 
   const handleTestSend = async () => {
@@ -499,45 +531,63 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
 
   const currentBlocks = editorTab === "visual" ? blocks : parseBodyToBlocks(rawBody);
 
+  // All template card entries: defaults + custom
+  const cardEntries: { type: string; label: string; tpl?: EmailTemplate; isCustom: boolean }[] = [
+    ...Object.entries(templateLabels).map(([type, label]) => ({
+      type,
+      label,
+      tpl: templates.find((t) => t.template_type === type),
+      isCustom: false,
+    })),
+    ...customTemplates.map((tpl) => ({
+      type: tpl.template_type,
+      label: getTemplateLabel(tpl.template_type, tpl),
+      tpl,
+      isCustom: true,
+    })),
+  ];
+
   return (
     <>
-      {/* Template Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(templateLabels).map(([type, label]) => {
-          const tpl = templates.find((t) => t.template_type === type);
+      {/* Template Cards Grid - fully responsive */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+        {cardEntries.map(({ type, label, tpl, isCustom }) => {
           const isCustomized = !!tpl;
           return (
             <Card
-              key={type}
+              key={tpl?.id || type}
               className="group cursor-pointer border hover:border-primary/40 hover:shadow-md transition-all duration-200 overflow-hidden"
-              onClick={() => openEditor(type)}
+              onClick={() => openEditor(type, tpl)}
             >
-              {/* Top accent */}
               <div className="h-1" style={{ backgroundColor: isCustomized ? accentColor : "hsl(var(--border))" }} />
-              
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl">{templateIcons[type]}</span>
-                    <div>
-                      <CardTitle className="text-sm font-semibold">{label}</CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="text-xl shrink-0">{isCustom ? "✉️" : getTemplateIcon(type)}</span>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-sm font-semibold truncate">{label}</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">
                         {tpl?.subject || DEFAULT_TEMPLATES[type]?.subject}
                       </p>
                     </div>
                   </div>
-                  {isCustomized ? (
-                    <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
-                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Custom
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px]">Default</Badge>
-                  )}
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {isCustom ? (
+                      <Badge className="text-[10px] bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
+                        <Sparkles className="h-3 w-3 mr-0.5" /> Custom
+                      </Badge>
+                    ) : isCustomized ? (
+                      <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Edited
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">Default</Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-0">
-                {/* Mini preview */}
                 <div className="rounded-md bg-muted/50 p-3 mb-3 border border-dashed border-border/50">
                   <div className="h-1 w-12 rounded-full mb-2" style={{ backgroundColor: accentColor, opacity: 0.5 }} />
                   <div className="space-y-1.5">
@@ -559,15 +609,39 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                   <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 flex-1 group-hover:bg-primary/5">
                     <Eye className="h-3 w-3" /> Preview
                   </Button>
+                  {isCustom && tpl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-destructive/10"
+                      onClick={(e) => { e.stopPropagation(); deleteTemplate(tpl); }}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
+
+        {/* Create custom template card */}
+        <Card
+          className="group cursor-pointer border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center min-h-[220px]"
+          onClick={createCustomTemplate}
+        >
+          <div className="flex flex-col items-center text-center p-6">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <Plus className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-semibold">Create Custom Template</p>
+            <p className="text-xs text-muted-foreground mt-1">Build your own email from scratch</p>
+          </div>
+        </Card>
       </div>
 
       {/* Variables & Tips Card */}
-      <div className="grid gap-4 md:grid-cols-2 mt-6">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 mt-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -577,13 +651,13 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
           <CardContent>
             <div className="space-y-2">
               {VARIABLES.map((v) => (
-                <div key={v.key} className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{v.key}</code>
-                    <span className="text-xs text-muted-foreground">{v.label}</span>
+                <div key={v.key} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <code className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">{v.key}</code>
+                    <span className="text-xs text-muted-foreground truncate hidden sm:inline">{v.label}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground/60">→ {v.example}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-muted-foreground/60 hidden md:inline">→ {v.example}</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => copyVariable(v.key)}>
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -601,7 +675,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {BRAND_COLORS.map((c) => (
                 <button
                   key={c}
@@ -623,12 +697,10 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             <p className="text-xs text-muted-foreground">
               This color will be used for CTA buttons, header strips, and accents in your email templates.
             </p>
-            
             <Separator />
-
             <div>
               <Label className="text-xs">Quick Test Send</Label>
-              <div className="flex gap-2 mt-1.5">
+              <div className="flex flex-col sm:flex-row gap-2 mt-1.5">
                 <Input
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
@@ -645,60 +717,77 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
         </Card>
       </div>
 
-      {/* ─── Editor Dialog ─────────────────────────────── */}
+      {/* ─── Editor Dialog (responsive: full screen on mobile) ─── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-5 pb-3 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{editingTemplate ? templateIcons[editingTemplate.template_type] : "📧"}</span>
-                <div>
-                  <DialogTitle className="text-base">
-                    {editingTemplate ? templateLabels[editingTemplate.template_type] : "Edit Template"}
-                  </DialogTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Design your email template with live preview</p>
+        <DialogContent className="max-w-6xl w-[100vw] sm:w-[95vw] h-[100dvh] sm:h-[90vh] max-h-[100dvh] sm:max-h-[90vh] flex flex-col p-0 gap-0 sm:rounded-lg rounded-none">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0">
+            <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <span className="text-xl shrink-0">{editingTemplate ? getTemplateIcon(editingTemplate.template_type) : "📧"}</span>
+                <div className="min-w-0 flex-1">
+                  {editingTemplate && isCustomType(editingTemplate.template_type) ? (
+                    <Input
+                      value={editingLabel}
+                      onChange={(e) => setEditingLabel(e.target.value)}
+                      className="h-8 text-sm font-semibold"
+                      placeholder="Template name..."
+                    />
+                  ) : (
+                    <DialogTitle className="text-sm sm:text-base truncate">
+                      {editingTemplate ? getTemplateLabel(editingTemplate.template_type, editingTemplate) : "Edit Template"}
+                    </DialogTitle>
+                  )}
+                  <p className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block">Design your email with live preview</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 mr-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5">
                   <Switch
                     checked={editingTemplate?.is_active || false}
                     onCheckedChange={(v) => editingTemplate && setEditingTemplate({ ...editingTemplate, is_active: v })}
                   />
                   <Label className="text-xs">Active</Label>
                 </div>
-                <Button size="sm" onClick={saveTemplate} className="gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Save Template
+                {/* Mobile preview toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden h-8 gap-1 text-xs"
+                  onClick={() => setMobilePreview(!mobilePreview)}
+                >
+                  {mobilePreview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {mobilePreview ? "Edit" : "Preview"}
+                </Button>
+                <Button size="sm" onClick={saveTemplate} className="h-8 gap-1.5 text-xs">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Save
                 </Button>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
             {/* Left: Editor */}
-            <div className="w-1/2 border-r flex flex-col overflow-hidden">
+            <div className={`${mobilePreview ? "hidden" : "flex"} lg:flex w-full lg:w-1/2 lg:border-r flex-col overflow-hidden min-h-0`}>
               {/* Subject */}
-              <div className="px-4 py-3 border-b bg-muted/20">
+              <div className="px-3 sm:px-4 py-3 border-b bg-muted/20 shrink-0">
                 <Label className="text-xs text-muted-foreground">Subject Line</Label>
                 <Input
                   value={editingTemplate?.subject || ""}
                   onChange={(e) => editingTemplate && setEditingTemplate({ ...editingTemplate, subject: e.target.value })}
-                  className="h-9 mt-1 font-medium"
+                  className="h-9 mt-1 font-medium text-sm"
                   placeholder="Enter email subject..."
                 />
               </div>
 
               {/* Editor mode tabs */}
-              <div className="flex items-center justify-between px-4 py-2 border-b">
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 border-b shrink-0 flex-wrap">
                 <div className="flex gap-1">
                   <Button
                     variant={editorTab === "visual" ? "default" : "ghost"}
                     size="sm"
                     className="h-7 text-xs gap-1"
                     onClick={() => {
-                      if (editorTab === "code") {
-                        setBlocks(parseBodyToBlocks(rawBody));
-                      }
+                      if (editorTab === "code") setBlocks(parseBodyToBlocks(rawBody));
                       setEditorTab("visual");
                     }}
                   >
@@ -709,9 +798,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                     size="sm"
                     className="h-7 text-xs gap-1"
                     onClick={() => {
-                      if (editorTab === "visual") {
-                        setRawBody(serializeBlocks(blocks));
-                      }
+                      if (editorTab === "visual") setRawBody(serializeBlocks(blocks));
                       setEditorTab("code");
                     }}
                   >
@@ -720,14 +807,14 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                 </div>
 
                 {editorTab === "visual" && (
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => addBlock("text")}>
+                  <div className="flex gap-1 flex-wrap">
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2" onClick={() => addBlock("text")}>
                       <Plus className="h-3 w-3" /> Text
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => addBlock("heading")}>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2" onClick={() => addBlock("heading")}>
                       <Bold className="h-3 w-3" /> H
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => addBlock("cta")}>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2" onClick={() => addBlock("cta")}>
                       <MousePointerClick className="h-3 w-3" /> CTA
                     </Button>
                     <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2" onClick={() => addBlock("divider")}>
@@ -738,10 +825,10 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
               </div>
 
               {/* Editor content */}
-              <div className="flex-1 overflow-auto p-4 space-y-3">
+              <div className="flex-1 overflow-auto p-3 sm:p-4 space-y-3 min-h-0">
                 {editorTab === "visual" ? (
                   blocks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-10">
                       <LayoutTemplate className="h-10 w-10 mb-3 opacity-30" />
                       <p className="text-sm">Add content blocks to build your email</p>
                       <div className="flex gap-2 mt-3">
@@ -760,7 +847,6 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                         block={block}
                         onChange={(b) => updateBlock(block.id, b)}
                         onRemove={() => removeBlock(block.id)}
-                        onInsertVariable={(v) => {}}
                       />
                     ))
                   )
@@ -780,7 +866,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                     <Textarea
                       value={rawBody}
                       onChange={(e) => setRawBody(e.target.value)}
-                      className="min-h-[400px] font-mono text-sm resize-none"
+                      className="min-h-[300px] sm:min-h-[400px] font-mono text-sm resize-none"
                       placeholder="Write your email body here..."
                     />
                   </div>
@@ -789,7 +875,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
 
               {/* CTA Presets */}
               {editorTab === "visual" && (
-                <div className="px-4 py-3 border-t bg-muted/20">
+                <div className="px-3 sm:px-4 py-3 border-t bg-muted/20 shrink-0">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Quick CTA Presets</p>
                   <div className="flex flex-wrap gap-1.5">
                     {CTA_PRESETS.map((preset) => (
@@ -819,8 +905,8 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
             </div>
 
             {/* Right: Live Preview */}
-            <div className="w-1/2 flex flex-col bg-muted/20">
-              <div className="px-4 py-2.5 border-b flex items-center justify-between">
+            <div className={`${mobilePreview ? "flex" : "hidden"} lg:flex w-full lg:w-1/2 flex-col bg-muted/20 overflow-hidden min-h-0`}>
+              <div className="px-3 sm:px-4 py-2.5 border-b flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <Eye className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs font-medium">Live Preview</span>
@@ -829,7 +915,7 @@ const EmailTemplateEditor = ({ templates, storeId, userId, senderEmail, senderNa
                   <Mail className="h-3 w-3 mr-1" /> Email Client View
                 </Badge>
               </div>
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-auto p-3 sm:p-4 min-h-0">
                 <EmailPreview
                   subject={editingTemplate?.subject || ""}
                   blocks={currentBlocks}
