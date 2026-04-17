@@ -305,23 +305,23 @@ const EmailBrandingTab = () => {
   }, [branding, previewTheme]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ─── Hero Header ──────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-6">
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Palette className="h-6 w-6 text-primary-foreground" />
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+              <Palette className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight">Email Branding Studio</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">Design professional branded emails for your campaigns</p>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-bold tracking-tight truncate">Email Branding Studio</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-2">Design professional branded emails for your campaigns</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {existingId && (
-              <Badge className="gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/15">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Active
+              <Badge className="gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/15 text-xs">
+                <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Active
               </Badge>
             )}
             <Button onClick={save} disabled={saving} size="sm" className="gap-2 shadow-md">
@@ -330,8 +330,7 @@ const EmailBrandingTab = () => {
             </Button>
           </div>
         </div>
-        {/* Decorative dots */}
-        <div className="absolute top-3 right-3 opacity-10">
+        <div className="absolute top-3 right-3 opacity-10 hidden sm:block">
           <div className="grid grid-cols-4 gap-1.5">
             {Array.from({ length: 16 }).map((_, i) => (
               <div key={i} className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -340,9 +339,9 @@ const EmailBrandingTab = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
         {/* ─── Settings Panel ─────────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           {/* Quick Themes */}
           <Card className="border-dashed">
             <CardHeader className="pb-2">
@@ -351,7 +350,7 @@ const EmailBrandingTab = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                 {COLOR_THEMES.map((theme) => (
                   <button
                     key={theme.name}
@@ -366,7 +365,7 @@ const EmailBrandingTab = () => {
                       <div className="h-4 w-4 rounded-full shadow-inner" style={{ backgroundColor: theme.primary }} />
                       <div className="h-3 w-3 rounded-full shadow-inner" style={{ backgroundColor: theme.secondary }} />
                     </div>
-                    <p className="text-[9px] font-semibold text-muted-foreground leading-tight">{theme.emoji} {theme.name}</p>
+                    <p className="text-[9px] font-semibold text-muted-foreground leading-tight truncate">{theme.emoji} {theme.name}</p>
                   </button>
                 ))}
               </div>
@@ -375,11 +374,11 @@ const EmailBrandingTab = () => {
 
           {/* Tabbed Settings */}
           <Tabs value={settingsTab} onValueChange={setSettingsTab}>
-            <TabsList className="w-full grid grid-cols-4 h-9">
-              <TabsTrigger value="identity" className="text-xs gap-1 px-1"><Image className="h-3 w-3" /> Identity</TabsTrigger>
-              <TabsTrigger value="style" className="text-xs gap-1 px-1"><Palette className="h-3 w-3" /> Style</TabsTrigger>
-              <TabsTrigger value="social" className="text-xs gap-1 px-1"><Globe className="h-3 w-3" /> Social</TabsTrigger>
-              <TabsTrigger value="layout" className="text-xs gap-1 px-1"><LayoutTemplate className="h-3 w-3" /> Layout</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-4 h-auto sm:h-9 p-1">
+              <TabsTrigger value="identity" className="text-[10px] sm:text-xs gap-1 px-1 py-1.5 flex-col sm:flex-row"><Image className="h-3 w-3" /> <span>Identity</span></TabsTrigger>
+              <TabsTrigger value="style" className="text-[10px] sm:text-xs gap-1 px-1 py-1.5 flex-col sm:flex-row"><Palette className="h-3 w-3" /> <span>Style</span></TabsTrigger>
+              <TabsTrigger value="social" className="text-[10px] sm:text-xs gap-1 px-1 py-1.5 flex-col sm:flex-row"><Globe className="h-3 w-3" /> <span>Social</span></TabsTrigger>
+              <TabsTrigger value="layout" className="text-[10px] sm:text-xs gap-1 px-1 py-1.5 flex-col sm:flex-row"><LayoutTemplate className="h-3 w-3" /> <span>Layout</span></TabsTrigger>
             </TabsList>
 
             {/* Identity Tab */}
