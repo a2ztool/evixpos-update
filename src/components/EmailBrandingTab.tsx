@@ -473,12 +473,12 @@ const EmailBrandingTab = () => {
                   {/* Border Radius */}
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Corner Style</Label>
-                    <div className="flex gap-1.5">
+                    <div className="grid grid-cols-5 gap-1.5">
                       {RADIUS_OPTIONS.map((r) => (
                         <button
                           key={r.value}
                           onClick={() => setBranding({ ...branding, border_radius: r.value })}
-                          className={`flex-1 py-2 px-1 text-center text-[10px] font-semibold border-2 transition-all ${
+                          className={`py-2 px-1 text-center text-[10px] font-semibold border-2 transition-all ${
                             branding.border_radius === r.value
                               ? "border-primary bg-primary/5 text-primary"
                               : "border-border hover:border-muted-foreground/30"
