@@ -280,6 +280,8 @@ const SettingsPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [tabSearch, setTabSearch] = useState("");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as Tab;
