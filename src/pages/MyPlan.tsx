@@ -282,11 +282,73 @@ const MyPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-8 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 hidden sm:flex">
-          <h1 className="text-2xl font-bold">Packages & Subscription</h1>
+      <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto">
+        {/* Premium Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
+          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-2">
+              <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/20 gap-1.5">
+                <Sparkles className="h-3 w-3" /> Packages & Subscription
+              </Badge>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Power up your business with the right plan
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                Flexible volume-based pricing. Upgrade, downgrade or cancel anytime — pay only for what you use.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:min-w-[360px]">
+              {[
+                { icon: Crown, label: "Current", value: currentPlan, color: "text-primary" },
+                { icon: Calendar, label: "Days left", value: endDate ? `${remainingDays}` : "∞", color: "text-emerald-600" },
+                { icon: Wallet, label: "Currency", value: currency, color: "text-orange-600" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl bg-background/70 backdrop-blur-sm border border-border/50 p-2.5 sm:p-3">
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <s.icon className={`h-3 w-3 ${s.color}`} /> {s.label}
+                  </div>
+                  <div className="text-base sm:text-lg font-bold mt-0.5 truncate">{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Quick Guide Section */}
+        <Card className="border-border/50 bg-gradient-to-br from-background to-muted/30">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Lightbulb className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">How to choose the right plan</h3>
+                <p className="text-xs text-muted-foreground">4 simple steps to pick the perfect package</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { n: 1, icon: Target, title: "Estimate volume", desc: "Use the slider to set your monthly customer volume.", color: "bg-blue-500/10 text-blue-600" },
+                { n: 2, icon: BarChart3, title: "Compare features", desc: "Review the feature matrix to find what you need.", color: "bg-emerald-500/10 text-emerald-600" },
+                { n: 3, icon: Calendar, title: "Pick billing", desc: "Save 20% with yearly billing on any plan.", color: "bg-orange-500/10 text-orange-600" },
+                { n: 4, icon: Rocket, title: "Upgrade & grow", desc: "Apply a coupon and start instantly.", color: "bg-violet-500/10 text-violet-600" },
+              ].map((step) => (
+                <div key={step.n} className="relative rounded-xl border border-border/50 bg-background p-3 hover:border-primary/30 hover:shadow-sm transition-all">
+                  <div className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-sm">
+                    {step.n}
+                  </div>
+                  <div className={`h-8 w-8 rounded-lg ${step.color} flex items-center justify-center mb-2`}>
+                    <step.icon className="h-4 w-4" />
+                  </div>
+                  <p className="font-semibold text-sm">{step.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Active Coupon Banner */}
         {activeBanner && !appliedCoupon && (
