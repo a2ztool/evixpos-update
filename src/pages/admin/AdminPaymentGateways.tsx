@@ -140,7 +140,8 @@ const AdminPaymentGateways = () => {
   const handleSave = async () => {
     if (!form.gateway_name.trim()) { toast.error("Gateway name required"); return; }
     const qrUrl = await handleUploadQR();
-    const payload = { ...form, qr_code_url: qrUrl };
+    const cleanFields = form.required_fields.filter(f => f.key.trim() && f.label.trim());
+    const payload = { ...form, qr_code_url: qrUrl, required_fields: cleanFields };
 
     if (editing) {
       await adminCall("update_payment_gateway", { gateway_id: editing.id, ...payload });
