@@ -276,7 +276,7 @@ const SupportPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto">
+      <div className="space-y-5 sm:space-y-7 max-w-6xl mx-auto pb-8 sm:pb-12">
         {/* Premium Hero */}
         <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
           <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
