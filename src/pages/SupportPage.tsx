@@ -486,14 +486,14 @@ const SupportPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredTickets.map(ticket => {
                   const statusConf = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
                   const priorityConf = PRIORITY_CONFIG[ticket.priority] || PRIORITY_CONFIG.medium;
                   const StatusIcon = statusConf.icon;
                   return (
                     <Card key={ticket.id} className="border-border/50 hover:shadow-md transition-all cursor-pointer group" onClick={() => openTicketDetail(ticket)}>
-                      <CardContent className="p-4">
+                      <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2 mb-1">
