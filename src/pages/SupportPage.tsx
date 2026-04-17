@@ -525,15 +525,25 @@ const SupportPage = () => {
               {SERVICES.map((s, i) => {
                 const Icon = s.icon;
                 return (
-                  <Card key={i} className="border-border/50 hover:shadow-md transition-all group cursor-pointer">
+                  <Card key={i} className="border-border/50 hover:shadow-lg hover:-translate-y-0.5 transition-all group overflow-hidden relative">
+                    <div className={`absolute top-0 left-0 right-0 h-0.5 ${s.bg.replace("/10", "/60")}`} />
                     <CardContent className="p-5">
-                      <div className={`h-11 w-11 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+                      <div className={`h-11 w-11 rounded-xl ${s.bg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                         <Icon className={`h-5 w-5 ${s.color}`} />
                       </div>
                       <h4 className="font-semibold text-sm">{s.title[lang]}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{s.desc[lang]}</p>
-                      <Button variant="ghost" size="sm" className="mt-3 h-7 text-xs gap-1 p-0 text-primary">
-                        Learn More <ArrowUpRight className="h-3 w-3" />
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]">{s.desc[lang]}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-3 h-7 text-xs gap-1 p-0 text-primary hover:bg-transparent hover:text-primary/80"
+                        onClick={() => {
+                          setForm({ subject: `Inquiry: ${s.title.en}`, description: `I'm interested in your ${s.title.en} service.\n\nDetails:\n${s.desc.en}\n\nPlease share more information.`, category: "other", priority: "medium" });
+                          setActiveTab("tickets");
+                          setSheetOpen(true);
+                        }}
+                      >
+                        Inquire Now <ArrowUpRight className="h-3 w-3" />
                       </Button>
                     </CardContent>
                   </Card>
