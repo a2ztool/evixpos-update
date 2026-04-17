@@ -330,15 +330,15 @@ const SupportPage = () => {
             { label: "Resolved", value: stats.resolved, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", ring: "ring-emerald-500/20" },
           ].map((kpi, i) => (
             <Card key={i} className="border-border/50 hover:shadow-md transition-all h-full">
-              <CardContent className="p-4 sm:p-5 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-3">
+              <CardContent className="p-3.5 sm:p-4 h-full flex flex-col">
+                <div className="flex items-center justify-between mb-2">
                   <div className={`h-9 w-9 rounded-xl ${kpi.bg} ring-1 ${kpi.ring} flex items-center justify-center`}>
                     <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                   </div>
                   <span className="text-2xl font-bold tabular-nums">{kpi.value}</span>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                <div className="mt-auto pt-3">
+                <div className="mt-auto pt-2">
                   {i === 3 ? (
                     <>
                       <div className="flex justify-between text-[10px] mb-1">
@@ -348,7 +348,7 @@ const SupportPage = () => {
                       <Progress value={stats.resolutionRate} className="h-1.5" />
                     </>
                   ) : (
-                    <div className="h-[22px]" aria-hidden />
+                    <div className="h-[18px]" aria-hidden />
                   )}
                 </div>
               </CardContent>
