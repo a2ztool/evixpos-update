@@ -1,11 +1,9 @@
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorePlan } from "@/hooks/useStorePlan";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Loader2, X, Crown } from "lucide-react";
+import { Upload, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -18,11 +16,8 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
 const ProductImageField = ({ value, onChange, storeId }: Props) => {
-  const { plan, loading } = useStorePlan();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-
-  const canUpload = !loading && (plan === "pro" || plan === "business");
 
   const handleFile = async (file: File) => {
     if (!storeId) {
@@ -56,57 +51,51 @@ const ProductImageField = ({ value, onChange, storeId }: Props) => {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Product Image</Label>
-        {!canUpload && !loading && (
-          <Badge variant="outline" className="gap-1 text-xs">
-            <Crown className="h-3 w-3" />
-            Upload requires Pro
-          </Badge>
+      <Label>Product Image</Label>
+
+      <div className="flex items-center gap-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept={ALLOWED.join(",")}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            e.target.value = "";
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+          className="gap-2"
+        >
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? "Uploading..." : "Upload Image"}
+        </Button>
+        {value && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")} className="gap-1">
+            <X className="h-4 w-4" /> Remove
+          </Button>
         )}
       </div>
-
-      {canUpload && (
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept={ALLOWED.join(",")}
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleFile(f);
-              e.target.value = "";
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-            className="gap-2"
-          >
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {uploading ? "Uploading..." : "Upload Image"}
-          </Button>
-          {value && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")} className="gap-1">
-              <X className="h-4 w-4" /> Remove
-            </Button>
-          )}
-        </div>
-      )}
 
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={canUpload ? "Or paste image URL — https://..." : "https://... (Free plan: URL only)"}
+        placeholder="Or paste image URL — https://..."
       />
 
       {value && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="Preview" className="h-20 w-20 rounded-lg object-cover border" onError={(e) => ((e.currentTarget.style.display = "none"))} />
+        <img
+          src={value}
+          alt="Preview"
+          className="h-20 w-20 rounded-lg object-cover border"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
       )}
     </div>
   );
