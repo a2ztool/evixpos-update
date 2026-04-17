@@ -472,12 +472,13 @@ Deno.serve(async (req) => {
 
     // ─── CREATE PAYMENT GATEWAY ───
     if (action === "create_payment_gateway") {
-      const { currency, gateway_name, gateway_type, qr_code_url, payment_details, is_active, sort_order, mode, api_config, icon_url } = params;
+      const { currency, gateway_name, gateway_type, qr_code_url, payment_details, is_active, sort_order, mode, api_config, icon_url, required_fields } = params;
       const { error } = await supabase.from("payment_gateways").insert({
         currency, gateway_name, gateway_type, qr_code_url: qr_code_url || "",
         payment_details: payment_details || {}, is_active: is_active ?? true,
         sort_order: sort_order || 0, mode: mode || "manual",
         api_config: api_config || {}, icon_url: icon_url || "",
+        required_fields: Array.isArray(required_fields) ? required_fields : [],
       });
       if (error) throw error;
       return json({ success: true });

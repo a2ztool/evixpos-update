@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,14 @@ import { useStore } from "@/contexts/StoreContext";
 import { toast } from "sonner";
 import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer } from "lucide-react";
 
+interface RequiredField {
+  key: string;
+  label: string;
+  type: "text" | "number" | "tel" | "email" | "textarea";
+  required: boolean;
+  placeholder?: string;
+}
+
 interface PaymentGateway {
   id: string;
   currency: string;
@@ -19,6 +28,8 @@ interface PaymentGateway {
   qr_code_url: string;
   payment_details: Record<string, string>;
   is_active: boolean;
+  icon_url?: string | null;
+  required_fields?: RequiredField[];
 }
 
 interface PaymentModalProps {
@@ -69,6 +80,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
   const [existingPayment, setExistingPayment] = useState<{ status: string; expires_at?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
   const { timeLeft, isExpired } = useExpiryTimer(existingPayment?.expires_at || null);
 
@@ -81,6 +93,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     setExistingPayment(null);
     setLoading(true);
     setDuplicateWarning(false);
+    setFieldValues({});
 
     const fetchData = async () => {
       const { data: gw } = await supabase
@@ -132,6 +145,16 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
       toast.error("এই Transaction ID আগে ব্যবহার করা হয়েছে!");
       return;
     }
+
+    // Validate dynamic required fields
+    const dynFields = selectedGateway.required_fields || [];
+    for (const f of dynFields) {
+      if (f.required && !(fieldValues[f.key] || "").trim()) {
+        toast.error(`${f.label} is required`);
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
@@ -157,7 +180,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
         transaction_id: transactionId,
         proof_url: proofUrl,
         status: "pending",
-      });
+        payment_data: fieldValues,
+      } as any);
 
       if (error) {
         if (error.message?.includes("idx_plan_payments_unique_txn")) {
@@ -279,7 +303,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                 {gateways.map((gw) => (
                   <button
                     key={gw.id}
-                    onClick={() => setSelectedGateway(gw)}
+                    onClick={() => { setSelectedGateway(gw); setFieldValues({}); }}
                     className={`p-3 rounded-xl border-2 transition-all text-left ${
                       selectedGateway?.id === gw.id
                         ? "border-primary bg-primary/5"
@@ -287,12 +311,19 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      {gw.gateway_type === "qr" ? (
+                      {gw.icon_url ? (
+                        <img
+                          src={gw.icon_url}
+                          alt={gw.gateway_name}
+                          className="h-6 w-6 rounded object-contain bg-white p-0.5"
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : gw.gateway_type === "qr" ? (
                         <QrCode className="h-4 w-4 text-primary" />
                       ) : (
                         <CreditCard className="h-4 w-4 text-primary" />
                       )}
-                      <span className="text-sm font-medium">{gw.gateway_name}</span>
+                      <span className="text-sm font-medium truncate">{gw.gateway_name}</span>
                     </div>
                     {selectedGateway?.id === gw.id && (
                       <Check className="h-3 w-3 text-primary mt-1" />
@@ -335,6 +366,37 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                       ))}
                     </CardContent>
                   </Card>
+                )}
+
+                {/* Dynamic Required Fields (admin-defined per gateway) */}
+                {selectedGateway.required_fields && selectedGateway.required_fields.length > 0 && (
+                  <div className="space-y-3">
+                    {selectedGateway.required_fields.map((f) => (
+                      <div key={f.key} className="space-y-1.5">
+                        <Label htmlFor={`field-${f.key}`} className="text-sm">
+                          {f.label}
+                          {f.required && <span className="text-destructive ml-0.5">*</span>}
+                        </Label>
+                        {f.type === "textarea" ? (
+                          <Textarea
+                            id={`field-${f.key}`}
+                            placeholder={f.placeholder || ""}
+                            value={fieldValues[f.key] || ""}
+                            onChange={(e) => setFieldValues(v => ({ ...v, [f.key]: e.target.value }))}
+                            rows={3}
+                          />
+                        ) : (
+                          <Input
+                            id={`field-${f.key}`}
+                            type={f.type}
+                            placeholder={f.placeholder || ""}
+                            value={fieldValues[f.key] || ""}
+                            onChange={(e) => setFieldValues(v => ({ ...v, [f.key]: e.target.value }))}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {/* Transaction ID with duplicate warning */}
