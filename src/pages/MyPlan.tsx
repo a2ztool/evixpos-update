@@ -17,7 +17,9 @@ import {
   Store, Users, Package, Monitor, ShoppingCart, BookOpen,
   BarChart3, RefreshCw, MessageCircle, Bot, Megaphone,
   CreditCard, Copy, Gift, Sparkles, HelpCircle, ShieldCheck,
-  ChevronDown, ChevronUp, Headphones, Globe
+  ChevronDown, ChevronUp, Headphones, Globe, TrendingUp,
+  Calendar, Clock, Rocket, Lock, Award, BookMarked,
+  PlayCircle, Lightbulb, Target, ArrowRight, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import PaymentHistory from "@/components/PaymentHistory";
@@ -280,11 +282,73 @@ const MyPlan = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-8 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 hidden sm:flex">
-          <h1 className="text-2xl font-bold">Packages & Subscription</h1>
+      <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto">
+        {/* Premium Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-7">
+          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-2">
+              <Badge className="bg-primary/15 text-primary border-0 hover:bg-primary/20 gap-1.5">
+                <Sparkles className="h-3 w-3" /> Packages & Subscription
+              </Badge>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Power up your business with the right plan
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                Flexible volume-based pricing. Upgrade, downgrade or cancel anytime — pay only for what you use.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:min-w-[360px]">
+              {[
+                { icon: Crown, label: "Current", value: currentPlan, color: "text-primary" },
+                { icon: Calendar, label: "Days left", value: endDate ? `${remainingDays}` : "∞", color: "text-emerald-600" },
+                { icon: Wallet, label: "Currency", value: currency, color: "text-orange-600" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl bg-background/70 backdrop-blur-sm border border-border/50 p-2.5 sm:p-3">
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <s.icon className={`h-3 w-3 ${s.color}`} /> {s.label}
+                  </div>
+                  <div className="text-base sm:text-lg font-bold mt-0.5 truncate">{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Quick Guide Section */}
+        <Card className="border-border/50 bg-gradient-to-br from-background to-muted/30">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Lightbulb className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">How to choose the right plan</h3>
+                <p className="text-xs text-muted-foreground">4 simple steps to pick the perfect package</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { n: 1, icon: Target, title: "Estimate volume", desc: "Use the slider to set your monthly customer volume.", color: "bg-blue-500/10 text-blue-600" },
+                { n: 2, icon: BarChart3, title: "Compare features", desc: "Review the feature matrix to find what you need.", color: "bg-emerald-500/10 text-emerald-600" },
+                { n: 3, icon: Calendar, title: "Pick billing", desc: "Save 20% with yearly billing on any plan.", color: "bg-orange-500/10 text-orange-600" },
+                { n: 4, icon: Rocket, title: "Upgrade & grow", desc: "Apply a coupon and start instantly.", color: "bg-violet-500/10 text-violet-600" },
+              ].map((step) => (
+                <div key={step.n} className="relative rounded-xl border border-border/50 bg-background p-3 hover:border-primary/30 hover:shadow-sm transition-all">
+                  <div className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-sm">
+                    {step.n}
+                  </div>
+                  <div className={`h-8 w-8 rounded-lg ${step.color} flex items-center justify-center mb-2`}>
+                    <step.icon className="h-4 w-4" />
+                  </div>
+                  <p className="font-semibold text-sm">{step.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Active Coupon Banner */}
         {activeBanner && !appliedCoupon && (
@@ -538,100 +602,174 @@ const MyPlan = () => {
           )}
         </div>
 
-        {/* Plan Cards */}
+        {/* Plan Cards — Premium SaaS Style */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PLANS.map((p) => {
             const isActive = p.name === currentPlan;
             const Icon = p.icon;
+            const priceINR = getINRPrice(p.key);
+            const monthlySavings = yearly && priceINR && priceINR > 0
+              ? Math.round(priceINR * RATES_FROM_INR[currency] * 12 * 0.2)
+              : 0;
             return (
               <Card
                 key={p.name}
-                className={`relative overflow-hidden border-border/50 transition-all hover:shadow-lg ${
-                  p.popular ? "ring-2 ring-primary" : ""
+                className={`group relative overflow-hidden border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                  p.popular ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""
                 }`}
               >
+                {/* Gradient top accent */}
+                <div className={`h-1.5 w-full bg-gradient-to-r ${p.gradient}`} />
+
+                {/* Glow on popular */}
+                {p.popular && (
+                  <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+                )}
+
                 {isActive && (
-                  <Badge className="absolute top-3 right-3 bg-success text-success-foreground text-[10px]">
-                    ACTIVE
+                  <Badge className="absolute top-3 right-3 bg-success text-success-foreground text-[10px] z-10 shadow-sm">
+                    <Check className="h-2.5 w-2.5 mr-0.5" /> ACTIVE
                   </Badge>
                 )}
                 {p.popular && !isActive && (
-                  <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground text-[10px]">
-                    POPULAR
+                  <Badge className="absolute top-3 right-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-[10px] z-10 shadow-sm">
+                    <Star className="h-2.5 w-2.5 mr-0.5 fill-current" /> POPULAR
                   </Badge>
                 )}
-                <CardContent className="pt-6 pb-5">
-                  <div className={`${p.color} font-bold text-sm mb-1`}>{p.name}</div>
-                  <p className="text-xs text-muted-foreground mb-3">Package Details</p>
 
-                  {/* Limits */}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-                    <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {p.stores} stores</span>
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)}</span>
-                    <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {p.products}</span>
+                <CardContent className="pt-5 pb-5 relative">
+                  {/* Icon + Name */}
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center shadow-sm`}>
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <div className={`${p.color} font-bold text-base leading-none`}>{p.name}</div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{p.tagline}</p>
+                    </div>
                   </div>
 
+                  {/* Price */}
                   {(() => {
-                    const priceINR = getINRPrice(p.key);
                     if (priceINR === 0) return (
-                      <div className="my-4">
+                      <div className="my-4 pb-3 border-b border-border/50">
                         <span className={`text-3xl font-bold ${p.color}`}>Free</span>
-                        <p className="text-sm text-muted-foreground">{p.tagline}</p>
+                        <span className="text-sm text-muted-foreground ml-1">forever</span>
                       </div>
                     );
                     if (priceINR === null) return (
-                      <div className="my-4">
+                      <div className="my-4 pb-3 border-b border-border/50">
                         <span className={`text-3xl font-bold ${p.color}`}>Custom</span>
-                        <p className="text-sm text-muted-foreground">{p.tagline}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Tailored pricing</p>
                       </div>
                     );
                     return (
-                      <div className="my-4">
-                        {hasDiscount(p.key) && (
-                          <span className="text-sm text-muted-foreground line-through mr-2">
-                            {originalPrice(p.key)}
+                      <div className="my-4 pb-3 border-b border-border/50">
+                        <div className="flex items-baseline gap-1.5">
+                          {hasDiscount(p.key) && (
+                            <span className="text-xs text-muted-foreground line-through">
+                              {originalPrice(p.key)}
+                            </span>
+                          )}
+                          <span className={`text-3xl font-bold ${p.color} leading-none`}>
+                            {formatPrice(p.key)}
                           </span>
-                        )}
-                        <span className={`text-3xl font-bold ${p.color}`}>
-                          {formatPrice(p.key)}
-                        </span>
-                        <span className="text-sm text-muted-foreground">{yearly ? "/yr" : "/mo"}</span>
-                        {(yearly || discountPct > 0 || discountFixed > 0) && (
-                          <div className="flex items-center gap-1.5 mt-1">
-                            {yearly && (
-                              <Badge variant="outline" className="text-success border-success/30 text-[10px]">20% OFF</Badge>
-                            )}
-                            {discountPct > 0 && (
-                              <Badge variant="outline" className="text-success border-success/30 text-[10px]">{discountPct}% OFF</Badge>
-                            )}
-                            {discountFixed > 0 && (
-                              <Badge variant="outline" className="text-success border-success/30 text-[10px]">{CURRENCY_SYMBOLS[currency]}{discountFixed} OFF</Badge>
-                            )}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Valid: {yearly ? "365" : "30"} days</p>
+                          <span className="text-xs text-muted-foreground">{yearly ? "/yr" : "/mo"}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1 mt-2">
+                          {yearly && (
+                            <Badge variant="outline" className="text-success border-success/30 text-[10px] py-0 px-1.5">20% OFF</Badge>
+                          )}
+                          {discountPct > 0 && (
+                            <Badge variant="outline" className="text-success border-success/30 text-[10px] py-0 px-1.5">{discountPct}% OFF</Badge>
+                          )}
+                          {discountFixed > 0 && (
+                            <Badge variant="outline" className="text-success border-success/30 text-[10px] py-0 px-1.5">{CURRENCY_SYMBOLS[currency]}{discountFixed} OFF</Badge>
+                          )}
+                          {monthlySavings > 0 && (
+                            <span className="text-[10px] text-success font-medium">
+                              Save {CURRENCY_SYMBOLS[currency]}{monthlySavings}/yr
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" /> {yearly ? "365" : "30"} days access
+                        </p>
                       </div>
                     );
                   })()}
 
+                  {/* Limits chips */}
+                  <div className="space-y-1.5 mb-4">
+                    {[
+                      { icon: Store, label: `${p.stores} ${typeof p.stores === "number" && p.stores > 1 ? "stores" : "store"}` },
+                      { icon: Users, label: `${p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : formatVolume(selectedVolume)} customers` },
+                      { icon: Package, label: `${p.products} products` },
+                    ].map((l) => (
+                      <div key={l.label} className="flex items-center gap-2 text-xs">
+                        <l.icon className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-foreground/80">{l.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
                   {isActive ? (
-                    <Button variant="outline" className="w-full" disabled>
-                      Current Plan
+                    <Button variant="outline" className="w-full gap-1.5" disabled>
+                      <Check className="h-3.5 w-3.5" /> Current Plan
                     </Button>
-                  ) : getINRPrice(p.key) === null ? (
-                    <Button variant="outline" className="w-full">
-                      Contact Sales
+                  ) : priceINR === null ? (
+                    <Button variant="outline" className="w-full gap-1.5">
+                      <Headphones className="h-3.5 w-3.5" /> Contact Sales
                     </Button>
                   ) : (
-                    <Button className={`w-full bg-gradient-to-r ${p.gradient} text-white`} onClick={() => handleUpgrade(p)}>
-                      {getINRPrice(p.key) === 0 ? "Get Started" : "Upgrade Now"}
+                    <Button
+                      className={`w-full bg-gradient-to-r ${p.gradient} text-white shadow-sm hover:shadow-md gap-1.5 group/btn`}
+                      onClick={() => handleUpgrade(p)}
+                    >
+                      {priceINR === 0 ? "Get Started" : "Upgrade Now"}
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
                     </Button>
                   )}
+
+                  {/* Mini features preview */}
+                  <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
+                    {p.features.slice(0, 4).map((f) => (
+                      <div key={f} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                        <Check className="h-3 w-3 text-success shrink-0 mt-0.5" />
+                        <span className="leading-snug">{f}</span>
+                      </div>
+                    ))}
+                    {p.features.length > 4 && (
+                      <p className="text-[10px] text-primary font-medium pt-0.5">+ {p.features.length - 4} more features</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
+
+        {/* Trust strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { icon: ShieldCheck, title: "7-day refund", desc: "Money-back" },
+            { icon: Lock, title: "Secure pay", desc: "256-bit SSL" },
+            { icon: Award, title: "5,000+ stores", desc: "Trusted" },
+            { icon: RefreshCw, title: "Cancel anytime", desc: "No lock-in" },
+          ].map((t) => (
+            <div key={t.title} className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-muted/20">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <t.icon className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold truncate">{t.title}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{t.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
 
         {/* Features of Current Plan */}
         <Card className="border-border/50">
