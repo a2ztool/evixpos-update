@@ -535,6 +535,32 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── GET ANALYTICS TRENDS ───
+    if (action === "get_analytics_trends") {
+      const days = Number(params.days) || 7;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      since.setHours(0, 0, 0, 0);
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("total_amount, created_at")
+        .gte("created_at", since.toISOString());
+
+      const buckets: Record<string, { date: string; orders: number; revenue: number }> = {};
+      for (let i = 0; i < days; i++) {
+        const d = new Date(since.getTime() + i * 24 * 60 * 60 * 1000);
+        const key = d.toISOString().slice(0, 10);
+        buckets[key] = { date: key, orders: 0, revenue: 0 };
+      }
+      (orders || []).forEach((o: any) => {
+        const key = new Date(o.created_at).toISOString().slice(0, 10);
+        if (buckets[key]) {
+          buckets[key].orders += 1;
+          buckets[key].revenue += Number(o.total_amount) || 0;
+        }
+      });
+      return json(Object.values(buckets));
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {

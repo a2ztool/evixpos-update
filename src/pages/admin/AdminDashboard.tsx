@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Store, ShoppingCart, DollarSign, Crown } from "lucide-react";
+
+const AdminAnalyticsChart = lazy(() => import("@/components/admin/AdminAnalyticsChart"));
 
 interface Stats {
   totalUsers: number;
@@ -76,6 +78,18 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           )}
+
+          <Suspense
+            fallback={
+              <Card className="bg-slate-800 border-slate-700">
+                <CardContent className="p-6 flex justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400" />
+                </CardContent>
+              </Card>
+            }
+          >
+            <AdminAnalyticsChart />
+          </Suspense>
         </>
       )}
     </div>
