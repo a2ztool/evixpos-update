@@ -117,6 +117,11 @@ interface PlatformCoupon {
 }
 
 const MyPlan = () => {
+  const navigate = useNavigate();
+  const WHATSAPP_NUMBER = "918101949890";
+  const openWhatsApp = () => {
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi, I have a question about my subscription.")}`, "_blank");
+  };
   const { plan: rawPlan, volume: subVolume, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
   const plan = rawPlan ?? "free";
   const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
