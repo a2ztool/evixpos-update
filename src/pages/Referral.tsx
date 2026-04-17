@@ -335,7 +335,7 @@ const Referral = () => {
         )}
 
         {/* ─── Stats Grid (premium) ─── */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
           {[
             { label: "Total Clicks", value: settings?.total_clicks || 0, icon: MousePointerClick, color: "text-rose-500", bg: "bg-rose-500/10", trend: null },
             { label: "Signups", value: totalSignups, icon: UserPlus, color: "text-blue-500", bg: "bg-blue-500/10", trend: `${conversionRate}% CR` },
@@ -343,18 +343,20 @@ const Referral = () => {
             { label: "Premium", value: premiumUsers, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", trend: `${premiumConversion}%` },
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
-            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all">
-              <CardContent className="p-2.5">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className={`h-7 w-7 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="h-3.5 w-3.5" />
+            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-2xl h-full">
+              <CardContent className="p-5 h-full flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <div className={`h-10 w-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="h-4 w-4" />
                   </div>
                   {stat.trend && (
-                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold">{stat.trend}</Badge>
+                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-semibold">{stat.trend}</Badge>
                   )}
                 </div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
-                <p className="text-base sm:text-lg font-bold tabular-nums leading-tight mt-0.5 truncate">{stat.value}</p>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
+                  <p className="text-xl font-bold tabular-nums leading-tight truncate">{stat.value}</p>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -362,19 +364,19 @@ const Referral = () => {
 
         {/* ─── Referral Link + QR (premium) ─── */}
         <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-          <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
-            <CardContent className="p-5 pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5 rounded-2xl">
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                   <LinkIcon className="h-4 w-4 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-semibold text-sm">Your Unique Referral Link</h2>
                   <p className="text-[11px] text-muted-foreground">Share this everywhere — every signup tracks back to you</p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2.5 border border-border/40 min-w-0">
                   <Badge className="shrink-0 bg-primary/15 text-primary border-0 hover:bg-primary/20">CODE: {settings?.referral_code || "..."}</Badge>
                   <Input value={referralLink} readOnly className="border-0 bg-transparent font-mono text-xs p-0 h-auto focus-visible:ring-0 shadow-none truncate" />
@@ -385,15 +387,15 @@ const Referral = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
                   <Wallet className="h-4 w-4 text-emerald-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Withdrawable</p>
                     <p className="text-sm font-bold truncate">{fmtCurrency(settings?.pending_balance || 0)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20">
                   <Target className="h-4 w-4 text-blue-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Min. Withdraw</p>
@@ -405,43 +407,41 @@ const Referral = () => {
           </Card>
 
           {/* QR Code card (desktop) */}
-          <Card className="hidden lg:block border-border/50 w-[200px]">
-            <CardContent className="p-4 flex flex-col items-center text-center">
-              <div className="flex items-center gap-1.5 mb-2">
+          <Card className="hidden lg:block border-border/50 rounded-2xl w-[200px]">
+            <CardContent className="p-5 flex flex-col items-center text-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <QrCode className="h-3.5 w-3.5 text-muted-foreground" />
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Scan QR</p>
               </div>
               {qrUrl && (
                 <img src={qrUrl} alt="Referral QR" className="w-[140px] h-[140px] rounded-lg bg-white p-1.5 border" />
               )}
-              <p className="text-[10px] text-muted-foreground mt-2">Mobile-friendly sharing</p>
+              <p className="text-[10px] text-muted-foreground">Mobile-friendly sharing</p>
             </CardContent>
           </Card>
         </div>
 
         {/* ─── Share Channels Grid ─── */}
-        <Card className="border-border/50">
-          <CardContent className="p-5 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                  <Share2 className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-sm">Share & Promote</h2>
-                  <p className="text-[11px] text-muted-foreground">One click to share via your favorite platform</p>
-                </div>
+        <Card className="border-border/50 rounded-2xl">
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                <Share2 className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm">Share & Promote</h2>
+                <p className="text-[11px] text-muted-foreground">One click to share via your favorite platform</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
               {shareChannels.map((ch) => (
                 <button
                   key={ch.name}
                   onClick={ch.action}
-                  className="group flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/40 hover:border-primary/40 hover:shadow-md transition-all bg-card"
+                  className="group flex flex-col items-center gap-2 p-4 rounded-xl border border-border/40 hover:border-primary/40 hover:shadow-md transition-all bg-card"
                 >
                   <div className={`h-10 w-10 rounded-xl ${ch.color} text-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
-                    <ch.icon className="h-4.5 w-4.5" />
+                    <ch.icon className="h-4 w-4" />
                   </div>
                   <span className="text-[11px] font-medium">{ch.name}</span>
                 </button>
