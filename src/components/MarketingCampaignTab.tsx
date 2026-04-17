@@ -330,85 +330,32 @@ const MarketingCampaignTab = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Hero Stats */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{customers.length}</p>
-                <p className="text-xs text-muted-foreground">Customers</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <Send className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{campaignStats.sent}</p>
-                <p className="text-xs text-muted-foreground">Sent</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                <Eye className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{campaignStats.openRate}%</p>
-                <p className="text-xs text-muted-foreground">Open Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Target className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{campaignStats.clickRate}%</p>
-                <p className="text-xs text-muted-foreground">Click Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{campaignStats.uniqueOpens}</p>
-                <p className="text-xs text-muted-foreground">Unique Opens</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <XCircle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{campaignStats.failed}</p>
-                <p className="text-xs text-muted-foreground">Failed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-2.5 sm:gap-3 lg:gap-4 grid-cols-3 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          { icon: Users, label: "Customers", value: customers.length, from: "from-primary/10", to: "to-primary/5", border: "border-primary/20", iconBg: "bg-primary/20", iconColor: "text-primary" },
+          { icon: Send, label: "Sent", value: campaignStats.sent, from: "from-blue-500/10", to: "to-blue-500/5", border: "border-blue-500/20", iconBg: "bg-blue-500/20", iconColor: "text-blue-600" },
+          { icon: Eye, label: "Open Rate", value: `${campaignStats.openRate}%`, from: "from-green-500/10", to: "to-green-500/5", border: "border-green-500/20", iconBg: "bg-green-500/20", iconColor: "text-green-600" },
+          { icon: Target, label: "Click Rate", value: `${campaignStats.clickRate}%`, from: "from-purple-500/10", to: "to-purple-500/5", border: "border-purple-500/20", iconBg: "bg-purple-500/20", iconColor: "text-purple-600" },
+          { icon: TrendingUp, label: "Unique Opens", value: campaignStats.uniqueOpens, from: "from-amber-500/10", to: "to-amber-500/5", border: "border-amber-500/20", iconBg: "bg-amber-500/20", iconColor: "text-amber-600" },
+          { icon: XCircle, label: "Failed", value: campaignStats.failed, from: "from-red-500/10", to: "to-red-500/5", border: "border-red-500/20", iconBg: "bg-red-500/20", iconColor: "text-red-600" },
+        ].map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <Card key={i} className={`bg-gradient-to-br ${s.from} ${s.to} ${s.border}`}>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl ${s.iconBg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.iconColor}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base sm:text-xl font-bold leading-tight truncate">{s.value}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Sub Tabs */}
@@ -840,40 +787,27 @@ const MarketingCampaignTab = () => {
         {/* ─── HISTORY TAB ──────────────────────────────── */}
         <TabsContent value="history" className="space-y-4 mt-4">
           {/* Stats */}
-          <div className="grid gap-3 sm:gap-4 grid-cols-3">
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.sent}</p>
-                  <p className="text-xs text-muted-foreground">Delivered</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.failed}</p>
-                  <p className="text-xs text-muted-foreground">Failed</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{campaignStats.pending}</p>
-                  <p className="text-xs text-muted-foreground">Pending</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-2.5 sm:gap-4 grid-cols-3">
+            {[
+              { icon: CheckCircle2, label: "Delivered", value: campaignStats.sent, bg: "bg-green-500/10", color: "text-green-600" },
+              { icon: XCircle, label: "Failed", value: campaignStats.failed, bg: "bg-red-500/10", color: "text-red-600" },
+              { icon: Clock, label: "Pending", value: campaignStats.pending, bg: "bg-amber-500/10", color: "text-amber-600" },
+            ].map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <Card key={i}>
+                  <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.color}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-xl font-bold leading-tight truncate">{s.value}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* History Table */}
