@@ -583,176 +583,318 @@ const Products = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-[120px]">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="physical">Physical</SelectItem>
-            <SelectItem value="digital">Digital</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Product Table or Empty State */}
+      {/* Product List or Empty State */}
       {filtered.length === 0 ? (
-        <div className="premium-card flex flex-col items-center justify-center py-20">
+        <div className="premium-card flex flex-col items-center justify-center py-16 sm:py-20">
           <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <Package className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">No products yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">Add your first product with pricing and variations.</p>
-          <Button onClick={openAdd} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add
-          </Button>
+          <h3 className="text-lg font-semibold mb-1">{products.length === 0 ? "No products yet" : "No products match filters"}</h3>
+          <p className="text-sm text-muted-foreground mb-4 text-center px-4">
+            {products.length === 0 ? "Add your first product with pricing and variations." : "Try adjusting your search or filters."}
+          </p>
+          {products.length === 0 && (
+            <Button onClick={openAdd} className="gap-2">
+              <Plus className="h-4 w-4" /> Add Product
+            </Button>
+          )}
         </div>
       ) : (
         <>
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
-            {filtered.map((p) => (
-              <div key={p.id} className="mobile-card">
-                <div className="flex items-start gap-3">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                      <Package className="h-5 w-5 text-muted-foreground" />
+          {/* GRID VIEW (desktop optional) */}
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              {filtered.map((p) => {
+                const isSel = selectedIds.has(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    className={`premium-card p-3 sm:p-4 group relative transition-all hover:shadow-md ${isSel ? "ring-2 ring-primary" : ""}`}
+                  >
+                    <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity data-[checked=true]:opacity-100" data-checked={isSel}>
+                      <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} />
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-semibold text-sm truncate">{p.name}</p>
+                    <div className="aspect-square w-full rounded-lg bg-muted overflow-hidden mb-3 relative">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"><Package className="h-10 w-10 text-muted-foreground/40" /></div>
+                      )}
                       {(variationCounts[p.id] || 0) > 0 && (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5 flex-shrink-0">
+                        <Badge variant="secondary" className="absolute top-2 right-2 text-[10px] gap-0.5">
                           <Layers className="h-2.5 w-2.5" /> {variationCounts[p.id]}
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="capitalize">{p.type}</span>
-                      {p.category && <><span>·</span><span>{p.category}</span></>}
-                      {p.sku && <><span>·</span><span>{p.sku}</span></>}
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="font-medium text-sm truncate flex-1">{p.name}</p>
+                      <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px] shrink-0">{p.is_active ? "Active" : "Off"}</Badge>
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-sm">৳{Number(p.price).toFixed(0)}</span>
-                        <span className="text-xs text-muted-foreground">Cost: ৳{Number(p.base_cost).toFixed(0)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {p.type === "digital" ? (
-                          <Badge variant="secondary" className="text-[10px]">∞</Badge>
-                        ) : (
-                          <span className={`text-xs font-medium ${p.stock <= 0 ? "text-destructive" : ""}`}>Stock: {p.stock}</span>
-                        )}
-                        <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px]">
-                          {p.is_active ? "Active" : "Off"}
-                        </Badge>
-                      </div>
+                    <p className="text-xs text-muted-foreground truncate mb-2">{p.category || "Uncategorized"} · {p.sku || "No SKU"}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm tabular-nums">৳{Number(p.price).toFixed(0)}</span>
+                      {p.type === "digital" ? (
+                        <Badge variant="secondary" className="text-[10px]">∞</Badge>
+                      ) : (
+                        <span className={`text-xs font-medium ${p.stock <= 0 ? "text-destructive" : p.stock <= 5 ? "text-amber-600" : "text-muted-foreground"}`}>
+                          Stock: {p.stock}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/50">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => openEdit(p)}>
+                        <Pencil className="h-3 w-3 mr-1" /> Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => openEdit(p)}>
-                    <Pencil className="h-3 w-3 mr-1" /> Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="premium-card overflow-hidden hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card View (list mode) */}
+              <div className="md:hidden space-y-3">
+                {filtered.map((p) => {
+                  const isSel = selectedIds.has(p.id);
+                  return (
+                    <div key={p.id} className={`mobile-card transition-all ${isSel ? "ring-2 ring-primary" : ""}`}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} className="mt-1" />
                         {p.image_url ? (
-                          <img src={p.image_url} alt={p.name} className="h-9 w-9 rounded-lg object-cover" />
+                          <img src={p.image_url} alt={p.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
                         ) : (
-                          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
-                            <Package className="h-4 w-4 text-muted-foreground" />
+                          <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                            <Package className="h-5 w-5 text-muted-foreground" />
                           </div>
                         )}
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-sm">{p.name}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-semibold text-sm truncate">{p.name}</p>
                             {(variationCounts[p.id] || 0) > 0 && (
-                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5 flex-shrink-0">
                                 <Layers className="h-2.5 w-2.5" /> {variationCounts[p.id]}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground capitalize">{p.type}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="capitalize">{p.type}</span>
+                            {p.category && <><span>·</span><span>{p.category}</span></>}
+                            {p.sku && <><span>·</span><span className="truncate">{p.sku}</span></>}
+                          </div>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-3">
+                              <span className="font-bold text-sm">৳{Number(p.price).toFixed(0)}</span>
+                              <span className="text-xs text-muted-foreground">Cost: ৳{Number(p.base_cost).toFixed(0)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {p.type === "digital" ? (
+                                <Badge variant="secondary" className="text-[10px]">∞</Badge>
+                              ) : (
+                                <span className={`text-xs font-medium ${p.stock <= 0 ? "text-destructive" : p.stock <= 5 ? "text-amber-600" : ""}`}>Stock: {p.stock}</span>
+                              )}
+                              <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px]">
+                                {p.is_active ? "Active" : "Off"}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.sku || "—"}</TableCell>
-                    <TableCell className="text-sm">{p.category || "—"}</TableCell>
-                    <TableCell className="text-sm">৳{Number(p.base_cost).toFixed(2)}</TableCell>
-                    <TableCell className="font-semibold text-sm">৳{Number(p.price).toFixed(2)}</TableCell>
-                    <TableCell>
-                      {p.type === "digital" ? (
-                        <Badge variant="secondary" className="text-xs">Unlimited</Badge>
-                      ) : (
-                        <span className={`text-sm font-medium ${p.stock <= 0 ? "text-destructive" : ""}`}>{p.stock}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={p.is_active ? "default" : "secondary"} className="text-xs">
-                        {p.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                        <Button variant="outline" size="sm" className="flex-1 text-xs h-8" onClick={() => openEdit(p)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="premium-card overflow-hidden hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="w-10">
+                        <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="Select all" />
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Product</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">SKU</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Category</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-right">Cost</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-right">Price</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground text-right">Stock</TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Status</TableHead>
+                      <TableHead className="text-right text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((p) => {
+                      const isSel = selectedIds.has(p.id);
+                      return (
+                        <TableRow key={p.id} className={`transition-colors ${isSel ? "bg-primary/5" : "hover:bg-muted/40"}`}>
+                          <TableCell>
+                            <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {p.image_url ? (
+                                <img src={p.image_url} alt={p.name} className="h-9 w-9 rounded-lg object-cover ring-1 ring-border/50" loading="lazy" />
+                              ) : (
+                                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-medium text-sm">{p.name}</p>
+                                  {(variationCounts[p.id] || 0) > 0 && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
+                                      <Layers className="h-2.5 w-2.5" /> {variationCounts[p.id]}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground capitalize">{p.type}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground font-mono">{p.sku || "—"}</TableCell>
+                          <TableCell className="text-sm">
+                            {p.category ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-muted text-muted-foreground border">
+                                {p.category}
+                              </span>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-sm tabular-nums text-right text-muted-foreground">৳{Number(p.base_cost).toFixed(2)}</TableCell>
+                          <TableCell className="font-semibold text-sm tabular-nums text-right">৳{Number(p.price).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
+                            {p.type === "digital" ? (
+                              <Badge variant="secondary" className="text-xs">∞</Badge>
+                            ) : (
+                              <span className={`text-sm font-medium tabular-nums ${p.stock <= 0 ? "text-destructive" : p.stock <= 5 ? "text-amber-600" : ""}`}>{p.stock}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${p.is_active ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}`}>
+                              <span className={`size-1.5 rounded-full ${p.is_active ? "bg-primary" : "bg-muted-foreground"}`} />
+                              {p.is_active ? "Active" : "Inactive"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right space-x-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(p)} className="h-8 w-8">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="h-8 w-8">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </>
       )}
+
+      {/* Mobile FAB (Add Product) */}
+      <button
+        type="button"
+        onClick={openAdd}
+        className="sm:hidden fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
+        aria-label="Add product"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      {/* Mobile Import quick action */}
+      <button
+        type="button"
+        onClick={() => setImportOpen(true)}
+        className="sm:hidden fixed bottom-20 right-[5.25rem] z-40 h-12 w-12 rounded-full bg-background border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
+        aria-label="Import products"
+      >
+        <Upload className="h-5 w-5" />
+      </button>
+
+      {/* Help / Guide Drawer */}
+      <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Products Guide
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6 space-y-5 text-sm">
+            <div className="premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Quick Start</p>
+              <ol className="space-y-2 list-decimal list-inside text-foreground/90">
+                <li>Click <span className="font-medium">+ Add Product</span> (FAB on mobile) to create.</li>
+                <li>Fill name, SKU, category, price & stock.</li>
+                <li>Add <span className="font-medium">Variations</span> (1 month / 6 months / etc.) for subscriptions.</li>
+                <li>Toggle <span className="font-medium">Active</span> to publish to POS & order forms.</li>
+              </ol>
+            </div>
+            <div className="premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Bulk Actions</p>
+              <p className="text-foreground/90">Tick the checkboxes to select multiple products. Then activate, deactivate, or delete them in one click.</p>
+            </div>
+            <div className="premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Filters & Sort</p>
+              <ul className="space-y-1.5 text-foreground/90 list-disc list-inside">
+                <li><span className="font-medium">Category / Type / Stock / Status</span> — narrow down the list.</li>
+                <li><span className="font-medium">Sort</span> by newest, name, price, or stock.</li>
+                <li>Toggle between <span className="font-medium">List</span> and <span className="font-medium">Grid</span> view (desktop).</li>
+              </ul>
+            </div>
+            <div className="premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Import via CSV</p>
+              <p className="text-foreground/90">Use the <span className="font-medium">Import</span> button to bulk add from CSV. Download the template first to see the required columns.</p>
+            </div>
+            <div className="premium-card p-4 bg-primary/5 border-primary/20">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Pro Tip</p>
+              <p className="text-foreground/90">Subscription variations auto-create entries in the <span className="font-medium">Subscriptions</span> page when sold via POS.</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Bulk Confirm */}
+      <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm === "delete" && `Delete ${selectedIds.size} products?`}
+              {bulkConfirm === "activate" && `Activate ${selectedIds.size} products?`}
+              {bulkConfirm === "deactivate" && `Deactivate ${selectedIds.size} products?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm === "delete"
+                ? "This action cannot be undone. The selected products will be permanently removed."
+                : "You can change this later from the products list."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkConfirm && runBulk(bulkConfirm)}
+              className={bulkConfirm === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Add/Edit Product Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
