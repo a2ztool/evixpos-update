@@ -199,8 +199,8 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
           <p style="font-size:12px;color:#666;font-family:monospace;margin-top:6px;background:#f0fdfa;padding:3px 10px;border-radius:4px;display:inline-block">${invoiceId}</p>
           <div style="margin-top:8px">
             <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;${
-              order.payment_status === "paid" ? "background:#dcfce7;color:#166534" :
-              order.payment_status === "partial" ? "background:#fef3c7;color:#92400e" :
+              derivedStatus === "paid" ? "background:#dcfce7;color:#166534" :
+              derivedStatus === "partial" ? "background:#fef3c7;color:#92400e" :
               "background:#fee2e2;color:#991b1b"
             }">● ${statusCfg.label}</span>
           </div>
