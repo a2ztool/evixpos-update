@@ -766,9 +766,14 @@ const Subscriptions = () => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
-                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
+                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
                         <CardContent className="p-4 space-y-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-2">
+                            <Checkbox
+                              className="mt-0.5"
+                              checked={selectedIds.has(s.id)}
+                              onCheckedChange={() => toggleSelect(s.id)}
+                            />
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-sm">{s.customers?.name || "No customer"}</p>
                               <p className="text-xs text-muted-foreground">{s.product_name} · {s.variation}</p>
