@@ -38,6 +38,7 @@ interface InvoiceOrder {
   created_at: string;
   customers: { name: string } | null;
   customer_id: string | null;
+  meta?: { paid_amount?: number; due_amount?: number; [k: string]: any } | null;
 }
 
 interface InvoiceModalProps {
