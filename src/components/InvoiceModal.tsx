@@ -547,7 +547,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
             {/* Totals */}
             <div className="flex justify-end">
-              <div className="w-full sm:w-72 space-y-2">
+              <div className="w-full sm:w-80 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{curSymbol}{(orderItems.length > 0 ? subtotal : total).toFixed(2)}</span>
@@ -561,9 +561,25 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                   </div>
                 )}
                 <Separator className="my-1" />
-                <div className="flex justify-between items-center text-xl font-black text-primary pt-1">
-                  <span>Total Due</span>
+                <div className="flex justify-between items-center text-base font-bold pt-1">
+                  <span>Total</span>
                   <span>{curSymbol}{total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-700 dark:text-emerald-400">Paid</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">{curSymbol}{paidAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>Due</span>
+                  <span className={`font-semibold ${dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>{curSymbol}{dueAmount.toFixed(2)}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
+                  <Badge className={`text-[10px] px-3 py-1 rounded-full border-0 font-bold uppercase tracking-wider ${statusCfg.bg} ${statusCfg.text}`}>
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${statusCfg.dot}`} />
+                    {statusCfg.label}
+                  </Badge>
                 </div>
                 <p className="text-[10px] text-right text-muted-foreground uppercase tracking-wider">
                   {order.payment_currency} • {order.payment_method}
