@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Plus, Search, Truck, Phone, Mail, Edit2, Trash2, FileDown, MessageCircle,
-  Receipt, Eye, DollarSign, Users, ShoppingBag, TrendingUp, Package, Filter,
-  ChevronRight, BarChart3
+  Receipt, Eye, DollarSign, Users, ShoppingBag, TrendingUp, Package, HelpCircle,
+  ChevronRight, BarChart3, AlertTriangle, Sparkles, Boxes,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,11 +30,12 @@ const Inventory = () => {
   const qc = useQueryClient();
 
   // --- State ---
-  const [activeTab, setActiveTab] = useState("suppliers");
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
   const [supplierSearch, setSupplierSearch] = useState("");
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState<"all" | "today" | "7d" | "30d">("all");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   // Supplier form
   const [supplierDialog, setSupplierDialog] = useState(false);
@@ -144,14 +146,13 @@ const Inventory = () => {
 
   const createPurchase = useMutation({
     mutationFn: async () => {
-      // Calculate total from items
       const itemsWithCalc = purchaseItems.filter(i => i.product_name && Number(i.unit_cost) > 0);
       const calcTotal = itemsWithCalc.reduce((s, i) => s + Number(i.quantity) * Number(i.unit_cost), 0);
       const total = Number(pForm.total_amount) || calcTotal;
       const paid = Number(pForm.paid_amount) || 0;
       const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
 
-      const { data: purchase, error } = await supabase.from("purchases").insert({
+      const { error } = await supabase.from("purchases").insert({
         store_id: storeId!, user_id: userId!,
         supplier_id: pForm.supplier_id || null,
         total_amount: total, paid_amount: paid,
@@ -160,7 +161,6 @@ const Inventory = () => {
       }).select().single();
       if (error) throw error;
 
-      // Update supplier due
       if (pForm.supplier_id && total > paid) {
         const due = total - paid;
         const { data: sup } = await supabase.from("suppliers").select("balance_due").eq("id", pForm.supplier_id).single();
@@ -169,7 +169,6 @@ const Inventory = () => {
         }
       }
 
-      // Auto-sync stock: increase product quantities
       for (const item of itemsWithCalc) {
         const matchedProduct = products.find((p: any) => p.name.toLowerCase() === item.product_name.toLowerCase());
         if (matchedProduct) {
@@ -246,7 +245,6 @@ const Inventory = () => {
     setPurchaseItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
   };
 
-  // Auto-calc total from items
   const itemsTotal = useMemo(() =>
     purchaseItems.reduce((s, i) => s + Number(i.quantity || 0) * Number(i.unit_cost || 0), 0),
     [purchaseItems]
@@ -262,18 +260,25 @@ const Inventory = () => {
   );
 
   const filteredPurchases = useMemo(() => {
+    const now = Date.now();
+    const ranges: Record<string, number> = { today: 1, "7d": 7, "30d": 30 };
+    const days = ranges[dateRange];
     return purchases.filter((p: any) => {
       const matchSearch = p.suppliers?.name?.toLowerCase().includes(purchaseSearch.toLowerCase()) || p.notes?.toLowerCase().includes(purchaseSearch.toLowerCase());
       const matchStatus = statusFilter === "all" || p.payment_status === statusFilter;
       const matchSupplier = !selectedSupplier || p.supplier_id === selectedSupplier.id;
-      return matchSearch && matchStatus && matchSupplier;
+      const matchDate = !days || (now - new Date(p.purchase_date).getTime()) <= days * 86400000;
+      return matchSearch && matchStatus && matchSupplier && matchDate;
     });
-  }, [purchases, purchaseSearch, statusFilter, selectedSupplier]);
+  }, [purchases, purchaseSearch, statusFilter, selectedSupplier, dateRange]);
 
   // --- Analytics ---
   const totalDue = suppliers.reduce((s: number, sup: any) => s + Number(sup.balance_due || 0), 0);
   const totalPurchases = purchases.reduce((s: number, p: any) => s + Number(p.total_amount), 0);
   const totalPaid = purchases.reduce((s: number, p: any) => s + Number(p.paid_amount), 0);
+  const lowStockCount = products.filter((p: any) => Number(p.stock) > 0 && Number(p.stock) <= 5).length;
+  const outOfStockCount = products.filter((p: any) => Number(p.stock) <= 0).length;
+  const dueSuppliers = useMemo(() => suppliers.filter((s: any) => Number(s.balance_due) > 0).sort((a: any, b: any) => Number(b.balance_due) - Number(a.balance_due)).slice(0, 5), [suppliers]);
   const topSuppliers = useMemo(() => {
     const map: Record<string, { name: string; total: number }> = {};
     purchases.forEach((p: any) => {
@@ -296,56 +301,96 @@ const Inventory = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Stat card — Precision Aviator glass style
+  const StatCard = ({ icon: Icon, label, value, tint = "primary", subtle }: any) => (
+    <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-2.5 sm:p-3.5 shadow-sm hover:shadow-md transition-all">
+      <div className={`absolute -top-6 -right-6 h-16 w-16 rounded-full bg-${tint}/10 blur-2xl`} />
+      <div className="relative flex items-center gap-2 sm:gap-2.5">
+        <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-${tint}/10 ring-1 ring-${tint}/20 flex items-center justify-center shrink-0`}>
+          <Icon className={`h-4 w-4 text-${tint}`} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
+          <p className={`text-base sm:text-lg font-bold truncate ${subtle ? `text-${tint}` : ""}`}>{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <DashboardLayout>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="space-y-3 sm:space-y-4">
+        {/* Premium Header */}
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-3 sm:pb-5 mb-1 sm:mb-2 border-b border-border/60">
           <div className="hidden sm:block">
-            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" /> Inventory Management
+            <h1 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20">
+                <Boxes className="h-4 w-4 text-primary" />
+              </span>
+              Inventory Management
             </h1>
-            <p className="text-xs text-muted-foreground">Suppliers, purchases & stock sync</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Suppliers, purchases & stock sync</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportCSV}><FileDown className="h-3.5 w-3.5 mr-1" /> Export</Button>
-            <Button size="sm" onClick={() => { resetSupplierForm(); setSupplierDialog(true); }}>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" title="Guide">
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" /> Inventory Guide
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-5 space-y-4 text-sm">
+                  {[
+                    { t: "1. Add Suppliers", d: "ক্লিক 'Supplier' বাটন → name/phone/email দিন → Save। এরা আপনার পণ্য সরবরাহকারী।" },
+                    { t: "2. Record a Purchase", d: "'Purchase' বাটন থেকে supplier select করুন, item add করুন (qty + unit cost)। Total auto-calculate হবে।" },
+                    { t: "3. Auto Stock Sync", d: "Purchase item-এর product name যদি Products-এর সাথে match করে, তাহলে stock automatically বেড়ে যাবে।" },
+                    { t: "4. Track Due Payments", d: "Partial/unpaid purchases supplier-এর balance due তে যোগ হবে। সরাসরি 'Pay' বাটন থেকে settle করুন।" },
+                    { t: "5. WhatsApp Reminders", d: "Supplier card hover করে WhatsApp icon চাপলে due reminder message তৈরি হবে।" },
+                    { t: "6. Filter & Export", d: "Date range / status / supplier filter ব্যবহার করুন। CSV-তে export করে accountant-কে পাঠান।" },
+                  ].map((s, i) => (
+                    <div key={i} className="rounded-lg border border-border/60 bg-card/50 p-3">
+                      <p className="font-semibold text-sm">{s.t}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.d}</p>
+                    </div>
+                  ))}
+                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                    <p className="text-xs font-medium text-primary">💡 Pro Tip</p>
+                    <p className="text-xs text-muted-foreground mt-1">Low stock items সরাসরি right panel থেকে দেখা যায় — quick reorder action নিতে পারেন।</p>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+            <Button variant="outline" size="sm" onClick={exportCSV} className="flex-1 sm:flex-initial h-9">
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Export
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { resetSupplierForm(); setSupplierDialog(true); }} className="flex-1 sm:flex-initial h-9">
               <Plus className="h-3.5 w-3.5 mr-1" /> Supplier
             </Button>
-            <Button size="sm" onClick={() => { resetPurchaseForm(); setPurchaseDialog(true); }}>
+            <Button size="sm" onClick={() => { resetPurchaseForm(); setPurchaseDialog(true); }} className="flex-1 sm:flex-initial h-9 bg-gradient-to-br from-primary to-primary/85 shadow-md">
               <Plus className="h-3.5 w-3.5 mr-1" /> Purchase
             </Button>
           </div>
         </div>
 
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <Card className="border-border/50"><CardContent className="p-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center"><Users className="h-4 w-4 text-primary" /></div>
-            <div><p className="text-[10px] text-muted-foreground uppercase">Suppliers</p><p className="text-lg font-bold">{suppliers.length}</p></div>
-          </CardContent></Card>
-          <Card className="border-border/50"><CardContent className="p-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><ShoppingBag className="h-4 w-4 text-blue-500" /></div>
-            <div><p className="text-[10px] text-muted-foreground uppercase">Total Purchase</p><p className="text-lg font-bold">{format(totalPurchases)}</p></div>
-          </CardContent></Card>
-          <Card className="border-border/50"><CardContent className="p-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-green-500" /></div>
-            <div><p className="text-[10px] text-muted-foreground uppercase">Total Paid</p><p className="text-lg font-bold text-green-600">{format(totalPaid)}</p></div>
-          </CardContent></Card>
-          <Card className="border-border/50"><CardContent className="p-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center"><DollarSign className="h-4 w-4 text-destructive" /></div>
-            <div><p className="text-[10px] text-muted-foreground uppercase">Total Due</p><p className="text-lg font-bold text-destructive">{format(totalDue)}</p></div>
-          </CardContent></Card>
-          <Card className="border-border/50 hidden lg:block"><CardContent className="p-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><BarChart3 className="h-4 w-4 text-amber-500" /></div>
-            <div><p className="text-[10px] text-muted-foreground uppercase">Top Supplier</p><p className="text-sm font-bold truncate">{topSuppliers[0]?.name || "—"}</p></div>
-          </CardContent></Card>
+        {/* Glass Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3">
+          <StatCard icon={Users} label="Suppliers" value={suppliers.length} tint="primary" />
+          <StatCard icon={ShoppingBag} label="Purchases" value={format(totalPurchases)} tint="blue-500" />
+          <StatCard icon={TrendingUp} label="Paid" value={format(totalPaid)} tint="green-500" subtle />
+          <StatCard icon={DollarSign} label="Due" value={format(totalDue)} tint="destructive" subtle />
+          <StatCard icon={AlertTriangle} label="Low Stock" value={lowStockCount} tint="amber-500" />
+          <StatCard icon={Package} label="Out" value={outOfStockCount} tint="destructive" />
         </div>
 
         {/* Main Split Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left: Suppliers List */}
-          <Card className="lg:col-span-4 border-border/50">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+          {/* Left: Suppliers */}
+          <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/60">
             <CardHeader className="p-3 pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -355,16 +400,15 @@ const Inventory = () => {
               </div>
               <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)} placeholder="Search..." className="pl-8 h-8 text-xs" />
+                <Input value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)} placeholder="Search supplier..." className="pl-8 h-8 text-xs" />
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[calc(100vh-380px)] min-h-[300px]">
+              <ScrollArea className="h-[320px] sm:h-[calc(100vh-420px)] sm:min-h-[320px]">
                 <div className="space-y-0.5 p-2">
-                  {/* All suppliers button */}
                   <button
                     onClick={() => setSelectedSupplier(null)}
-                    className={`w-full text-left rounded-lg p-2.5 transition-all text-xs ${!selectedSupplier ? "bg-primary/10 border border-primary/20" : "hover:bg-accent"}`}
+                    className={`w-full text-left rounded-lg p-2.5 transition-all text-xs ${!selectedSupplier ? "bg-primary/10 border border-primary/20" : "hover:bg-accent border border-transparent"}`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium">All Suppliers</span>
@@ -381,11 +425,11 @@ const Inventory = () => {
                       key={s.id}
                       onClick={() => setSelectedSupplier(s)}
                       className={`w-full text-left rounded-lg p-2.5 transition-all group ${
-                        selectedSupplier?.id === s.id ? "bg-primary/10 border border-primary/20" : "hover:bg-accent"
+                        selectedSupplier?.id === s.id ? "bg-primary/10 border border-primary/20" : "hover:bg-accent border border-transparent"
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center flex-shrink-0">
                           <Truck className="h-3.5 w-3.5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -394,15 +438,14 @@ const Inventory = () => {
                             <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                           <div className="flex items-center justify-between mt-0.5">
-                            {s.phone && <p className="text-[10px] text-muted-foreground">{s.phone}</p>}
+                            {s.phone && <p className="text-[10px] text-muted-foreground truncate">{s.phone}</p>}
                             <Badge variant={Number(s.balance_due) > 0 ? "destructive" : "secondary"} className="text-[10px] h-4">
                               {format(Number(s.balance_due || 0))}
                             </Badge>
                           </div>
                         </div>
                       </div>
-                      {/* Quick actions on hover */}
-                      <div className="flex gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 mt-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button size="sm" variant="ghost" className="h-6 text-[10px] px-1.5" onClick={(e) => { e.stopPropagation(); openEditSupplier(s); }}>
                           <Edit2 className="h-3 w-3" />
                         </Button>
@@ -434,50 +477,81 @@ const Inventory = () => {
 
           {/* Right: Purchases */}
           <div className="lg:col-span-8 space-y-3">
-            {/* Selected supplier info banner */}
+            {/* Selected supplier banner */}
             {selectedSupplier && (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Truck className="h-5 w-5 text-primary" />
+              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center shrink-0">
+                      <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm">{selectedSupplier.name}</p>
-                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                        {selectedSupplier.phone && <span className="flex items-center gap-0.5"><Phone className="h-3 w-3" />{selectedSupplier.phone}</span>}
-                        {selectedSupplier.email && <span className="flex items-center gap-0.5"><Mail className="h-3 w-3" />{selectedSupplier.email}</span>}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{selectedSupplier.name}</p>
+                      <div className="flex items-center gap-2 sm:gap-3 text-[10px] text-muted-foreground">
+                        {selectedSupplier.phone && <span className="flex items-center gap-0.5 truncate"><Phone className="h-3 w-3" />{selectedSupplier.phone}</span>}
+                        {selectedSupplier.email && <span className="hidden sm:flex items-center gap-0.5 truncate"><Mail className="h-3 w-3" />{selectedSupplier.email}</span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Badge variant={Number(selectedSupplier.balance_due) > 0 ? "destructive" : "default"} className="text-xs">
                       Due: {format(Number(selectedSupplier.balance_due || 0))}
                     </Badge>
-                    <Button size="sm" variant="ghost" onClick={() => setSelectedSupplier(null)}>✕</Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setSelectedSupplier(null)}>✕</Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
+            {/* Filters — horizontal scroll on mobile */}
+            <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
+              <div className="relative flex-1 min-w-[140px]">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input value={purchaseSearch} onChange={e => setPurchaseSearch(e.target.value)} placeholder="Search purchases..." className="pl-8 h-8 text-xs" />
+                <Input value={purchaseSearch} onChange={e => setPurchaseSearch(e.target.value)} placeholder="Search purchases..." className="pl-8 h-9 text-xs" />
               </div>
-              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
-                <TabsList className="h-8">
-                  <TabsTrigger value="all" className="text-xs h-6 px-2">All</TabsTrigger>
-                  <TabsTrigger value="paid" className="text-xs h-6 px-2">Paid</TabsTrigger>
-                  <TabsTrigger value="partial" className="text-xs h-6 px-2">Partial</TabsTrigger>
-                  <TabsTrigger value="unpaid" className="text-xs h-6 px-2">Unpaid</TabsTrigger>
+              <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
+                <SelectTrigger className="h-9 text-xs w-auto min-w-[100px] shrink-0"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="shrink-0">
+                <TabsList className="h-9">
+                  <TabsTrigger value="all" className="text-xs h-7 px-2">All</TabsTrigger>
+                  <TabsTrigger value="paid" className="text-xs h-7 px-2">Paid</TabsTrigger>
+                  <TabsTrigger value="partial" className="text-xs h-7 px-2">Partial</TabsTrigger>
+                  <TabsTrigger value="unpaid" className="text-xs h-7 px-2">Unpaid</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
+            {/* Due reminders strip */}
+            {dueSuppliers.length > 0 && !selectedSupplier && (
+              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-transparent p-2.5">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                  <p className="text-xs font-semibold">Pending Dues</p>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {dueSuppliers.map((s: any) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { setPayTarget("supplier"); setPayDialog(s); setPayAmount(""); }}
+                      className="shrink-0 rounded-lg bg-card border border-border/60 px-2.5 py-1.5 text-left hover:border-primary/40 transition-all"
+                    >
+                      <p className="text-[10px] font-medium truncate max-w-[100px]">{s.name}</p>
+                      <p className="text-xs font-bold text-destructive">{format(Number(s.balance_due))}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Purchases Table */}
-            <Card className="border-border/50">
+            <Card className="border-border/60">
               <CardContent className="p-0">
                 {/* Mobile */}
                 <div className="md:hidden space-y-2 p-3">
@@ -488,10 +562,10 @@ const Inventory = () => {
                   ) : filteredPurchases.map((p: any) => {
                     const due = Math.max(0, Number(p.total_amount) - Number(p.paid_amount));
                     return (
-                      <div key={p.id} className="border rounded-lg p-2.5 space-y-1.5">
+                      <div key={p.id} className="border border-border/60 rounded-lg p-2.5 space-y-1.5 bg-card">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-xs">{p.suppliers?.name || "Unknown"}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-xs truncate">{p.suppliers?.name || "Unknown"}</p>
                             <p className="text-[10px] text-muted-foreground">{formatDate(new Date(p.purchase_date), "dd MMM yyyy")}</p>
                           </div>
                           <Badge variant={p.payment_status === "paid" ? "default" : p.payment_status === "partial" ? "secondary" : "destructive"} className="text-[10px]">
@@ -503,11 +577,16 @@ const Inventory = () => {
                           <span>Paid: <strong className="text-green-600">{format(Number(p.paid_amount))}</strong></span>
                           {due > 0 && <span>Due: <strong className="text-destructive">{format(due)}</strong></span>}
                         </div>
-                        {due > 0 && (
-                          <Button size="sm" variant="outline" className="w-full h-6 text-[10px]" onClick={() => { setPayTarget("purchase"); setPayDialog(p); setPayAmount(""); }}>
-                            <Receipt className="h-3 w-3 mr-1" /> Pay ({format(due)})
+                        <div className="flex gap-1.5">
+                          {due > 0 && (
+                            <Button size="sm" variant="outline" className="flex-1 h-7 text-[10px]" onClick={() => { setPayTarget("purchase"); setPayDialog(p); setPayAmount(""); }}>
+                              <Receipt className="h-3 w-3 mr-1" /> Pay {format(due)}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailDialog(p)}>
+                            <Eye className="h-3 w-3" />
                           </Button>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -562,6 +641,34 @@ const Inventory = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Top suppliers leaderboard */}
+            {topSuppliers.length > 0 && (
+              <Card className="border-border/60">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <BarChart3 className="h-4 w-4 text-primary" /> Top Suppliers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-1.5">
+                  {topSuppliers.map((t: any, i: number) => {
+                    const max = topSuppliers[0].total || 1;
+                    const pct = (t.total / max) * 100;
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium truncate">{i + 1}. {t.name}</span>
+                          <span className="text-muted-foreground">{format(t.total)}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
@@ -571,14 +678,14 @@ const Inventory = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editSupplierId ? "Edit" : "Add"} Supplier</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Name *</Label><Input value={sForm.name} onChange={e => setSForm(p => ({ ...p, name: e.target.value }))} placeholder="Supplier name" className="h-8 text-sm" /></div>
+            <div><Label className="text-xs">Name *</Label><Input value={sForm.name} onChange={e => setSForm(p => ({ ...p, name: e.target.value }))} placeholder="Supplier name" className="h-9 text-sm" /></div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Phone</Label><Input value={sForm.phone} onChange={e => setSForm(p => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="h-8 text-sm" /></div>
-              <div><Label className="text-xs">Email</Label><Input value={sForm.email} onChange={e => setSForm(p => ({ ...p, email: e.target.value }))} placeholder="Email" className="h-8 text-sm" /></div>
+              <div><Label className="text-xs">Phone</Label><Input value={sForm.phone} onChange={e => setSForm(p => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="h-9 text-sm" /></div>
+              <div><Label className="text-xs">Email</Label><Input value={sForm.email} onChange={e => setSForm(p => ({ ...p, email: e.target.value }))} placeholder="Email" className="h-9 text-sm" /></div>
             </div>
-            <div><Label className="text-xs">Address</Label><Input value={sForm.address} onChange={e => setSForm(p => ({ ...p, address: e.target.value }))} placeholder="Address" className="h-8 text-sm" /></div>
+            <div><Label className="text-xs">Address</Label><Input value={sForm.address} onChange={e => setSForm(p => ({ ...p, address: e.target.value }))} placeholder="Address" className="h-9 text-sm" /></div>
             <div><Label className="text-xs">Notes</Label><Textarea value={sForm.notes} onChange={e => setSForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes" rows={2} className="text-sm" /></div>
-            <Button onClick={() => saveSupplier.mutate()} disabled={!sForm.name || saveSupplier.isPending} className="w-full h-8 text-sm">
+            <Button onClick={() => saveSupplier.mutate()} disabled={!sForm.name || saveSupplier.isPending} className="w-full h-9 text-sm">
               {saveSupplier.isPending ? "Saving..." : editSupplierId ? "Update" : "Add Supplier"}
             </Button>
           </div>
@@ -593,12 +700,11 @@ const Inventory = () => {
             <div>
               <Label className="text-xs">Supplier</Label>
               <Select value={pForm.supplier_id} onValueChange={v => setPForm(p => ({ ...p, supplier_id: v }))}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select supplier" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select supplier" /></SelectTrigger>
                 <SelectContent>{suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
-            {/* Multi-item purchase */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold">Items</Label>
@@ -609,20 +715,20 @@ const Inventory = () => {
                   <div className="col-span-5">
                     {idx === 0 && <Label className="text-[10px]">Product</Label>}
                     <Input value={item.product_name} onChange={e => updatePurchaseItem(idx, "product_name", e.target.value)}
-                      placeholder="Product name" className="h-7 text-xs" list="product-suggestions" />
+                      placeholder="Product name" className="h-8 text-xs" list="product-suggestions" />
                   </div>
                   <div className="col-span-2">
                     {idx === 0 && <Label className="text-[10px]">Qty</Label>}
                     <Input type="number" value={item.quantity} onChange={e => updatePurchaseItem(idx, "quantity", e.target.value)}
-                      className="h-7 text-xs" />
+                      className="h-8 text-xs" />
                   </div>
                   <div className="col-span-3">
                     {idx === 0 && <Label className="text-[10px]">Unit Cost</Label>}
                     <Input type="number" value={item.unit_cost} onChange={e => updatePurchaseItem(idx, "unit_cost", e.target.value)}
-                      placeholder="Cost" className="h-7 text-xs" />
+                      placeholder="Cost" className="h-8 text-xs" />
                   </div>
                   <div className="col-span-2 flex items-center gap-1">
-                    <span className="text-[10px] font-medium">{format(Number(item.quantity || 0) * Number(item.unit_cost || 0))}</span>
+                    <span className="text-[10px] font-medium truncate">{format(Number(item.quantity || 0) * Number(item.unit_cost || 0))}</span>
                     {purchaseItems.length > 1 && (
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => removePurchaseItem(idx)}>
                         <Trash2 className="h-3 w-3 text-destructive" />
@@ -637,8 +743,8 @@ const Inventory = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Total Amount *</Label><Input type="number" value={pForm.total_amount} onChange={e => setPForm(p => ({ ...p, total_amount: e.target.value }))} className="h-8 text-sm" /></div>
-              <div><Label className="text-xs">Paid Amount</Label><Input type="number" value={pForm.paid_amount} onChange={e => setPForm(p => ({ ...p, paid_amount: e.target.value }))} className="h-8 text-sm" /></div>
+              <div><Label className="text-xs">Total Amount *</Label><Input type="number" value={pForm.total_amount} onChange={e => setPForm(p => ({ ...p, total_amount: e.target.value }))} className="h-9 text-sm" /></div>
+              <div><Label className="text-xs">Paid Amount</Label><Input type="number" value={pForm.paid_amount} onChange={e => setPForm(p => ({ ...p, paid_amount: e.target.value }))} className="h-9 text-sm" /></div>
             </div>
             {pForm.total_amount && (
               <div className="rounded-lg bg-muted/50 p-2 text-xs">
@@ -648,7 +754,7 @@ const Inventory = () => {
             <div>
               <Label className="text-xs">Payment Method</Label>
               <Select value={pForm.payment_method} onValueChange={v => setPForm(p => ({ ...p, payment_method: v }))}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="bank">Bank</SelectItem>
@@ -657,8 +763,8 @@ const Inventory = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label className="text-xs">Notes</Label><Input value={pForm.notes} onChange={e => setPForm(p => ({ ...p, notes: e.target.value }))} placeholder="Purchase description" className="h-8 text-sm" /></div>
-            <Button onClick={() => createPurchase.mutate()} disabled={!pForm.total_amount || createPurchase.isPending} className="w-full h-8 text-sm">
+            <div><Label className="text-xs">Notes</Label><Input value={pForm.notes} onChange={e => setPForm(p => ({ ...p, notes: e.target.value }))} placeholder="Purchase description" className="h-9 text-sm" /></div>
+            <Button onClick={() => createPurchase.mutate()} disabled={!pForm.total_amount || createPurchase.isPending} className="w-full h-9 text-sm">
               {createPurchase.isPending ? "Saving..." : "Record Purchase"}
             </Button>
           </div>
@@ -681,7 +787,7 @@ const Inventory = () => {
                 </>
               )}
             </div>
-            <div><Label className="text-xs">Amount</Label><Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="Amount" className="h-8 text-sm" /></div>
+            <div><Label className="text-xs">Amount</Label><Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="Amount" className="h-9 text-sm" /></div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
                 const max = payTarget === "supplier" ? Number(payDialog?.balance_due || 0) : Math.max(0, Number(payDialog?.total_amount || 0) - Number(payDialog?.paid_amount || 0));
@@ -691,7 +797,7 @@ const Inventory = () => {
             <div>
               <Label className="text-xs">Method</Label>
               <Select value={payMethod} onValueChange={setPayMethod}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="bkash">bKash</SelectItem>
@@ -700,7 +806,7 @@ const Inventory = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => payMutation.mutate()} disabled={!payAmount || payMutation.isPending} className="w-full h-8 text-sm">
+            <Button onClick={() => payMutation.mutate()} disabled={!payAmount || payMutation.isPending} className="w-full h-9 text-sm">
               {payMutation.isPending ? "Recording..." : "Record Payment"}
             </Button>
           </div>
