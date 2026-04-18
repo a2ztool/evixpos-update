@@ -24,7 +24,8 @@ import {
   RotateCcw, ChevronDown, ChevronUp, TrendingUp, Users, Calculator,
   Bell, Clock, CheckCircle2, XCircle, AlertTriangle, Download,
   BarChart3, PieChart, Calendar, DollarSign, ArrowUpRight,
-  ArrowDownRight, Eye, Zap, ShieldCheck, Timer
+  ArrowDownRight, Eye, Zap, ShieldCheck, Timer, HelpCircle, Sparkles,
+  Activity, Target, Lightbulb, TrendingDown, Repeat, Crown, Filter
 } from "lucide-react";
 import { differenceInDays, addDays, format as fnsFormat, subDays } from "date-fns";
 import {
