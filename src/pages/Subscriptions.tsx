@@ -836,7 +836,13 @@ const Subscriptions = () => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
-                            <TableRow key={s.id} className={`group transition-colors ${isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                            <TableRow key={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedIds.has(s.id)}
+                                  onCheckedChange={() => toggleSelect(s.id)}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div>
                                   <p className="font-medium text-sm">{s.customers?.name || "—"}</p>
