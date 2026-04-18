@@ -813,6 +813,15 @@ const Subscriptions = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-10">
+                            <Checkbox
+                              checked={filtered.length > 0 && filtered.every(s => selectedIds.has(s.id))}
+                              onCheckedChange={(c) => {
+                                if (c) setSelectedIds(new Set(filtered.map(s => s.id)));
+                                else clearSelection();
+                              }}
+                            />
+                          </TableHead>
                           <TableHead>Customer</TableHead>
                           <TableHead>Subscription</TableHead>
                           <TableHead className="text-right">Price</TableHead>
