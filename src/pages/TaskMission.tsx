@@ -106,12 +106,13 @@ const TaskMission = () => {
   // Filtered tasks
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
+      if (focusMode && (t.status === "done" || t.priority === "low")) return false;
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
       if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !(t.description || "").toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [tasks, statusFilter, priorityFilter, search]);
+  }, [tasks, statusFilter, priorityFilter, search, focusMode]);
 
   // Stats
   const stats = useMemo(() => {
