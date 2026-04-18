@@ -263,17 +263,33 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
       <!-- Totals -->
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-        <div style="width:280px">
+        <div style="width:300px">
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
             <span style="color:#888">Subtotal</span>
             <span style="font-weight:500">${curSymbol}${(orderItems.length > 0 ? subtotal : total).toFixed(2)}</span>
           </div>
           ${discountRow}
-          <div style="border-top:2px solid #0d9488;margin-top:10px;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:18px;font-weight:900;color:#0d9488">Total Due</span>
-            <span style="font-size:20px;font-weight:900;color:#0d9488">${curSymbol}${total.toFixed(2)}</span>
+          <div style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:14px">
+            <span style="font-weight:700">Total</span>
+            <span style="font-weight:800">${curSymbol}${total.toFixed(2)}</span>
           </div>
-          <p style="font-size:10px;text-align:right;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${order.payment_currency} • ${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span style="color:#059669">Paid</span>
+            <span style="font-weight:600;color:#059669">${curSymbol}${paidAmount.toFixed(2)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span style="color:${dueAmount > 0.01 ? "#dc2626" : "#888"}">Due</span>
+            <span style="font-weight:600;color:${dueAmount > 0.01 ? "#dc2626" : "#888"}">${curSymbol}${dueAmount.toFixed(2)}</span>
+          </div>
+          <div style="border-top:2px solid #0d9488;margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#666">Status</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;${
+              derivedStatus === "paid" ? "background:#dcfce7;color:#166534" :
+              derivedStatus === "partial" ? "background:#fef3c7;color:#92400e" :
+              "background:#fee2e2;color:#991b1b"
+            }">● ${statusCfg.label}</span>
+          </div>
+          <p style="font-size:10px;text-align:right;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:6px">${order.payment_currency} • ${order.payment_method}</p>
         </div>
       </div>
 
