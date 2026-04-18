@@ -20,12 +20,16 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Pencil, Search, Megaphone, MousePointerClick, DollarSign,
   TrendingUp, TrendingDown, Target, Eye, BarChart3, Download, FileText,
-  Calendar, Zap, ArrowUpRight, ArrowDownRight
+  Calendar, Zap, ArrowUpRight, ArrowDownRight, Sparkles, BookOpen,
+  ChevronUp, ChevronDown, Lightbulb, Activity, Award, AlertTriangle,
+  CheckCircle2, Info, LineChart as LineChartIcon, Flame
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, Legend, PieChart, Pie, Cell
 } from "recharts";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -34,7 +38,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, differenceInDays } from "date-fns";
 
 interface AdCost {
   id: string;
