@@ -809,25 +809,7 @@ const Products = () => {
         </>
       )}
 
-      {/* Mobile FAB (Add Product) */}
-      <button
-        type="button"
-        onClick={openAdd}
-        className="sm:hidden fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="Add product"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
 
-      {/* Mobile Import quick action */}
-      <button
-        type="button"
-        onClick={() => setImportOpen(true)}
-        className="sm:hidden fixed bottom-20 right-[5.25rem] z-40 h-12 w-12 rounded-full bg-background border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="Import products"
-      >
-        <Upload className="h-5 w-5" />
-      </button>
 
       {/* Help / Guide Drawer */}
       <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
