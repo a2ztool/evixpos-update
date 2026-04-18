@@ -415,75 +415,79 @@ const Products = () => {
     <DashboardLayout>
       <UsageWarningBanner type="products" />
 
-      {/* Premium Header */}
-      <div className="flex items-end justify-between flex-wrap gap-3 pb-4 sm:pb-5 mb-4 sm:mb-6 border-b border-border/60">
-        <div className="flex flex-col gap-1">
-          <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
+      {/* Premium Header — title only shown on desktop (DashboardLayout shows it on mobile) */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-3 sm:pb-5 mb-3 sm:mb-6 border-b border-border/60">
+        <div className="hidden sm:flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
             <span>Sales & Products</span>
             <span className="text-border">/</span>
             <span className="text-primary">Catalog</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Products</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setGuideOpen(true)}
-            className="gap-1.5 h-9"
-            aria-label="Open guide"
+            onClick={() => setImportOpen(true)}
+            className="gap-1.5 h-9 flex-1 sm:flex-initial"
           >
-            <HelpCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Guide</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-1.5 h-9 hidden sm:inline-flex">
             <Upload className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-1.5 h-9 hidden sm:inline-flex" onClick={openAdd}>
+          <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-initial" onClick={openAdd}>
             <Plus className="h-4 w-4" />
             Add Product
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setGuideOpen(true)}
+            className="h-9 w-9 shrink-0"
+            aria-label="Open guide"
+          >
+            <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="premium-card p-4 sm:p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Total</span>
-            <Boxes className="h-3.5 w-3.5 text-muted-foreground/60" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
+        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <span className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Total</span>
+            <Boxes className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/60" />
           </div>
-          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
+          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
         </div>
-        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Active</span>
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary/70" />
+        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <span className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Active</span>
+            <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary/70" />
           </div>
-          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
+          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
         </div>
-        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
+        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400" />
-          <div className="flex items-center justify-between mb-2 pl-1">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Low Stock</span>
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          <div className="flex items-center justify-between mb-1 sm:mb-2 pl-1">
+            <span className="text-[9px] sm:text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Low Stock</span>
+            <AlertTriangle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
+          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
         </div>
-        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
+        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-rose-500" />
-          <div className="flex items-center justify-between mb-2 pl-1">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-widest">Out of Stock</span>
-            <XCircle className="h-3.5 w-3.5 text-rose-500" />
+          <div className="flex items-center justify-between mb-1 sm:mb-2 pl-1">
+            <span className="text-[9px] sm:text-[11px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-widest">Out of Stock</span>
+            <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-rose-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
+          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
         </div>
       </div>
 
       {/* Toolbar: Search + Filters + View toggle */}
-      <div className="premium-card p-2 sm:p-2.5 mb-4 flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[180px]">
+      <div className="premium-card p-2 sm:p-2.5 mb-3 sm:mb-4 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2 sm:flex-wrap">
+        <div className="relative sm:flex-1 sm:min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, SKU, or category..."
@@ -492,16 +496,16 @@ const Products = () => {
             className="pl-9 h-9 border-0 bg-transparent shadow-none focus-visible:ring-1"
           />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-1 px-1 pb-1 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[110px] shrink-0"><SelectValue placeholder="Category" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-8 text-xs w-[100px]"><SelectValue placeholder="Type" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[95px] shrink-0"><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="physical">Physical</SelectItem>
@@ -509,7 +513,7 @@ const Products = () => {
             </SelectContent>
           </Select>
           <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as any)}>
-            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Stock" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[105px] shrink-0"><SelectValue placeholder="Stock" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Stock</SelectItem>
               <SelectItem value="in">In Stock</SelectItem>
@@ -518,7 +522,7 @@ const Products = () => {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[105px] shrink-0"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
@@ -526,7 +530,7 @@ const Products = () => {
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-            <SelectTrigger className="h-8 text-xs w-[140px]">
+            <SelectTrigger className="h-8 text-xs w-[135px] shrink-0">
               <ArrowUpDown className="h-3 w-3 mr-1" />
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
@@ -540,7 +544,7 @@ const Products = () => {
               <SelectItem value="stock_desc">Stock (high→low)</SelectItem>
             </SelectContent>
           </Select>
-          <div className="hidden md:flex bg-muted/50 p-0.5 rounded-md border">
+          <div className="hidden md:flex bg-muted/50 p-0.5 rounded-md border shrink-0">
             <button
               type="button"
               onClick={() => setViewMode("list")}
@@ -805,25 +809,7 @@ const Products = () => {
         </>
       )}
 
-      {/* Mobile FAB (Add Product) */}
-      <button
-        type="button"
-        onClick={openAdd}
-        className="sm:hidden fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="Add product"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
 
-      {/* Mobile Import quick action */}
-      <button
-        type="button"
-        onClick={() => setImportOpen(true)}
-        className="sm:hidden fixed bottom-20 right-[5.25rem] z-40 h-12 w-12 rounded-full bg-background border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="Import products"
-      >
-        <Upload className="h-5 w-5" />
-      </button>
 
       {/* Help / Guide Drawer */}
       <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
