@@ -716,7 +716,40 @@ const Subscriptions = () => {
               </Select>
             </div>
 
-            <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+              {filtered.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={filtered.length > 0 && filtered.every(s => selectedIds.has(s.id))}
+                    onCheckedChange={(c) => {
+                      if (c) setSelectedIds(new Set(filtered.map(s => s.id)));
+                      else clearSelection();
+                    }}
+                  />
+                  <Label htmlFor="select-all" className="text-xs cursor-pointer">Select all</Label>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border bg-background/95 backdrop-blur-sm shadow-md p-3">
+                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> {selectedIds.size} selected</Badge>
+                <div className="flex-1" />
+                <Button size="sm" variant="outline" className="gap-1.5 text-green-600" disabled={bulkBusy} onClick={bulkRemind}>
+                  <MessageCircle className="h-4 w-4" /> Remind All
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-primary" disabled={bulkBusy} onClick={bulkRenew}>
+                  <RotateCcw className="h-4 w-4" /> Renew All
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-destructive" disabled={bulkBusy} onClick={bulkDelete}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+              </div>
+            )}
 
             {filtered.length === 0 ? (
               <Card className="flex flex-col items-center justify-center py-16">
