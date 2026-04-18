@@ -144,6 +144,48 @@ const TaskMission = () => {
     return { total, todo, inProgress, done, completionRate, overdue, highDone, streak, dueSoon };
   }, [tasks]);
 
+  // Period comparison: this week vs last week
+  const weekComparison = useMemo(() => {
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const lastWeekStart = subDays(weekStart, 7);
+    const thisWeekDone = tasks.filter((t) => t.completed_at && new Date(t.completed_at) >= weekStart).length;
+    const lastWeekDone = tasks.filter((t) => {
+      if (!t.completed_at) return false;
+      const d = new Date(t.completed_at);
+      return d >= lastWeekStart && d < weekStart;
+    }).length;
+    const change = lastWeekDone > 0 ? ((thisWeekDone - lastWeekDone) / lastWeekDone) * 100 : (thisWeekDone > 0 ? 100 : 0);
+    return { thisWeekDone, lastWeekDone, change };
+  }, [tasks]);
+
+  // Productivity score (0-100): completion rate + streak bonus - overdue penalty
+  const productivityScore = useMemo(() => {
+    const base = stats.completionRate * 0.6;
+    const streakBonus = Math.min(stats.streak * 2, 30);
+    const overduePenalty = Math.min(stats.overdue * 5, 20);
+    return Math.max(0, Math.min(100, Math.round(base + streakBonus + 10 - overduePenalty)));
+  }, [stats]);
+
+  const scoreLabel = productivityScore >= 80 ? { text: "Excellent", color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" }
+    : productivityScore >= 60 ? { text: "Good", color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" }
+    : productivityScore >= 40 ? { text: "Fair", color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" }
+    : { text: "Needs Focus", color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30" };
+
+  // Smart insights
+  const insights = useMemo(() => {
+    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
+    if (stats.overdue > 0) list.push({ type: "warn", text: `${stats.overdue} task${stats.overdue > 1 ? "s" : ""} overdue — review your priorities.` });
+    if (stats.streak >= 7) list.push({ type: "good", text: `🔥 ${stats.streak}-day streak! You're on fire — keep it going.` });
+    if (stats.dueSoon > 0) list.push({ type: "info", text: `${stats.dueSoon} task${stats.dueSoon > 1 ? "s" : ""} due in the next 3 days.` });
+    if (stats.completionRate >= 80 && stats.total >= 5) list.push({ type: "good", text: "Outstanding completion rate — excellent execution!" });
+    if (stats.inProgress > 5) list.push({ type: "warn", text: "Too many tasks in progress — focus on finishing before starting new." });
+    if (weekComparison.change > 20) list.push({ type: "good", text: `Productivity up ${weekComparison.change.toFixed(0)}% vs last week!` });
+    if (weekComparison.change < -20 && weekComparison.lastWeekDone > 0) list.push({ type: "warn", text: `Completed ${Math.abs(weekComparison.change).toFixed(0)}% fewer tasks than last week.` });
+    if (list.length === 0) list.push({ type: "info", text: "Add tasks and complete them daily to unlock insights." });
+    return list.slice(0, 4);
+  }, [stats, weekComparison]);
+
   // Charts data
   const priorityDistribution = useMemo(() => [
     { name: "High", value: tasks.filter((t) => t.priority === "high" && t.status !== "done").length, color: "hsl(var(--destructive))" },
