@@ -38,6 +38,7 @@ interface InvoiceOrder {
   created_at: string;
   customers: { name: string } | null;
   customer_id: string | null;
+  meta?: { paid_amount?: number; due_amount?: number; [k: string]: any } | null;
 }
 
 interface InvoiceModalProps {
@@ -108,7 +109,30 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
     : Number(order.discount);
   const total = Number(order.total_amount);
   const itemCount = orderItems.length > 0 ? orderItems.reduce((s, i) => s + i.quantity, 0) : 1;
-  const statusCfg = paymentStatusConfig[order.payment_status] || paymentStatusConfig.unpaid;
+
+  // Derive paid / due from order.meta when present, fallback to payment_status logic
+  const metaPaid = order.meta && typeof order.meta.paid_amount === "number" ? Number(order.meta.paid_amount) : null;
+  const metaDue = order.meta && typeof order.meta.due_amount === "number" ? Number(order.meta.due_amount) : null;
+  let paidAmount: number;
+  let dueAmount: number;
+  if (metaPaid !== null || metaDue !== null) {
+    paidAmount = metaPaid !== null ? metaPaid : Math.max(total - (metaDue ?? 0), 0);
+    dueAmount = metaDue !== null ? metaDue : Math.max(total - (metaPaid ?? 0), 0);
+  } else if (order.payment_status === "paid") {
+    paidAmount = total; dueAmount = 0;
+  } else if (order.payment_status === "unpaid") {
+    paidAmount = 0; dueAmount = total;
+  } else {
+    paidAmount = 0; dueAmount = total;
+  }
+
+  // Recompute status from numbers (in case DB value is stale)
+  const derivedStatus = paidAmount <= 0.001
+    ? "unpaid"
+    : dueAmount <= 0.01
+      ? "paid"
+      : "partial";
+  const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
   // QR code data for payment verification
   const qrData = JSON.stringify({
@@ -175,8 +199,8 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
           <p style="font-size:12px;color:#666;font-family:monospace;margin-top:6px;background:#f0fdfa;padding:3px 10px;border-radius:4px;display:inline-block">${invoiceId}</p>
           <div style="margin-top:8px">
             <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;${
-              order.payment_status === "paid" ? "background:#dcfce7;color:#166534" :
-              order.payment_status === "partial" ? "background:#fef3c7;color:#92400e" :
+              derivedStatus === "paid" ? "background:#dcfce7;color:#166534" :
+              derivedStatus === "partial" ? "background:#fef3c7;color:#92400e" :
               "background:#fee2e2;color:#991b1b"
             }">● ${statusCfg.label}</span>
           </div>
@@ -196,7 +220,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
         </div>
         <div style="padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
           <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:5px">💳 Payment</p>
-          <p style="font-size:14px;font-weight:700;text-transform:capitalize">${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+          <p style="font-size:14px;font-weight:700;text-transform:capitalize">${order.payment_method}</p>
           <p style="font-size:10px;color:#888;margin-top:2px;text-transform:capitalize">Source: ${order.source}</p>
         </div>
       </div>
@@ -239,17 +263,33 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
       <!-- Totals -->
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-        <div style="width:280px">
+        <div style="width:300px">
           <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
             <span style="color:#888">Subtotal</span>
             <span style="font-weight:500">${curSymbol}${(orderItems.length > 0 ? subtotal : total).toFixed(2)}</span>
           </div>
           ${discountRow}
-          <div style="border-top:2px solid #0d9488;margin-top:10px;padding-top:12px;display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:18px;font-weight:900;color:#0d9488">Total Due</span>
-            <span style="font-size:20px;font-weight:900;color:#0d9488">${curSymbol}${total.toFixed(2)}</span>
+          <div style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:14px">
+            <span style="font-weight:700">Total</span>
+            <span style="font-weight:800">${curSymbol}${total.toFixed(2)}</span>
           </div>
-          <p style="font-size:10px;text-align:right;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${order.payment_currency} • ${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span style="color:#059669">Paid</span>
+            <span style="font-weight:600;color:#059669">${curSymbol}${paidAmount.toFixed(2)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span style="color:${dueAmount > 0.01 ? "#dc2626" : "#888"}">Due</span>
+            <span style="font-weight:600;color:${dueAmount > 0.01 ? "#dc2626" : "#888"}">${curSymbol}${dueAmount.toFixed(2)}</span>
+          </div>
+          <div style="border-top:2px solid #0d9488;margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#666">Status</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;${
+              derivedStatus === "paid" ? "background:#dcfce7;color:#166534" :
+              derivedStatus === "partial" ? "background:#fef3c7;color:#92400e" :
+              "background:#fee2e2;color:#991b1b"
+            }">● ${statusCfg.label}</span>
+          </div>
+          <p style="font-size:10px;text-align:right;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-top:6px">${order.payment_currency} • ${order.payment_method}</p>
         </div>
       </div>
 
@@ -523,7 +563,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
             {/* Totals */}
             <div className="flex justify-end">
-              <div className="w-full sm:w-72 space-y-2">
+              <div className="w-full sm:w-80 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{curSymbol}{(orderItems.length > 0 ? subtotal : total).toFixed(2)}</span>
@@ -537,9 +577,25 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                   </div>
                 )}
                 <Separator className="my-1" />
-                <div className="flex justify-between items-center text-xl font-black text-primary pt-1">
-                  <span>Total Due</span>
+                <div className="flex justify-between items-center text-base font-bold pt-1">
+                  <span>Total</span>
                   <span>{curSymbol}{total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-700 dark:text-emerald-400">Paid</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">{curSymbol}{paidAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>Due</span>
+                  <span className={`font-semibold ${dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>{curSymbol}{dueAmount.toFixed(2)}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Status</span>
+                  <Badge className={`text-[10px] px-3 py-1 rounded-full border-0 font-bold uppercase tracking-wider ${statusCfg.bg} ${statusCfg.text}`}>
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${statusCfg.dot}`} />
+                    {statusCfg.label}
+                  </Badge>
                 </div>
                 <p className="text-[10px] text-right text-muted-foreground uppercase tracking-wider">
                   {order.payment_currency} • {order.payment_method}
