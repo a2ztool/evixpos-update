@@ -764,31 +764,33 @@ const TaskMission = () => {
 
           {/* Missions Tab */}
           <TabsContent value="missions" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {missions.map((m) => {
                 const MIcon = m.icon;
                 const progress = Math.min((m.current / m.target) * 100, 100);
                 const completed = m.current >= m.target;
                 return (
-                  <Card key={m.id} className={`transition-all duration-300 hover:shadow-md ${completed ? "border-primary/50 bg-primary/5" : ""}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${completed ? "bg-primary/20" : "bg-muted"}`}>
+                  <Card key={m.id} className={`transition-all duration-300 hover:shadow-md ${completed ? "border-primary/50 bg-primary/5" : "border-border/40"}`}>
+                    <CardContent className="p-5 !pt-5 space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className={`p-3 rounded-xl shrink-0 ${completed ? "bg-primary/20" : "bg-muted"}`}>
                           <MIcon className={`h-5 w-5 ${completed ? "text-primary" : "text-muted-foreground"}`} />
                         </div>
-                        <span className="text-2xl">{completed ? m.reward : "🔒"}</span>
+                        <span className="text-2xl leading-none">{completed ? m.reward : "🔒"}</span>
                       </div>
-                      <h3 className="font-semibold text-sm">{m.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{m.desc}</p>
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                          <span>{m.current}/{m.target}</span>
-                          <span>{progress.toFixed(0)}%</span>
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-sm leading-tight">{m.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-snug">{m.desc}</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-foreground">{m.current}/{m.target}</span>
+                          <span className="text-muted-foreground">{progress.toFixed(0)}%</span>
                         </div>
                         <Progress value={progress} className="h-2" />
                       </div>
                       {completed && (
-                        <Badge className="mt-3 bg-primary/10 text-primary border-primary/20">
+                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 w-fit">
                           <Sparkles className="h-3 w-3 mr-1" /> Achieved!
                         </Badge>
                       )}
