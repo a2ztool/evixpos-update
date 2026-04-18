@@ -415,10 +415,27 @@ const Subscriptions = () => {
     if (selectedIds.size === 0) return;
     if (!confirm(`Delete ${selectedIds.size} subscription(s)? This cannot be undone.`)) return;
     setBulkBusy(true);
-    const { error } = await supabase.from("subscriptions").delete().in("id", Array.from(selectedIds));
+    const ids = Array.from(selectedIds);
+    const prev = subs;
+    setSubs((curr) => curr.filter((x) => !selectedIds.has(x.id)));
+    const { error, count } = await supabase
+      .from("subscriptions")
+      .delete({ count: "exact" })
+      .in("id", ids);
     setBulkBusy(false);
     clearSelection();
-    if (error) toast.error(error.message); else toast.success("Deleted");
+    if (error) {
+      setSubs(prev);
+      toast.error(error.message);
+      return;
+    }
+    if (!count) {
+      setSubs(prev);
+      toast.error("Delete blocked — you may not have permission to delete these subscriptions.");
+      return;
+    }
+    toast.success(`Deleted ${count} subscription(s)`);
+    fetchAll();
   };
 
   const exportCSV = () => {
