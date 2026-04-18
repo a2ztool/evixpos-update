@@ -24,7 +24,8 @@ import {
   RotateCcw, ChevronDown, ChevronUp, TrendingUp, Users, Calculator,
   Bell, Clock, CheckCircle2, XCircle, AlertTriangle, Download,
   BarChart3, PieChart, Calendar, DollarSign, ArrowUpRight,
-  ArrowDownRight, Eye, Zap, ShieldCheck, Timer
+  ArrowDownRight, Eye, Zap, ShieldCheck, Timer, HelpCircle, Sparkles,
+  Activity, Target, Lightbulb, TrendingDown, Repeat, Crown, Filter
 } from "lucide-react";
 import { differenceInDays, addDays, format as fnsFormat, subDays } from "date-fns";
 import {
@@ -96,6 +97,7 @@ const Subscriptions = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("subscriptions");
   const [calcOpen, setCalcOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [calc, setCalc] = useState({ planPrice: 0, costPrice: 0, customers: 0, duration: "1 Month" });
 
   const fetchAll = useCallback(async () => {
@@ -159,6 +161,59 @@ const Subscriptions = () => {
       totalRenewals, avgLifetime, renewalRate, churnRate,
       profit: totalRevenue - totalCost,
     };
+  }, [subs]);
+
+  // Subscription Health Score (0-100)
+  const healthScore = useMemo(() => {
+    let score = 0;
+    if (stats.activeCount > 0) score += 25;
+    if (stats.renewalRate >= 50) score += 25;
+    else if (stats.renewalRate >= 25) score += 15;
+    else if (stats.renewalRate > 0) score += 8;
+    if (stats.churnRate <= 10) score += 25;
+    else if (stats.churnRate <= 25) score += 15;
+    else if (stats.churnRate <= 40) score += 8;
+    if (stats.profit > 0) score += 15;
+    if (stats.expiringWeek === 0) score += 10;
+    else if (stats.expiringWeek <= 3) score += 5;
+    return Math.min(100, score);
+  }, [stats]);
+
+  const healthLabel = healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Healthy" : healthScore >= 40 ? "Fair" : "Needs Attention";
+  const healthColor = healthScore >= 80 ? "text-green-600" : healthScore >= 60 ? "text-primary" : healthScore >= 40 ? "text-amber-600" : "text-destructive";
+
+  // Smart insights
+  const insights = useMemo(() => {
+    const arr: { type: "success" | "warning" | "danger" | "info"; icon: any; text: string }[] = [];
+    if (stats.expiringToday > 0) arr.push({ type: "danger", icon: AlertTriangle, text: `${stats.expiringToday} subscription${stats.expiringToday > 1 ? "s" : ""} expire today — send reminders now!` });
+    if (stats.expiringWeek >= 3) arr.push({ type: "warning", icon: Clock, text: `${stats.expiringWeek} subscriptions expiring this week. Forecasted at-risk revenue: ${formatCurrency(subs.filter(s => s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 7).reduce((a, s) => a + Number(s.price), 0), 0)}` });
+    if (stats.churnRate > 30) arr.push({ type: "danger", icon: TrendingDown, text: `High churn rate (${stats.churnRate.toFixed(0)}%) — consider win-back campaigns.` });
+    if (stats.renewalRate >= 60) arr.push({ type: "success", icon: Sparkles, text: `Strong renewal rate of ${stats.renewalRate.toFixed(0)}% — your customers love your service!` });
+    if (stats.mrr > 0 && stats.activeCount > 0) arr.push({ type: "info", icon: TrendingUp, text: `Avg revenue per user: ${formatCurrency(stats.mrr / stats.activeCount, 0)}/mo across ${stats.activeCount} active subs.` });
+    if (arr.length === 0) arr.push({ type: "info", icon: Lightbulb, text: "Add your first subscription to unlock recurring revenue insights." });
+    return arr.slice(0, 4);
+  }, [stats, subs]);
+
+  // Top customers by revenue
+  const topCustomers = useMemo(() => {
+    const map = new Map<string, { name: string; phone: string; revenue: number; count: number }>();
+    subs.forEach(s => {
+      if (!s.customers?.name) return;
+      const key = s.customer_id || s.customers.name;
+      const e = map.get(key) || { name: s.customers.name, phone: s.customers.phone, revenue: 0, count: 0 };
+      e.revenue += Number(s.price);
+      e.count++;
+      map.set(key, e);
+    });
+    return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  }, [subs]);
+
+  // At-risk subs (expiring in next 14 days)
+  const atRiskSubs = useMemo(() => {
+    return subs
+      .filter(s => s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 14)
+      .sort((a, b) => getDaysLeft(a.end_date) - getDaysLeft(b.end_date))
+      .slice(0, 6);
   }, [subs]);
 
   // Charts
@@ -328,126 +383,240 @@ const Subscriptions = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="hidden sm:block">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <RefreshCw className="h-6 w-6 text-primary" />
+        {/* Premium Hero */}
+        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-7">
+          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20 shrink-0">
+                <Repeat className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
-              Subscriptions
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">Manage subscriptions, renewals & revenue tracking</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button size="sm" onClick={openAdd} className="gap-1.5">
-              <Plus className="h-4 w-4" /> Add Subscription
-            </Button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Subscriptions</h1>
+                  <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs">
+                    <Sparkles className="h-3 w-3" /> Premium
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Track recurring revenue, renewals & churn intelligently
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="flex-1 lg:flex-none lg:w-64 rounded-xl bg-background/60 backdrop-blur border p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase text-muted-foreground tracking-wide flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Sub Health
+                  </p>
+                  <span className={`text-[10px] sm:text-xs font-bold ${healthColor}`}>{healthLabel}</span>
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className={`text-2xl sm:text-3xl font-bold ${healthColor}`}>{healthScore}</span>
+                  <span className="text-xs text-muted-foreground mb-1">/100</span>
+                </div>
+                <Progress value={healthScore} className="h-1.5 mt-2" />
+              </div>
+              <div className="flex flex-col gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 w-full justify-center">
+                  <Download className="h-4 w-4" /> <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button size="sm" onClick={openAdd} className="gap-1.5 w-full justify-center shadow-sm">
+                  <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* KPI Cards */}
+        {/* Quick Guide */}
+        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors rounded-lg">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                    <HelpCircle className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Quick Guide & Best Practices</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">
+                      Learn how to grow MRR, reduce churn & automate renewals
+                    </p>
+                  </div>
+                </div>
+                {guideOpen ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { icon: Plus, title: "1. Add Subscription", text: "Click Add to create. Pick customer, product, duration & price. End date auto-calculates." },
+                  { icon: Bell, title: "2. Send Reminders", text: "Use the WhatsApp button on each row to send a renewal reminder before expiry." },
+                  { icon: RotateCcw, title: "3. Renew with One Click", text: "When customer pays, hit Renew. Dates roll forward and renewal counter increments." },
+                  { icon: Target, title: "4. Watch Health Score", text: "Aim for 80+. High renewal rate, low churn & active follow-up boost your score." },
+                ].map((g, i) => {
+                  const GIcon = g.icon;
+                  return (
+                    <div key={i} className="rounded-lg border bg-background p-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="p-1.5 rounded bg-primary/10"><GIcon className="h-3.5 w-3.5 text-primary" /></div>
+                        <p className="text-xs font-semibold">{g.title}</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">{g.text}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Smart Insights */}
+        {insights.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {insights.map((ins, i) => {
+              const styles = {
+                success: "border-l-green-500 bg-green-500/5",
+                warning: "border-l-amber-500 bg-amber-500/5",
+                danger: "border-l-destructive bg-destructive/5",
+                info: "border-l-primary bg-primary/5",
+              }[ins.type];
+              const iconColor = {
+                success: "text-green-600",
+                warning: "text-amber-600",
+                danger: "text-destructive",
+                info: "text-primary",
+              }[ins.type];
+              const Icon = ins.icon;
+              return (
+                <div key={i} className={`flex items-start gap-3 rounded-lg border-l-4 border border-border/50 p-3 ${styles}`}>
+                  <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${iconColor}`} />
+                  <p className="text-xs sm:text-sm leading-relaxed">{ins.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* KPI Cards — Premium */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="group hover:shadow-md transition-all duration-300 border-l-4 border-l-green-500">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Active</p>
-                <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                </div>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.activeCount}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                MRR: {formatCurrency(stats.mrr, 0)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-md transition-all duration-300 border-l-4 border-l-amber-500">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Expiring Soon</p>
-                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                </div>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">{stats.expiringWeek}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                {stats.expiringToday} expire today
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-md transition-all duration-300 border-l-4 border-l-red-500">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Expired</p>
-                <div className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30">
-                  <XCircle className="h-3.5 w-3.5 text-red-600" />
-                </div>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-destructive">{stats.expiredCount}</p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                Churn: {stats.churnRate.toFixed(0)}%
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-md transition-all duration-300 border-l-4 border-l-primary">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Revenue</p>
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.totalRevenue, 0)}</p>
-              <p className={`text-[10px] sm:text-xs mt-1 ${stats.profit >= 0 ? "text-green-600" : "text-destructive"}`}>
-                Profit: {formatCurrency(stats.profit, 0)}
-              </p>
-            </CardContent>
-          </Card>
+          {[
+            { label: "Active", value: stats.activeCount, sub: `MRR ${formatCurrency(stats.mrr, 0)}`, icon: CheckCircle2, accent: "border-l-green-500", iconBg: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-600", valueColor: "text-green-600" },
+            { label: "Expiring Soon", value: stats.expiringWeek, sub: `${stats.expiringToday} today`, icon: AlertTriangle, accent: "border-l-amber-500", iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600", valueColor: "text-amber-600" },
+            { label: "Expired", value: stats.expiredCount, sub: `Churn ${stats.churnRate.toFixed(0)}%`, icon: XCircle, accent: "border-l-red-500", iconBg: "bg-red-100 dark:bg-red-900/30", iconColor: "text-red-600", valueColor: "text-destructive" },
+            { label: "Total Revenue", value: formatCurrency(stats.totalRevenue, 0), sub: `Profit ${formatCurrency(stats.profit, 0)}`, icon: DollarSign, accent: "border-l-primary", iconBg: "bg-primary/10", iconColor: "text-primary", valueColor: "" },
+          ].map((k, i) => {
+            const KIcon = k.icon;
+            return (
+              <Card key={i} className={`hover:shadow-md transition-all border-l-4 ${k.accent}`}>
+                <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase text-muted-foreground tracking-wide">{k.label}</p>
+                    <div className={`p-1.5 rounded-lg ${k.iconBg} shrink-0`}>
+                      <KIcon className={`h-3.5 w-3.5 ${k.iconColor}`} />
+                    </div>
+                  </div>
+                  <p className={`text-xl sm:text-2xl lg:text-3xl font-bold truncate ${k.valueColor}`}>{k.value}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 truncate">{k.sub}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Secondary metrics */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <RotateCcw className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Renewals</p>
-                <p className="text-lg font-bold">{stats.totalRenewals}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Renewal Rate</p>
-                <p className="text-lg font-bold">{stats.renewalRate.toFixed(0)}%</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                <Timer className="h-4 w-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">30-Day Expiry</p>
-                <p className="text-lg font-bold">{stats.expiring30}</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Total Renewals", value: stats.totalRenewals, icon: RotateCcw, iconBg: "bg-primary/10", iconColor: "text-primary" },
+            { label: "Renewal Rate", value: `${stats.renewalRate.toFixed(0)}%`, icon: TrendingUp, iconBg: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-600" },
+            { label: "30-Day Expiry", value: stats.expiring30, icon: Timer, iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600" },
+            { label: "Avg Lifetime", value: stats.avgLifetime.toFixed(1), icon: Crown, iconBg: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-600" },
+          ].map((m, i) => {
+            const MIcon = m.icon;
+            return (
+              <Card key={i} className="hover:shadow-sm transition-all">
+                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${m.iconBg} shrink-0`}>
+                    <MIcon className={`h-4 w-4 ${m.iconColor}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{m.label}</p>
+                    <p className="text-base sm:text-lg font-bold truncate">{m.value}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
+
+        {/* At-Risk panel */}
+        {atRiskSubs.length > 0 && (
+          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600" /> At-Risk Subscriptions (next 14 days)
+                <Badge variant="outline" className="ml-auto text-[10px]">{atRiskSubs.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {atRiskSubs.map(s => {
+                  const d = getDaysLeft(s.end_date);
+                  return (
+                    <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg border bg-background p-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold truncate">{s.customers?.name || "—"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{s.product_name}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge className={d <= 3 ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-[10px]" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]"}>{d}d</Badge>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => sendWhatsAppReminder(s)}>
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Top Customers */}
+        {topCustomers.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-500" /> Top Customers by Revenue
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2.5">
+                {topCustomers.map((c, i) => {
+                  const medal = ["🥇", "🥈", "🥉"][i] || `#${i + 1}`;
+                  const max = topCustomers[0].revenue || 1;
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="text-base sm:text-lg w-8 text-center shrink-0">{medal}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="text-xs sm:text-sm font-medium truncate">{c.name}</p>
+                          <p className="text-xs sm:text-sm font-bold shrink-0">{formatCurrency(c.revenue, 0)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Progress value={(c.revenue / max) * 100} className="h-1.5 flex-1" />
+                          <span className="text-[10px] text-muted-foreground shrink-0">{c.count} sub{c.count > 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
