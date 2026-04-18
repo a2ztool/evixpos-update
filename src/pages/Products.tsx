@@ -19,7 +19,18 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { validateWithToast, productSchema } from "@/lib/validations";
-import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers } from "lucide-react";
+import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers, HelpCircle, LayoutGrid, List as ListIcon, CheckSquare, ArrowUpDown, AlertTriangle, CheckCircle2, XCircle, Boxes, Sparkles } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import ProductImageField from "@/components/ProductImageField";
