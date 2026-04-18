@@ -305,254 +305,175 @@ const AdCosts = () => {
     toast.success("CSV exported!");
   };
 
+  const renderDelta = (val: number | undefined | null) => {
+    if (val === null || val === undefined) return null;
+    const pos = val >= 0;
+    return (
+      <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${pos ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-500"}`}>
+        {pos ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
+        {Math.abs(val).toFixed(1)}%
+      </span>
+    );
+  };
+
   return (
     <DashboardLayout>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-        <div className="hidden sm:block">
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-            <Megaphone className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            Ad Cost Manager
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Track campaigns, analyze ROI & optimize ad spend
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Download className="h-4 w-4" /> Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={exportCSV}>
-                <FileText className="h-4 w-4 mr-2" /> Export CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size="sm" onClick={openAdd} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add Ad Cost
-          </Button>
+      {/* Premium Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-orange-500/10 via-background to-violet-500/10 p-5 sm:p-6 mb-5">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/10 blur-3xl" />
+        <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center shadow-lg shrink-0">
+              <Megaphone className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Ad Cost Manager</h1>
+                <Badge className="bg-gradient-to-r from-orange-500 to-violet-500 text-white border-0 text-[10px] gap-1">
+                  <Sparkles className="h-2.5 w-2.5" /> PRO
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                Track campaigns, ROAS & smart insights to optimize ad spend
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowGuide(!showGuide)} className="gap-1.5 rounded-xl">
+              <BookOpen className="h-4 w-4" /> Guide {showGuide ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportCSV}>
+                  <FileText className="h-4 w-4 mr-2" /> Export CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" onClick={openAdd} className="gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-violet-500 hover:opacity-90 text-white border-0">
+              <Plus className="h-4 w-4" /> Add Ad
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -mr-6 -mt-6" />
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                <DollarSign className="h-4 w-4 text-red-500" />
+      {/* Quick Guide */}
+      {showGuide && (
+        <Card className="mb-5 border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-9 w-9 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                <Lightbulb className="h-4 w-4 text-orange-500" />
               </div>
-              <span className="text-xs text-muted-foreground font-medium">Total Spend</span>
+              <div>
+                <h3 className="font-semibold text-sm">Quick Guide — Master your Ad ROI</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Understand each metric and how to act on it.</p>
+              </div>
             </div>
-            {loading ? <Skeleton className="h-7 w-24 mt-1" /> : (
-              <p className="text-lg sm:text-2xl font-bold text-destructive">৳{stats.totalSpend.toLocaleString()}</p>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { icon: Zap, color: "text-amber-500 bg-amber-500/10", title: "ROAS (Return on Ad Spend)", desc: "Revenue ÷ Spend. Above 3x = excellent, 1.5–3x = good, below 1x = losing money." },
+                { icon: MousePointerClick, color: "text-blue-500 bg-blue-500/10", title: "CTR (Click-through Rate)", desc: "Clicks ÷ Impressions. Above 2% = strong creative-audience fit." },
+                { icon: DollarSign, color: "text-emerald-500 bg-emerald-500/10", title: "CPC (Cost per Click)", desc: "Lower is better. Compare across platforms to spot deals." },
+                { icon: Target, color: "text-violet-500 bg-violet-500/10", title: "CPA (Cost per Acquisition)", desc: "Spend ÷ Conversions. Must stay below avg order value to stay profitable." },
+                { icon: Activity, color: "text-cyan-500 bg-cyan-500/10", title: "Period Comparison", desc: "Green ▲ = growth vs prior equal period. Red ▼ = decline — investigate." },
+                { icon: Award, color: "text-pink-500 bg-pink-500/10", title: "Top Campaigns", desc: "Scale these winners. Pause campaigns with negative profit." },
+              ].map((g) => (
+                <div key={g.title} className="flex gap-3 p-3 rounded-xl bg-card border border-border/40">
+                  <div className={`h-8 w-8 rounded-lg ${g.color} flex items-center justify-center shrink-0`}>
+                    <g.icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold">{g.title}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{g.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
+      )}
 
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-full -mr-6 -mt-6" />
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-green-600" />
+      {/* Primary KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        {[
+          { label: "Total Spend", value: `৳${stats.totalSpend.toLocaleString()}`, icon: DollarSign, bg: "bg-red-500/10 text-red-500", delta: deltas?.spend, valueClass: "text-destructive" },
+          { label: "Revenue", value: `৳${stats.totalRevenue.toLocaleString()}`, icon: TrendingUp, bg: "bg-emerald-500/10 text-emerald-600", delta: deltas?.revenue, valueClass: "text-emerald-600" },
+          { label: "ROAS", value: `${stats.roas.toFixed(2)}x`, icon: Zap, bg: "bg-amber-500/10 text-amber-500", delta: deltas?.roas, valueClass: stats.roas >= 1 ? "text-emerald-600" : "text-destructive" },
+          { label: "Net Profit", value: `${stats.profit >= 0 ? "+" : ""}৳${stats.profit.toLocaleString()}`, icon: stats.profit >= 0 ? ArrowUpRight : ArrowDownRight, bg: stats.profit >= 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-500", delta: deltas?.profit, valueClass: stats.profit >= 0 ? "text-emerald-600" : "text-destructive" },
+        ].map((k) => (
+          <Card key={k.label} className="rounded-2xl">
+            <CardContent className="!p-3.5 sm:!p-4 flex items-center gap-3">
+              <div className={`h-9 w-9 shrink-0 rounded-xl ${k.bg} flex items-center justify-center`}>
+                <k.icon className="h-4 w-4" />
               </div>
-              <span className="text-xs text-muted-foreground font-medium">Revenue</span>
-            </div>
-            {loading ? <Skeleton className="h-7 w-24 mt-1" /> : (
-              <p className="text-lg sm:text-2xl font-bold text-green-600">৳{stats.totalRevenue.toLocaleString()}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-6 -mt-6" />
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap className="h-4 w-4 text-primary" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{k.label}</p>
+                  {renderDelta(k.delta)}
+                </div>
+                {loading ? <Skeleton className="h-6 w-20 mt-1" /> : (
+                  <p className={`text-lg sm:text-xl font-bold tabular-nums mt-0.5 truncate ${k.valueClass}`}>{k.value}</p>
+                )}
               </div>
-              <span className="text-xs text-muted-foreground font-medium">ROAS</span>
-            </div>
-            {loading ? <Skeleton className="h-7 w-24 mt-1" /> : (
-              <p className="text-lg sm:text-2xl font-bold">{stats.roas.toFixed(2)}x</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-violet-500/5 rounded-full -mr-6 -mt-6" />
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${stats.profit >= 0 ? "bg-green-500/10" : "bg-red-500/10"}`}>
-                {stats.profit >= 0 ? <ArrowUpRight className="h-4 w-4 text-green-600" /> : <ArrowDownRight className="h-4 w-4 text-red-500" />}
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">Net Profit</span>
-            </div>
-            {loading ? <Skeleton className="h-7 w-24 mt-1" /> : (
-              <p className={`text-lg sm:text-2xl font-bold ${stats.profit >= 0 ? "text-green-600" : "text-destructive"}`}>
-                {stats.profit >= 0 ? "+" : ""}৳{stats.profit.toLocaleString()}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-5">
         {[
-          { label: "Clicks", value: stats.totalClicks.toLocaleString(), icon: MousePointerClick },
-          { label: "Impressions", value: stats.totalImpressions.toLocaleString(), icon: Eye },
-          { label: "Conversions", value: stats.totalConversions.toLocaleString(), icon: Target },
-          { label: "CTR", value: `${stats.ctr.toFixed(1)}%`, icon: BarChart3 },
-          { label: "CPC", value: `৳${stats.cpc.toFixed(1)}`, icon: DollarSign },
-          { label: "CPA", value: `৳${stats.cpa.toFixed(0)}`, icon: Zap },
+          { label: "Clicks", value: stats.totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-blue-500 bg-blue-500/10" },
+          { label: "Impressions", value: stats.totalImpressions.toLocaleString(), icon: Eye, color: "text-cyan-500 bg-cyan-500/10" },
+          { label: "Conversions", value: stats.totalConversions.toLocaleString(), icon: Target, color: "text-emerald-600 bg-emerald-500/10" },
+          { label: "CTR", value: `${stats.ctr.toFixed(1)}%`, icon: BarChart3, color: "text-violet-500 bg-violet-500/10" },
+          { label: "CPC", value: `৳${stats.cpc.toFixed(1)}`, icon: DollarSign, color: "text-amber-500 bg-amber-500/10" },
+          { label: "CPA", value: `৳${stats.cpa.toFixed(0)}`, icon: Flame, color: "text-pink-500 bg-pink-500/10" },
         ].map((m) => (
-          <Card key={m.label}>
-            <CardContent className="pt-3 pb-2 text-center">
-              <m.icon className="h-3.5 w-3.5 mx-auto text-muted-foreground mb-1" />
-              <p className="text-xs text-muted-foreground">{m.label}</p>
-              {loading ? <Skeleton className="h-5 w-12 mx-auto mt-1" /> : (
-                <p className="text-sm sm:text-base font-bold">{m.value}</p>
+          <Card key={m.label} className="rounded-2xl">
+            <CardContent className="!p-3 text-center">
+              <div className={`h-7 w-7 rounded-lg ${m.color} flex items-center justify-center mx-auto mb-1.5`}>
+                <m.icon className="h-3.5 w-3.5" />
+              </div>
+              <p className="text-[10px] text-muted-foreground font-medium">{m.label}</p>
+              {loading ? <Skeleton className="h-4 w-12 mx-auto mt-1" /> : (
+                <p className="text-sm font-bold tabular-nums">{m.value}</p>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-        {/* Spend vs Revenue Trend */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Spend vs Revenue Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-[220px] w-full" /> : dailyTrend.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
-                <BarChart3 className="h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm">No trend data</p>
+      {/* Smart Insights */}
+      {!loading && (
+        <Card className="mb-5 rounded-2xl border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-card to-violet-500/5">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-white" />
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={dailyTrend}>
-                  <defs>
-                    <linearGradient id="spendG" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-                  <XAxis dataKey="day" fontSize={10} tickLine={false} />
-                  <YAxis fontSize={10} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-                  <Legend iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
-                  <Area type="monotone" dataKey="spend" stroke="#ef4444" fill="url(#spendG)" strokeWidth={2} name="Spend" />
-                  <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revG)" strokeWidth={2} name="Revenue" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Platform Distribution */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-              <Megaphone className="h-4 w-4 text-primary" />
-              By Platform
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-[220px] w-full" /> : platformPie.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
-                <Megaphone className="h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm">No platform data</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={platformPie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
-                    {platformPie.map((entry, i) => (
-                      <Cell key={i} fill={PLATFORM_COLORS[entry.name] || CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} formatter={(v: number) => [`৳${v.toLocaleString()}`, "Spend"]} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Platform Performance Bar */}
-      {platformChart.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              Platform Performance Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={platformChart}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-                <XAxis dataKey="platform" fontSize={10} tickLine={false} />
-                <YAxis fontSize={10} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-                <Legend iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
-                <Bar dataKey="spend" fill="#ef4444" radius={[4, 4, 0, 0]} name="Spend" />
-                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Top Campaigns */}
-      {topCampaigns.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Top Performing Campaigns
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {topCampaigns.map((a, i) => {
-                const profit = Number(a.revenue) - Number(a.amount);
-                const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
+              <h3 className="text-sm font-bold">Smart Insights</h3>
+              <Badge variant="outline" className="text-[10px] ml-auto">AI Powered</Badge>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {insights.map((ins, i) => {
+                const cfg = ins.type === "good"
+                  ? { Icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10" }
+                  : ins.type === "warn"
+                  ? { Icon: AlertTriangle, cls: "text-amber-500 bg-amber-500/10" }
+                  : { Icon: Info, cls: "text-blue-500 bg-blue-500/10" };
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                      #{i + 1}
+                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-card border border-border/40">
+                    <div className={`h-7 w-7 rounded-lg ${cfg.cls} flex items-center justify-center shrink-0`}>
+                      <cfg.Icon className="h-3.5 w-3.5" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{a.campaign_name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-[10px]">{a.platform}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{a.ad_date}</span>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-sm font-bold ${profit >= 0 ? "text-green-600" : "text-destructive"}`}>
-                        {profit >= 0 ? "+" : ""}৳{profit.toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">ROAS: {roas.toFixed(2)}x</p>
-                    </div>
+                    <p className="text-xs leading-relaxed">{ins.text}</p>
                   </div>
                 );
               })}
@@ -560,6 +481,220 @@ const AdCosts = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 mb-5">
+        <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex rounded-xl">
+          <TabsTrigger value="overview" className="gap-1.5 rounded-lg"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
+          <TabsTrigger value="platforms" className="gap-1.5 rounded-lg"><Megaphone className="h-3.5 w-3.5" /><span className="hidden sm:inline">Platforms</span></TabsTrigger>
+          <TabsTrigger value="campaigns" className="gap-1.5 rounded-lg"><Award className="h-3.5 w-3.5" /><span className="hidden sm:inline">Top Campaigns</span></TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4 mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-2 rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" /> Spend vs Revenue Trend
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="!pt-0">
+                {loading ? <Skeleton className="h-[220px] w-full" /> : dailyTrend.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
+                    <BarChart3 className="h-10 w-10 mb-2 opacity-20" />
+                    <p className="text-sm">No trend data</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={dailyTrend}>
+                      <defs>
+                        <linearGradient id="spendG" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                      <XAxis dataKey="day" fontSize={10} tickLine={false} />
+                      <YAxis fontSize={10} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
+                      <Area type="monotone" dataKey="spend" stroke="#ef4444" fill="url(#spendG)" strokeWidth={2} name="Spend" />
+                      <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revG)" strokeWidth={2} name="Revenue" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-primary" /> Spend by Platform
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="!pt-0">
+                {loading ? <Skeleton className="h-[220px] w-full" /> : platformPie.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
+                    <Megaphone className="h-10 w-10 mb-2 opacity-20" />
+                    <p className="text-sm">No platform data</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={platformPie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+                        {platformPie.map((entry, i) => (
+                          <Cell key={i} fill={PLATFORM_COLORS[entry.name] || CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} formatter={(v: number) => [`৳${v.toLocaleString()}`, "Spend"]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ROAS Health */}
+          <Card className="rounded-2xl">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold">ROAS Health</h3>
+                </div>
+                <span className="text-sm font-bold tabular-nums">{stats.roas.toFixed(2)}x</span>
+              </div>
+              <Progress value={Math.min(100, (stats.roas / 5) * 100)} className="h-2 mb-2" />
+              <p className="text-[11px] text-muted-foreground">
+                {stats.roas >= 3 ? "🚀 Excellent — scale aggressively." : stats.roas >= 1.5 ? "👍 Healthy — keep optimizing creatives." : stats.roas >= 1 ? "⚠️ Break-even — needs improvement." : stats.totalSpend > 0 ? "🔴 Losing money — pause and rethink." : "Add campaigns to evaluate ROAS."}
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="platforms" className="space-y-4 mt-0">
+          {platformChart.length === 0 ? (
+            <Card className="rounded-2xl">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <Megaphone className="h-10 w-10 mb-2 opacity-20" />
+                <p className="text-sm">No platform data yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <Card className="rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" /> Platform Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="!pt-0">
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={platformChart}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                      <XAxis dataKey="platform" fontSize={10} tickLine={false} />
+                      <YAxis fontSize={10} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
+                      <Bar dataKey="spend" fill="#ef4444" radius={[4, 4, 0, 0]} name="Spend" />
+                      <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Award className="h-4 w-4 text-primary" /> Platform Leaderboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {platformChart.map((p, i) => {
+                      const profit = p.revenue - p.spend;
+                      const roas = p.spend > 0 ? p.revenue / p.spend : 0;
+                      const max = platformChart[0].spend || 1;
+                      const pct = (p.spend / max) * 100;
+                      return (
+                        <div key={p.platform} className="p-3 rounded-xl border border-border/40 hover:border-primary/40 transition-all">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ backgroundColor: PLATFORM_COLORS[p.platform] || "#6b7280" }}>
+                              #{i + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{p.platform}</p>
+                              <p className="text-[10px] text-muted-foreground">{p.clicks.toLocaleString()} clicks • {p.conversions} conv.</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className={`text-sm font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                                {profit >= 0 ? "+" : ""}৳{profit.toLocaleString()}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">ROAS: {roas.toFixed(2)}x</p>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: PLATFORM_COLORS[p.platform] || "#6b7280" }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="campaigns" className="space-y-4 mt-0">
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" /> Top Performing Campaigns
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topCampaigns.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Award className="h-10 w-10 mb-2 opacity-20" />
+                  <p className="text-sm">No campaigns yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {topCampaigns.map((a, i) => {
+                    const profit = Number(a.revenue) - Number(a.amount);
+                    const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
+                    return (
+                      <div key={a.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-border/40 hover:border-primary/40 hover:bg-muted/30 transition-all">
+                        <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${i === 0 ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white" : i === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white" : i === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white" : "bg-primary/10 text-primary"}`}>
+                          #{i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{a.campaign_name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[10px]" style={{ borderColor: PLATFORM_COLORS[a.platform], color: PLATFORM_COLORS[a.platform] }}>{a.platform}</Badge>
+                            <span className="text-[10px] text-muted-foreground">{a.ad_date}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-sm font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                            {profit >= 0 ? "+" : ""}৳{profit.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">ROAS: {roas.toFixed(2)}x</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Filters */}
       <Card className="mb-4">
