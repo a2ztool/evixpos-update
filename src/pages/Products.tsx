@@ -103,6 +103,15 @@ const Products = () => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // New: bulk select, view mode, sort, advanced filters, guide drawer
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [sortBy, setSortBy] = useState<"newest" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc">("newest");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "in" | "low" | "out">("all");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "activate" | "deactivate">(null);
+
   const fetchProducts = async () => {
     if (!activeStore) return;
     const { data } = await supabase.from("products").select("*").eq("store_id", activeStore.id).order("created_at", { ascending: false });
