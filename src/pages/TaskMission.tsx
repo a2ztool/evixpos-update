@@ -267,6 +267,30 @@ const TaskMission = () => {
     toast.success("Deleted");
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkComplete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    await supabase.from("tasks").update({ status: "done", completed_at: new Date().toISOString() }).in("id", ids);
+    toast.success(`✓ Completed ${ids.length} tasks`);
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    await supabase.from("tasks").delete().in("id", ids);
+    toast.success(`Deleted ${ids.length} tasks`);
+    setSelectedIds(new Set());
+  };
+
   const exportCSV = () => {
     const headers = ["Title", "Description", "Priority", "Status", "Due Date", "Completed At", "Created"];
     const rows = filtered.map((t) => [
