@@ -21,8 +21,10 @@ import {
   Plus, Trash2, Pencil, Search, ListTodo, CheckCircle2, Clock, AlertCircle,
   Target, Trophy, Flame, Star, TrendingUp, Calendar, Filter,
   BarChart3, Zap, Award, ArrowUp, ArrowRight, ArrowDown, Download,
-  Sparkles, Flag, CircleDot
+  Sparkles, Flag, CircleDot, HelpCircle, ChevronDown, ChevronUp,
+  Activity, Rocket, Brain, Crown, CheckSquare, X, Gauge
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { differenceInDays, format as fnsFormat, subDays, startOfWeek, startOfMonth } from "date-fns";
 import { BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from "recharts";
 
