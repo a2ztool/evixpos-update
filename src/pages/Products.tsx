@@ -415,34 +415,38 @@ const Products = () => {
     <DashboardLayout>
       <UsageWarningBanner type="products" />
 
-      {/* Premium Header */}
-      <div className="flex items-end justify-between flex-wrap gap-3 pb-4 sm:pb-5 mb-4 sm:mb-6 border-b border-border/60">
-        <div className="flex flex-col gap-1">
-          <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
+      {/* Premium Header — title only shown on desktop (DashboardLayout shows it on mobile) */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-3 sm:pb-5 mb-3 sm:mb-6 border-b border-border/60">
+        <div className="hidden sm:flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
             <span>Sales & Products</span>
             <span className="text-border">/</span>
             <span className="text-primary">Catalog</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Products</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setGuideOpen(true)}
-            className="gap-1.5 h-9"
-            aria-label="Open guide"
+            onClick={() => setImportOpen(true)}
+            className="gap-1.5 h-9 flex-1 sm:flex-initial"
           >
-            <HelpCircle className="h-4 w-4" />
-            <span className="hidden sm:inline">Guide</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-1.5 h-9 hidden sm:inline-flex">
             <Upload className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-1.5 h-9 hidden sm:inline-flex" onClick={openAdd}>
+          <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-initial" onClick={openAdd}>
             <Plus className="h-4 w-4" />
             Add Product
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setGuideOpen(true)}
+            className="h-9 w-9 shrink-0"
+            aria-label="Open guide"
+          >
+            <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
       </div>
