@@ -590,8 +590,6 @@ const POS = () => {
             user_id: effectiveUserId!,
             store_id: activeStore?.id,
             customer_id: customerId || null,
-            product_id: item.product.id,
-            order_id: order.id,
             product_name: item.product.name,
             variation: cleanVarName(item.variation!.name),
             price: getItemPrice(item),
@@ -601,7 +599,7 @@ const POS = () => {
             status: computedPaymentStatus === "paid" ? "active" : "pending",
             plan: "customer" as any,
             renewals: 0,
-            notes: `Auto-created from POS Order #${order.id.slice(0, 8)}${item.quantity > 1 ? ` · Unit ${index + 1}` : ""}`,
+            notes: `Auto-created from POS Order #${order.id.slice(0, 8)} | product:${item.product.id}${item.quantity > 1 ? ` | unit ${index + 1}` : ""}`,
           }));
           return quantityRows;
         });
