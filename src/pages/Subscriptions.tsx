@@ -341,6 +341,67 @@ const Subscriptions = () => {
     toast.success("WhatsApp opened");
   };
 
+  // ===== Bulk actions =====
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkRenew = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const targets = subs.filter(s => selectedIds.has(s.id));
+    let ok = 0, fail = 0;
+    for (const s of targets) {
+      const newStart = s.end_date || fnsFormat(new Date(), "yyyy-MM-dd");
+      const newEnd = getEndDate(newStart, s.variation);
+      const { error } = await supabase.from("subscriptions").update({
+        start_date: newStart, end_date: newEnd,
+        renewals: (s.renewals || 0) + 1, status: "active",
+      }).eq("id", s.id);
+      if (error) fail++; else ok++;
+    }
+    setBulkBusy(false);
+    clearSelection();
+    if (ok) toast.success(`🔄 Renewed ${ok} subscription${ok > 1 ? "s" : ""}`);
+    if (fail) toast.error(`Failed to renew ${fail}`);
+  };
+
+  const bulkRemind = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const targets = subs.filter(s => selectedIds.has(s.id));
+    let opened = 0, skipped = 0;
+    for (const s of targets) {
+      const customer = customers.find((c) => c.id === s.customer_id);
+      if (!customer?.phone) { skipped++; continue; }
+      const daysLeft = getDaysLeft(s.end_date);
+      const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+      window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+      opened++;
+      // small delay so the browser doesn't block multi-window opens
+      await new Promise(r => setTimeout(r, 250));
+    }
+    setBulkBusy(false);
+    clearSelection();
+    if (opened) toast.success(`📲 Opened WhatsApp for ${opened}`);
+    if (skipped) toast.warning(`Skipped ${skipped} (no phone)`);
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} subscription(s)? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("subscriptions").delete().in("id", Array.from(selectedIds));
+    setBulkBusy(false);
+    clearSelection();
+    if (error) toast.error(error.message); else toast.success("Deleted");
+  };
+
   const exportCSV = () => {
     const headers = ["Customer", "Phone", "Product", "Variation", "Start", "End", "Price", "Cost", "Status", "Renewals"];
     const rows = filtered.map(s => [
