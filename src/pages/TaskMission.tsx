@@ -577,68 +577,34 @@ const TaskMission = () => {
         </Card>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <Card className="hover:shadow-md transition-all duration-300 border-border/40">
-            <CardContent className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Completion</p>
-                <div className="p-1 rounded-md bg-primary/10">
-                  <TrendingUp className="h-3 w-3 text-primary" />
-                </div>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold">{stats.completionRate.toFixed(0)}%</p>
-              <Progress value={stats.completionRate} className="h-1 mt-1.5" />
-              <p className="text-[10px] text-muted-foreground mt-1">{stats.done}/{stats.total} tasks</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-blue-500">
-            <CardContent className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">To Do</p>
-                <CircleDot className="h-3.5 w-3.5 text-blue-500" />
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.todo}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">{stats.dueSoon} due soon</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-amber-500">
-            <CardContent className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">In Progress</p>
-                <Zap className="h-3.5 w-3.5 text-amber-500" />
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-amber-600">{stats.inProgress}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Active now</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-green-500">
-            <CardContent className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Completed</p>
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.done}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Total achieved</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-orange-500">
-            <CardContent className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Streak</p>
-                <Flame className="h-3.5 w-3.5 text-orange-500" />
-              </div>
-              <p className="text-xl sm:text-2xl font-bold text-orange-600">{stats.streak}<span className="text-xs font-normal ml-1">days</span></p>
-              {stats.overdue > 0 ? (
-                <p className="text-[10px] text-destructive mt-1">{stats.overdue} overdue</p>
-              ) : (
-                <p className="text-[10px] text-muted-foreground mt-1">On track 🔥</p>
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          {[
+            { label: "Completion", value: `${stats.completionRate.toFixed(0)}%`, sub: `${stats.done}/${stats.total} tasks`, Icon: TrendingUp, color: "primary", accent: "border-l-primary", iconBg: "bg-primary/10", iconColor: "text-primary", valueColor: "text-foreground", showProgress: true },
+            { label: "To Do", value: stats.todo, sub: `${stats.dueSoon} due soon`, Icon: CircleDot, color: "blue", accent: "border-l-blue-500", iconBg: "bg-blue-500/10", iconColor: "text-blue-500", valueColor: "text-blue-600 dark:text-blue-400" },
+            { label: "In Progress", value: stats.inProgress, sub: "Active now", Icon: Zap, color: "amber", accent: "border-l-amber-500", iconBg: "bg-amber-500/10", iconColor: "text-amber-500", valueColor: "text-amber-600 dark:text-amber-400" },
+            { label: "Completed", value: stats.done, sub: "Total achieved", Icon: CheckCircle2, color: "green", accent: "border-l-green-500", iconBg: "bg-green-500/10", iconColor: "text-green-500", valueColor: "text-green-600 dark:text-green-400" },
+            { label: "Streak", value: stats.streak, suffix: "days", sub: stats.overdue > 0 ? `${stats.overdue} overdue` : "On track 🔥", subColor: stats.overdue > 0 ? "text-destructive" : "text-muted-foreground", Icon: Flame, color: "orange", accent: "border-l-orange-500", iconBg: "bg-orange-500/10", iconColor: "text-orange-500", valueColor: "text-orange-600 dark:text-orange-400" },
+          ].map((k, i) => {
+            const KIcon = k.Icon;
+            return (
+              <Card key={i} className={`hover:shadow-md transition-all duration-300 border-l-4 ${k.accent}`}>
+                <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight">{k.label}</p>
+                    <div className={`p-1.5 rounded-lg ${k.iconBg} shrink-0`}>
+                      <KIcon className={`h-3.5 w-3.5 ${k.iconColor}`} />
+                    </div>
+                  </div>
+                  <p className={`text-2xl sm:text-3xl font-bold leading-none ${k.valueColor}`}>
+                    {k.value}
+                    {k.suffix && <span className="text-xs font-medium ml-1 text-muted-foreground">{k.suffix}</span>}
+                  </p>
+                  {k.showProgress && <Progress value={stats.completionRate} className="h-1.5 mt-3" />}
+                  <p className={`text-[11px] mt-2 ${k.subColor || "text-muted-foreground"}`}>{k.sub}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Tabs */}
