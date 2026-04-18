@@ -220,7 +220,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
         </div>
         <div style="padding:14px 16px;border-radius:10px;background:#f8fafb;border:1px solid #e8ecef">
           <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:5px">💳 Payment</p>
-          <p style="font-size:14px;font-weight:700;text-transform:capitalize">${order.payment_method}: ${curSymbol}${total.toFixed(2)}</p>
+          <p style="font-size:14px;font-weight:700;text-transform:capitalize">${order.payment_method}</p>
           <p style="font-size:10px;color:#888;margin-top:2px;text-transform:capitalize">Source: ${order.source}</p>
         </div>
       </div>
