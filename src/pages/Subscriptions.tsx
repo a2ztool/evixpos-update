@@ -163,6 +163,59 @@ const Subscriptions = () => {
     };
   }, [subs]);
 
+  // Subscription Health Score (0-100)
+  const healthScore = useMemo(() => {
+    let score = 0;
+    if (stats.activeCount > 0) score += 25;
+    if (stats.renewalRate >= 50) score += 25;
+    else if (stats.renewalRate >= 25) score += 15;
+    else if (stats.renewalRate > 0) score += 8;
+    if (stats.churnRate <= 10) score += 25;
+    else if (stats.churnRate <= 25) score += 15;
+    else if (stats.churnRate <= 40) score += 8;
+    if (stats.profit > 0) score += 15;
+    if (stats.expiringWeek === 0) score += 10;
+    else if (stats.expiringWeek <= 3) score += 5;
+    return Math.min(100, score);
+  }, [stats]);
+
+  const healthLabel = healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Healthy" : healthScore >= 40 ? "Fair" : "Needs Attention";
+  const healthColor = healthScore >= 80 ? "text-green-600" : healthScore >= 60 ? "text-primary" : healthScore >= 40 ? "text-amber-600" : "text-destructive";
+
+  // Smart insights
+  const insights = useMemo(() => {
+    const arr: { type: "success" | "warning" | "danger" | "info"; icon: any; text: string }[] = [];
+    if (stats.expiringToday > 0) arr.push({ type: "danger", icon: AlertTriangle, text: `${stats.expiringToday} subscription${stats.expiringToday > 1 ? "s" : ""} expire today — send reminders now!` });
+    if (stats.expiringWeek >= 3) arr.push({ type: "warning", icon: Clock, text: `${stats.expiringWeek} subscriptions expiring this week. Forecasted at-risk revenue: ${formatCurrency(subs.filter(s => s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 7).reduce((a, s) => a + Number(s.price), 0), 0)}` });
+    if (stats.churnRate > 30) arr.push({ type: "danger", icon: TrendingDown, text: `High churn rate (${stats.churnRate.toFixed(0)}%) — consider win-back campaigns.` });
+    if (stats.renewalRate >= 60) arr.push({ type: "success", icon: Sparkles, text: `Strong renewal rate of ${stats.renewalRate.toFixed(0)}% — your customers love your service!` });
+    if (stats.mrr > 0 && stats.activeCount > 0) arr.push({ type: "info", icon: TrendingUp, text: `Avg revenue per user: ${formatCurrency(stats.mrr / stats.activeCount, 0)}/mo across ${stats.activeCount} active subs.` });
+    if (arr.length === 0) arr.push({ type: "info", icon: Lightbulb, text: "Add your first subscription to unlock recurring revenue insights." });
+    return arr.slice(0, 4);
+  }, [stats, subs]);
+
+  // Top customers by revenue
+  const topCustomers = useMemo(() => {
+    const map = new Map<string, { name: string; phone: string; revenue: number; count: number }>();
+    subs.forEach(s => {
+      if (!s.customers?.name) return;
+      const key = s.customer_id || s.customers.name;
+      const e = map.get(key) || { name: s.customers.name, phone: s.customers.phone, revenue: 0, count: 0 };
+      e.revenue += Number(s.price);
+      e.count++;
+      map.set(key, e);
+    });
+    return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  }, [subs]);
+
+  // At-risk subs (expiring in next 14 days)
+  const atRiskSubs = useMemo(() => {
+    return subs
+      .filter(s => s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 14)
+      .sort((a, b) => getDaysLeft(a.end_date) - getDaysLeft(b.end_date))
+      .slice(0, 6);
+  }, [subs]);
+
   // Charts
   const statusDistribution = useMemo(() => {
     const active = subs.filter(s => s.status === "active" && getDaysLeft(s.end_date) >= 0).length;
