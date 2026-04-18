@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -98,6 +99,8 @@ const Subscriptions = () => {
   const [activeTab, setActiveTab] = useState("subscriptions");
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [calc, setCalc] = useState({ planPrice: 0, costPrice: 0, customers: 0, duration: "1 Month" });
 
   const fetchAll = useCallback(async () => {
@@ -336,6 +339,67 @@ const Subscriptions = () => {
     const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
     window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("WhatsApp opened");
+  };
+
+  // ===== Bulk actions =====
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkRenew = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const targets = subs.filter(s => selectedIds.has(s.id));
+    let ok = 0, fail = 0;
+    for (const s of targets) {
+      const newStart = s.end_date || fnsFormat(new Date(), "yyyy-MM-dd");
+      const newEnd = getEndDate(newStart, s.variation);
+      const { error } = await supabase.from("subscriptions").update({
+        start_date: newStart, end_date: newEnd,
+        renewals: (s.renewals || 0) + 1, status: "active",
+      }).eq("id", s.id);
+      if (error) fail++; else ok++;
+    }
+    setBulkBusy(false);
+    clearSelection();
+    if (ok) toast.success(`🔄 Renewed ${ok} subscription${ok > 1 ? "s" : ""}`);
+    if (fail) toast.error(`Failed to renew ${fail}`);
+  };
+
+  const bulkRemind = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const targets = subs.filter(s => selectedIds.has(s.id));
+    let opened = 0, skipped = 0;
+    for (const s of targets) {
+      const customer = customers.find((c) => c.id === s.customer_id);
+      if (!customer?.phone) { skipped++; continue; }
+      const daysLeft = getDaysLeft(s.end_date);
+      const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+      window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+      opened++;
+      // small delay so the browser doesn't block multi-window opens
+      await new Promise(r => setTimeout(r, 250));
+    }
+    setBulkBusy(false);
+    clearSelection();
+    if (opened) toast.success(`📲 Opened WhatsApp for ${opened}`);
+    if (skipped) toast.warning(`Skipped ${skipped} (no phone)`);
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} subscription(s)? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("subscriptions").delete().in("id", Array.from(selectedIds));
+    setBulkBusy(false);
+    clearSelection();
+    if (error) toast.error(error.message); else toast.success("Deleted");
   };
 
   const exportCSV = () => {
@@ -652,7 +716,40 @@ const Subscriptions = () => {
               </Select>
             </div>
 
-            <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+              {filtered.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={filtered.length > 0 && filtered.every(s => selectedIds.has(s.id))}
+                    onCheckedChange={(c) => {
+                      if (c) setSelectedIds(new Set(filtered.map(s => s.id)));
+                      else clearSelection();
+                    }}
+                  />
+                  <Label htmlFor="select-all" className="text-xs cursor-pointer">Select all</Label>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border bg-background/95 backdrop-blur-sm shadow-md p-3">
+                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> {selectedIds.size} selected</Badge>
+                <div className="flex-1" />
+                <Button size="sm" variant="outline" className="gap-1.5 text-green-600" disabled={bulkBusy} onClick={bulkRemind}>
+                  <MessageCircle className="h-4 w-4" /> Remind All
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-primary" disabled={bulkBusy} onClick={bulkRenew}>
+                  <RotateCcw className="h-4 w-4" /> Renew All
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-destructive" disabled={bulkBusy} onClick={bulkDelete}>
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+              </div>
+            )}
 
             {filtered.length === 0 ? (
               <Card className="flex flex-col items-center justify-center py-16">
@@ -669,9 +766,14 @@ const Subscriptions = () => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
-                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
+                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
                         <CardContent className="p-4 space-y-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-2">
+                            <Checkbox
+                              className="mt-0.5"
+                              checked={selectedIds.has(s.id)}
+                              onCheckedChange={() => toggleSelect(s.id)}
+                            />
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-sm">{s.customers?.name || "No customer"}</p>
                               <p className="text-xs text-muted-foreground">{s.product_name} · {s.variation}</p>
@@ -711,6 +813,15 @@ const Subscriptions = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-10">
+                            <Checkbox
+                              checked={filtered.length > 0 && filtered.every(s => selectedIds.has(s.id))}
+                              onCheckedChange={(c) => {
+                                if (c) setSelectedIds(new Set(filtered.map(s => s.id)));
+                                else clearSelection();
+                              }}
+                            />
+                          </TableHead>
                           <TableHead>Customer</TableHead>
                           <TableHead>Subscription</TableHead>
                           <TableHead className="text-right">Price</TableHead>
@@ -725,7 +836,13 @@ const Subscriptions = () => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
-                            <TableRow key={s.id} className={`group transition-colors ${isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                            <TableRow key={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedIds.has(s.id)}
+                                  onCheckedChange={() => toggleSelect(s.id)}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div>
                                   <p className="font-medium text-sm">{s.customers?.name || "—"}</p>
