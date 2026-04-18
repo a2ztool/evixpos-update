@@ -75,6 +75,9 @@ const TaskMission = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("board");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [focusMode, setFocusMode] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     if (!activeStore || !user) return;
