@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -16,8 +16,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, FileText, Search, Trash2, Pencil, Link as LinkIcon, Copy, X } from "lucide-react";
+import {
+  Plus, FileText, Search, Trash2, Pencil, Link as LinkIcon, Copy, X,
+  HelpCircle, ExternalLink, QrCode, Share2, LayoutGrid, List as ListIcon,
+  Power, PowerOff, ShoppingBag, Sparkles, TrendingUp, Eye,
+} from "lucide-react";
+import { buildOrderFormUrl } from "@/lib/publicUrl";
 
 interface OrderForm {
   id: string;
@@ -55,8 +61,14 @@ const OrderForms = () => {
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const [forms, setForms] = useState<OrderForm[]>([]);
+  const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const [editId, setEditId] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formSlug, setFormSlug] = useState("");
@@ -77,15 +89,32 @@ const OrderForms = () => {
       .eq("user_id", user.id)
       .eq("store_id", activeStore.id)
       .order("created_at", { ascending: false });
-    if (data)
-      setForms(
-        data.map((f: any) => ({
-          ...f,
-          fields: (f.fields as any) || [],
-          selected_products: (f.selected_products as any) || [],
-          custom_fields: (f.custom_fields as any) || [],
-        }))
-      );
+    if (data) {
+      const list = data.map((f: any) => ({
+        ...f,
+        fields: (f.fields as any) || [],
+        selected_products: (f.selected_products as any) || [],
+        custom_fields: (f.custom_fields as any) || [],
+      })) as OrderForm[];
+      setForms(list);
+
+      // Fetch order counts per form (source = order_form, notes contains form name)
+      const { data: ords } = await supabase
+        .from("orders")
+        .select("notes")
+        .eq("user_id", user.id)
+        .eq("store_id", activeStore.id)
+        .eq("source", "order_form");
+      const counts: Record<string, number> = {};
+      (ords || []).forEach((o: any) => {
+        const m = (o.notes || "").match(/Order Form:\s*([^|]+?)(\s\||$)/);
+        const name = m?.[1]?.trim();
+        if (name) counts[name] = (counts[name] || 0) + 1;
+      });
+      const byFormId: Record<string, number> = {};
+      list.forEach((f) => { byFormId[f.id] = counts[f.name] || 0; });
+      setOrderCounts(byFormId);
+    }
   };
 
   const fetchProducts = async () => {
@@ -127,22 +156,14 @@ const OrderForms = () => {
 
     if (editId) {
       const { error } = await supabase.from("order_forms").update(payload).eq("id", editId);
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Form updated");
-      }
+      if (error) { toast.error(error.message); } else { toast.success("Form updated"); }
     } else {
       const { error } = await supabase.from("order_forms").insert({
         user_id: effectiveUserId!,
         store_id: activeStore.id,
         ...payload,
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Order form created");
-      }
+      if (error) { toast.error(error.message); } else { toast.success("Order form created"); }
     }
     setSheetOpen(false);
     resetForm();
@@ -175,7 +196,18 @@ const OrderForms = () => {
   const handleDelete = async (id: string) => {
     await supabase.from("order_forms").delete().eq("id", id);
     toast.success("Form deleted");
+    setDeleteId(null);
     fetchForms();
+  };
+
+  const toggleStatus = async (f: OrderForm) => {
+    const next = f.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("order_forms").update({ status: next }).eq("id", f.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`Form ${next === "active" ? "activated" : "deactivated"}`);
+      fetchForms();
+    }
   };
 
   const addCustomField = (type: CustomField["type"]) => {
@@ -205,106 +237,215 @@ const OrderForms = () => {
     );
   };
 
-  const filtered = forms.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = useMemo(() => {
+    return forms.filter((f) => {
+      if (search && !f.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "all" && f.status !== statusFilter) return false;
+      return true;
+    });
+  }, [forms, search, statusFilter]);
 
-  const formLink = (f: OrderForm) => `${window.location.origin}/f/${f.slug || f.id}`;
+  const stats = useMemo(() => ({
+    total: forms.length,
+    active: forms.filter((f) => f.status === "active").length,
+    inactive: forms.filter((f) => f.status !== "active").length,
+    orders: Object.values(orderCounts).reduce((a, b) => a + b, 0),
+  }), [forms, orderCounts]);
+
+  const formLink = (f: OrderForm) => buildOrderFormUrl(f.slug || f.id);
+
+  const copyLink = (f: OrderForm) => {
+    navigator.clipboard.writeText(formLink(f));
+    toast.success("Link copied to clipboard");
+  };
+
+  const shareLink = async (f: OrderForm) => {
+    const url = formLink(f);
+    if (navigator.share) {
+      try { await navigator.share({ title: f.name, url }); } catch {}
+    } else {
+      copyLink(f);
+    }
+  };
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  return (
-    <DashboardLayout>
-      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Order Forms</h1>
-        <Button
-          size="sm"
-          className="gap-2"
-          onClick={() => {
-            resetForm();
-            setSheetOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Create Form</span>
-          <span className="sm:hidden">New</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search forms..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+  // ---- Stat card ----
+  const StatCard = ({ icon: Icon, label, value, tint = "primary" }: any) => (
+    <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-2.5 sm:p-3.5 shadow-sm">
+      <div className={`absolute -top-6 -right-6 h-16 w-16 rounded-full bg-${tint}/10 blur-2xl`} />
+      <div className="relative flex items-center gap-2.5">
+        <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-${tint}/10 ring-1 ring-${tint}/20 flex items-center justify-center`}>
+          <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-${tint}`} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium truncate">{label}</p>
+          <p className="text-base sm:text-lg font-bold truncate">{value}</p>
         </div>
       </div>
+    </div>
+  );
 
-      {filtered.length === 0 ? (
-        <div className="premium-card flex flex-col items-center justify-center py-16 sm:py-20">
-          <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <LinkIcon className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
+  return (
+    <DashboardLayout>
+      {/* HEADER — premium, mobile-first */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-3 sm:pb-5 mb-3 sm:mb-5 border-b border-border/60">
+        <div className="hidden sm:flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center">
+            <FileText className="h-5 w-5 text-primary" />
           </div>
-          <h3 className="text-base sm:text-lg font-semibold mb-1">No order forms yet</h3>
-          <p className="text-sm text-muted-foreground mb-4 text-center px-4">
-            Create customizable payment links to easily collect orders.
-          </p>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold leading-tight">Order Forms</h1>
+            <p className="text-xs text-muted-foreground">Hosted checkout pages for your products</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGuideOpen(true)}>
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Guide</span>
+          </Button>
           <Button
-            onClick={() => {
-              resetForm();
-              setSheetOpen(true);
-            }}
-            className="gap-2"
+            size="sm"
+            className="flex-1 sm:flex-initial gap-1.5"
+            onClick={() => { resetForm(); setSheetOpen(true); }}
           >
             <Plus className="h-4 w-4" />
             Create Form
           </Button>
         </div>
+      </div>
+
+      {/* STATS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-5">
+        <StatCard icon={FileText} label="Total Forms" value={stats.total} tint="primary" />
+        <StatCard icon={Sparkles} label="Active" value={stats.active} tint="emerald-500" />
+        <StatCard icon={PowerOff} label="Inactive" value={stats.inactive} tint="muted-foreground" />
+        <StatCard icon={ShoppingBag} label="Orders Received" value={stats.orders} tint="primary" />
+      </div>
+
+      {/* TOOLBAR — glass */}
+      <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm p-2 sm:p-2.5 mb-3 sm:mb-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search forms..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 bg-background/60"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+            <SelectTrigger className="h-9 w-[120px] flex-shrink-0 bg-background/60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="hidden sm:flex items-center rounded-md border border-border bg-background/60 p-0.5">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon" className="h-8 w-8"
+              onClick={() => setViewMode("list")}
+            ><ListIcon className="h-4 w-4" /></Button>
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon" className="h-8 w-8"
+              onClick={() => setViewMode("grid")}
+            ><LayoutGrid className="h-4 w-4" /></Button>
+          </div>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/40 backdrop-blur-sm flex flex-col items-center justify-center py-14 sm:py-20 px-4">
+          <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center mb-4">
+            <LinkIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+          </div>
+          <h3 className="text-base sm:text-lg font-semibold mb-1">No order forms yet</h3>
+          <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
+            Create a hosted checkout link, share it on social or WhatsApp, and start collecting orders instantly.
+          </p>
+          <Button onClick={() => { resetForm(); setSheetOpen(true); }} className="gap-2">
+            <Plus className="h-4 w-4" /> Create your first form
+          </Button>
+        </div>
+      ) : viewMode === "grid" ? (
+        // GRID
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((f) => (
+            <div key={f.id} className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-4 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
+              <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-primary/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold truncate">{f.name}</h3>
+                    <p className="text-xs text-muted-foreground truncate">/f/{f.slug || f.id.slice(0, 8)}</p>
+                  </div>
+                  <Badge variant={f.status === "active" ? "default" : "secondary"} className="text-[10px]">
+                    {f.status === "active" ? "Live" : "Off"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                  <span className="flex items-center gap-1"><ShoppingBag className="h-3 w-3" />{(f.selected_products || []).length} items</span>
+                  <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" />{orderCounts[f.id] || 0} orders</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button size="sm" variant="outline" className="flex-1 gap-1.5 h-8" onClick={() => copyLink(f)}>
+                    <Copy className="h-3.5 w-3.5" /> Copy
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8" onClick={() => window.open(formLink(f), "_blank")}>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8" onClick={() => shareLink(f)}>
+                    <Share2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8" onClick={() => openEdit(f)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(f.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <>
           {/* Mobile card list */}
-          <div className="md:hidden space-y-3 pb-safe">
+          <div className="md:hidden space-y-2.5">
             {filtered.map((f) => (
-              <div key={f.id} className="mobile-card space-y-3">
-                <div className="flex items-start justify-between">
+              <div key={f.id} className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-3 space-y-2.5 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      /f/{f.slug || f.id}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">/f/{f.slug || f.id.slice(0, 8)}</p>
                   </div>
-                  <Badge className="text-[10px] ml-2 flex-shrink-0">
-                    {(f.selected_products || []).length} selected
+                  <Badge variant={f.status === "active" ? "default" : "secondary"} className="text-[10px] flex-shrink-0">
+                    {f.status === "active" ? "Live" : "Off"}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Created</span>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{(f.selected_products || []).length} items · {orderCounts[f.id] || 0} orders</span>
                   <span>{new Date(f.created_at).toLocaleDateString()}</span>
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1.5"
-                    onClick={() => {
-                      navigator.clipboard.writeText(formLink(f));
-                      toast.success("Link copied!");
-                    }}
-                  >
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <Button variant="outline" size="sm" className="flex-1 gap-1.5 h-8" onClick={() => copyLink(f)}>
                     <Copy className="h-3.5 w-3.5" /> Copy Link
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openEdit(f)}>
+                  <Button variant="outline" size="sm" className="h-8 w-8" onClick={() => shareLink(f)}>
+                    <Share2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 w-8" onClick={() => openEdit(f)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive gap-1.5"
-                    onClick={() => handleDelete(f.id)}
-                  >
+                  <Button variant="outline" size="sm" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(f.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -313,48 +454,52 @@ const OrderForms = () => {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block premium-card overflow-hidden">
+          <div className="hidden md:block rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/40">
                   <TableHead>Form Name</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead>Services</TableHead>
+                  <TableHead>Public Link</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Orders</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((f) => (
-                  <TableRow key={f.id} className="hover:bg-muted/50 transition-colors">
+                  <TableRow key={f.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">{f.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate max-w-[180px]">/f/{f.slug || f.id.slice(0, 12)}...</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => {
-                            navigator.clipboard.writeText(formLink(f));
-                            toast.success("Link copied!");
-                          }}
-                        >
+                        <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded truncate max-w-[200px]">/f/{f.slug || f.id.slice(0, 12)}</code>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(f)}>
                           <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(formLink(f), "_blank")}>
+                          <ExternalLink className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
+                    <TableCell><span className="text-sm">{(f.selected_products || []).length}</span></TableCell>
+                    <TableCell><span className="text-sm font-medium">{orderCounts[f.id] || 0}</span></TableCell>
                     <TableCell>
-                      <span className="text-sm">{(f.selected_products || []).length} selected</span>
+                      <button onClick={() => toggleStatus(f)} className="inline-flex">
+                        <Badge variant={f.status === "active" ? "default" : "secondary"} className="cursor-pointer">
+                          {f.status === "active" ? "Live" : "Off"}
+                        </Badge>
+                      </button>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(f.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(f)}>
+                      <Button variant="ghost" size="icon" onClick={() => shareLink(f)} title="Share">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(f)} title="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(f.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(f.id)} title="Delete">
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -366,13 +511,63 @@ const OrderForms = () => {
         </>
       )}
 
+      {/* DELETE CONFIRM */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this form?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the order form. The public link will stop working immediately. Existing orders will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* GUIDE DRAWER */}
+      <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-primary" /> Order Forms Guide
+            </SheetTitle>
+          </SheetHeader>
+          <div className="space-y-5 mt-6 text-sm">
+            {[
+              { n: 1, title: "Create a form", body: "Click Create Form, name it, and pick the products or services you want to sell." },
+              { n: 2, title: "Customize fields", body: "Add custom fields like address, notes, size — anything you need from the customer." },
+              { n: 3, title: "Choose payment", body: "Take Payment uses your configured gateways. Show Coupon mode lets buyers redeem a code instead." },
+              { n: 4, title: "Share the link", body: "Copy the public /f/your-slug link and share on WhatsApp, Facebook, Instagram bio, or email." },
+              { n: 5, title: "Track orders", body: "Orders received via this form appear in Orders with source = order_form, plus the Orders count here." },
+            ].map((s) => (
+              <div key={s.n} className="flex gap-3">
+                <div className="h-7 w-7 rounded-full bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center flex-shrink-0 text-xs font-semibold text-primary">{s.n}</div>
+                <div>
+                  <p className="font-medium">{s.title}</p>
+                  <p className="text-muted-foreground text-xs mt-0.5">{s.body}</p>
+                </div>
+              </div>
+            ))}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+              <p className="font-medium flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-primary" /> Pro tip</p>
+              <p className="text-muted-foreground mt-1">Use a short, branded slug like <code>/f/special</code> for higher click-through rates.</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* CREATE / EDIT SHEET */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editId ? "Edit Order Form" : "Add Order Form"}</SheetTitle>
+            <SheetTitle>{editId ? "Edit Order Form" : "Create Order Form"}</SheetTitle>
             <p className="text-sm text-muted-foreground">
-              Create a hosted payment page link to share with your customers.
+              Build a hosted checkout page and share the link with your customers.
             </p>
           </SheetHeader>
 
@@ -387,22 +582,17 @@ const OrderForms = () => {
                     setFormName(e.target.value);
                     if (!editId) setFormSlug(generateSlug(e.target.value));
                   }}
-                  placeholder="e.g. Get 1 Free"
+                  placeholder="e.g. Summer Sale"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Link/Slug</Label>
-                <div className="flex items-center">
-                  <span className="text-xs text-muted-foreground mr-1 hidden sm:inline whitespace-nowrap">
-                    {window.location.origin}/f/
-                  </span>
-                  <Input
-                    value={formSlug}
-                    onChange={(e) => setFormSlug(generateSlug(e.target.value))}
-                    placeholder="auto-generated"
-                    className="flex-1"
-                  />
-                </div>
+                <Label>Link / Slug</Label>
+                <Input
+                  value={formSlug}
+                  onChange={(e) => setFormSlug(generateSlug(e.target.value))}
+                  placeholder="auto-generated"
+                />
+                <p className="text-[11px] text-muted-foreground truncate">{buildOrderFormUrl(formSlug || "your-slug")}</p>
               </div>
             </div>
 
@@ -412,32 +602,21 @@ const OrderForms = () => {
               <Textarea
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Write Description here..."
+                placeholder="Write a short description shown to customers..."
                 rows={3}
               />
             </div>
 
             {/* Services toggles */}
             <div>
-              <Label className="mb-3 block">Select Services</Label>
-              <RadioGroup
-                value={takePayment ? "payment" : "coupon"}
-                className="flex gap-6"
-              >
+              <Label className="mb-3 block">Mode</Label>
+              <RadioGroup value={takePayment ? "payment" : "coupon"} className="flex gap-6">
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem
-                    value="payment"
-                    id="take-payment"
-                    onClick={() => { setTakePayment(true); setShowCoupon(false); }}
-                  />
+                  <RadioGroupItem value="payment" id="take-payment" onClick={() => { setTakePayment(true); setShowCoupon(false); }} />
                   <Label htmlFor="take-payment" className="cursor-pointer">Take Payment</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <RadioGroupItem
-                    value="coupon"
-                    id="show-coupon"
-                    onClick={() => { setShowCoupon(true); setTakePayment(false); }}
-                  />
+                  <RadioGroupItem value="coupon" id="show-coupon" onClick={() => { setShowCoupon(true); setTakePayment(false); }} />
                   <Label htmlFor="show-coupon" className="cursor-pointer">Show Coupon</Label>
                 </div>
               </RadioGroup>
@@ -453,25 +632,14 @@ const OrderForms = () => {
                     <span className="text-xs text-muted-foreground">⌄</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                   <Command>
-                    <CommandInput
-                      placeholder="Search services..."
-                      value={productSearch}
-                      onValueChange={setProductSearch}
-                    />
+                    <CommandInput placeholder="Search services..." value={productSearch} onValueChange={setProductSearch} />
                     <CommandList>
                       <CommandEmpty>No products found.</CommandEmpty>
                       <CommandGroup>
                         {filteredProducts.map((p) => (
-                          <CommandItem
-                            key={p.id}
-                            onSelect={() => {
-                              toggleProduct(p.id);
-                              setProductSearchOpen(false);
-                            }}
-                            className="flex flex-col items-start"
-                          >
+                          <CommandItem key={p.id} onSelect={() => { toggleProduct(p.id); setProductSearchOpen(false); }} className="flex flex-col items-start">
                             <span className="font-medium">{p.name}</span>
                             <span className="text-xs text-muted-foreground">৳{p.price.toFixed(2)}</span>
                           </CommandItem>
@@ -499,7 +667,7 @@ const OrderForms = () => {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-2">
-                  No services selected. Form will be valid, but customers won't be able to buy anything.
+                  No services selected. Customers won't be able to buy anything.
                 </p>
               )}
             </div>
@@ -509,22 +677,20 @@ const OrderForms = () => {
               <div>
                 <h4 className="font-semibold text-base">Custom Form Fields</h4>
                 <p className="text-xs text-muted-foreground">
-                  Build your own custom form by adding extra fields like Text, Numbers, Radios, and Dropdowns.
+                  Build your own form by adding extra fields like Text, Numbers, Radios, and Dropdowns.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {(["text", "number", "textarea", "select", "radio", "checkbox"] as const).map((type) => (
                   <Button key={type} variant="outline" size="sm" className="gap-1" onClick={() => addCustomField(type)}>
                     <Plus className="h-3.5 w-3.5" />
-                    {type === "text" ? "Text Field" : type === "number" ? "Number" : type === "textarea" ? "Text Area" : type === "select" ? "Select Dropdown" : type === "radio" ? "Radio Group" : "Checkbox"}
+                    {type === "text" ? "Text" : type === "number" ? "Number" : type === "textarea" ? "Text Area" : type === "select" ? "Dropdown" : type === "radio" ? "Radio" : "Checkbox"}
                   </Button>
                 ))}
               </div>
 
               {customFields.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-2">
-                  No custom fields added yet. Add one above to collect more info from customers.
-                </p>
+                <p className="text-xs text-muted-foreground text-center py-2">No custom fields added yet.</p>
               ) : (
                 <div className="space-y-3">
                   {customFields.map((cf) => (
@@ -535,16 +701,9 @@ const OrderForms = () => {
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       </div>
-                      <Input
-                        value={cf.label}
-                        onChange={(e) => updateCustomField(cf.id, { label: e.target.value })}
-                        placeholder="Field label..."
-                      />
+                      <Input value={cf.label} onChange={(e) => updateCustomField(cf.id, { label: e.target.value })} placeholder="Field label..." />
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={cf.required}
-                          onCheckedChange={(v) => updateCustomField(cf.id, { required: v })}
-                        />
+                        <Switch checked={cf.required} onCheckedChange={(v) => updateCustomField(cf.id, { required: v })} />
                         <span className="text-xs text-muted-foreground">Required</span>
                       </div>
                       {(cf.type === "select" || cf.type === "radio") && (
@@ -561,26 +720,17 @@ const OrderForms = () => {
                                 placeholder={`Option ${i + 1}`}
                                 className="text-sm"
                               />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => {
-                                  const newOpts = (cf.options || []).filter((_, idx) => idx !== i);
-                                  updateCustomField(cf.id, { options: newOpts });
-                                }}
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                                const newOpts = (cf.options || []).filter((_, idx) => idx !== i);
+                                updateCustomField(cf.id, { options: newOpts });
+                              }}>
                                 <X className="h-3 w-3" />
                               </Button>
                             </div>
                           ))}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              updateCustomField(cf.id, { options: [...(cf.options || []), ""] })
-                            }
-                          >
+                          <Button variant="outline" size="sm" onClick={() =>
+                            updateCustomField(cf.id, { options: [...(cf.options || []), ""] })
+                          }>
                             <Plus className="h-3 w-3 mr-1" /> Add Option
                           </Button>
                         </div>
@@ -591,7 +741,7 @@ const OrderForms = () => {
               )}
             </div>
 
-            <Button className="w-full" onClick={handleSave}>
+            <Button className="w-full h-11" onClick={handleSave}>
               {editId ? "Update Form" : "Create Form"}
             </Button>
           </div>
