@@ -378,85 +378,264 @@ const TaskMission = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="hidden sm:block">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <Target className="h-6 w-6 text-primary" />
+        {/* Premium Hero */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-4 sm:p-6">
+          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg">
+                <Target className="h-6 w-6" />
               </div>
-              Task & Mission
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Manage tasks, track progress & earn achievements
-            </p>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Task & Mission</h1>
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 gap-1 text-[10px]">
+                    <Crown className="h-2.5 w-2.5" /> PRO
+                  </Badge>
+                  <Badge variant="outline" className={`${scoreLabel.bg} ${scoreLabel.color} border-0 gap-1`}>
+                    <Gauge className="h-3 w-3" /> Score {productivityScore}
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Plan, track and gamify your daily productivity workflow
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant={focusMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFocusMode(!focusMode)}
+                className="gap-1.5"
+              >
+                <Brain className="h-4 w-4" /> {focusMode ? "Focus On" : "Focus Mode"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setGuideOpen(!guideOpen)} className="gap-1.5">
+                <HelpCircle className="h-4 w-4" /> Guide
+                {guideOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
+                <Download className="h-4 w-4" /> Export
+              </Button>
+              <Button size="sm" onClick={openAdd} className="gap-1.5 shadow-md">
+                <Plus className="h-4 w-4" /> New Task
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button size="sm" onClick={openAdd} className="gap-1.5">
-              <Plus className="h-4 w-4" /> New Task
-            </Button>
+
+          {/* Snapshot strip */}
+          <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-border/40">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">This Week Done</p>
+              <p className="text-lg font-bold mt-0.5 flex items-center gap-1.5">
+                {weekComparison.thisWeekDone}
+                {weekComparison.change !== 0 && (
+                  <span className={`text-[10px] font-medium ${weekComparison.change > 0 ? "text-emerald-600" : "text-red-600"}`}>
+                    {weekComparison.change > 0 ? "▲" : "▼"} {Math.abs(weekComparison.change).toFixed(0)}%
+                  </span>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Active</p>
+              <p className="text-lg font-bold mt-0.5">{stats.todo + stats.inProgress}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Overdue</p>
+              <p className={`text-lg font-bold mt-0.5 ${stats.overdue > 0 ? "text-destructive" : ""}`}>{stats.overdue}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Streak</p>
+              <p className="text-lg font-bold mt-0.5 flex items-center gap-1">
+                <Flame className="h-4 w-4 text-orange-500" /> {stats.streak}d
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Quick Guide */}
+        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
+          <CollapsibleContent>
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" /> Quick Guide — Master Your Productivity
+                  </h3>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setGuideOpen(false)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { icon: Plus, title: "1. Create Tasks", desc: "Click 'New Task' — set title, priority (High/Med/Low), and due date." },
+                    { icon: ListTodo, title: "2. Use the Board", desc: "Switch tabs across Board, List, Missions & Analytics. Tick to complete." },
+                    { icon: Brain, title: "3. Focus Mode", desc: "Hides completed & low-priority tasks so you only see what matters today." },
+                    { icon: Trophy, title: "4. Earn Missions", desc: "Complete streaks & milestones to unlock achievements and grow your score." },
+                  ].map((s, i) => (
+                    <div key={i} className="flex gap-2.5 p-3 rounded-lg bg-card border border-border/40">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <s.icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-xs">{s.title}</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{s.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[11px] text-muted-foreground bg-background/60 rounded-lg p-2.5 border border-border/40">
+                  💡 <strong>Productivity Score</strong> = completion rate + streak bonus − overdue penalty. Aim for 80+!
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Smart Insights */}
+        {insights.length > 0 && (
+          <Card className="border-border/40">
+            <CardContent className="p-3.5 sm:p-4">
+              <div className="flex items-center gap-2 mb-2.5">
+                <Activity className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">Smart Insights</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {insights.map((ins, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-2 p-2.5 rounded-lg text-xs border ${
+                      ins.type === "good"
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-900/10 dark:border-emerald-900/30 dark:text-emerald-300"
+                        : ins.type === "warn"
+                        ? "bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-900/10 dark:border-amber-900/30 dark:text-amber-300"
+                        : "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300"
+                    }`}
+                  >
+                    <span className="mt-0.5">
+                      {ins.type === "good" ? "✨" : ins.type === "warn" ? "⚠️" : "ℹ️"}
+                    </span>
+                    <span className="leading-relaxed">{ins.text}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <Card className="border-primary/40 bg-primary/5 sticky top-2 z-20">
+            <CardContent className="p-3 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                {selectedIds.size} selected
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={bulkComplete}>
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Complete
+                </Button>
+                <Button size="sm" variant="destructive" className="gap-1.5" onClick={bulkDelete}>
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Productivity Score Card */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Rocket className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">Productivity Score</h3>
+              </div>
+              <Badge className={`${scoreLabel.bg} ${scoreLabel.color} border-0`}>{scoreLabel.text}</Badge>
+            </div>
+            <div className="flex items-end gap-3 mb-2">
+              <p className="text-3xl sm:text-4xl font-bold">{productivityScore}</p>
+              <p className="text-sm text-muted-foreground mb-1">/ 100</p>
+            </div>
+            <Progress value={productivityScore} className="h-2" />
+            <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+              <div className="p-2 rounded-lg bg-muted/40">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Completion</p>
+                <p className="text-sm font-bold mt-0.5">{stats.completionRate.toFixed(0)}%</p>
+              </div>
+              <div className="p-2 rounded-lg bg-muted/40">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Streak Bonus</p>
+                <p className="text-sm font-bold mt-0.5">+{Math.min(stats.streak * 2, 30)}</p>
+              </div>
+              <div className="p-2 rounded-lg bg-muted/40">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overdue Penalty</p>
+                <p className="text-sm font-bold mt-0.5 text-destructive">−{Math.min(stats.overdue * 5, 20)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground font-medium">Completion</p>
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <Card className="hover:shadow-md transition-all duration-300 border-border/40">
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Completion</p>
+                <div className="p-1 rounded-md bg-primary/10">
+                  <TrendingUp className="h-3 w-3 text-primary" />
                 </div>
               </div>
-              <p className="text-2xl font-bold">{stats.completionRate.toFixed(0)}%</p>
-              <Progress value={stats.completionRate} className="h-1.5 mt-2" />
+              <p className="text-xl sm:text-2xl font-bold">{stats.completionRate.toFixed(0)}%</p>
+              <Progress value={stats.completionRate} className="h-1 mt-1.5" />
               <p className="text-[10px] text-muted-foreground mt-1">{stats.done}/{stats.total} tasks</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-blue-500">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground font-medium">To Do</p>
-                <CircleDot className="h-4 w-4 text-blue-500" />
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">To Do</p>
+                <CircleDot className="h-3.5 w-3.5 text-blue-500" />
               </div>
-              <p className="text-2xl font-bold text-blue-600">{stats.todo}</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.todo}</p>
               <p className="text-[10px] text-muted-foreground mt-1">{stats.dueSoon} due soon</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-amber-500">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground font-medium">In Progress</p>
-                <Zap className="h-4 w-4 text-amber-500" />
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">In Progress</p>
+                <Zap className="h-3.5 w-3.5 text-amber-500" />
               </div>
-              <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
+              <p className="text-xl sm:text-2xl font-bold text-amber-600">{stats.inProgress}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Active now</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-green-500">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground font-medium">Completed</p>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Completed</p>
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
               </div>
-              <p className="text-2xl font-bold text-green-600">{stats.done}</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.done}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Total achieved</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-all duration-300 border-l-4 border-l-orange-500">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground font-medium">Streak</p>
-                <Flame className="h-4 w-4 text-orange-500" />
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Streak</p>
+                <Flame className="h-3.5 w-3.5 text-orange-500" />
               </div>
-              <p className="text-2xl font-bold text-orange-600">{stats.streak} <span className="text-sm font-normal">days</span></p>
-              {stats.overdue > 0 && (
+              <p className="text-xl sm:text-2xl font-bold text-orange-600">{stats.streak}<span className="text-xs font-normal ml-1">days</span></p>
+              {stats.overdue > 0 ? (
                 <p className="text-[10px] text-destructive mt-1">{stats.overdue} overdue</p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-1">On track 🔥</p>
               )}
             </CardContent>
           </Card>
