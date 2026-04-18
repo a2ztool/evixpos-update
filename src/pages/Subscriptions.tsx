@@ -318,8 +318,27 @@ const Subscriptions = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("subscriptions").delete().eq("id", id);
-    if (error) toast.error(error.message); else toast.success("Deleted");
+    if (!confirm("Delete this subscription? This cannot be undone.")) return;
+    // Optimistic remove so UI updates instantly even if realtime is slow
+    const prev = subs;
+    setSubs((curr) => curr.filter((x) => x.id !== id));
+    setSelectedIds((s) => { const n = new Set(s); n.delete(id); return n; });
+    const { error, count } = await supabase
+      .from("subscriptions")
+      .delete({ count: "exact" })
+      .eq("id", id);
+    if (error) {
+      setSubs(prev);
+      toast.error(error.message);
+      return;
+    }
+    if (!count) {
+      setSubs(prev);
+      toast.error("Delete blocked — you may not have permission to delete this subscription.");
+      return;
+    }
+    toast.success("Deleted");
+    fetchAll();
   };
 
   const handleRenew = async (s: Subscription) => {
@@ -396,10 +415,27 @@ const Subscriptions = () => {
     if (selectedIds.size === 0) return;
     if (!confirm(`Delete ${selectedIds.size} subscription(s)? This cannot be undone.`)) return;
     setBulkBusy(true);
-    const { error } = await supabase.from("subscriptions").delete().in("id", Array.from(selectedIds));
+    const ids = Array.from(selectedIds);
+    const prev = subs;
+    setSubs((curr) => curr.filter((x) => !selectedIds.has(x.id)));
+    const { error, count } = await supabase
+      .from("subscriptions")
+      .delete({ count: "exact" })
+      .in("id", ids);
     setBulkBusy(false);
     clearSelection();
-    if (error) toast.error(error.message); else toast.success("Deleted");
+    if (error) {
+      setSubs(prev);
+      toast.error(error.message);
+      return;
+    }
+    if (!count) {
+      setSubs(prev);
+      toast.error("Delete blocked — you may not have permission to delete these subscriptions.");
+      return;
+    }
+    toast.success(`Deleted ${count} subscription(s)`);
+    fetchAll();
   };
 
   const exportCSV = () => {
