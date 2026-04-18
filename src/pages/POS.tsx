@@ -597,7 +597,6 @@ const POS = () => {
             start_date: toDateStr(startDate),
             end_date: toDateStr(endDate),
             status: computedPaymentStatus === "paid" ? "active" : "pending",
-            plan: "customer" as any,
             renewals: 0,
             notes: `Auto-created from POS Order #${order.id.slice(0, 8)} | product:${item.product.id}${item.quantity > 1 ? ` | unit ${index + 1}` : ""}`,
           }));
