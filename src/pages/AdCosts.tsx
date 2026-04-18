@@ -82,6 +82,8 @@ const AdCosts = () => {
   const [datePreset, setDatePreset] = useState<DatePreset>("month");
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+  const [showGuide, setShowGuide] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const fetchAds = useCallback(async () => {
     if (!activeStore) return;
