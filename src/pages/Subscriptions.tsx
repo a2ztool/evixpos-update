@@ -98,6 +98,8 @@ const Subscriptions = () => {
   const [activeTab, setActiveTab] = useState("subscriptions");
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [calc, setCalc] = useState({ planPrice: 0, costPrice: 0, customers: 0, duration: "1 Month" });
 
   const fetchAll = useCallback(async () => {
