@@ -578,33 +578,44 @@ const POS = () => {
       // Auto-create subscriptions for any cart item whose variation is flagged as subscription
       const subscriptionItems = cart.filter(i => i.variation?.is_subscription);
       let subsCreated = 0;
-      for (const item of subscriptionItems) {
-        const startDate = new Date();
-        const endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + (item.variation!.duration_days || 30));
-        const toDateStr = (d: Date) => d.toISOString().slice(0, 10); // date-only for `date` column
-        for (let q = 0; q < item.quantity; q++) {
-          const { error: subErr } = await supabase.from("subscriptions").insert({
+      let subsFailed = 0;
+      if (subscriptionItems.length > 0) {
+        const now = new Date();
+        const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
+        const subscriptionPayloads = subscriptionItems.flatMap((item) => {
+          const startDate = new Date(now);
+          const endDate = new Date(now);
+          endDate.setDate(endDate.getDate() + (item.variation?.duration_days || 30));
+          const quantityRows = Array.from({ length: item.quantity }, (_, index) => ({
             user_id: effectiveUserId!,
             store_id: activeStore?.id,
             customer_id: customerId || null,
+            product_id: item.product.id,
+            order_id: order.id,
             product_name: item.product.name,
             variation: cleanVarName(item.variation!.name),
             price: getItemPrice(item),
             cost_price: 0,
             start_date: toDateStr(startDate),
             end_date: toDateStr(endDate),
-            status: "active",
+            status: computedPaymentStatus === "paid" ? "active" : "pending",
             plan: "customer" as any,
             renewals: 0,
-            notes: `Auto-created from POS Order #${order.id.slice(0, 8)}`,
-          });
-          if (subErr) {
-            console.error("[POS] subscription insert failed", subErr);
-            toast.error(`Subscription create failed: ${subErr.message}`);
-          } else {
-            subsCreated++;
-          }
+            notes: `Auto-created from POS Order #${order.id.slice(0, 8)}${item.quantity > 1 ? ` · Unit ${index + 1}` : ""}`,
+          }));
+          return quantityRows;
+        });
+
+        const { error: subErr, data: insertedSubs } = await ((supabase.from("subscriptions" as any) as any)
+          .insert(subscriptionPayloads)
+          .select("id"));
+
+        if (subErr) {
+          subsFailed = subscriptionPayloads.length;
+          console.error("[POS] subscription insert failed", subErr);
+          toast.error(`Subscription create failed: ${subErr.message}`);
+        } else {
+          subsCreated = insertedSubs?.length || subscriptionPayloads.length;
         }
       }
 
