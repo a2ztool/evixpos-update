@@ -7,21 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   BarChart3, TrendingUp, Users, Package, DollarSign, ShoppingCart,
   Download, FileText, Calendar, ArrowUpRight, ArrowDownRight, Percent,
-  RefreshCw, Target, PieChart as PieChartIcon
+  RefreshCw, Target, PieChart as PieChartIcon, Sparkles, HelpCircle,
+  ChevronDown, ChevronUp, Activity, Gauge, Lightbulb, Zap, AlertCircle,
+  CheckCircle2, TrendingDown, Crown, Trophy
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Cell, PieChart, Pie, AreaChart, Area, Legend
+  LineChart, Line, Cell, PieChart, Pie, AreaChart, Area, Legend,
+  RadialBarChart, RadialBar
 } from "recharts";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const CHART_COLORS = [
-  "hsl(174, 98%, 21%)", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#ec4899", "#14b8a6", "#f97316"
+  "hsl(174, 98%, 21%)", "hsl(217, 91%, 60%)", "hsl(38, 92%, 50%)",
+  "hsl(0, 84%, 60%)", "hsl(262, 83%, 58%)", "hsl(330, 81%, 60%)",
+  "hsl(173, 80%, 40%)", "hsl(24, 95%, 53%)"
 ];
 
 const Reports = () => {
@@ -29,24 +35,30 @@ const Reports = () => {
   const { activeStore } = useStore();
   const { format: formatPrice } = useCurrency();
   const [orders, setOrders] = useState<any[]>([]);
+  const [prevOrdersData, setPrevOrdersData] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [adCosts, setAdCosts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [period, setPeriod] = useState("30");
   const [loading, setLoading] = useState(true);
-  const [productFilter, setProductFilter] = useState("all");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user || !activeStore) return;
     setLoading(true);
+    const days = parseInt(period);
     const since = new Date();
-    since.setDate(since.getDate() - parseInt(period));
+    since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString();
+    const prevSince = new Date();
+    prevSince.setDate(prevSince.getDate() - days * 2);
+    const prevSinceISO = prevSince.toISOString();
     const sid = activeStore.id;
 
-    const [o, p, c, a, t] = await Promise.all([
+    const [o, prevO, p, c, a, t] = await Promise.all([
       supabase.from("orders").select("total_amount, cost_price, status, created_at, customer_id, payment_method, payment_status, source").eq("store_id", sid).gte("created_at", sinceISO),
+      supabase.from("orders").select("total_amount, cost_price, status, created_at").eq("store_id", sid).gte("created_at", prevSinceISO).lt("created_at", sinceISO),
       supabase.from("products").select("id, name, price, stock, category, base_cost").eq("store_id", sid),
       supabase.from("customers").select("id, name, created_at").eq("store_id", sid),
       supabase.from("ad_costs").select("amount, revenue, ad_date, platform").eq("store_id", sid).gte("ad_date", since.toISOString().split("T")[0]),
@@ -54,6 +66,7 @@ const Reports = () => {
     ]);
 
     if (o.data) setOrders(o.data);
+    if (prevO.data) setPrevOrdersData(prevO.data);
     if (p.data) setProducts(p.data);
     if (c.data) setCustomers(c.data);
     if (a.data) setAdCosts(a.data);
@@ -63,19 +76,8 @@ const Reports = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Previous period orders for comparison ──
-  const prevOrders = useMemo(() => {
-    const days = parseInt(period);
-    const now = new Date();
-    const prevEnd = new Date(now);
-    prevEnd.setDate(prevEnd.getDate() - days);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - days);
-    // We don't have prev data loaded, so estimate 0 for now
-    return { revenue: 0, orders: 0 };
-  }, [period]);
-
   const completedOrders = useMemo(() => orders.filter(o => o.status === "completed"), [orders]);
+  const prevCompleted = useMemo(() => prevOrdersData.filter(o => o.status === "completed"), [prevOrdersData]);
 
   // ── Summary Stats ──
   const stats = useMemo(() => {
@@ -94,17 +96,82 @@ const Reports = () => {
     const totalAdSpend = adCosts.reduce((s, a) => s + Number(a.amount), 0);
     const totalAdRevenue = adCosts.reduce((s, a) => s + Number(a.revenue), 0);
     const roas = totalAdSpend > 0 ? totalAdRevenue / totalAdSpend : 0;
+    const completionRate = orders.length > 0 ? (completedOrders.length / orders.length) * 100 : 0;
 
     return {
       totalRevenue, totalCost, totalProfit, avgOrderValue,
       totalOrders: orders.length, completedOrders: completedOrders.length,
       pendingOrders, cancelledOrders, profitMargin, newCustomers,
       totalAdSpend, totalAdRevenue, roas, totalCustomers: customers.length,
-      totalProducts: products.length
+      totalProducts: products.length, completionRate
     };
   }, [orders, completedOrders, customers, products, adCosts, period]);
 
-  // ── Revenue Trend ──
+  const prevStats = useMemo(() => {
+    const revenue = prevCompleted.reduce((s, o) => s + Number(o.total_amount), 0);
+    const cost = prevCompleted.reduce((s, o) => s + Number(o.cost_price || 0), 0);
+    return {
+      revenue, profit: revenue - cost,
+      orders: prevOrdersData.length,
+      avg: prevCompleted.length > 0 ? revenue / prevCompleted.length : 0,
+    };
+  }, [prevCompleted, prevOrdersData]);
+
+  const deltas = useMemo(() => {
+    const pct = (cur: number, prev: number) => prev > 0 ? ((cur - prev) / prev) * 100 : (cur > 0 ? 100 : 0);
+    return {
+      revenue: pct(stats.totalRevenue, prevStats.revenue),
+      profit: pct(stats.totalProfit, prevStats.profit),
+      orders: pct(stats.totalOrders, prevStats.orders),
+      avg: pct(stats.avgOrderValue, prevStats.avg),
+    };
+  }, [stats, prevStats]);
+
+  // ── Business Health Score (0-100) ──
+  const healthScore = useMemo(() => {
+    let score = 0;
+    // Profit margin contributes 30
+    if (stats.profitMargin >= 30) score += 30;
+    else if (stats.profitMargin >= 15) score += 20;
+    else if (stats.profitMargin >= 5) score += 10;
+    // Completion rate 25
+    if (stats.completionRate >= 90) score += 25;
+    else if (stats.completionRate >= 70) score += 18;
+    else if (stats.completionRate >= 50) score += 10;
+    // ROAS 20
+    if (stats.roas >= 3) score += 20;
+    else if (stats.roas >= 2) score += 14;
+    else if (stats.roas >= 1) score += 7;
+    // Growth 25
+    if (deltas.revenue >= 20) score += 25;
+    else if (deltas.revenue >= 5) score += 17;
+    else if (deltas.revenue >= 0) score += 10;
+    return Math.min(100, score);
+  }, [stats, deltas]);
+
+  const healthLabel = healthScore >= 80 ? { text: "Excellent", color: "text-green-600", bg: "bg-green-500/10" }
+    : healthScore >= 60 ? { text: "Healthy", color: "text-emerald-600", bg: "bg-emerald-500/10" }
+    : healthScore >= 40 ? { text: "Average", color: "text-amber-600", bg: "bg-amber-500/10" }
+    : { text: "Needs Attention", color: "text-destructive", bg: "bg-destructive/10" };
+
+  // ── Smart Insights ──
+  const insights = useMemo(() => {
+    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
+    if (deltas.revenue >= 20) list.push({ type: "good", text: `Revenue up ${deltas.revenue.toFixed(0)}% vs previous period — strong growth!` });
+    if (deltas.revenue <= -20 && prevStats.revenue > 0) list.push({ type: "warn", text: `Revenue down ${Math.abs(deltas.revenue).toFixed(0)}% — investigate causes.` });
+    if (stats.profitMargin >= 30) list.push({ type: "good", text: `Outstanding ${stats.profitMargin.toFixed(0)}% profit margin — excellent pricing!` });
+    if (stats.profitMargin < 10 && stats.totalRevenue > 0) list.push({ type: "warn", text: `Low ${stats.profitMargin.toFixed(0)}% margin — review costs and pricing.` });
+    if (stats.roas >= 3) list.push({ type: "good", text: `ROAS of ${stats.roas.toFixed(1)}x — ad campaigns highly profitable.` });
+    if (stats.roas > 0 && stats.roas < 1) list.push({ type: "warn", text: `ROAS of ${stats.roas.toFixed(1)}x means ads losing money — pause underperformers.` });
+    if (stats.pendingOrders > 5) list.push({ type: "warn", text: `${stats.pendingOrders} pending orders — process them to unlock revenue.` });
+    if (stats.cancelledOrders > stats.completedOrders * 0.2 && stats.totalOrders > 5) list.push({ type: "warn", text: `High cancellation rate — review fulfillment quality.` });
+    if (products.filter(p => p.stock <= 0).length > 5) list.push({ type: "warn", text: `${products.filter(p => p.stock <= 0).length} products out of stock — restock to recover sales.` });
+    if (stats.newCustomers >= 10) list.push({ type: "good", text: `${stats.newCustomers} new customers acquired — great reach!` });
+    if (list.length === 0) list.push({ type: "info", text: "Add more sales data to unlock personalized insights." });
+    return list.slice(0, 5);
+  }, [stats, deltas, prevStats, products]);
+
+  // ── Charts data ──
   const revenueTrend = useMemo(() => {
     const map: Record<string, { date: string; revenue: number; profit: number; orders: number }> = {};
     completedOrders.forEach(o => {
@@ -117,14 +184,12 @@ const Reports = () => {
     return Object.values(map);
   }, [completedOrders]);
 
-  // ── Order Status Distribution ──
   const orderStatusData = useMemo(() => [
     { name: "Completed", value: stats.completedOrders, color: "hsl(142, 76%, 36%)" },
     { name: "Pending", value: stats.pendingOrders, color: "hsl(38, 92%, 50%)" },
     { name: "Cancelled", value: stats.cancelledOrders, color: "hsl(0, 84%, 60%)" },
   ].filter(d => d.value > 0), [stats]);
 
-  // ── Payment Method Breakdown ──
   const paymentMethods = useMemo(() => {
     const map: Record<string, number> = {};
     completedOrders.forEach(o => {
@@ -133,12 +198,10 @@ const Reports = () => {
     });
     return Object.entries(map).map(([name, value], i) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      value,
-      color: CHART_COLORS[i % CHART_COLORS.length]
+      value, color: CHART_COLORS[i % CHART_COLORS.length]
     }));
   }, [completedOrders]);
 
-  // ── Top Products by Revenue ──
   const topProducts = useMemo(() => {
     return products
       .map(p => ({ name: p.name, stock: p.stock, price: Number(p.price), category: p.category || "Uncategorized" }))
@@ -146,7 +209,6 @@ const Reports = () => {
       .slice(0, 8);
   }, [products]);
 
-  // ── Top Customers ──
   const topCustomers = useMemo(() => {
     const map: Record<string, { name: string; orders: number; total: number }> = {};
     completedOrders.filter(o => o.customer_id).forEach(o => {
@@ -161,7 +223,6 @@ const Reports = () => {
     return Object.values(map).sort((a, b) => b.total - a.total).slice(0, 5);
   }, [completedOrders, customers]);
 
-  // ── Order Source Breakdown ──
   const orderSources = useMemo(() => {
     const map: Record<string, number> = {};
     orders.forEach(o => {
@@ -170,12 +231,10 @@ const Reports = () => {
     });
     return Object.entries(map).map(([name, value], i) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      value,
-      color: CHART_COLORS[i % CHART_COLORS.length]
+      value, color: CHART_COLORS[i % CHART_COLORS.length]
     }));
   }, [orders]);
 
-  // ── Income vs Expense ──
   const incomeExpense = useMemo(() => {
     const income = transactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
     const expense = transactions.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
@@ -185,17 +244,13 @@ const Reports = () => {
     ];
   }, [transactions]);
 
-  // ── Export CSV ──
   const exportCSV = () => {
     const headers = ["Date", "Status", "Amount", "Cost", "Profit", "Payment Method", "Source"];
     const rows = orders.map(o => [
       new Date(o.created_at).toLocaleDateString(),
-      o.status,
-      o.total_amount,
-      o.cost_price || 0,
+      o.status, o.total_amount, o.cost_price || 0,
       Number(o.total_amount) - Number(o.cost_price || 0),
-      o.payment_method,
-      o.source
+      o.payment_method, o.source
     ]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -207,32 +262,31 @@ const Reports = () => {
     URL.revokeObjectURL(url);
   };
 
-  const StatCard = ({ label, value, icon: Icon, sub, trend, color }: any) => (
-    <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">{label}</p>
-            <p className="text-xl sm:text-2xl font-bold">{value}</p>
-            {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
-          </div>
-          <div className={`p-2.5 rounded-xl ${color || "bg-primary/10"}`}>
-            <Icon className={`h-4 w-4 ${color ? "text-white" : "text-primary"}`} />
+  const DeltaChip = ({ value }: { value: number }) => {
+    if (!isFinite(value) || prevStats.revenue === 0 && value === 0) return null;
+    const positive = value >= 0;
+    return (
+      <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${positive ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-destructive/10 text-destructive"}`}>
+        {positive ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
+        {Math.abs(value).toFixed(0)}%
+      </span>
+    );
+  };
+
+  const StatCard = ({ label, value, icon: Icon, sub, delta, color, accent }: any) => (
+    <Card className={`hover:shadow-md transition-all duration-300 border-l-4 ${accent}`}>
+      <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight">{label}</p>
+          <div className={`p-1.5 rounded-lg ${color} shrink-0`}>
+            <Icon className="h-3.5 w-3.5 text-white" />
           </div>
         </div>
-        {trend !== undefined && (
-          <div className="flex items-center gap-1 mt-2">
-            {trend >= 0 ? (
-              <ArrowUpRight className="h-3 w-3 text-emerald-500" />
-            ) : (
-              <ArrowDownRight className="h-3 w-3 text-destructive" />
-            )}
-            <span className={`text-[11px] font-medium ${trend >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-              {Math.abs(trend).toFixed(1)}%
-            </span>
-            <span className="text-[11px] text-muted-foreground">vs prev</span>
-          </div>
-        )}
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <p className="text-xl sm:text-2xl font-bold leading-none">{value}</p>
+          {delta !== undefined && <DeltaChip value={delta} />}
+        </div>
+        {sub && <p className="text-[11px] text-muted-foreground mt-2">{sub}</p>}
       </CardContent>
     </Card>
   );
@@ -244,7 +298,7 @@ const Reports = () => {
         <p className="text-xs font-medium text-foreground mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} className="text-xs" style={{ color: p.color }}>
-            {p.name}: {typeof p.value === "number" ? `৳${p.value.toLocaleString()}` : p.value}
+            {p.name}: {typeof p.value === "number" ? formatPrice(p.value) : p.value}
           </p>
         ))}
       </div>
@@ -254,37 +308,88 @@ const Reports = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="hidden sm:block">
-            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Reports & Analytics
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Business insights for <span className="font-medium text-foreground">{activeStore?.name || "your store"}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-[130px] sm:w-[150px] h-9">
-                <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 Days</SelectItem>
-                <SelectItem value="30">Last 30 Days</SelectItem>
-                <SelectItem value="90">Last 90 Days</SelectItem>
-                <SelectItem value="365">Last Year</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={fetchData} className="h-9">
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="h-9">
-              <Download className="h-3.5 w-3.5 mr-1.5" /> Export
-            </Button>
+        {/* Premium Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="p-2 rounded-xl bg-primary/15">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Reports & Analytics</h1>
+                <Badge className="bg-gradient-to-r from-primary to-primary/70 text-primary-foreground border-0 text-[10px] px-2 py-0.5">
+                  <Sparkles className="h-2.5 w-2.5 mr-1" /> PRO
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Business insights for <span className="font-semibold text-foreground">{activeStore?.name || "your store"}</span> · Last {period} days
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={period} onValueChange={setPeriod}>
+                <SelectTrigger className="w-[130px] sm:w-[150px] h-9 bg-background">
+                  <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 Days</SelectItem>
+                  <SelectItem value="30">Last 30 Days</SelectItem>
+                  <SelectItem value="90">Last 90 Days</SelectItem>
+                  <SelectItem value="365">Last Year</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={fetchData} className="h-9 bg-background">
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 bg-background">
+                <Download className="h-3.5 w-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Export</span>
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Quick Guide */}
+        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between p-4 hover:bg-primary/5 rounded-2xl transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-primary/15">
+                    <HelpCircle className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold">Quick Guide</p>
+                    <p className="text-[11px] text-muted-foreground">How to read your business reports</p>
+                  </div>
+                </div>
+                {guideOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {[
+                    { icon: Gauge, title: "Health Score", desc: "0–100 score from margin, completion, ROAS & growth. Aim for 80+." },
+                    { icon: TrendingUp, title: "Period Deltas", desc: "Each KPI compares to the previous equal period. Green = growing." },
+                    { icon: Lightbulb, title: "Smart Insights", desc: "Auto-generated alerts on margins, ROAS, stock & cancellations." },
+                    { icon: Download, title: "Export CSV", desc: "Download all orders for the selected period for accounting." },
+                  ].map((g, i) => (
+                    <div key={i} className="flex gap-2.5 p-3 rounded-xl bg-card border border-border/40">
+                      <div className="p-1.5 rounded-lg bg-primary/10 h-fit shrink-0">
+                        <g.icon className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold">{g.title}</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{g.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -302,34 +407,104 @@ const Reports = () => {
           </div>
         ) : (
           <>
-            {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard label="Total Revenue" value={`৳${stats.totalRevenue.toLocaleString()}`} icon={DollarSign} sub={`${stats.completedOrders} completed`} color="bg-primary" />
-              <StatCard label="Net Profit" value={`৳${stats.totalProfit.toLocaleString()}`} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} color="bg-emerald-500" />
-              <StatCard label="Total Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} color="bg-blue-500" />
-              <StatCard label="Avg Order Value" value={`৳${Math.round(stats.avgOrderValue).toLocaleString()}`} icon={Target} sub={`${stats.totalCustomers} customers`} color="bg-purple-500" />
+            {/* Business Health Score */}
+            <Card className="border-border/40 overflow-hidden">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                  <div className="flex items-center gap-4 md:flex-1">
+                    <div className={`relative shrink-0 ${healthLabel.bg} p-3 rounded-2xl`}>
+                      <Gauge className={`h-7 w-7 ${healthLabel.color}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Business Health Score</p>
+                        <Badge className={`${healthLabel.bg} ${healthLabel.color} border-0 text-[10px]`}>{healthLabel.text}</Badge>
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <p className="text-3xl sm:text-4xl font-bold">{healthScore}</p>
+                        <span className="text-sm text-muted-foreground">/ 100</span>
+                      </div>
+                      <Progress value={healthScore} className="h-2 mt-2.5" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 md:gap-4 md:flex-1 md:border-l md:border-border/40 md:pl-6">
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Margin</p>
+                      <p className="text-base sm:text-lg font-bold mt-1">{stats.profitMargin.toFixed(0)}%</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">ROAS</p>
+                      <p className="text-base sm:text-lg font-bold mt-1">{stats.roas.toFixed(1)}x</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Growth</p>
+                      <p className={`text-base sm:text-lg font-bold mt-1 ${deltas.revenue >= 0 ? "text-green-600" : "text-destructive"}`}>
+                        {deltas.revenue >= 0 ? "+" : ""}{deltas.revenue.toFixed(0)}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Primary KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <StatCard label="Total Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} color="bg-primary" accent="border-l-primary" />
+              <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} color="bg-emerald-500" accent="border-l-emerald-500" />
+              <StatCard label="Total Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} color="bg-blue-500" accent="border-l-blue-500" />
+              <StatCard label="Avg Order Value" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} color="bg-purple-500" accent="border-l-purple-500" />
             </div>
 
-            {/* Secondary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} />
-              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} />
-              <StatCard label="Ad Spend" value={`৳${stats.totalAdSpend.toLocaleString()}`} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} />
-              <StatCard label="Ad Revenue" value={`৳${stats.totalAdRevenue.toLocaleString()}`} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} />
+            {/* Secondary KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} color="bg-pink-500" accent="border-l-pink-500" />
+              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} color="bg-orange-500" accent="border-l-orange-500" />
+              <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} color="bg-rose-500" accent="border-l-rose-500" />
+              <StatCard label="Ad Revenue" value={formatPrice(stats.totalAdRevenue)} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} color="bg-teal-500" accent="border-l-teal-500" />
             </div>
 
-            {/* Tabs for Charts */}
+            {/* Smart Insights */}
+            {insights.length > 0 && (
+              <Card className="border-border/40">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/10">
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                    </div>
+                    Smart Insights
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {insights.map((ins, i) => {
+                      const Icon = ins.type === "good" ? CheckCircle2 : ins.type === "warn" ? AlertCircle : Activity;
+                      const color = ins.type === "good" ? "text-green-600 bg-green-500/10" : ins.type === "warn" ? "text-amber-600 bg-amber-500/10" : "text-blue-600 bg-blue-500/10";
+                      return (
+                        <div key={i} className="flex gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+                          <div className={`p-1 rounded-md h-fit shrink-0 ${color.split(" ")[1]}`}>
+                            <Icon className={`h-3 w-3 ${color.split(" ")[0]}`} />
+                          </div>
+                          <p className="text-xs leading-snug">{ins.text}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex h-9">
-                <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
-                <TabsTrigger value="orders" className="text-xs">Orders</TabsTrigger>
-                <TabsTrigger value="products" className="text-xs">Products & Customers</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-4 h-10">
+                <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
+                <TabsTrigger value="orders" className="text-xs gap-1.5"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">Orders</span></TabsTrigger>
+                <TabsTrigger value="products" className="text-xs gap-1.5"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
+                <TabsTrigger value="finance" className="text-xs gap-1.5"><DollarSign className="h-3.5 w-3.5" /><span className="hidden sm:inline">Finance</span></TabsTrigger>
               </TabsList>
 
               {/* OVERVIEW TAB */}
               <TabsContent value="overview" className="space-y-4 mt-4">
-                {/* Revenue Trend */}
-                <Card className="border-border/50 shadow-sm">
+                <Card className="border-border/40 shadow-sm">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Revenue & Profit Trend
@@ -339,15 +514,15 @@ const Reports = () => {
                     {revenueTrend.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data for this period</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={240}>
+                      <ResponsiveContainer width="100%" height={260}>
                         <AreaChart data={revenueTrend}>
                           <defs>
                             <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(174, 98%, 21%)" stopOpacity={0.2} />
+                              <stop offset="5%" stopColor="hsl(174, 98%, 21%)" stopOpacity={0.3} />
                               <stop offset="95%" stopColor="hsl(174, 98%, 21%)" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                               <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                             </linearGradient>
                           </defs>
@@ -364,9 +539,8 @@ const Reports = () => {
                   </CardContent>
                 </Card>
 
-                {/* Income vs Expense + Order Sources */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-primary" /> Income vs Expense
@@ -374,9 +548,9 @@ const Reports = () => {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       {incomeExpense.every(d => d.value === 0) ? (
-                        <div className="flex items-center justify-center h-[180px] text-sm text-muted-foreground">No transaction data</div>
+                        <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No transaction data</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={180}>
+                        <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={incomeExpense}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis dataKey="name" fontSize={11} tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -391,7 +565,7 @@ const Reports = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <PieChartIcon className="h-4 w-4 text-primary" /> Order Sources
@@ -399,11 +573,11 @@ const Reports = () => {
                     </CardHeader>
                     <CardContent className="p-4 pt-0 flex items-center justify-center">
                       {orderSources.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">No data</div>
+                        <div className="text-sm text-muted-foreground py-12">No data</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={180}>
+                        <ResponsiveContainer width="100%" height={200}>
                           <PieChart>
-                            <Pie data={orderSources} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={35} paddingAngle={3} strokeWidth={0}>
+                            <Pie data={orderSources} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={3} strokeWidth={0}>
                               {orderSources.map((d, i) => <Cell key={i} fill={d.color} />)}
                             </Pie>
                             <Tooltip />
@@ -419,8 +593,7 @@ const Reports = () => {
               {/* ORDERS TAB */}
               <TabsContent value="orders" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Order Status */}
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <ShoppingCart className="h-4 w-4 text-primary" /> Order Status
@@ -430,9 +603,9 @@ const Reports = () => {
                       {orderStatusData.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-10">No orders</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={200}>
+                        <ResponsiveContainer width="100%" height={220}>
                           <PieChart>
-                            <Pie data={orderStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={3} strokeWidth={0}>
+                            <Pie data={orderStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={45} paddingAngle={3} strokeWidth={0}>
                               {orderStatusData.map((d, i) => <Cell key={i} fill={d.color} />)}
                             </Pie>
                             <Tooltip />
@@ -443,23 +616,22 @@ const Reports = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Payment Methods */}
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" /> Payment Methods
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent className="p-4 pt-2">
                       {paymentMethods.length === 0 ? (
                         <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data</div>
                       ) : (
-                        <div className="space-y-3 pt-2">
+                        <div className="space-y-3">
                           {paymentMethods.map((m, i) => {
                             const total = paymentMethods.reduce((s, p) => s + p.value, 0);
                             const pct = total > 0 ? Math.round((m.value / total) * 100) : 0;
                             return (
-                              <div key={i} className="space-y-1">
+                              <div key={i} className="space-y-1.5">
                                 <div className="flex justify-between text-xs">
                                   <span className="font-medium">{m.name}</span>
                                   <span className="text-muted-foreground">{m.value} ({pct}%)</span>
@@ -476,8 +648,7 @@ const Reports = () => {
                   </Card>
                 </div>
 
-                {/* Orders per Day */}
-                <Card className="border-border/50 shadow-sm">
+                <Card className="border-border/40 shadow-sm">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" /> Orders per Day
@@ -487,7 +658,7 @@ const Reports = () => {
                     {revenueTrend.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={220}>
                         <BarChart data={revenueTrend}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="date" fontSize={10} tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -501,11 +672,10 @@ const Reports = () => {
                 </Card>
               </TabsContent>
 
-              {/* PRODUCTS & CUSTOMERS TAB */}
+              {/* PRODUCTS TAB */}
               <TabsContent value="products" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Top Products */}
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Package className="h-4 w-4 text-primary" /> Top Products
@@ -516,33 +686,38 @@ const Reports = () => {
                         <div className="text-sm text-muted-foreground text-center py-10">No products</div>
                       ) : (
                         <div className="space-y-2">
-                          {topProducts.map((p, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <span className="text-xs font-semibold text-muted-foreground w-5">{i + 1}</span>
-                                <div className="min-w-0">
-                                  <p className="font-medium truncate">{p.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                          {topProducts.map((p, i) => {
+                            const podium = i < 3;
+                            const medal = ["🥇", "🥈", "🥉"][i];
+                            return (
+                              <div key={i} className="flex items-center justify-between text-sm p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${podium ? "bg-amber-500/10" : "bg-muted text-muted-foreground"}`}>
+                                    {podium ? medal : i + 1}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="font-medium truncate text-xs sm:text-sm">{p.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0 ml-2">
+                                  <p className="font-semibold text-xs sm:text-sm">{formatPrice(p.price)}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    Stock: <span className={p.stock <= 0 ? "text-destructive font-medium" : ""}>{p.stock}</span>
+                                  </p>
                                 </div>
                               </div>
-                              <div className="text-right shrink-0 ml-2">
-                                <p className="font-semibold">৳{p.price.toLocaleString()}</p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  Stock: <span className={p.stock <= 0 ? "text-destructive font-medium" : ""}>{p.stock}</span>
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>
                   </Card>
 
-                  {/* Top Customers */}
-                  <Card className="border-border/50 shadow-sm">
+                  <Card className="border-border/40 shadow-sm">
                     <CardHeader className="p-4 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" /> Top Customers
+                        <Crown className="h-4 w-4 text-primary" /> Top Customers
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-2">
@@ -550,28 +725,34 @@ const Reports = () => {
                         <div className="text-sm text-muted-foreground text-center py-10">No customer data</div>
                       ) : (
                         <div className="space-y-2">
-                          {topCustomers.map((c, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm p-3 rounded-lg border border-border/50 hover:shadow-sm transition-shadow">
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
-                                  {i + 1}
+                          {topCustomers.map((c, i) => {
+                            const podium = i < 3;
+                            const medal = ["🥇", "🥈", "🥉"][i];
+                            return (
+                              <div key={i} className="flex items-center justify-between text-sm p-3 rounded-lg border border-border/40 hover:shadow-sm transition-shadow">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${podium ? "bg-amber-500/10" : "bg-primary/10 text-primary"}`}>
+                                    {podium ? medal : i + 1}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium truncate text-xs sm:text-sm">{c.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">{c.orders} orders</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="font-medium">{c.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{c.orders} orders</p>
-                                </div>
+                                <p className="font-bold text-xs sm:text-sm shrink-0">{formatPrice(c.total)}</p>
                               </div>
-                              <p className="font-bold">৳{c.total.toLocaleString()}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
 
-                {/* Revenue vs Ad Spend */}
-                <Card className="border-border/50 shadow-sm">
+              {/* FINANCE TAB */}
+              <TabsContent value="finance" className="space-y-4 mt-4">
+                <Card className="border-border/40 shadow-sm">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" /> Revenue vs Ad Spend
@@ -579,12 +760,13 @@ const Reports = () => {
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     {adCosts.length === 0 ? (
-                      <div className="flex items-center justify-center h-[180px] text-sm text-muted-foreground">No ad data</div>
+                      <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No ad data</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={180}>
+                      <ResponsiveContainer width="100%" height={220}>
                         <BarChart data={[
                           { name: "Ad Spend", value: stats.totalAdSpend },
                           { name: "Ad Revenue", value: stats.totalAdRevenue },
+                          { name: "Net Profit", value: stats.totalProfit },
                         ]}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="name" fontSize={11} tick={{ fill: "hsl(var(--muted-foreground))" }} />
@@ -593,12 +775,49 @@ const Reports = () => {
                           <Bar dataKey="value" radius={[6, 6, 0, 0]} name="Amount">
                             <Cell fill="hsl(0, 84%, 60%)" />
                             <Cell fill="hsl(174, 98%, 21%)" />
+                            <Cell fill="hsl(142, 76%, 36%)" />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     )}
                   </CardContent>
                 </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                  <Card className="border-l-4 border-l-emerald-500">
+                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">Profit Margin</p>
+                        <Trophy className="h-4 w-4 text-emerald-500" />
+                      </div>
+                      <p className="text-2xl font-bold">{stats.profitMargin.toFixed(1)}%</p>
+                      <Progress value={Math.min(stats.profitMargin, 100)} className="h-1.5 mt-3" />
+                      <p className="text-[11px] text-muted-foreground mt-2">Target: 30%+</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">Completion Rate</p>
+                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <p className="text-2xl font-bold">{stats.completionRate.toFixed(1)}%</p>
+                      <Progress value={stats.completionRate} className="h-1.5 mt-3" />
+                      <p className="text-[11px] text-muted-foreground mt-2">{stats.completedOrders}/{stats.totalOrders} orders</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-l-4 border-l-amber-500">
+                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">ROAS</p>
+                        <Zap className="h-4 w-4 text-amber-500" />
+                      </div>
+                      <p className="text-2xl font-bold">{stats.roas.toFixed(2)}x</p>
+                      <Progress value={Math.min(stats.roas * 25, 100)} className="h-1.5 mt-3" />
+                      <p className="text-[11px] text-muted-foreground mt-2">Target: 3x+</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </>
