@@ -332,11 +332,17 @@ const Products = () => {
   };
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       if (typeFilter !== "all" && p.type !== typeFilter) return false;
       if (statusFilter !== "all") {
         if (statusFilter === "active" && !p.is_active) return false;
         if (statusFilter === "inactive" && p.is_active) return false;
+      }
+      if (categoryFilter !== "all" && (p.category || "") !== categoryFilter) return false;
+      if (stockFilter !== "all" && p.type !== "digital") {
+        if (stockFilter === "out" && p.stock > 0) return false;
+        if (stockFilter === "low" && (p.stock <= 0 || p.stock > 5)) return false;
+        if (stockFilter === "in" && p.stock <= 0) return false;
       }
       if (search) {
         const q = search.toLowerCase();
@@ -344,24 +350,238 @@ const Products = () => {
       }
       return true;
     });
-  }, [products, typeFilter, statusFilter, search]);
+    const sorted = [...list].sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc": return a.name.localeCompare(b.name);
+        case "name_desc": return b.name.localeCompare(a.name);
+        case "price_asc": return Number(a.price) - Number(b.price);
+        case "price_desc": return Number(b.price) - Number(a.price);
+        case "stock_asc": return a.stock - b.stock;
+        case "stock_desc": return b.stock - a.stock;
+        default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return sorted;
+  }, [products, typeFilter, statusFilter, categoryFilter, stockFilter, search, sortBy]);
+
+  const stats = useMemo(() => {
+    const total = products.length;
+    const active = products.filter((p) => p.is_active).length;
+    const lowStock = products.filter((p) => p.type !== "digital" && p.stock > 0 && p.stock <= 5).length;
+    const outOfStock = products.filter((p) => p.type !== "digital" && p.stock <= 0).length;
+    return { total, active, lowStock, outOfStock };
+  }, [products]);
+
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => p.category && set.add(p.category));
+    return Array.from(set).sort();
+  }, [products]);
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((p) => p.id)));
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const runBulk = async (action: "delete" | "activate" | "deactivate") => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (action === "delete") {
+      const { error } = await supabase.from("products").delete().in("id", ids);
+      if (error) toast.error(error.message);
+      else toast.success(`${ids.length} products deleted`);
+    } else {
+      const { error } = await supabase.from("products").update({ is_active: action === "activate" }).in("id", ids);
+      if (error) toast.error(error.message);
+      else toast.success(`${ids.length} products ${action === "activate" ? "activated" : "deactivated"}`);
+    }
+    clearSelection();
+    setBulkConfirm(null);
+    fetchProducts();
+  };
+
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   return (
     <DashboardLayout>
       <UsageWarningBanner type="products" />
-      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Products</h1>
+
+      {/* Premium Header */}
+      <div className="flex items-end justify-between flex-wrap gap-3 pb-4 sm:pb-5 mb-4 sm:mb-6 border-b border-border/60">
+        <div className="flex flex-col gap-1">
+          <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
+            <span>Sales & Products</span>
+            <span className="text-border">/</span>
+            <span className="text-primary">Catalog</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Products</h1>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-2 hidden sm:inline-flex">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setGuideOpen(true)}
+            className="gap-1.5 h-9"
+            aria-label="Open guide"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Guide</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-1.5 h-9 hidden sm:inline-flex">
             <Upload className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-2 h-9" onClick={openAdd}>
+          <Button size="sm" className="gap-1.5 h-9 hidden sm:inline-flex" onClick={openAdd}>
             <Plus className="h-4 w-4" />
-            Add
+            Add Product
           </Button>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="premium-card p-4 sm:p-5 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Total</span>
+            <Boxes className="h-3.5 w-3.5 text-muted-foreground/60" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
+        </div>
+        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Active</span>
+            <CheckCircle2 className="h-3.5 w-3.5 text-primary/70" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
+        </div>
+        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400" />
+          <div className="flex items-center justify-between mb-2 pl-1">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Low Stock</span>
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
+        </div>
+        <div className="premium-card p-4 sm:p-5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-rose-500" />
+          <div className="flex items-center justify-between mb-2 pl-1">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-widest">Out of Stock</span>
+            <XCircle className="h-3.5 w-3.5 text-rose-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
+        </div>
+      </div>
+
+      {/* Toolbar: Search + Filters + View toggle */}
+      <div className="premium-card p-2 sm:p-2.5 mb-4 flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, SKU, or category..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 border-0 bg-transparent shadow-none focus-visible:ring-1"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="h-8 text-xs w-[100px]"><SelectValue placeholder="Type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="physical">Physical</SelectItem>
+              <SelectItem value="digital">Digital</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as any)}>
+            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Stock" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stock</SelectItem>
+              <SelectItem value="in">In Stock</SelectItem>
+              <SelectItem value="low">Low (≤5)</SelectItem>
+              <SelectItem value="out">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <SelectTrigger className="h-8 text-xs w-[140px]">
+              <ArrowUpDown className="h-3 w-3 mr-1" />
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+              <SelectItem value="price_asc">Price (low→high)</SelectItem>
+              <SelectItem value="price_desc">Price (high→low)</SelectItem>
+              <SelectItem value="stock_asc">Stock (low→high)</SelectItem>
+              <SelectItem value="stock_desc">Stock (high→low)</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="hidden md:flex bg-muted/50 p-0.5 rounded-md border">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded transition-colors ${viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              aria-label="List view"
+            >
+              <ListIcon className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded transition-colors ${viewMode === "grid" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              aria-label="Grid view"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="premium-card p-2.5 mb-4 flex items-center justify-between flex-wrap gap-2 border-primary/40 bg-primary/5 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 text-sm">
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span className="font-medium">{selectedIds.size} selected</span>
+            <Button variant="ghost" size="sm" onClick={clearSelection} className="h-7 text-xs">Clear</Button>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setBulkConfirm("activate")}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Activate
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setBulkConfirm("deactivate")}>
+              <XCircle className="h-3.5 w-3.5 mr-1" /> Deactivate
+            </Button>
+            <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={() => setBulkConfirm("delete")}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
