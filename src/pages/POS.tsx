@@ -625,7 +625,7 @@ const POS = () => {
       };
 
       toast.success(computedPaymentStatus === "unpaid" ? "Order added to due book!" : computedPaymentStatus === "partial" ? `Partial payment recorded! Due: ${format(effectiveDue)}` : "Order completed!");
-      if (subscriptionItems.length > 0) toast.success(`${subscriptionItems.length} subscription(s) auto-created!`);
+      if (subsCreated > 0) toast.success(`${subsCreated} subscription(s) auto-created!`);
 
       setCart([]);
       setCustomerId("");
