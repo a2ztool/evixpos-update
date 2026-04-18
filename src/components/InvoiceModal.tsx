@@ -109,7 +109,30 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
     : Number(order.discount);
   const total = Number(order.total_amount);
   const itemCount = orderItems.length > 0 ? orderItems.reduce((s, i) => s + i.quantity, 0) : 1;
-  const statusCfg = paymentStatusConfig[order.payment_status] || paymentStatusConfig.unpaid;
+
+  // Derive paid / due from order.meta when present, fallback to payment_status logic
+  const metaPaid = order.meta && typeof order.meta.paid_amount === "number" ? Number(order.meta.paid_amount) : null;
+  const metaDue = order.meta && typeof order.meta.due_amount === "number" ? Number(order.meta.due_amount) : null;
+  let paidAmount: number;
+  let dueAmount: number;
+  if (metaPaid !== null || metaDue !== null) {
+    paidAmount = metaPaid !== null ? metaPaid : Math.max(total - (metaDue ?? 0), 0);
+    dueAmount = metaDue !== null ? metaDue : Math.max(total - (metaPaid ?? 0), 0);
+  } else if (order.payment_status === "paid") {
+    paidAmount = total; dueAmount = 0;
+  } else if (order.payment_status === "unpaid") {
+    paidAmount = 0; dueAmount = total;
+  } else {
+    paidAmount = 0; dueAmount = total;
+  }
+
+  // Recompute status from numbers (in case DB value is stale)
+  const derivedStatus = paidAmount <= 0.001
+    ? "unpaid"
+    : dueAmount <= 0.01
+      ? "paid"
+      : "partial";
+  const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
   // QR code data for payment verification
   const qrData = JSON.stringify({
