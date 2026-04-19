@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, Package, Users, ShoppingCart, CreditCard,
-  Settings, Plug, LogOut, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
+  Settings, Plug, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
   TrendingUp, ArrowUpDown, BookOpen, Megaphone, ListTodo, BarChart3, RefreshCw, Crown,
-  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, ExternalLink, Sheet, Lock,
+  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, Sheet, Lock,
   Truck, Wallet, Star, AlertTriangle, Receipt, CalendarDays
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
@@ -21,21 +21,20 @@ import {
   SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useState } from "react";
+
 type NavItem = { title: string; icon: any; path: string; perm?: string; feature?: FeatureKey; onlineOnly?: boolean; offlineOnly?: boolean };
 
-/** Maps each nav item to the permission required to see it */
 const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { state } = useSidebar();
   const { t } = useLanguage();
-  const { isStaff, staffInfo, hasPermission, hasAnyPermission } = useStaff();
+  const { isStaff, staffInfo, hasPermission } = useStaff();
   const { activeStore } = useStore();
   const { plan, hasFeature } = useStorePlan();
   const { unreadCount: msgUnread } = useMessageUnread();
@@ -75,7 +74,6 @@ const AppSidebar = () => {
     { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
     { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book", onlineOnly: true },
     { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
-    
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission", onlineOnly: true },
     { title: "Daily Report", icon: CalendarDays, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
     { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", perm: "reports.view", offlineOnly: true },
@@ -90,7 +88,6 @@ const AppSidebar = () => {
     { title: "Facebook Ads", icon: Zap, path: "/integrations/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
   ];
 
-  /** Filter items based on staff permissions and store mode */
   const filterByPerm = (items: NavItem[]) =>
     items.filter(item => {
       if (item.perm && !hasPermission(item.perm)) return false;
@@ -107,75 +104,98 @@ const AppSidebar = () => {
   const filteredIntegrations = filterByPerm(integrationSubItems);
   const filteredOfflineOps = filterByPerm(offlineOpsItems);
 
-  // Owner-only sections: referral, my-plan, settings (staff can see settings.view)
   const showReferral = !isStaff;
   const showMyPlan = !isStaff;
   const showSettings = !isStaff || hasPermission("settings.view");
 
   const [ordersOpen, setOrdersOpen] = useState(location.pathname.startsWith("/orders"));
-  const [productsOpen, setProductsOpen] = useState(["/products", "/order-forms", "/coupons"].includes(location.pathname));
-  const [financeOpen, setFinanceOpen] = useState(location.pathname.startsWith("/finance"));
+  const [productsOpen, setProductsOpen] = useState(["/products", "/order-forms", "/coupons", "/inventory"].some(p => location.pathname.startsWith(p)));
+  const [financeOpen, setFinanceOpen] = useState(location.pathname.startsWith("/finance") || location.pathname.startsWith("/offline"));
   const [integrationsOpen, setIntegrationsOpen] = useState(location.pathname.startsWith("/integrations"));
 
-  const initials = user?.email?.slice(0, 2).toUpperCase() ?? "U";
   const fullPath = location.pathname + location.search;
 
+  // ---- Menu item ----
   const renderItem = (item: NavItem) => {
     const active = fullPath === item.path || (item.path === "/orders" && location.pathname === "/orders" && !location.search);
     const locked = item.feature ? !hasFeature(item.feature) : false;
-    return (
-      <SidebarMenuItem key={item.path}>
-        <SidebarMenuButton
-          onClick={() => navigate(item.path)}
-          onMouseEnter={() => prefetchRoute(item.path)}
-          onFocus={() => prefetchRoute(item.path)}
-          isActive={active}
-          className={`rounded-lg transition-all duration-150 ${
-            active ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-          } ${locked ? "opacity-60" : ""}`}
-        >
-          <item.icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
-          {!collapsed && (
-            <span className="flex items-center gap-2 flex-1">
-              {item.title}
-              {locked && <Lock className="h-3 w-3 text-muted-foreground/70 ml-auto" />}
-            </span>
-          )}
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+
+    const button = (
+      <SidebarMenuButton
+        onClick={() => navigate(item.path)}
+        onMouseEnter={() => prefetchRoute(item.path)}
+        onFocus={() => prefetchRoute(item.path)}
+        isActive={active}
+        tooltip={collapsed ? item.title : undefined}
+        className={`relative rounded-lg transition-all duration-200 ${
+          active
+            ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold shadow-sm"
+            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        } ${locked ? "opacity-60" : ""}`}
+      >
+        {active && !collapsed && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
+        )}
+        <item.icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
+        <span className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="truncate">{item.title}</span>
+          {locked && <Lock className="h-3 w-3 text-muted-foreground/70 ml-auto shrink-0" />}
+        </span>
+      </SidebarMenuButton>
     );
+
+    return <SidebarMenuItem key={item.path}>{button}</SidebarMenuItem>;
   };
 
+  // ---- Collapsible group (in expanded mode) / icon button (in collapsed mode) ----
   const renderCollapsible = (
     label: string, icon: any, items: NavItem[],
     open: boolean, setOpen: (v: boolean) => void, activePath: string
   ) => {
     const Icon = icon;
-    const isActive = location.pathname.startsWith(activePath);
+    const isActive = items.some(it => fullPath === it.path) || location.pathname.startsWith(activePath);
+
     if (collapsed) {
+      // In collapsed mode render the parent as a single icon button that
+      // navigates to the first child. Tooltip shows the section name.
       return (
-        <SidebarMenuItem>
-          <SidebarMenuButton onClick={() => navigate(items[0].path)} isActive={isActive} className="rounded-lg">
-            <Icon className="h-4 w-4" />
+        <SidebarMenuItem key={label}>
+          <SidebarMenuButton
+            onClick={() => navigate(items[0].path)}
+            isActive={isActive}
+            tooltip={label}
+            className={`rounded-lg transition-all duration-200 ${
+              isActive
+                ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+            }`}
+          >
+            <Icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
+            <span className="truncate">{label}</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       );
     }
+
     return (
-      <Collapsible open={open} onOpenChange={setOpen}>
+      <Collapsible key={label} open={open} onOpenChange={setOpen}>
         <SidebarMenuItem>
           <CollapsibleTrigger asChild>
-            <SidebarMenuButton className={`rounded-lg transition-all duration-150 justify-between ${isActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
-              <div className="flex items-center gap-2">
-                <Icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                <span>{label}</span>
-              </div>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+            <SidebarMenuButton
+              className={`relative rounded-lg transition-all duration-200 ${
+                isActive ? "text-foreground font-medium" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              }`}
+            >
+              <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+              <span className="flex items-center justify-between flex-1 min-w-0">
+                <span className="truncate">{label}</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+              </span>
             </SidebarMenuButton>
           </CollapsibleTrigger>
         </SidebarMenuItem>
-        <CollapsibleContent>
-          <SidebarMenu className="pl-4 space-y-0.5 mt-0.5">
+        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
+          <SidebarMenu className="ml-4 mt-1 pl-3 space-y-0.5 border-l border-border/60">
             {items.map(renderItem)}
           </SidebarMenu>
         </CollapsibleContent>
@@ -185,8 +205,8 @@ const AppSidebar = () => {
 
   const renderGroup = (label: string, items: NavItem[]) => (
     <SidebarGroup key={label}>
-      <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
-        {!collapsed && label}
+      <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
+        {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="px-2 space-y-0.5">{items.map(renderItem)}</SidebarMenu>
@@ -194,28 +214,79 @@ const AppSidebar = () => {
     </SidebarGroup>
   );
 
+  // Messages item (custom because of badge)
+  const renderMessages = () => {
+    const active = fullPath === "/staff-inbox";
+    const button = (
+      <SidebarMenuButton
+        onClick={() => navigate("/staff-inbox")}
+        onMouseEnter={() => prefetchRoute("/staff-inbox")}
+        isActive={active}
+        tooltip={collapsed ? `Messages${msgUnread > 0 ? ` (${msgUnread})` : ""}` : undefined}
+        className={`relative rounded-lg transition-all duration-200 ${
+          active
+            ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold"
+            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        }`}
+      >
+        <div className="relative shrink-0">
+          <MessageSquare className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
+          {collapsed && msgUnread > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 px-1 rounded-full bg-destructive text-destructive-foreground text-[8px] font-bold flex items-center justify-center ring-2 ring-sidebar">
+              {msgUnread > 9 ? "9+" : msgUnread}
+            </span>
+          )}
+        </div>
+        <span className="flex items-center justify-between flex-1 min-w-0">
+          <span className="truncate">Messages</span>
+          {msgUnread > 0 && (
+            <Badge className="h-5 min-w-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] p-0 px-1.5 animate-pulse shrink-0">
+              {msgUnread > 99 ? "99+" : msgUnread}
+            </Badge>
+          )}
+        </span>
+      </SidebarMenuButton>
+    );
+    return <SidebarMenuItem key="/staff-inbox">{button}</SidebarMenuItem>;
+  };
+
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
-      <SidebarContent>
-        <div className={`px-4 py-5 flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+    <Sidebar collapsible="icon" className="border-r border-border/60 bg-gradient-to-b from-sidebar to-sidebar/95">
+      <SidebarContent className="gap-1">
+        {/* Brand */}
+        <div className={`flex items-center ${collapsed ? "justify-center px-0" : "px-4"} py-4 border-b border-border/40`}>
           {collapsed ? (
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-primary-foreground font-bold text-sm">E</span>
-            </div>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
+                    aria-label="Dashboard"
+                  >
+                    <span className="text-primary-foreground font-bold text-sm">E</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">EvixPOS · {plan}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : (
-            <div className="flex items-center gap-2">
-              <img src={brandLogo} alt="EvixPOS" className="h-7 w-auto" />
-              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-medium text-muted-foreground uppercase">{plan}</span>
-            </div>
+            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 group min-w-0">
+              <img src={brandLogo} alt="EvixPOS" className="h-7 w-auto transition-transform group-hover:scale-105" />
+              <span className="text-[10px] bg-gradient-to-r from-primary/15 to-primary/5 ring-1 ring-primary/20 px-1.5 py-0.5 rounded font-semibold text-primary uppercase tracking-wide">
+                {plan}
+              </span>
+            </button>
           )}
         </div>
 
+        {/* Sections */}
         {filteredOverview.length > 0 && renderGroup(t.overview, filteredOverview)}
 
         {(filteredOrders.length > 0 || filteredProducts.length > 0) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
-              {!collapsed && t.salesProducts}
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
+              {t.salesProducts}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
@@ -232,8 +303,8 @@ const AppSidebar = () => {
 
         {(filteredFinance.length > 0 || hasPermission("reports.view")) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
-              {!collapsed && t.performance}
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
+              {t.performance}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
@@ -246,8 +317,8 @@ const AppSidebar = () => {
 
         {(filteredIntegrations.length > 0 || showReferral) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
-              {!collapsed && t.systemGrowth}
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
+              {t.systemGrowth}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
@@ -260,38 +331,12 @@ const AppSidebar = () => {
 
         {(showMyPlan || showSettings) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-4 mb-1">
-              {!collapsed && t.supportSection}
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
+              {t.supportSection}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5">
-                <SidebarMenuItem key="/staff-inbox">
-                  <SidebarMenuButton
-                    onClick={() => navigate("/staff-inbox")}
-                    onMouseEnter={() => prefetchRoute("/staff-inbox")}
-                    isActive={fullPath === "/staff-inbox"}
-                    className={`rounded-lg transition-all duration-150 ${
-                      fullPath === "/staff-inbox" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <MessageSquare className={`h-4 w-4 ${fullPath === "/staff-inbox" ? "text-primary" : ""}`} />
-                    {!collapsed && (
-                      <span className="flex items-center gap-2 flex-1">
-                        Messages
-                        {msgUnread > 0 && (
-                          <Badge className="ml-auto h-5 min-w-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] p-0 px-1.5 animate-pulse">
-                            {msgUnread > 99 ? "99+" : msgUnread}
-                          </Badge>
-                        )}
-                      </span>
-                    )}
-                    {collapsed && msgUnread > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center">
-                        {msgUnread > 9 ? "9+" : msgUnread}
-                      </span>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {renderMessages()}
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
                 {showSettings && renderItem({ title: t.settings, icon: Settings, path: "/settings" })}
@@ -302,24 +347,36 @@ const AppSidebar = () => {
 
         {/* Staff badge */}
         {isStaff && !collapsed && (
-          <div className="mx-4 mb-2 p-3 rounded-xl bg-accent/50 border border-border">
+          <div className="mx-3 mt-2 mb-1 p-2.5 rounded-xl bg-gradient-to-br from-accent/60 to-accent/20 border border-border/60">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] capitalize border-primary/30 text-primary">{staffInfo?.role}</Badge>
+              <Badge variant="outline" className="text-[10px] capitalize border-primary/30 text-primary bg-primary/5">{staffInfo?.role}</Badge>
               <span className="text-[10px] text-muted-foreground truncate">{staffInfo?.name}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Staff account</p>
+            <p className="text-[10px] text-muted-foreground/80 mt-1">Staff account</p>
           </div>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-border/50 space-y-3">
-        {/* Product Limit Widget */}
-        {!collapsed ? (
-          <SidebarUsageWidget navigate={navigate} plan={plan} />
+      <SidebarFooter className={`border-t border-border/40 ${collapsed ? "p-1.5" : "p-3"}`}>
+        {collapsed ? (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-full h-9 text-primary hover:bg-primary/10"
+                  onClick={() => navigate("/my-plan")}
+                  aria-label="Upgrade plan"
+                >
+                  <Zap className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">Upgrade plan</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : (
-          <Button variant="ghost" size="icon" className="w-full text-primary" onClick={() => navigate("/my-plan")}>
-            <Zap className="h-4 w-4" />
-          </Button>
+          <SidebarUsageWidget navigate={navigate} plan={plan} />
         )}
       </SidebarFooter>
     </Sidebar>
