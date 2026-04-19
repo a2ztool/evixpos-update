@@ -30,6 +30,7 @@ type SortBy = "recent" | "amount_high" | "due_high";
 
 const Purchases = () => {
   const { storeId, userId, ready } = useStoreQuery();
+  const { user } = useAuth();
   const { format } = useCurrency();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,7 +39,15 @@ const Purchases = () => {
   const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [guideOpen, setGuideOpen] = useState(false);
   const [form, setForm] = useState({
-    supplier_id: "", total_amount: "", paid_amount: "", payment_method: "cash", notes: "",
+    supplier_id: "",
+    product_id: "" as string,
+    product_name: "",
+    quantity: "1",
+    unit_price: "",
+    paid_amount: "",
+    payment_method: "cash",
+    purchase_date: formatDate(new Date(), "yyyy-MM-dd"),
+    notes: "",
   });
   const [payDialog, setPayDialog] = useState<any>(null);
   const [payAmount, setPayAmount] = useState("");
