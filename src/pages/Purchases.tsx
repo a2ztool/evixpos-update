@@ -69,7 +69,7 @@ const Purchases = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, stock_quantity")
+        .select("id, name, price, stock")
         .eq("store_id", storeId!)
         .order("name");
       return data || [];
@@ -174,12 +174,12 @@ const Purchases = () => {
       if (form.product_id) {
         const { data: prod } = await supabase
           .from("products")
-          .select("stock_quantity")
+          .select("stock")
           .eq("id", form.product_id)
           .maybeSingle();
         if (prod) {
           await supabase.from("products")
-            .update({ stock_quantity: Number(prod.stock_quantity || 0) + qty })
+            .update({ stock: Number(prod.stock || 0) + qty })
             .eq("id", form.product_id);
         }
       }
