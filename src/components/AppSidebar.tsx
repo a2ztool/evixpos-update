@@ -126,7 +126,7 @@ const AppSidebar = () => {
         onMouseEnter={() => prefetchRoute(item.path)}
         onFocus={() => prefetchRoute(item.path)}
         isActive={active}
-        tooltip={collapsed ? item.title : undefined}
+        tooltip={item.title}
         className={`relative rounded-lg transition-all duration-200 ${
           active
             ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold shadow-sm"
