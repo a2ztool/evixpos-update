@@ -120,7 +120,6 @@ const StockAlerts = () => {
       if (qty <= 0) throw new Error("Invalid quantity");
       const newStock = Number(restockDialog.stock) + qty;
       const updates: any = { stock: newStock };
-      if (restockCost) updates.cost_price = Number(restockCost);
       const { error } = await supabase.from("products").update(updates).eq("id", restockDialog.id);
       if (error) throw error;
     },
