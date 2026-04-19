@@ -13,15 +13,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Plus, Search, ShoppingBag, FileDown, Eye, Receipt, Wallet, TrendingUp,
   BookOpen, Sparkles, AlertTriangle, Filter, Crown, ArrowUpRight, ShieldCheck,
-  Calendar, CheckCircle2,
+  Calendar, CheckCircle2, Package,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { validateWithToast, purchaseSchema } from "@/lib/validations";
 import { format as formatDate, subDays, startOfMonth } from "date-fns";
+import { normalizePaymentMethods } from "@/lib/paymentMethods";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RTooltip, CartesianGrid } from "recharts";
 
 type StatusFilter = "all" | "paid" | "partial" | "unpaid";
@@ -29,6 +30,7 @@ type SortBy = "recent" | "amount_high" | "due_high";
 
 const Purchases = () => {
   const { storeId, userId, ready } = useStoreQuery();
+  const { user } = useAuth();
   const { format } = useCurrency();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,7 +39,15 @@ const Purchases = () => {
   const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [guideOpen, setGuideOpen] = useState(false);
   const [form, setForm] = useState({
-    supplier_id: "", total_amount: "", paid_amount: "", payment_method: "cash", notes: "",
+    supplier_id: "",
+    product_id: "" as string,
+    product_name: "",
+    quantity: "1",
+    unit_price: "",
+    paid_amount: "",
+    payment_method: "cash",
+    purchase_date: formatDate(new Date(), "yyyy-MM-dd"),
+    notes: "",
   });
   const [payDialog, setPayDialog] = useState<any>(null);
   const [payAmount, setPayAmount] = useState("");
@@ -52,6 +62,42 @@ const Purchases = () => {
       return data || [];
     },
   });
+
+  const { data: productList = [] } = useQuery({
+    queryKey: ["purchase-products", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, price, stock")
+        .eq("store_id", storeId!)
+        .order("name");
+      return data || [];
+    },
+  });
+
+  // Active payment methods from business settings
+  const { data: paymentMethodOptions = [] } = useQuery({
+    queryKey: ["purchase-payment-methods", storeId, user?.id],
+    enabled: ready && !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("store_id", storeId!)
+        .maybeSingle();
+      const methods = normalizePaymentMethods(data?.payment_methods).filter(m => m.enabled);
+      return methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }];
+    },
+  });
+
+  // Set default payment method when options arrive
+  useEffect(() => {
+    if (paymentMethodOptions.length > 0 && !paymentMethodOptions.find(m => m.id === form.payment_method)) {
+      setForm(p => ({ ...p, payment_method: paymentMethodOptions[0].id }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethodOptions]);
 
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["purchases", storeId],
@@ -81,37 +127,97 @@ const Purchases = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const parsed = validateWithToast(purchaseSchema, form, toast.error);
-      if (!parsed) throw new Error("Validation failed");
-      const total = Number(form.total_amount) || 0;
+      const qty = Number(form.quantity) || 0;
+      const unit = Number(form.unit_price) || 0;
+      const total = qty * unit;
       const paid = Number(form.paid_amount) || 0;
+      const productName = form.product_id
+        ? productList.find((p: any) => p.id === form.product_id)?.name || ""
+        : form.product_name.trim();
+
+      if (!productName) throw new Error("Select or enter a product");
+      if (qty <= 0) throw new Error("Quantity must be greater than 0");
+      if (unit <= 0) throw new Error("Unit price must be greater than 0");
+      if (paid < 0 || paid > total) throw new Error("Paid amount must be between 0 and total");
+
       const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
-      const { error } = await supabase.from("purchases").insert({
+      const composedNotes = [
+        `${productName} × ${qty} @ ${format(unit)}`,
+        form.notes?.trim() || "",
+      ].filter(Boolean).join(" — ");
+
+      // 1. Insert purchase header
+      const { data: purchase, error: pErr } = await supabase.from("purchases").insert({
         store_id: storeId!, user_id: userId!,
         supplier_id: form.supplier_id || null,
         total_amount: total, paid_amount: paid,
-        payment_status: status, payment_method: form.payment_method,
-        notes: form.notes,
-      });
-      if (error) throw error;
+        payment_status: status,
+        payment_method: form.payment_method,
+        purchase_date: form.purchase_date,
+        notes: composedNotes,
+      }).select("id").single();
+      if (pErr) throw pErr;
 
+      // 2. Insert linked purchase_item line
+      if (purchase?.id) {
+        const { error: iErr } = await supabase.from("purchase_items").insert({
+          purchase_id: purchase.id,
+          product_id: form.product_id || null,
+          quantity: qty,
+          unit_cost: unit,
+          total_cost: total,
+        });
+        if (iErr) throw iErr;
+      }
+
+      // 3. Bump product stock if linked
+      if (form.product_id) {
+        const { data: prod } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", form.product_id)
+          .maybeSingle();
+        if (prod) {
+          await supabase.from("products")
+            .update({ stock: Number(prod.stock || 0) + qty })
+            .eq("id", form.product_id);
+        }
+      }
+
+      // 4. Add unpaid amount to supplier balance
       if (form.supplier_id && total > paid) {
         const due = total - paid;
-        const { data: sup } = await supabase.from("suppliers").select("balance_due").eq("id", form.supplier_id).single();
+        const { data: sup } = await supabase
+          .from("suppliers")
+          .select("balance_due")
+          .eq("id", form.supplier_id)
+          .maybeSingle();
         if (sup) {
-          await supabase.from("suppliers").update({ balance_due: Number(sup.balance_due) + due }).eq("id", form.supplier_id);
+          await supabase.from("suppliers")
+            .update({ balance_due: Number(sup.balance_due) + due })
+            .eq("id", form.supplier_id);
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-products", storeId] });
       setDialogOpen(false);
-      setForm({ supplier_id: "", total_amount: "", paid_amount: "", payment_method: "cash", notes: "" });
-      toast.success("Purchase recorded");
+      setForm({
+        supplier_id: "", product_id: "", product_name: "",
+        quantity: "1", unit_price: "", paid_amount: "",
+        payment_method: paymentMethodOptions[0]?.id || "cash",
+        purchase_date: formatDate(new Date(), "yyyy-MM-dd"), notes: "",
+      });
+      toast.success("Purchase recorded — stock & supplier dues updated");
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Auto-calc helpers
+  const computedTotal = (Number(form.quantity) || 0) * (Number(form.unit_price) || 0);
+  const computedDue = Math.max(0, computedTotal - (Number(form.paid_amount) || 0));
 
   const payMutation = useMutation({
     mutationFn: async () => {
@@ -277,46 +383,144 @@ const Purchases = () => {
                     <Plus className="h-4 w-4" /> New Purchase
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Record Purchase</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Supplier</Label>
-                      <Select value={form.supplier_id} onValueChange={v => setForm(p => ({ ...p, supplier_id: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Select supplier (optional)" /></SelectTrigger>
-                        <SelectContent>{suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Total Amount *</Label><Input type="number" value={form.total_amount} onChange={e => setForm(p => ({ ...p, total_amount: e.target.value }))} placeholder="0.00" /></div>
-                      <div><Label>Paid Amount</Label><Input type="number" value={form.paid_amount} onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))} placeholder="0.00" /></div>
-                    </div>
-                    {form.total_amount && (
-                      <div className="rounded-lg bg-muted/50 p-2.5 text-sm flex justify-between">
-                        <span className="text-muted-foreground">Outstanding Due</span>
-                        <span className="font-bold text-destructive">{format(Math.max(0, Number(form.total_amount) - Number(form.paid_amount)))}</span>
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Plus className="h-5 w-5 text-primary" /> Record Purchase
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {/* Product details */}
+                    <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5" /> Product Details
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Select Product</Label>
+                          <Select
+                            value={form.product_id || "_manual"}
+                            onValueChange={v => {
+                              if (v === "_manual") {
+                                setForm(p => ({ ...p, product_id: "", unit_price: p.unit_price }));
+                              } else {
+                                const prod = productList.find((p: any) => p.id === v);
+                                setForm(p => ({
+                                  ...p,
+                                  product_id: v,
+                                  product_name: prod?.name || "",
+                                  unit_price: prod?.price ? String(prod.price) : p.unit_price,
+                                }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Select or enter manually" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="_manual">✏️ Manual entry</SelectItem>
+                              {productList.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name} {p.stock != null && `· stock ${p.stock}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Or Manual Name {!form.product_id && "*"}</Label>
+                          <Input
+                            value={form.product_name}
+                            disabled={!!form.product_id}
+                            onChange={e => setForm(p => ({ ...p, product_name: e.target.value }))}
+                            placeholder="e.g. Rice 5kg"
+                          />
+                        </div>
                       </div>
-                    )}
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: "0" }))}>Credit</Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(Math.round(Number(p.total_amount) / 2)) }))}>Half</Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: p.total_amount }))}>Full</Button>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-xs">Quantity *</Label>
+                          <Input type="number" min="1" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Unit Price *</Label>
+                          <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))} placeholder="0.00" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Total</Label>
+                          <div className="h-10 rounded-md border bg-background px-3 flex items-center font-bold text-primary">
+                            {format(computedTotal)}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Supplier + Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Supplier (optional)</Label>
+                        <Select value={form.supplier_id || "_none"} onValueChange={v => setForm(p => ({ ...p, supplier_id: v === "_none" ? "" : v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">— No supplier —</SelectItem>
+                            {suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Purchase Date</Label>
+                        <Input type="date" value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} />
+                      </div>
+                    </div>
+
+                    {/* Payment */}
+                    <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Wallet className="h-3.5 w-3.5" /> Payment
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Paid Amount</Label>
+                          <Input type="number" min="0" step="0.01" value={form.paid_amount} onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))} placeholder="0.00" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Payment Method</Label>
+                          <Select value={form.payment_method} onValueChange={v => setForm(p => ({ ...p, payment_method: v }))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {paymentMethodOptions.map((m: any) => (
+                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: "0" }))}>Credit</Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(Math.round(computedTotal / 2)) }))}>Half</Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(computedTotal) }))}>Full</Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="rounded-md bg-emerald-500/10 p-2">
+                          <p className="text-[10px] text-muted-foreground uppercase">Paid</p>
+                          <p className="font-bold text-emerald-600">{format(Number(form.paid_amount) || 0)}</p>
+                        </div>
+                        <div className={`rounded-md p-2 ${computedDue > 0 ? "bg-destructive/10" : "bg-muted/40"}`}>
+                          <p className="text-[10px] text-muted-foreground uppercase">Due</p>
+                          <p className={`font-bold ${computedDue > 0 ? "text-destructive" : ""}`}>{format(computedDue)}</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
-                      <Label>Payment Method</Label>
-                      <Select value={form.payment_method} onValueChange={v => setForm(p => ({ ...p, payment_method: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">💵 Cash</SelectItem>
-                          <SelectItem value="bank">🏦 Bank Transfer</SelectItem>
-                          <SelectItem value="bkash">📱 bKash</SelectItem>
-                          <SelectItem value="nagad">📱 Nagad</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs">Notes (optional)</Label>
+                      <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Invoice #, batch, remarks..." />
                     </div>
-                    <div><Label>Notes</Label><Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Items, invoice #, description..." /></div>
-                    <Button onClick={() => createMutation.mutate()} disabled={!form.total_amount || createMutation.isPending} className="w-full">
-                      {createMutation.isPending ? "Saving..." : "Record Purchase"}
+
+                    <Button
+                      onClick={() => createMutation.mutate()}
+                      disabled={!form.unit_price || !form.quantity || (!form.product_id && !form.product_name.trim()) || createMutation.isPending}
+                      className="w-full"
+                    >
+                      {createMutation.isPending ? "Saving..." : `Record Purchase · ${format(computedTotal)}`}
                     </Button>
                   </div>
                 </DialogContent>
