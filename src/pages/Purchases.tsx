@@ -127,37 +127,97 @@ const Purchases = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const parsed = validateWithToast(purchaseSchema, form, toast.error);
-      if (!parsed) throw new Error("Validation failed");
-      const total = Number(form.total_amount) || 0;
+      const qty = Number(form.quantity) || 0;
+      const unit = Number(form.unit_price) || 0;
+      const total = qty * unit;
       const paid = Number(form.paid_amount) || 0;
+      const productName = form.product_id
+        ? productList.find((p: any) => p.id === form.product_id)?.name || ""
+        : form.product_name.trim();
+
+      if (!productName) throw new Error("Select or enter a product");
+      if (qty <= 0) throw new Error("Quantity must be greater than 0");
+      if (unit <= 0) throw new Error("Unit price must be greater than 0");
+      if (paid < 0 || paid > total) throw new Error("Paid amount must be between 0 and total");
+
       const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
-      const { error } = await supabase.from("purchases").insert({
+      const composedNotes = [
+        `${productName} × ${qty} @ ${format(unit)}`,
+        form.notes?.trim() || "",
+      ].filter(Boolean).join(" — ");
+
+      // 1. Insert purchase header
+      const { data: purchase, error: pErr } = await supabase.from("purchases").insert({
         store_id: storeId!, user_id: userId!,
         supplier_id: form.supplier_id || null,
         total_amount: total, paid_amount: paid,
-        payment_status: status, payment_method: form.payment_method,
-        notes: form.notes,
-      });
-      if (error) throw error;
+        payment_status: status,
+        payment_method: form.payment_method,
+        purchase_date: form.purchase_date,
+        notes: composedNotes,
+      }).select("id").single();
+      if (pErr) throw pErr;
 
+      // 2. Insert linked purchase_item line
+      if (purchase?.id) {
+        const { error: iErr } = await supabase.from("purchase_items").insert({
+          purchase_id: purchase.id,
+          product_id: form.product_id || null,
+          quantity: qty,
+          unit_cost: unit,
+          total_cost: total,
+        });
+        if (iErr) throw iErr;
+      }
+
+      // 3. Bump product stock if linked
+      if (form.product_id) {
+        const { data: prod } = await supabase
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", form.product_id)
+          .maybeSingle();
+        if (prod) {
+          await supabase.from("products")
+            .update({ stock_quantity: Number(prod.stock_quantity || 0) + qty })
+            .eq("id", form.product_id);
+        }
+      }
+
+      // 4. Add unpaid amount to supplier balance
       if (form.supplier_id && total > paid) {
         const due = total - paid;
-        const { data: sup } = await supabase.from("suppliers").select("balance_due").eq("id", form.supplier_id).single();
+        const { data: sup } = await supabase
+          .from("suppliers")
+          .select("balance_due")
+          .eq("id", form.supplier_id)
+          .maybeSingle();
         if (sup) {
-          await supabase.from("suppliers").update({ balance_due: Number(sup.balance_due) + due }).eq("id", form.supplier_id);
+          await supabase.from("suppliers")
+            .update({ balance_due: Number(sup.balance_due) + due })
+            .eq("id", form.supplier_id);
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-products", storeId] });
       setDialogOpen(false);
-      setForm({ supplier_id: "", total_amount: "", paid_amount: "", payment_method: "cash", notes: "" });
-      toast.success("Purchase recorded");
+      setForm({
+        supplier_id: "", product_id: "", product_name: "",
+        quantity: "1", unit_price: "", paid_amount: "",
+        payment_method: paymentMethodOptions[0]?.id || "cash",
+        purchase_date: formatDate(new Date(), "yyyy-MM-dd"), notes: "",
+      });
+      toast.success("Purchase recorded — stock & supplier dues updated");
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Auto-calc helpers
+  const computedTotal = (Number(form.quantity) || 0) * (Number(form.unit_price) || 0);
+  const computedDue = Math.max(0, computedTotal - (Number(form.paid_amount) || 0));
 
   const payMutation = useMutation({
     mutationFn: async () => {
