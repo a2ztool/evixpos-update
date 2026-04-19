@@ -61,7 +61,7 @@ const StockAlerts = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, stock, sku, price, cost_price, image_url")
+        .select("id, name, stock, sku, price, image_url")
         .eq("store_id", storeId!)
         .eq("is_active", true)
         .eq("type", "physical")
