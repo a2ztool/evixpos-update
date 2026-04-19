@@ -222,7 +222,7 @@ const AppSidebar = () => {
         onClick={() => navigate("/staff-inbox")}
         onMouseEnter={() => prefetchRoute("/staff-inbox")}
         isActive={active}
-        tooltip={collapsed ? `Messages${msgUnread > 0 ? ` (${msgUnread})` : ""}` : undefined}
+        tooltip={`Messages${msgUnread > 0 ? ` (${msgUnread})` : ""}`}
         className={`relative rounded-lg transition-all duration-200 ${
           active
             ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold"
