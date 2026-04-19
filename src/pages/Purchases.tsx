@@ -383,46 +383,144 @@ const Purchases = () => {
                     <Plus className="h-4 w-4" /> New Purchase
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Record Purchase</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Supplier</Label>
-                      <Select value={form.supplier_id} onValueChange={v => setForm(p => ({ ...p, supplier_id: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Select supplier (optional)" /></SelectTrigger>
-                        <SelectContent>{suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Total Amount *</Label><Input type="number" value={form.total_amount} onChange={e => setForm(p => ({ ...p, total_amount: e.target.value }))} placeholder="0.00" /></div>
-                      <div><Label>Paid Amount</Label><Input type="number" value={form.paid_amount} onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))} placeholder="0.00" /></div>
-                    </div>
-                    {form.total_amount && (
-                      <div className="rounded-lg bg-muted/50 p-2.5 text-sm flex justify-between">
-                        <span className="text-muted-foreground">Outstanding Due</span>
-                        <span className="font-bold text-destructive">{format(Math.max(0, Number(form.total_amount) - Number(form.paid_amount)))}</span>
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Plus className="h-5 w-5 text-primary" /> Record Purchase
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {/* Product details */}
+                    <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5" /> Product Details
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Select Product</Label>
+                          <Select
+                            value={form.product_id || "_manual"}
+                            onValueChange={v => {
+                              if (v === "_manual") {
+                                setForm(p => ({ ...p, product_id: "", unit_price: p.unit_price }));
+                              } else {
+                                const prod = productList.find((p: any) => p.id === v);
+                                setForm(p => ({
+                                  ...p,
+                                  product_id: v,
+                                  product_name: prod?.name || "",
+                                  unit_price: prod?.price ? String(prod.price) : p.unit_price,
+                                }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Select or enter manually" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="_manual">✏️ Manual entry</SelectItem>
+                              {productList.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name} {p.stock != null && `· stock ${p.stock}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Or Manual Name {!form.product_id && "*"}</Label>
+                          <Input
+                            value={form.product_name}
+                            disabled={!!form.product_id}
+                            onChange={e => setForm(p => ({ ...p, product_name: e.target.value }))}
+                            placeholder="e.g. Rice 5kg"
+                          />
+                        </div>
                       </div>
-                    )}
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: "0" }))}>Credit</Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(Math.round(Number(p.total_amount) / 2)) }))}>Half</Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: p.total_amount }))}>Full</Button>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-xs">Quantity *</Label>
+                          <Input type="number" min="1" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Unit Price *</Label>
+                          <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))} placeholder="0.00" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Total</Label>
+                          <div className="h-10 rounded-md border bg-background px-3 flex items-center font-bold text-primary">
+                            {format(computedTotal)}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Supplier + Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Supplier (optional)</Label>
+                        <Select value={form.supplier_id || "_none"} onValueChange={v => setForm(p => ({ ...p, supplier_id: v === "_none" ? "" : v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="_none">— No supplier —</SelectItem>
+                            {suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Purchase Date</Label>
+                        <Input type="date" value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} />
+                      </div>
+                    </div>
+
+                    {/* Payment */}
+                    <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Wallet className="h-3.5 w-3.5" /> Payment
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Paid Amount</Label>
+                          <Input type="number" min="0" step="0.01" value={form.paid_amount} onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))} placeholder="0.00" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Payment Method</Label>
+                          <Select value={form.payment_method} onValueChange={v => setForm(p => ({ ...p, payment_method: v }))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {paymentMethodOptions.map((m: any) => (
+                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: "0" }))}>Credit</Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(Math.round(computedTotal / 2)) }))}>Half</Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => setForm(p => ({ ...p, paid_amount: String(computedTotal) }))}>Full</Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="rounded-md bg-emerald-500/10 p-2">
+                          <p className="text-[10px] text-muted-foreground uppercase">Paid</p>
+                          <p className="font-bold text-emerald-600">{format(Number(form.paid_amount) || 0)}</p>
+                        </div>
+                        <div className={`rounded-md p-2 ${computedDue > 0 ? "bg-destructive/10" : "bg-muted/40"}`}>
+                          <p className="text-[10px] text-muted-foreground uppercase">Due</p>
+                          <p className={`font-bold ${computedDue > 0 ? "text-destructive" : ""}`}>{format(computedDue)}</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
-                      <Label>Payment Method</Label>
-                      <Select value={form.payment_method} onValueChange={v => setForm(p => ({ ...p, payment_method: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">💵 Cash</SelectItem>
-                          <SelectItem value="bank">🏦 Bank Transfer</SelectItem>
-                          <SelectItem value="bkash">📱 bKash</SelectItem>
-                          <SelectItem value="nagad">📱 Nagad</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs">Notes (optional)</Label>
+                      <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Invoice #, batch, remarks..." />
                     </div>
-                    <div><Label>Notes</Label><Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Items, invoice #, description..." /></div>
-                    <Button onClick={() => createMutation.mutate()} disabled={!form.total_amount || createMutation.isPending} className="w-full">
-                      {createMutation.isPending ? "Saving..." : "Record Purchase"}
+
+                    <Button
+                      onClick={() => createMutation.mutate()}
+                      disabled={!form.unit_price || !form.quantity || (!form.product_id && !form.product_name.trim()) || createMutation.isPending}
+                      className="w-full"
+                    >
+                      {createMutation.isPending ? "Saving..." : `Record Purchase · ${format(computedTotal)}`}
                     </Button>
                   </div>
                 </DialogContent>
