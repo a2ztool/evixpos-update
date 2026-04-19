@@ -63,6 +63,42 @@ const Purchases = () => {
     },
   });
 
+  const { data: productList = [] } = useQuery({
+    queryKey: ["purchase-products", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, price, stock_quantity")
+        .eq("store_id", storeId!)
+        .order("name");
+      return data || [];
+    },
+  });
+
+  // Active payment methods from business settings
+  const { data: paymentMethodOptions = [] } = useQuery({
+    queryKey: ["purchase-payment-methods", storeId, user?.id],
+    enabled: ready && !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("store_id", storeId!)
+        .maybeSingle();
+      const methods = normalizePaymentMethods(data?.payment_methods).filter(m => m.enabled);
+      return methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }];
+    },
+  });
+
+  // Set default payment method when options arrive
+  useEffect(() => {
+    if (paymentMethodOptions.length > 0 && !paymentMethodOptions.find(m => m.id === form.payment_method)) {
+      setForm(p => ({ ...p, payment_method: paymentMethodOptions[0].id }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethodOptions]);
+
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["purchases", storeId],
     enabled: ready,
