@@ -639,10 +639,6 @@ const StockAlerts = () => {
                   ))}
                 </div>
               </div>
-              <div>
-                <Label>Update Cost Price (optional)</Label>
-                <Input type="number" value={restockCost} onChange={e => setRestockCost(e.target.value)} placeholder={restockDialog?.cost_price || "Leave blank to keep"} className="mt-1" />
-              </div>
               <Button onClick={() => restockMutation.mutate()} disabled={!restockQty || restockMutation.isPending} className="w-full h-11">
                 {restockMutation.isPending ? "Updating..." : `Add ${restockQty || 0} units`}
               </Button>
