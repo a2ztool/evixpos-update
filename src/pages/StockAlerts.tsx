@@ -177,7 +177,7 @@ const StockAlerts = () => {
   const deadStockValue = deadStockProducts.reduce((sum: number, p: any) => sum + (Number(p.price) * Number(p.stock)), 0);
   const lowStockValue = lowStockProducts.reduce((sum: number, p: any) => sum + (Number(p.price) * Number(p.stock)), 0);
   const reorderCost = lowStockProducts.reduce(
-    (sum: number, p: any) => sum + (Number(p.cost_price || p.price * 0.7) * Math.max(lowThreshold * 4 - Number(p.stock), 0)),
+    (sum: number, p: any) => sum + (Number(p.price) * 0.7 * Math.max(lowThreshold * 4 - Number(p.stock), 0)),
     0
   );
 
