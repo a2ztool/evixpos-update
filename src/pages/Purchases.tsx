@@ -13,15 +13,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Plus, Search, ShoppingBag, FileDown, Eye, Receipt, Wallet, TrendingUp,
   BookOpen, Sparkles, AlertTriangle, Filter, Crown, ArrowUpRight, ShieldCheck,
-  Calendar, CheckCircle2,
+  Calendar, CheckCircle2, Package,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { validateWithToast, purchaseSchema } from "@/lib/validations";
 import { format as formatDate, subDays, startOfMonth } from "date-fns";
+import { normalizePaymentMethods } from "@/lib/paymentMethods";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RTooltip, CartesianGrid } from "recharts";
 
 type StatusFilter = "all" | "paid" | "partial" | "unpaid";
