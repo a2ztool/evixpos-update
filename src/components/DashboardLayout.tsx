@@ -289,7 +289,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           {/* Main content — independent scroll area */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 pb-24 animate-fade-in sm:p-4 sm:pb-4 lg:p-8 lg:pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
+          <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 pb-[112px] animate-fade-in sm:p-4 sm:pb-4 lg:p-8 lg:pb-8" style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="max-w-7xl mx-auto w-full min-w-0">{children}</div>
           </main>
         </div>
