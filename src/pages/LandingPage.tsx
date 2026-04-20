@@ -405,9 +405,9 @@ const LandingPage = () => {
             <Button 
               size="sm" 
               onClick={() => navigate("/auth")} 
-              className="gap-1.5 text-[13px] font-semibold h-9 sm:h-10 px-4 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
+              className="gap-1.5 text-[12px] sm:text-[13px] font-semibold h-7 sm:h-10 px-3 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
             >
-              {get("nav_start_free", "Start Free")} <ArrowRight className="h-3.5 w-3.5" />
+              {get("nav_start_free", "Start Free")} <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
