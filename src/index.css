@@ -149,7 +149,6 @@
     /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
     html { scrollbar-width: none; }
     html::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  }
 
     /* Media should never overflow its container on mobile */
     img, video, canvas, svg, iframe {
