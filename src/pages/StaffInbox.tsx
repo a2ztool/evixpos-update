@@ -608,7 +608,7 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        <div className="flex rounded-xl border border-border overflow-hidden bg-card shadow-sm" style={{ height: "calc(100vh - 12rem)" }}>
+        <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-visible md:overflow-hidden bg-card shadow-sm md:h-[calc(100dvh-12rem)]">
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
@@ -626,7 +626,7 @@ const StaffInbox = () => {
                 ))}
               </div>
             </div>
-            <ScrollArea className="flex-1">
+            <ScrollArea className="md:flex-1">
               {loading && conversations.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
               ) : conversations.length === 0 ? (
@@ -892,7 +892,7 @@ const StaffInbox = () => {
                 </div>
 
                 {/* Messages */}
-                <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-muted/30">
+                <div ref={scrollRef} className="px-4 py-4 space-y-3 bg-muted/30 overflow-visible md:flex-1 md:overflow-y-auto">
                   {visibleMessages.length === 0 && (
                     <div className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</div>
                   )}

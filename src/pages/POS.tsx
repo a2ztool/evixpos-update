@@ -1069,9 +1069,9 @@ const POS = () => {
         cartEmpty={cart.length === 0}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100vh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:min-h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
-        <div className="lg:col-span-2 p-3 sm:p-6 overflow-y-auto pb-24 lg:pb-6">
+        <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-24 lg:pb-6">
           {/* Action bar: Hold, Resume, Recent, Shortcuts */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <TooltipProvider>
