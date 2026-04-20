@@ -604,11 +604,8 @@
   }
 }
 html,
-body {
+body,
+#root {
   height: 100%;
-}
-
-body {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
