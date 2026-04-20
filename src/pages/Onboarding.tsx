@@ -37,7 +37,15 @@ const Onboarding = () => {
   const [storeName, setStoreName] = useState("");
   const [storeSlug, setStoreSlug] = useState("");
   const [language, setLanguage] = useState("en");
-  const [currency, setCurrency] = useState("INR");
+  const [currency, setCurrency] = useState(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      const locale = (navigator.language || "").toLowerCase();
+      if (tz.includes("Dhaka") || locale.startsWith("bn")) return "BDT";
+      if (tz.includes("Kolkata") || tz.includes("Calcutta") || locale.startsWith("hi") || locale.endsWith("-in")) return "INR";
+    } catch {}
+    return "USD";
+  });
   const [creating, setCreating] = useState(false);
   const [storeMode, setStoreMode] = useState<StoreMode>("online");
 
