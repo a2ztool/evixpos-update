@@ -71,7 +71,7 @@ const SupportPopup = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="fixed bottom-20 sm:bottom-6 right-4 z-[61] w-[calc(100vw-2rem)] sm:w-[360px] max-h-[80vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl"
+              className="fixed bottom-20 sm:bottom-6 right-4 z-[61] w-[calc(100vw-2rem)] sm:w-[360px] min-h-fit max-h-none overflow-visible sm:max-h-[80vh] sm:overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 pb-2">

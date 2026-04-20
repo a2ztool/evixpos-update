@@ -164,7 +164,7 @@ const Sidebar = React.forwardRef<
           }
           side={side}
         >
-          <div className="flex min-h-0 w-full flex-col">{children}</div>
+          <div className="flex w-full flex-col min-h-[100dvh] max-h-none overflow-visible md:min-h-0 md:max-h-full md:overflow-hidden">{children}</div>
         </SheetContent>
       </Sheet>
     );
@@ -331,7 +331,7 @@ const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"di
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+        "flex flex-1 flex-col gap-2 overflow-visible min-h-[100dvh] max-h-none md:min-h-0 md:max-h-full md:overflow-auto group-data-[collapsible=icon]:md:overflow-hidden",
         className,
       )}
       {...props}

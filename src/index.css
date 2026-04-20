@@ -135,28 +135,29 @@
   /* ─── Mobile responsive foundation (≤767px) ───
      Prevents horizontal scroll and makes media/tables fluid by default.
      Desktop layout untouched. */
-  @media (max-width: 767px) {
+  @media (max-width: 736px) {
     /* Mobile uses one page-level scroll. Shared shells must grow naturally
        instead of trapping scroll inside nested wrappers. */
     html, body {
       max-width: 100vw;
-      height: auto;
+      height: auto !important;
       min-height: 100dvh;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: scroll !important;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: auto;
     }
 
     #root,
     [class*="sidebar-wrapper"],
     .group\/sidebar-wrapper {
-      min-height: 100dvh;
+      min-height: 100dvh !important;
       max-height: none !important;
     }
 
     #root {
-      height: auto;
-      overflow: visible;
+      height: auto !important;
+      overflow: visible !important;
     }
 
     /* Kill fixed viewport heights inside the sidebar shell on mobile so the
@@ -167,7 +168,22 @@
     [class*="sidebar-wrapper"] > div,
     main {
       height: auto !important;
-      min-height: 0 !important;
+      min-height: 100dvh !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    .layout,
+    .main,
+    .wrapper,
+    .content,
+    [data-sidebar="content"],
+    [data-sidebar="sidebar"],
+    [data-radix-scroll-area-viewport],
+    [data-slot="sheet-content"],
+    [data-state][role="dialog"] {
+      height: auto !important;
+      min-height: 100dvh !important;
       max-height: none !important;
       overflow: visible !important;
     }
@@ -182,6 +198,10 @@
       min-height: 100dvh !important;
     }
     main.flex-1 { overflow: visible !important; }
+
+    * {
+      max-height: none !important;
+    }
 
     /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
     html { scrollbar-width: none; }
