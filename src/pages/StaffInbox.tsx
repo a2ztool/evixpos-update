@@ -726,7 +726,7 @@ const StaffInbox = () => {
                 ))}
               </div>
             </div>
-            <ScrollArea className="md:flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               {loading && conversations.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
               ) : conversations.length === 0 ? (
