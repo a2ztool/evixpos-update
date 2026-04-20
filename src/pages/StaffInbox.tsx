@@ -665,7 +665,7 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-visible md:overflow-hidden bg-card shadow-sm md:h-[calc(100dvh-12rem)]">
+        <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-hidden bg-card shadow-sm h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)] max-h-[calc(100dvh-10rem)]">
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
