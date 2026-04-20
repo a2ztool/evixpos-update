@@ -477,7 +477,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Social proof badge */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
+            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-0.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
               <div className="flex -space-x-1.5 sm:-space-x-2 shrink-0">
                 {[1,2,3].map(i => {
                   const img = get(`social_proof_avatar_${i}`);
