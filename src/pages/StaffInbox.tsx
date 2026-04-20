@@ -161,10 +161,32 @@ const StaffInbox = () => {
   }, [storeId, myId, isStaff]);
 
   const fetchGroups = useCallback(async () => {
-    if (!storeId) return;
-    const { data } = await db.from("chat_groups").select("*").eq("store_id", storeId).order("created_at", { ascending: false });
-    if (data) setGroups(data);
-  }, [storeId]);
+    if (!storeId || !myId) return;
+    if (isStaff) {
+      // Staff: only groups they are a member of
+      const { data: memberRows } = await db
+        .from("chat_group_members")
+        .select("group_id")
+        .eq("user_id", myId);
+      const groupIds = (memberRows || []).map((r: any) => r.group_id);
+      if (groupIds.length === 0) { setGroups([]); return; }
+      const { data } = await db
+        .from("chat_groups")
+        .select("*")
+        .eq("store_id", storeId)
+        .in("id", groupIds)
+        .order("created_at", { ascending: false });
+      if (data) setGroups(data);
+    } else {
+      // Owner: all store groups
+      const { data } = await db
+        .from("chat_groups")
+        .select("*")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false });
+      if (data) setGroups(data);
+    }
+  }, [storeId, myId, isStaff]);
 
   const fetchUnreadCounts = useCallback(async () => {
     if (!storeId || !myId) return;
