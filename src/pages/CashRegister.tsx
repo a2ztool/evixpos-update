@@ -414,7 +414,7 @@ const CashRegister = () => {
           ].map((kpi, i) => (
             <Card key={i} className="relative overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.bg}`} />
-              <CardContent className="relative p-4">
+              <CardContent className="relative px-4 py-4 sm:px-5 sm:py-5">
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">{kpi.label}</p>
                   <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
