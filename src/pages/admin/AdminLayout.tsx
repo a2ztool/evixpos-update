@@ -79,7 +79,7 @@ const AdminLayout = () => {
 
   if (authLoading || isAdmin === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-[100dvh] md:min-h-screen flex items-center justify-center bg-slate-900">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
       </div>
     );
@@ -93,7 +93,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-900">
+    <div className="min-h-[100dvh] md:min-h-screen flex bg-slate-900">
       {/* Sidebar - hidden on mobile */}
       <aside className="hidden md:flex w-64 bg-slate-800 border-r border-slate-700 flex-col">
         <div className="p-4 border-b border-slate-700 flex items-center gap-3">

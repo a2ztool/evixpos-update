@@ -334,7 +334,7 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-[100dvh] md:min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse"><Zap className="h-6 w-6 text-primary" /></div>
           <div className="h-1.5 w-32 bg-muted rounded-full overflow-hidden"><div className="h-full w-1/2 bg-primary rounded-full animate-[shimmer_1s_ease-in-out_infinite]" /></div>
@@ -354,7 +354,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-[100dvh] md:min-h-screen bg-background text-foreground overflow-x-hidden">
 
       {/* ═══════════════════ FIXED HEADER (BANNER + NAVBAR) ═══════════════════ */}
       <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style={{ backdropFilter: scrolled ? 'blur(20px)' : 'blur(0px)', background: scrolled ? 'hsl(var(--background) / 0.85)' : 'transparent' }}>
