@@ -256,6 +256,7 @@ const SettingsPage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
+  const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
   const { plan } = useSubscription();
   const navigate = useNavigate();
@@ -365,6 +366,11 @@ const SettingsPage = () => {
       }
     }
     setLoading(false);
+    // Sync currency globally across all of the user's stores (single source of truth)
+    const cur = (settings.default_currency || "USD").toUpperCase();
+    if (cur === "BDT" || cur === "INR" || cur === "USD") {
+      await setGlobalCurrency(cur as CurrencyCode);
+    }
     toast.success(lang === "bn" ? "সেটিংস সেভ হয়েছে!" : lang === "hi" ? "सेटिंग्स सेव हो गई!" : "Settings saved!");
   };
 
