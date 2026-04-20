@@ -1069,7 +1069,7 @@ const POS = () => {
         cartEmpty={cart.length === 0}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:min-h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
         <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-24 lg:pb-6">
           {/* Action bar: Hold, Resume, Recent, Shortcuts */}
@@ -1189,8 +1189,8 @@ const POS = () => {
 
       {/* Variation Modal */}
       <Dialog open={variationModalOpen} onOpenChange={setVariationModalOpen}>
-        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden">
-          <div className="px-6 pt-6 pb-4 border-b border-border/50">
+        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle></DialogHeader>
             {variationProduct && (
               <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-muted/50">
@@ -1199,7 +1199,7 @@ const POS = () => {
               </div>
             )}
           </div>
-          <div className="px-6 py-4 space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="px-6 py-4 space-y-2 overflow-y-auto flex-1 min-h-0">
             {variationProduct && getVariations(variationProduct.id).map(v => (
               <button key={v.id} onClick={() => setSelectedVariation(v)} className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${selectedVariation?.id === v.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50"}`}>
                 <div>
@@ -1217,7 +1217,7 @@ const POS = () => {
               </button>
             ))}
           </div>
-          <div className="border-t border-border/50 px-6 py-4 flex gap-2">
+          <div className="border-t border-border/50 px-6 py-4 flex gap-2 flex-shrink-0">
             <Button variant="outline" className="flex-1" onClick={() => setVariationModalOpen(false)}>Cancel</Button>
             <Button className="flex-1 gap-1" onClick={handleVariationConfirm} disabled={!selectedVariation}><Plus className="h-4 w-4" /> Add to Cart</Button>
           </div>
@@ -1226,8 +1226,8 @@ const POS = () => {
 
       {/* Checkout Stepper */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-          <div className="border-b border-border/50 px-6 pt-6 pb-4">
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="border-b border-border/50 px-6 pt-6 pb-4 flex-shrink-0">
             <DialogHeader className="mb-4"><DialogTitle className="text-lg">Checkout</DialogTitle></DialogHeader>
             <div className="flex items-center gap-1">
               {CHECKOUT_STEPS.map((s, i) => (
@@ -1243,8 +1243,8 @@ const POS = () => {
               {CHECKOUT_STEPS.map((s, i) => <span key={i} className={`flex-1 text-[10px] text-center ${i === checkoutStep ? "text-primary font-medium" : "text-muted-foreground"}`}>{s.label}</span>)}
             </div>
           </div>
-          <div className="px-6 py-5 min-h-[200px]">{renderCheckoutStep()}</div>
-          <div className="border-t border-border/50 px-6 py-4 flex items-center justify-between bg-muted/30">
+          <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">{renderCheckoutStep()}</div>
+          <div className="border-t border-border/50 px-6 py-4 flex items-center justify-between bg-muted/30 flex-shrink-0">
             <Button variant="outline" size="sm" onClick={() => checkoutStep === 0 ? setCheckoutOpen(false) : setCheckoutStep(checkoutStep - 1)} className="gap-1">
               <ArrowLeft className="h-3.5 w-3.5" />{checkoutStep === 0 ? "Cancel" : "Back"}
             </Button>
