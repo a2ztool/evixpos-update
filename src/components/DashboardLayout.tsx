@@ -349,38 +349,52 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-auto w-[calc(100%-24px)] max-w-[420px] mb-[max(env(safe-area-inset-bottom),12px)] relative">
-        {/* Floating glass bar — 4 side icons, gap in the middle for FAB */}
-        <div
-          className="rounded-[28px] border border-white/50 dark:border-white/[0.08] relative"
-          style={{
-            background:
-              "linear-gradient(165deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.92) 100%)",
-            backdropFilter: "blur(40px) saturate(200%)",
-            WebkitBackdropFilter: "blur(40px) saturate(200%)",
-            boxShadow:
-              "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
-          }}
-        >
-          {/* Dark mode override */}
-          <div
-            className="hidden dark:block absolute inset-0 rounded-[28px] pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(12,12,24,0.92) 100%)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-            }}
-          />
+      <div className="pointer-events-auto mx-auto w-[calc(100%-16px)] max-w-[440px] mb-[max(env(safe-area-inset-bottom),8px)] relative">
+        {/* SVG notched glass bar — curved cut-out for FAB */}
+        <div className="relative" style={{ filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.12)) drop-shadow(0 2px 6px rgba(0,0,0,0.06))" }}>
+          <svg
+            viewBox="0 0 400 78"
+            preserveAspectRatio="none"
+            className="w-full h-[78px] block"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient id="navBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(var(--card))" stopOpacity="0.98" />
+                <stop offset="100%" stopColor="hsl(var(--card))" stopOpacity="0.94" />
+              </linearGradient>
+            </defs>
+            {/* Path: rounded rect with curved notch on top-center */}
+            <path
+              d="
+                M 28 0
+                L 158 0
+                C 168 0, 168 8, 174 14
+                C 182 22, 192 28, 200 28
+                C 208 28, 218 22, 226 14
+                C 232 8, 232 0, 242 0
+                L 372 0
+                Q 400 0, 400 28
+                L 400 50
+                Q 400 78, 372 78
+                L 28 78
+                Q 0 78, 0 50
+                L 0 28
+                Q 0 0, 28 0
+                Z
+              "
+              fill="url(#navBarGrad)"
+              stroke="hsl(var(--border))"
+              strokeWidth="0.5"
+              strokeOpacity="0.5"
+            />
+          </svg>
 
-          <div className="relative z-10 grid grid-cols-5 items-center px-2 py-2.5">
-            {/* Left side: 2 icons */}
+          {/* Icons overlaid on top of SVG */}
+          <div className="absolute inset-0 grid grid-cols-5 items-end px-1 pb-2.5 pt-3">
             <NavItem icon={LayoutDashboard} label="Home" path="/dashboard" navigate={navigate} location={location} />
             <NavItem icon={Monitor} label="POS" path="/pos" navigate={navigate} location={location} />
-
-            {/* Center spacer for FAB */}
-            <div aria-hidden className="h-10" />
-
-            {/* Right side: 2 icons */}
+            <div aria-hidden />
             {isStaff ? (
               <NavItem icon={ShoppingCart} label="Orders" path="/orders" navigate={navigate} location={location} />
             ) : (
@@ -390,8 +404,8 @@ const MobileNav = () => {
           </div>
         </div>
 
-        {/* Floating FAB — fully detached, hovering above the bar */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-20">
+        {/* Floating FAB — sits inside the notch */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-5 z-20">
           {isStaff ? (
             <CenterNavButton
               icon={MessageSquare}
