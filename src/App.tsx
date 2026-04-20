@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { StaffProvider } from "@/contexts/StaffContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PlansConfigProvider } from "@/contexts/PlansConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OfflineBanner from "@/components/OfflineBanner";
@@ -147,6 +148,7 @@ const App = () => {
     <LanguageProvider>
     <StoreProvider>
     <StaffProvider>
+    <CurrencyProvider>
     <PlansConfigProvider>
       <TooltipProvider>
         <Toaster />
