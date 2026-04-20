@@ -1071,7 +1071,7 @@ const POS = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
-        <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-4 lg:pb-6">
+        <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-[120px] lg:pb-6">
           {/* Action bar: Hold, Resume, Recent, Shortcuts */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <TooltipProvider>
@@ -1159,7 +1159,7 @@ const POS = () => {
 
           {/* Mobile cart bar */}
           {cart.length > 0 && (
-            <button onClick={() => setMobileCartOpen(true)} className="lg:hidden fixed bottom-[calc(6.5rem+max(env(safe-area-inset-bottom),12px))] left-3 right-3 z-40 bg-primary text-primary-foreground px-4 py-3.5 flex items-center justify-between shadow-lg active:opacity-90 transition-opacity rounded-2xl">
+            <button onClick={() => setMobileCartOpen(true)} className="lg:hidden fixed bottom-[calc(5rem+max(env(safe-area-inset-bottom),8px))] left-1/2 -translate-x-1/2 z-40 bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between shadow-xl active:opacity-90 transition-opacity rounded-2xl w-[calc(100%-32px)] max-w-[420px]">
               <div className="flex items-center gap-2.5"><ShoppingCart className="h-5 w-5" /><span className="font-semibold text-sm">{cart.reduce((s, i) => s + i.quantity, 0)} items</span></div>
               <div className="flex items-center gap-2"><span className="font-bold">{format(total)}</span><ChevronDown className="h-4 w-4 rotate-180" /></div>
             </button>
@@ -1189,8 +1189,10 @@ const POS = () => {
 
       {/* Variation Modal */}
       <Dialog open={variationModalOpen} onOpenChange={setVariationModalOpen}>
-        <DialogContent className="max-w-sm w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
-          <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
+        <DialogContent className="p-0 gap-0 overflow-hidden flex flex-col
+          max-sm:!inset-x-0 max-sm:!bottom-0 max-sm:!top-auto max-sm:!left-0 max-sm:!right-0 max-sm:!translate-x-0 max-sm:!translate-y-0 max-sm:!w-full max-sm:!max-w-full max-sm:!rounded-b-none max-sm:!rounded-t-2xl max-sm:!max-h-[70vh] max-sm:data-[state=closed]:!slide-out-to-bottom max-sm:data-[state=open]:!slide-in-from-bottom
+          sm:max-w-sm sm:w-[calc(100%-2rem)] sm:max-h-[85vh]">
+          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border/50 flex-shrink-0">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle></DialogHeader>
             {variationProduct && (
               <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-muted/50">
@@ -1199,7 +1201,7 @@ const POS = () => {
               </div>
             )}
           </div>
-          <div className="px-6 py-4 space-y-2 overflow-y-auto min-h-0">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-2 overflow-y-auto min-h-0 flex-1">
             {variationProduct && getVariations(variationProduct.id).map(v => (
               <button key={v.id} onClick={() => setSelectedVariation(v)} className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${selectedVariation?.id === v.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50"}`}>
                 <div>
@@ -1217,7 +1219,7 @@ const POS = () => {
               </button>
             ))}
           </div>
-          <div className="border-t border-border/50 px-6 py-4 flex gap-2 flex-shrink-0">
+          <div className="sticky bottom-0 border-t border-border/50 px-4 sm:px-6 py-3 sm:py-4 flex gap-2 flex-shrink-0 bg-background">
             <Button variant="outline" className="flex-1" onClick={() => setVariationModalOpen(false)}>Cancel</Button>
             <Button className="flex-1 gap-1" onClick={handleVariationConfirm} disabled={!selectedVariation}><Plus className="h-4 w-4" /> Add to Cart</Button>
           </div>
