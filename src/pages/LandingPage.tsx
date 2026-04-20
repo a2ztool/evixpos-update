@@ -1356,7 +1356,7 @@ const LandingPage = () => {
       <footer className="relative border-t border-border/40 bg-gradient-to-b from-muted/40 to-muted/80">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-12 sm:py-16 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
+          <div className="py-10 sm:py-16 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-12 gap-x-4 gap-y-6 sm:gap-8 lg:gap-12">
             <div className="col-span-2 sm:col-span-2 lg:col-span-3">
               <div className="flex items-center gap-2.5 mb-5">
                 <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className="h-9 w-auto" />
