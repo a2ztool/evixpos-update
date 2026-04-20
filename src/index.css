@@ -180,13 +180,6 @@
     }
 
     /* Sidebar shell + main must not create their own scroll container */
-    .group\/sidebar-wrapper,
-    [data-sidebar="content"],
-    main,
-    main.flex-1 {
-      overflow: visible !important;
-      max-height: none !important;
-    }
 
     /* Recharts: don't hijack vertical swipe on mobile.
        Allow page to scroll when finger is over a chart. */
