@@ -275,31 +275,38 @@ const StaffInbox = () => {
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, fetchUnreadCounts]);
 
-  // ─── Realtime group messages ───
+  // ─── Realtime group messages (global: all groups I'm a member of) ───
   useEffect(() => {
-    if (!activeChat || activeChatType !== "group") return;
-    const channel = supabase.channel(`group-chat-${activeChat}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_group_messages", filter: `group_id=eq.${activeChat}` },
+    if (!storeId || !myId || groups.length === 0) return;
+    const groupIds = groups.map(g => g.id);
+    const channel = supabase.channel(`group-chats-${myId}-${storeId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_group_messages" },
         (payload) => {
           const m = payload.new as any;
-          const mapped: ChatMessage = {
-            id: m.id, store_id: storeId || "", sender_id: m.sender_id, receiver_id: activeChat,
-            message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
-            file_url: null, file_name: null, task_title: null, task_status: null,
-            is_read: true, created_at: m.created_at, reply_to_id: m.reply_to_id || null,
-            reactions: m.reactions || null, deleted_for: null, is_deleted_for_everyone: false,
-          };
-          setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
-          scrollToBottom();
+          if (!groupIds.includes(m.group_id)) return;
+          const ac = activeChatRef.current;
+          const act = activeChatTypeRef.current;
+          if (act === "group" && ac === m.group_id) {
+            const mapped: ChatMessage = {
+              id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
+              message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
+              file_url: null, file_name: null, task_title: null, task_status: null,
+              is_read: true, created_at: m.created_at, reply_to_id: m.reply_to_id || null,
+              reactions: m.reactions || null, deleted_for: null, is_deleted_for_everyone: false,
+            };
+            setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
+            scrollToBottom();
+          }
           if (m.sender_id !== myId) {
-            if (soundEnabled) playNotificationSound();
+            if (soundEnabledRef.current) playNotificationSound();
             const senderName = getSenderNameById(m.sender_id);
-            sendDesktopNotification(`👥 Group Message`, `${senderName}: ${m.message?.slice(0, 80)}`);
+            const grp = groups.find(g => g.id === m.group_id);
+            sendDesktopNotification(`👥 ${grp?.name || "Group"}`, `${senderName}: ${(m.message || "").slice(0, 80)}`);
           }
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [activeChat, activeChatType, storeId, myId, soundEnabled]);
+  }, [storeId, myId, groups]);
 
   // ─── Typing indicator via broadcast ───
   useEffect(() => {
