@@ -8,14 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Search, Moon, Sun, Globe, LogOut, Settings, User,
-  Crown, Command, Keyboard, Smartphone,
-} from "lucide-react";
+import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard, Smartphone } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,9 +84,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { symbol: currencySymbol, activeCurrency } = useCurrency();
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
-  const initials = isStaff && staffInfo
-    ? staffInfo.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
-    : (user?.email?.slice(0, 2).toUpperCase() ?? "U");
+  const initials =
+    isStaff && staffInfo
+      ? staffInfo.name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2)
+      : (user?.email?.slice(0, 2).toUpperCase() ?? "U");
   const pageTitle = routeTitles[location.pathname] || "Dashboard";
 
   useEffect(() => {
@@ -107,7 +114,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <div className="w-full bg-background md:flex md:min-h-svh">
+      <div className="w-full bg-background min-h-screen md:flex">
         <AppSidebar />
         <div className="min-w-0 md:min-h-0 md:flex-1 md:flex md:flex-col">
           {/* Top navbar — compact on mobile */}
@@ -140,17 +147,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 {/* Keyboard Shortcuts - desktop only */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hidden md:inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hidden md:inline-flex"
+                    >
                       <Keyboard className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p className="text-xs">Keyboard shortcuts</p></TooltipContent>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Keyboard shortcuts</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Language - hidden on mobile */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground gap-1.5 hidden sm:inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-muted-foreground hover:text-foreground gap-1.5 hidden sm:inline-flex"
+                    >
                       <Globe className="h-3.5 w-3.5" />
                       <span className="text-xs font-medium">{langLabels[lang]}</span>
                     </Button>
@@ -169,18 +186,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 {/* Dark Mode */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={toggleDark}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={toggleDark}
+                    >
                       {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p className="text-xs">{darkMode ? "Light mode" : "Dark mode"}</p></TooltipContent>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">{darkMode ? "Light mode" : "Dark mode"}</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Install App - desktop only */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="outline" size="sm"
+                      variant="outline"
+                      size="sm"
                       className="h-8 px-3 text-xs font-medium gap-1.5 border-primary/20 text-primary hover:bg-primary/5 hidden md:inline-flex"
                       onClick={promptInstall}
                       disabled={isInstalled}
@@ -189,7 +214,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       {isInstalled ? "✓ Installed" : "Install App"}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p></TooltipContent>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Currency badge — single source of truth */}
@@ -200,7 +227,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <span className="text-muted-foreground">{activeCurrency}</span>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p className="text-xs">Display currency · Change in Settings</p></TooltipContent>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Display currency · Change in Settings</p>
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Notifications */}
@@ -211,7 +240,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-0.5">
                       <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold">{initials}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold">
+                          {initials}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -220,7 +251,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{displayName}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {isStaff ? `Staff • ${staffInfo?.role}` : `${(plan ?? "free").charAt(0).toUpperCase() + (plan ?? "free").slice(1)} Plan`}
+                          {isStaff
+                            ? `Staff • ${staffInfo?.role}`
+                            : `${(plan ?? "free").charAt(0).toUpperCase() + (plan ?? "free").slice(1)} Plan`}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -257,9 +290,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
           {/* Main content — proper bottom padding for mobile nav */}
           <main className="overflow-visible px-3 py-2 pb-24 animate-fade-in sm:p-4 sm:pb-4 sm:overflow-x-visible md:flex-1 lg:p-8 lg:pb-8">
-            <div className="max-w-7xl mx-auto w-full min-w-0">
-              {children}
-            </div>
+            <div className="max-w-7xl mx-auto w-full min-w-0">{children}</div>
           </main>
         </div>
       </div>
@@ -279,7 +310,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Mobile bottom nav
-import { LayoutDashboard, Monitor, ShoppingCart, CreditCard, Package, Users as UsersIcon, RefreshCw as RefreshIcon, BarChart3 as ChartIcon, Plug, Crown as CrownIcon, Headphones as SupportIcon, MessageSquare } from "lucide-react";
+import {
+  LayoutDashboard,
+  Monitor,
+  ShoppingCart,
+  CreditCard,
+  Package,
+  Users as UsersIcon,
+  RefreshCw as RefreshIcon,
+  BarChart3 as ChartIcon,
+  Plug,
+  Crown as CrownIcon,
+  Headphones as SupportIcon,
+  MessageSquare,
+} from "lucide-react";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -303,7 +347,6 @@ const MobileNav = () => {
   const location = useLocation();
   const { isStaff } = useStaff();
 
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
       <div className="pointer-events-auto mx-3 mb-[max(env(safe-area-inset-bottom),6px)]">
@@ -312,41 +355,35 @@ const MobileNav = () => {
           <div
             className="rounded-[26px] border border-white/40 dark:border-white/[0.08]"
             style={{
-              background: "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
+              background:
+                "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
               backdropFilter: "blur(40px) saturate(200%)",
               WebkitBackdropFilter: "blur(40px) saturate(200%)",
-              boxShadow: "0 -2px 20px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)",
+              boxShadow:
+                "0 -2px 20px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)",
             }}
           >
             {/* Top glossy shine line */}
             <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
-            
+
             {/* Dark mode override */}
-            <div className="hidden dark:block absolute inset-0 rounded-[26px]" style={{
-              background: "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(16,16,28,0.90) 40%, rgba(12,12,24,0.92) 100%)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
-            }} />
+            <div
+              className="hidden dark:block absolute inset-0 rounded-[26px]"
+              style={{
+                background:
+                  "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(16,16,28,0.90) 40%, rgba(12,12,24,0.92) 100%)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
+              }}
+            />
             {/* Dark mode top shine */}
             <div className="hidden dark:block absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
             <div className="relative z-10 flex items-end justify-around px-1.5 pt-2.5 pb-3">
               {/* Home */}
-              <NavItem
-                icon={LayoutDashboard}
-                label="Home"
-                path="/dashboard"
-                navigate={navigate}
-                location={location}
-              />
+              <NavItem icon={LayoutDashboard} label="Home" path="/dashboard" navigate={navigate} location={location} />
 
               {/* POS */}
-              <NavItem
-                icon={Monitor}
-                label="POS"
-                path="/pos"
-                navigate={navigate}
-                location={location}
-              />
+              <NavItem icon={Monitor} label="POS" path="/pos" navigate={navigate} location={location} />
 
               {/* CENTER — Staff: Messaging / Owner: Orders */}
               {isStaff ? (
@@ -369,31 +406,13 @@ const MobileNav = () => {
 
               {/* Staff: Orders / Owner: Products */}
               {isStaff ? (
-                <NavItem
-                  icon={ShoppingCart}
-                  label="Orders"
-                  path="/orders"
-                  navigate={navigate}
-                  location={location}
-                />
+                <NavItem icon={ShoppingCart} label="Orders" path="/orders" navigate={navigate} location={location} />
               ) : (
-                <NavItem
-                  icon={Package}
-                  label="Products"
-                  path="/products"
-                  navigate={navigate}
-                  location={location}
-                />
+                <NavItem icon={Package} label="Products" path="/products" navigate={navigate} location={location} />
               )}
 
               {/* Settings */}
-              <NavItem
-                icon={Settings}
-                label="Settings"
-                path="/settings"
-                navigate={navigate}
-                location={location}
-              />
+              <NavItem icon={Settings} label="Settings" path="/settings" navigate={navigate} location={location} />
             </div>
           </div>
         </div>
@@ -404,13 +423,23 @@ const MobileNav = () => {
 
 /** Individual nav item (non-center) */
 const NavItem = ({
-  icon: Icon, label, path, navigate, location, isMore, isMoreActive
+  icon: Icon,
+  label,
+  path,
+  navigate,
+  location,
+  isMore,
+  isMoreActive,
 }: {
-  icon: any; label: string; path: string;
-  navigate: (p: string) => void; location: any;
-  isMore?: boolean; isMoreActive?: boolean;
+  icon: any;
+  label: string;
+  path: string;
+  navigate: (p: string) => void;
+  location: any;
+  isMore?: boolean;
+  isMoreActive?: boolean;
 }) => {
-  const active = isMore ? !!isMoreActive : (location.pathname === path || location.pathname.startsWith(path + "/"));
+  const active = isMore ? !!isMoreActive : location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
     <motion.button
@@ -434,11 +463,11 @@ const NavItem = ({
             className="absolute inset-0 w-10 h-10 rounded-2xl bg-primary/12 dark:bg-primary/20 blur-[2px]"
           />
         )}
-        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-          active
-            ? "bg-primary/10 dark:bg-primary/15 shadow-[0_2px_12px_hsl(var(--primary)/0.15)]"
-            : "bg-transparent"
-        }`}>
+        <div
+          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+            active ? "bg-primary/10 dark:bg-primary/15 shadow-[0_2px_12px_hsl(var(--primary)/0.15)]" : "bg-transparent"
+          }`}
+        >
           {/* Inner glossy highlight on active */}
           {active && (
             <div className="absolute inset-[1px] rounded-[14px] bg-gradient-to-b from-white/40 dark:from-white/10 to-transparent pointer-events-none" />
@@ -453,9 +482,11 @@ const NavItem = ({
       </motion.div>
 
       {/* Label */}
-      <span className={`text-[10px] tracking-wide transition-all duration-300 ${
-        active ? "font-bold text-primary" : "font-medium text-muted-foreground/55"
-      }`}>
+      <span
+        className={`text-[10px] tracking-wide transition-all duration-300 ${
+          active ? "font-bold text-primary" : "font-medium text-muted-foreground/55"
+        }`}
+      >
         {label}
       </span>
 
@@ -477,49 +508,55 @@ const NavItem = ({
 
 /** Center raised nav button — premium glossy */
 const CenterNavButton = ({
-  icon: Icon, label, isActive, onClick
+  icon: Icon,
+  label,
+  isActive,
+  onClick,
 }: {
-  icon: any; label: string; isActive: boolean; onClick: () => void;
+  icon: any;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
 }) => (
   <div className="relative flex flex-col items-center -mt-6">
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.88 }}
-      whileHover={{ scale: 1.05 }}
-      className="relative"
-    >
+    <motion.button onClick={onClick} whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.05 }} className="relative">
       {/* Outer glow ring */}
-      <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
-        isActive ? "bg-primary/25 scale-[1.5] blur-lg" : "bg-primary/10 scale-[1.2] blur-md"
-      }`} />
-      
+      <div
+        className={`absolute inset-0 rounded-full transition-all duration-500 ${
+          isActive ? "bg-primary/25 scale-[1.5] blur-lg" : "bg-primary/10 scale-[1.2] blur-md"
+        }`}
+      />
+
       <motion.div
         animate={isActive ? { y: -5 } : { y: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className="relative"
       >
         {/* Main button */}
-        <div className={`relative w-[58px] h-[58px] rounded-full flex items-center justify-center transition-all duration-300 ${
-          isActive
-            ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.5),0_2px_8px_hsl(var(--primary)/0.3)]"
-            : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_6px_24px_hsl(var(--primary)/0.35),0_2px_6px_hsl(var(--primary)/0.2)]"
-        }`}>
+        <div
+          className={`relative w-[58px] h-[58px] rounded-full flex items-center justify-center transition-all duration-300 ${
+            isActive
+              ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.5),0_2px_8px_hsl(var(--primary)/0.3)]"
+              : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_6px_24px_hsl(var(--primary)/0.35),0_2px_6px_hsl(var(--primary)/0.2)]"
+          }`}
+        >
           {/* Top glossy shine */}
           <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none" />
           {/* Inner ring highlight */}
           <div className="absolute inset-[3px] rounded-full border border-white/10 pointer-events-none" />
-          <Icon className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]" strokeWidth={2.2} />
+          <Icon
+            className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+            strokeWidth={2.2}
+          />
         </div>
-        
+
         {/* Bottom reflection */}
         <div className="absolute -bottom-1 left-3 right-3 h-2 rounded-full bg-primary/15 blur-sm" />
       </motion.div>
     </motion.button>
     <motion.span
       animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
-      className={`text-[10px] mt-2 font-bold tracking-wide ${
-        isActive ? "text-primary" : "text-muted-foreground"
-      }`}
+      className={`text-[10px] mt-2 font-bold tracking-wide ${isActive ? "text-primary" : "text-muted-foreground"}`}
     >
       {label}
     </motion.span>
