@@ -251,8 +251,8 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/60 bg-gradient-to-b from-sidebar to-sidebar/95 h-screen">
-      <SidebarContent className="gap-1 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <Sidebar collapsible="icon" className="border-r border-border/60 bg-gradient-to-b from-sidebar to-sidebar/95 h-screen flex flex-col overflow-hidden">
+      <SidebarContent className="flex-1 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
         {/* Brand */}
         <div className={`flex items-center ${collapsed ? "justify-center px-0" : "px-4"} py-4 border-b border-border/40`}>
           {collapsed ? (
