@@ -349,7 +349,7 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-3 mb-[max(env(safe-area-inset-bottom),6px)]">
+      <div className="pointer-events-auto mx-auto w-[calc(100%-24px)] max-w-[440px] mb-[max(env(safe-area-inset-bottom),12px)]">
         <div className="relative">
           {/* Premium glossy glass bar */}
           <div
