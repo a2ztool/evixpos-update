@@ -1226,8 +1226,8 @@ const POS = () => {
 
       {/* Checkout Stepper */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-          <div className="border-b border-border/50 px-6 pt-6 pb-4">
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="border-b border-border/50 px-6 pt-6 pb-4 flex-shrink-0">
             <DialogHeader className="mb-4"><DialogTitle className="text-lg">Checkout</DialogTitle></DialogHeader>
             <div className="flex items-center gap-1">
               {CHECKOUT_STEPS.map((s, i) => (
@@ -1243,8 +1243,8 @@ const POS = () => {
               {CHECKOUT_STEPS.map((s, i) => <span key={i} className={`flex-1 text-[10px] text-center ${i === checkoutStep ? "text-primary font-medium" : "text-muted-foreground"}`}>{s.label}</span>)}
             </div>
           </div>
-          <div className="px-6 py-5 min-h-[200px]">{renderCheckoutStep()}</div>
-          <div className="border-t border-border/50 px-6 py-4 flex items-center justify-between bg-muted/30">
+          <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">{renderCheckoutStep()}</div>
+          <div className="border-t border-border/50 px-6 py-4 flex items-center justify-between bg-muted/30 flex-shrink-0">
             <Button variant="outline" size="sm" onClick={() => checkoutStep === 0 ? setCheckoutOpen(false) : setCheckoutStep(checkoutStep - 1)} className="gap-1">
               <ArrowLeft className="h-3.5 w-3.5" />{checkoutStep === 0 ? "Cancel" : "Back"}
             </Button>
