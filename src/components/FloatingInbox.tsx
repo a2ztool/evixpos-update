@@ -314,7 +314,7 @@ const FloatingInbox = () => {
           {/* Messages - Scrollable */}
           <div 
             ref={scrollRef} 
-            className="relative px-3 pt-[76px] pb-[88px] space-y-3 bg-muted/20 overflow-visible md:absolute md:inset-0 md:top-[60px] md:bottom-[72px] md:overflow-y-auto"
+            className="absolute inset-0 top-[60px] bottom-[72px] px-3 py-3 space-y-3 bg-muted/20 overflow-y-auto"
           >
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm gap-2">
