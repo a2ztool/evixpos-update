@@ -199,8 +199,17 @@
     }
     main.flex-1 { overflow: visible !important; }
 
-    * {
-      max-height: none !important;
+    /* Keep fixed-position elements (bottom nav, headers, floating widgets)
+       truly fixed to the viewport — they must NOT be affected by the
+       single-body-scroll overrides above. */
+    .fixed,
+    [class*=" fixed"],
+    [class^="fixed"] {
+      position: fixed !important;
+    }
+    header.sticky,
+    .sticky {
+      position: sticky !important;
     }
 
     /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
