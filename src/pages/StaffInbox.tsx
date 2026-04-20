@@ -646,13 +646,8 @@ const StaffInbox = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto px-2 md:px-4 py-3">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-3">
-          {showChat && (
-            <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)} className="md:hidden h-8 w-8">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
+        {/* Header — hidden on mobile when a chat is open (native app feel) */}
+        <div className={cn("flex items-center gap-3 mb-3", showChat && "hidden md:flex")}>
           <MessageSquare className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">Messages</h1>
           {totalUnread > 0 && <Badge className="bg-primary text-primary-foreground text-xs">{totalUnread}</Badge>}
@@ -708,7 +703,14 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-hidden bg-card shadow-sm h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)] max-h-[calc(100dvh-10rem)]">
+        {/* Mobile: full-screen chat (subtract bottom-nav). Desktop: bordered card. */}
+        <div className={cn(
+          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
+          // Mobile when chat open: take the full screen (under top bar, above bottom-nav)
+          showChat
+            ? "fixed inset-x-0 top-14 bottom-16 z-30 bg-background md:static md:inset-auto md:h-[calc(100dvh-12rem)]"
+            : "h-[calc(100dvh-12rem)] md:h-[calc(100dvh-12rem)]"
+        )}>
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
