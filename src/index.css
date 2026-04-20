@@ -136,15 +136,18 @@
      Prevents horizontal scroll and makes media/tables fluid by default.
      Desktop layout untouched. */
   @media (max-width: 767px) {
-    /* Single page-level scroll on mobile. Allow body to grow naturally;
-       no inner scroll containers should hijack the wheel/touch. */
+    /* Let the document scroll naturally on mobile.
+       Do NOT force overflow-y or fixed heights on html/body --
+       SidebarProvider wraps content in a min-h-svh flex shell, and
+       forcing overflow + height:auto can collapse layout and break page scroll. */
     html, body {
       max-width: 100vw;
-      height: auto;
-      min-height: 100dvh;
       overflow-x: hidden;
-      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+    }
+
+    body {
+      min-height: 100dvh;
     }
 
     /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
