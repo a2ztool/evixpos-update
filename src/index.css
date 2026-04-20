@@ -388,12 +388,18 @@
       padding: 0.75rem 1rem !important;
     }
 
-    /* Touch-friendly minimum hit area for interactive controls */
+    /* Touch-friendly minimum hit area (WCAG AA = 44px) */
     button,
     [role="button"],
     a.button,
     [data-slot="button"] {
-      min-height: 40px;
+      min-height: 44px;
+    }
+    /* Compact icon-only buttons keep their explicit size class */
+    [data-slot="button"].h-7,
+    [data-slot="button"].h-8,
+    [data-slot="button"].size-icon-sm {
+      min-height: 0;
     }
 
     /* Inside dialogs/sheets/forms: stack inputs single-column,
@@ -425,6 +431,40 @@
     main .space-y-8 > * + * { margin-top: 1.25rem; }
     main .gap-6 { gap: 0.75rem; }
     main .gap-8 { gap: 1rem; }
+
+    /* Equal card alignment in grids — same height rows feel app-like */
+    main .grid > [data-slot="card"] {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    main .grid > [data-slot="card"] > [data-slot="card-content"] {
+      flex: 1;
+    }
+
+    /* Smooth, consistent micro-transitions across the app */
+    [data-slot="card"],
+    [data-slot="badge"],
+    [data-slot="button"],
+    [data-slot="tabs-trigger"],
+    [data-slot="select-trigger"],
+    [data-slot="dropdown-menu-item"],
+    a[href] {
+      transition: background-color 0.18s ease, color 0.18s ease,
+                  border-color 0.18s ease, transform 0.12s ease,
+                  box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    /* Page transitions — gentle fade-in when route content mounts */
+    main > * {
+      animation: mobile-page-in 0.28s ease-out both;
+    }
+  }
+
+  @keyframes mobile-page-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
     /* Sticky page header — opt-in via .mobile-sticky-header */
     .mobile-sticky-header {
