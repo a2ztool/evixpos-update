@@ -1071,7 +1071,7 @@ const POS = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
-        <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-24 lg:pb-6">
+        <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-4 lg:pb-6">
           {/* Action bar: Hold, Resume, Recent, Shortcuts */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <TooltipProvider>
@@ -1189,7 +1189,7 @@ const POS = () => {
 
       {/* Variation Modal */}
       <Dialog open={variationModalOpen} onOpenChange={setVariationModalOpen}>
-        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
+        <DialogContent className="max-w-sm w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
           <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle></DialogHeader>
             {variationProduct && (
@@ -1199,7 +1199,7 @@ const POS = () => {
               </div>
             )}
           </div>
-          <div className="px-6 py-4 space-y-2 overflow-y-auto flex-1 min-h-0">
+          <div className="px-6 py-4 space-y-2 overflow-y-auto min-h-0">
             {variationProduct && getVariations(variationProduct.id).map(v => (
               <button key={v.id} onClick={() => setSelectedVariation(v)} className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${selectedVariation?.id === v.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50"}`}>
                 <div>
