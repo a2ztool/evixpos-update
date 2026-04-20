@@ -365,7 +365,7 @@ const LandingPage = () => {
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-2 sm:gap-3 relative">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
-              <Button size="sm" variant="secondary" className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
+              <Button size="sm" variant="secondary" className="h-5 sm:h-7 text-[9px] sm:text-xs px-1.5 sm:px-3 rounded-md shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
             </div>
           </div>
         )}
