@@ -256,7 +256,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           {/* Main content — proper bottom padding for mobile nav */}
-          <main className="flex-1 px-3 py-2 sm:p-4 lg:p-8 animate-fade-in pb-24 sm:pb-4 lg:pb-8 overflow-x-clip sm:overflow-x-visible">
+          <main className="flex-1 px-3 py-2 sm:p-4 lg:p-8 animate-fade-in pb-24 sm:pb-4 lg:pb-8 sm:overflow-x-visible">
             <div className="max-w-7xl mx-auto w-full min-w-0">
               {children}
             </div>
