@@ -349,72 +349,66 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-auto w-[calc(100%-24px)] max-w-[440px] mb-[max(env(safe-area-inset-bottom),12px)]">
-        <div className="relative">
-          {/* Premium glossy glass bar */}
+      <div className="pointer-events-auto mx-auto w-[calc(100%-24px)] max-w-[420px] mb-[max(env(safe-area-inset-bottom),12px)] relative">
+        {/* Floating glass bar — 4 side icons, gap in the middle for FAB */}
+        <div
+          className="rounded-[28px] border border-white/50 dark:border-white/[0.08] relative"
+          style={{
+            background:
+              "linear-gradient(165deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.92) 100%)",
+            backdropFilter: "blur(40px) saturate(200%)",
+            WebkitBackdropFilter: "blur(40px) saturate(200%)",
+            boxShadow:
+              "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
+          }}
+        >
+          {/* Dark mode override */}
           <div
-            className="rounded-[26px] border border-white/40 dark:border-white/[0.08]"
+            className="hidden dark:block absolute inset-0 rounded-[28px] pointer-events-none"
             style={{
               background:
-                "linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 40%, rgba(241,245,249,0.85) 100%)",
-              backdropFilter: "blur(40px) saturate(200%)",
-              WebkitBackdropFilter: "blur(40px) saturate(200%)",
-              boxShadow:
-                "0 -2px 20px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)",
+                "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(12,12,24,0.92) 100%)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
-          >
-            {/* Top glossy shine line */}
-            <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+          />
 
-            {/* Dark mode override */}
-            <div
-              className="hidden dark:block absolute inset-0 rounded-[26px]"
-              style={{
-                background:
-                  "linear-gradient(165deg, rgba(24,24,35,0.94) 0%, rgba(16,16,28,0.90) 40%, rgba(12,12,24,0.92) 100%)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2)",
+          <div className="relative z-10 grid grid-cols-5 items-center px-2 py-2.5">
+            {/* Left side: 2 icons */}
+            <NavItem icon={LayoutDashboard} label="Home" path="/dashboard" navigate={navigate} location={location} />
+            <NavItem icon={Monitor} label="POS" path="/pos" navigate={navigate} location={location} />
+
+            {/* Center spacer for FAB */}
+            <div aria-hidden className="h-10" />
+
+            {/* Right side: 2 icons */}
+            {isStaff ? (
+              <NavItem icon={ShoppingCart} label="Orders" path="/orders" navigate={navigate} location={location} />
+            ) : (
+              <NavItem icon={Package} label="Products" path="/products" navigate={navigate} location={location} />
+            )}
+            <NavItem icon={Settings} label="Settings" path="/settings" navigate={navigate} location={location} />
+          </div>
+        </div>
+
+        {/* Floating FAB — fully detached, hovering above the bar */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-20">
+          {isStaff ? (
+            <CenterNavButton
+              icon={MessageSquare}
+              label=""
+              isActive={false}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
               }}
             />
-            {/* Dark mode top shine */}
-            <div className="hidden dark:block absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-            <div className="relative z-10 flex items-end justify-around px-1.5 pt-2.5 pb-3">
-              {/* Home */}
-              <NavItem icon={LayoutDashboard} label="Home" path="/dashboard" navigate={navigate} location={location} />
-
-              {/* POS */}
-              <NavItem icon={Monitor} label="POS" path="/pos" navigate={navigate} location={location} />
-
-              {/* CENTER — Staff: Messaging / Owner: Orders */}
-              {isStaff ? (
-                <CenterNavButton
-                  icon={MessageSquare}
-                  label="Chat"
-                  isActive={false}
-                  onClick={() => {
-                    window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
-                  }}
-                />
-              ) : (
-                <CenterNavButton
-                  icon={ShoppingCart}
-                  label="Orders"
-                  isActive={location.pathname.startsWith("/orders")}
-                  onClick={() => navigate("/orders")}
-                />
-              )}
-
-              {/* Staff: Orders / Owner: Products */}
-              {isStaff ? (
-                <NavItem icon={ShoppingCart} label="Orders" path="/orders" navigate={navigate} location={location} />
-              ) : (
-                <NavItem icon={Package} label="Products" path="/products" navigate={navigate} location={location} />
-              )}
-
-              {/* Settings */}
-              <NavItem icon={Settings} label="Settings" path="/settings" navigate={navigate} location={location} />
-            </div>
-          </div>
+          ) : (
+            <CenterNavButton
+              icon={ShoppingCart}
+              label=""
+              isActive={location.pathname.startsWith("/orders")}
+              onClick={() => navigate("/orders")}
+            />
+          )}
         </div>
       </div>
     </div>
