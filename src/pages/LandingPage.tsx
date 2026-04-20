@@ -376,10 +376,10 @@ const LandingPage = () => {
           initial={{ y: -20, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.5 }}
-          className={`max-w-5xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-7 transition-all duration-500 ease-out ${
+          className={`max-w-5xl mx-auto flex items-center justify-between px-3 sm:px-6 lg:px-7 transition-all duration-500 ease-out ${
             scrolled
-              ? "h-12 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
-              : "h-14 sm:h-16 rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
+              ? "h-10 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
+              : "h-11 sm:h-16 rounded-[18px] sm:rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
           }`}
         >
           <div className="flex items-center gap-2 shrink-0">
