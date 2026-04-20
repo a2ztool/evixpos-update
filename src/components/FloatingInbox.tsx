@@ -136,18 +136,67 @@ const FloatingInbox = () => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !storeId || !myId || !ownerId) return;
     const msg = newMessage.trim();
+    const replyToId = replyTo?.id ?? null;
+    const tempId = `temp-${Date.now()}`;
+
     setNewMessage("");
-    const insertData: any = {
-      store_id: storeId, sender_id: myId, receiver_id: ownerId,
-      message: msg, message_type: "text",
-    };
-    if (replyTo) insertData.reply_to_id = replyTo.id;
     setReplyTo(null);
-    const { error } = await supabase.from("staff_messages").insert(insertData);
+
+    const optimisticMessage: ChatMessage = {
+      id: tempId,
+      store_id: storeId,
+      sender_id: myId,
+      receiver_id: ownerId,
+      message: msg,
+      message_type: "text",
+      file_url: null,
+      file_name: null,
+      task_title: null,
+      task_status: null,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      reply_to_id: replyToId,
+      reactions: null,
+      deleted_for: null,
+      is_deleted_for_everyone: false,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    scrollToBottom();
+
+    const insertData: any = {
+      store_id: storeId,
+      sender_id: myId,
+      receiver_id: ownerId,
+      message: msg,
+      message_type: "text",
+    };
+    if (replyToId) insertData.reply_to_id = replyToId;
+
+    const { data, error } = await supabase
+      .from("staff_messages")
+      .insert(insertData)
+      .select("*")
+      .single();
+
     if (error) {
+      setMessages((prev) => prev.filter((message) => message.id !== tempId));
+      setNewMessage(msg);
+      if (replyToId) {
+        const originalReply = messages.find((message) => message.id === replyToId) ?? null;
+        setReplyTo(originalReply);
+      }
       console.error("Send failed:", error);
       toast.error("Failed to send message");
+      return;
     }
+
+    setMessages((prev) => {
+      const withoutTemp = prev.filter((message) => message.id !== tempId);
+      return withoutTemp.some((message) => message.id === data.id)
+        ? withoutTemp
+        : [...withoutTemp, data as ChatMessage];
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

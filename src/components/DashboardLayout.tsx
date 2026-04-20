@@ -298,13 +298,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile bottom navigation */}
       <MobileNav />
 
-      {/* Floating widgets — owner/user dashboard only (hidden for staff & admin) */}
-      {!isStaff && (
-        <>
-          <FloatingInbox />
-          <SupportPopup />
-        </>
-      )}
+      {/* Floating widgets */}
+      <FloatingInbox />
+      {!isStaff && <SupportPopup />}
     </SidebarProvider>
   );
 };
