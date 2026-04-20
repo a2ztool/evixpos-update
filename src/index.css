@@ -136,115 +136,64 @@
      Prevents horizontal scroll and makes media/tables fluid by default.
      Desktop layout untouched. */
   @media (max-width: 736px) {
-    /* Mobile uses one page-level scroll. Shared shells must grow naturally
-       instead of trapping scroll inside nested wrappers. */
-    html {
+    /* Single body-scroll on mobile. Keep it minimal — let flex shells size
+       naturally, only neutralize known viewport-locked utilities. */
+    html, body {
       max-width: 100vw;
+      overflow-x: hidden;
+    }
+    html {
       height: auto !important;
-      min-height: 100dvh;
-      overflow-x: hidden !important;
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: auto;
+      min-height: 100%;
     }
     body {
-      max-width: 100vw;
       height: auto !important;
       min-height: 100dvh;
-      overflow-x: hidden !important;
-      overflow-y: visible !important;
-      position: static !important;
+      overflow-y: auto !important;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
     }
-
-    #root,
-    [class*="sidebar-wrapper"],
-    .group\/sidebar-wrapper {
-      min-height: 100dvh !important;
-      max-height: none !important;
-    }
-
     #root {
       height: auto !important;
+      min-height: 100dvh;
       overflow: visible !important;
     }
 
-    /* Kill fixed viewport heights inside the sidebar shell on mobile so the
-       document (body) becomes the single scroll container. */
+    /* Neutralize Tailwind's viewport-height utilities so nested shells don't
+       trap scroll inside themselves. */
+    .h-screen, .min-h-screen, .h-svh, .min-h-svh {
+      height: auto !important;
+      min-height: 100dvh !important;
+      max-height: none !important;
+    }
+
+    /* Sidebar shell + main must not create their own scroll container. */
     .group\/sidebar-wrapper,
-    .group\/sidebar-wrapper > div,
-    [class*="sidebar-wrapper"],
-    [class*="sidebar-wrapper"] > div,
-    main {
-      height: auto !important;
-      min-height: 100dvh !important;
-      max-height: none !important;
-      overflow: visible !important;
-    }
-
-    .layout,
-    .main,
-    .wrapper,
-    .content,
     [data-sidebar="content"],
-    [data-sidebar="sidebar"],
-    [data-radix-scroll-area-viewport],
-    [data-slot="sheet-content"],
-    [data-state][role="dialog"] {
-      height: auto !important;
-      min-height: 100dvh !important;
-      max-height: none !important;
+    main.flex-1 {
       overflow: visible !important;
+      max-height: none !important;
     }
 
-    /* Sidebar's own min-h-svh / h-svh would otherwise lock the flex shell
-       to viewport height and trap scroll. */
-    .min-h-svh { min-height: 100dvh !important; }
-    .h-svh { height: auto !important; }
-    .h-screen,
-    .min-h-screen {
-      height: auto !important;
-      min-height: 100dvh !important;
-    }
-    main.flex-1 { overflow: visible !important; }
+    /* Hide native scrollbar UI for a native-app feel. */
+    body { scrollbar-width: none; }
+    body::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
-    /* Keep fixed-position elements (bottom nav, headers, floating widgets)
-       truly fixed to the viewport — they must NOT be affected by the
-       single-body-scroll overrides above. */
-    .fixed,
-    [class*=" fixed"],
-    [class^="fixed"] {
-      position: fixed !important;
-    }
-    header.sticky,
-    .sticky {
-      position: sticky !important;
-    }
-
-    /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
-    html { scrollbar-width: none; }
-    html::-webkit-scrollbar { display: none; width: 0; height: 0; }
-
-    /* Media should never overflow its container on mobile */
     img, video, canvas, svg, iframe {
       max-width: 100%;
       height: auto;
     }
 
-    /* Long unbroken strings (URLs, IDs) should wrap instead of pushing layout */
     p, span, h1, h2, h3, h4, h5, h6, td, th, li, a, label, dt, dd {
       overflow-wrap: anywhere;
       word-break: break-word;
     }
 
-    /* Wrap raw <pre>/<code> blocks */
     pre, code {
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    /* Any raw <table> not already wrapped becomes horizontally scrollable
-       inside its own block instead of pushing the whole page. */
     table {
       display: block;
       width: 100%;
