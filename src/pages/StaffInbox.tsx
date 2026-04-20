@@ -784,7 +784,7 @@ const StaffInbox = () => {
           </div>
 
           {/* ─── RIGHT: Chat Area ─── */}
-          <div className={cn("flex-1 flex flex-col", !showChat ? "hidden md:flex" : "flex")}>
+          <div className={cn("flex-1 flex flex-col min-h-0", !showChat ? "hidden md:flex" : "flex")}>
             {!activeChat ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
