@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -120,7 +120,8 @@
 
   /* ─── Hide native scrollbars globally (mobile + desktop).
      Desktop uses the top progress bar instead; mobile is app-style. ─── */
-  html, body {
+  html,
+  body {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -140,59 +141,119 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
     overscroll-behavior-y: contain;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ─── Mobile: single body-scroll model (≤767px) ───
-     Body is the only scroll container. Html/#root grow naturally.
-     Desktop layout untouched. */
+  /* ─────────────────────────────────────────────────────────────
+     MOBILE SCROLL FIX — unified at 767px (was split 736/767px)
+     Strategy: body owns the single scroll axis.
+     All layout shells are reset to height:auto / overflow:visible
+     so they never create a competing scroll container.
+     ───────────────────────────────────────────────────────────── */
   @media (max-width: 767px) {
-    html, body, #root {
-      height: auto;
-      min-height: 100dvh;
+    html {
+      height: auto !important;
+      min-height: 100%;
+      max-width: 100vw;
       overflow-x: hidden;
-    }
-    body {
-      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: none;
+      scroll-behavior: smooth;
     }
 
-    /* Neutralize Tailwind viewport-locked utilities so nested shells
-       don't trap the scroll. !important needed — Tailwind utilities are. */
-    .h-screen, .min-h-screen, .h-svh, .min-h-svh {
+    body {
+      height: auto !important;
+      min-height: 100dvh;
+      max-width: 100vw;
+      overflow-x: hidden;
+      overflow-y: auto !important; /* body is the ONE scroll owner */
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      scrollbar-width: none;
+    }
+    body::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    #root {
+      height: auto !important;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: visible !important; /* don't create a second scroll context */
+    }
+
+    /* ── KEY FIX: Tailwind's overflow-hidden on sidebar/layout shells
+       silently traps scroll on mobile WebKit. Neutralize it. ── */
+    .overflow-hidden {
+      overflow: visible !important;
+    }
+
+    /* Sidebar wrapper + main content area must not scroll independently */
+    .group\/sidebar-wrapper,
+    [data-sidebar="content"],
+    main.flex-1 {
+      overflow: visible !important;
+      max-height: none !important;
+      height: auto !important;
+    }
+
+    /* Tailwind viewport-height utilities — prevent fixed-height scroll traps */
+    .h-screen,
+    .min-h-screen,
+    .h-svh,
+    .min-h-svh,
+    .h-dvh,
+    .min-h-dvh {
       height: auto !important;
       min-height: 100dvh !important;
       max-height: none !important;
     }
 
-    /* Sidebar shell + main must not create their own scroll container */
-    .group\/sidebar-wrapper,
-    [data-sidebar="content"],
-    main.flex-1 {
-      overflow: visible;
-      max-height: none;
-    }
-
-    /* Fluid media + wrapping for narrow viewports */
-    img, video, canvas, svg, iframe {
+    /* Fluid media — prevent horizontal bleed */
+    img,
+    video,
+    canvas,
+    svg,
+    iframe {
       max-width: 100%;
       height: auto;
     }
 
-    p, span, h1, h2, h3, h4, h5, h6, td, th, li, a, label, dt, dd {
+    /* Text nodes — prevent horizontal overflow from long words/URLs */
+    p,
+    span,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    td,
+    th,
+    li,
+    a,
+    label,
+    dt,
+    dd {
       overflow-wrap: anywhere;
       word-break: break-word;
     }
 
-    pre, code {
+    pre,
+    code {
       white-space: pre-wrap;
       word-break: break-word;
     }
 
+    /* Tables scroll horizontally instead of blowing the layout */
     table {
       display: block;
       width: 100%;
@@ -202,17 +263,26 @@
     }
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply tracking-tight;
   }
 
-  /* Better touch targets on mobile */
+  /* ─── Better touch targets + prevent iOS zoom on input focus ─── */
   @media (max-width: 767px) {
-    button, [role="button"], a, input, select, textarea {
+    button,
+    [role="button"],
+    a,
+    input,
+    select,
+    textarea {
       touch-action: manipulation;
     }
 
-    /* Prevent zoom on input focus on iOS */
     input[type="text"],
     input[type="number"],
     input[type="email"],
@@ -225,12 +295,14 @@
       font-size: 16px !important;
     }
 
-    /* Native app-like selection */
+    /* Native app-like text selection behaviour */
     * {
       -webkit-user-select: none;
       user-select: none;
     }
-    input, textarea, [contenteditable="true"] {
+    input,
+    textarea,
+    [contenteditable="true"] {
       -webkit-user-select: text;
       user-select: text;
     }
@@ -395,16 +467,8 @@
 
   /* ───────────────────────────────────────────────
      APP-LIKE MOBILE POLISH (≤767px) — desktop untouched
-     Goal: native-app feel — compact padding, touch targets,
-     single-column forms, full-width primary buttons, smoother scroll.
      ─────────────────────────────────────────────── */
   @media (max-width: 767px) {
-    /* Smooth momentum scroll on the whole app */
-    html, body {
-      -webkit-overflow-scrolling: touch;
-      scroll-behavior: smooth;
-    }
-
     /* Tighten oversized desktop padding inside cards */
     [data-slot="card"],
     .premium-card {
@@ -434,8 +498,7 @@
       min-height: 0;
     }
 
-    /* Inside dialogs/sheets/forms: stack inputs single-column,
-       and make primary action buttons full-width for thumb reach. */
+    /* Stack dialog/sheet/form grids to single column for mobile */
     [data-slot="dialog-content"] .grid:not(.grid-cols-1),
     [data-slot="sheet-content"] .grid:not(.grid-cols-1),
     form .grid:not(.grid-cols-1) {
@@ -452,19 +515,27 @@
       width: 100% !important;
     }
 
-    /* Tap feedback for buttons (subtle native bounce) */
+    /* Tap feedback for buttons */
     [data-slot="button"]:active {
       transform: scale(0.97);
       transition: transform 0.08s ease-out;
     }
 
-    /* Tighter default content gap on mobile */
-    main .space-y-6 > * + * { margin-top: 1rem; }
-    main .space-y-8 > * + * { margin-top: 1.25rem; }
-    main .gap-6 { gap: 0.75rem; }
-    main .gap-8 { gap: 1rem; }
+    /* Tighter default content spacing on mobile */
+    main .space-y-6 > * + * {
+      margin-top: 1rem;
+    }
+    main .space-y-8 > * + * {
+      margin-top: 1.25rem;
+    }
+    main .gap-6 {
+      gap: 0.75rem;
+    }
+    main .gap-8 {
+      gap: 1rem;
+    }
 
-    /* Equal card alignment in grids — same height rows feel app-like */
+    /* Equal card height in grids */
     main .grid > [data-slot="card"] {
       height: 100%;
       display: flex;
@@ -474,7 +545,7 @@
       flex: 1;
     }
 
-    /* Smooth, consistent micro-transitions across the app */
+    /* Smooth, consistent micro-transitions */
     [data-slot="card"],
     [data-slot="badge"],
     [data-slot="button"],
@@ -482,20 +553,30 @@
     [data-slot="select-trigger"],
     [data-slot="dropdown-menu-item"],
     a[href] {
-      transition: background-color 0.18s ease, color 0.18s ease,
-                  border-color 0.18s ease, transform 0.12s ease,
-                  box-shadow 0.18s ease, opacity 0.18s ease;
+      transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.12s ease,
+        box-shadow 0.18s ease,
+        opacity 0.18s ease;
     }
 
-    /* Page transitions — gentle fade-in when route content mounts */
+    /* Page-mount fade-in */
     main > * {
       animation: mobile-page-in 0.28s ease-out both;
     }
   }
 
   @keyframes mobile-page-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
@@ -513,18 +594,36 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes slide-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes slide-in-right {
-    from { opacity: 0; transform: translateX(12px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   /* Hide scrollbar but keep scrolling */
@@ -546,6 +645,11 @@
 }
 
 @keyframes floatBadge {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
