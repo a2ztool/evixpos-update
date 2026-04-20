@@ -639,3 +639,12 @@
     transform: translateY(-8px);
   }
 }
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
