@@ -710,7 +710,7 @@ const StaffInbox = () => {
 
         <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-hidden bg-card shadow-sm h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)] max-h-[calc(100dvh-10rem)]">
           {/* ─── LEFT: Conversation List ─── */}
-          <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col", showChat ? "hidden md:flex" : "flex")}>
+          <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
