@@ -11,6 +11,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PlansConfigProvider } from "@/contexts/PlansConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OfflineBanner from "@/components/OfflineBanner";
+import ScrollProgress from "@/components/ScrollProgress";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
