@@ -349,49 +349,50 @@ const MobileNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden pointer-events-none">
-      <div className="pointer-events-auto mx-auto w-[calc(100%-16px)] max-w-[440px] mb-[max(env(safe-area-inset-bottom),8px)] relative">
-        {/* SVG notched glass bar — curved cut-out for FAB */}
-        <div className="relative" style={{ filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.12)) drop-shadow(0 2px 6px rgba(0,0,0,0.06))" }}>
+      <div className="pointer-events-auto relative w-full">
+        {/* SVG notched bar — full-width, top-rounded only, flush to bottom */}
+        <div className="relative" style={{ filter: "drop-shadow(0 -6px 20px rgba(0,0,0,0.10)) drop-shadow(0 -1px 4px rgba(0,0,0,0.05))" }}>
           <svg
-            viewBox="0 0 400 78"
+            viewBox="0 0 400 88"
             preserveAspectRatio="none"
-            className="w-full h-[78px] block"
+            className="w-full h-[82px] block"
             aria-hidden
           >
             <defs>
               <linearGradient id="navBarGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--card))" stopOpacity="0.98" />
-                <stop offset="100%" stopColor="hsl(var(--card))" stopOpacity="0.94" />
+                <stop offset="0%" stopColor="hsl(var(--card))" stopOpacity="1" />
+                <stop offset="100%" stopColor="hsl(var(--card))" stopOpacity="0.98" />
               </linearGradient>
             </defs>
-            {/* Path: rounded rect with curved notch on top-center */}
+            {/* Top-rounded rect with curved notch on top-center; bottom flush square */}
             <path
               d="
-                M 28 0
+                M 24 0
                 L 158 0
                 C 168 0, 168 8, 174 14
                 C 182 22, 192 28, 200 28
                 C 208 28, 218 22, 226 14
                 C 232 8, 232 0, 242 0
-                L 372 0
-                Q 400 0, 400 28
-                L 400 50
-                Q 400 78, 372 78
-                L 28 78
-                Q 0 78, 0 50
-                L 0 28
-                Q 0 0, 28 0
+                L 376 0
+                Q 400 0, 400 24
+                L 400 88
+                L 0 88
+                L 0 24
+                Q 0 0, 24 0
                 Z
               "
               fill="url(#navBarGrad)"
               stroke="hsl(var(--border))"
               strokeWidth="0.5"
-              strokeOpacity="0.5"
+              strokeOpacity="0.4"
             />
           </svg>
 
           {/* Icons overlaid on top of SVG */}
-          <div className="absolute inset-0 grid grid-cols-5 items-end px-1 pb-2.5 pt-3">
+          <div
+            className="absolute inset-x-0 top-0 grid grid-cols-5 items-center px-2 pt-3"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)", height: "100%" }}
+          >
             <NavItem icon={LayoutDashboard} label="Home" path="/dashboard" navigate={navigate} location={location} />
             <NavItem icon={Monitor} label="POS" path="/pos" navigate={navigate} location={location} />
             <div aria-hidden />
