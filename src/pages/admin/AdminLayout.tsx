@@ -162,8 +162,8 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto">
+      {/* Main — page-level scroll on mobile, container scroll on desktop */}
+      <main className="flex-1 overflow-visible md:overflow-auto">
         <div className="px-3 py-3 md:p-6 pt-16 md:pt-6 pb-24 md:pb-6">
           <Outlet />
         </div>
