@@ -360,7 +360,7 @@ const LandingPage = () => {
       <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style={{ backdropFilter: scrolled ? 'blur(20px)' : 'blur(0px)', background: scrolled ? 'hsl(var(--background) / 0.85)' : 'transparent' }}>
         {/* ANNOUNCEMENT BANNER — collapses on scroll */}
         {bannerActive && (
-          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-xs sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-12 py-2 sm:py-2.5 opacity-100'}`}>
+          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-xs sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-12 py-1 sm:py-2.5 opacity-100'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-2 sm:gap-3 relative">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
@@ -376,10 +376,10 @@ const LandingPage = () => {
           initial={{ y: -20, opacity: 0 }} 
           animate={{ y: 0, opacity: 1 }} 
           transition={{ duration: 0.5 }}
-          className={`max-w-5xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-7 transition-all duration-500 ease-out ${
+          className={`max-w-5xl mx-auto flex items-center justify-between px-3 sm:px-6 lg:px-7 transition-all duration-500 ease-out ${
             scrolled
-              ? "h-12 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
-              : "h-14 sm:h-16 rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
+              ? "h-10 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
+              : "h-11 sm:h-16 rounded-[18px] sm:rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
           }`}
         >
           <div className="flex items-center gap-2 shrink-0">
@@ -405,9 +405,9 @@ const LandingPage = () => {
             <Button 
               size="sm" 
               onClick={() => navigate("/auth")} 
-              className="gap-1.5 text-[13px] font-semibold h-9 sm:h-10 px-4 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
+              className="gap-1.5 text-[12px] sm:text-[13px] font-semibold h-7 sm:h-10 px-3 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
             >
-              {get("nav_start_free", "Start Free")} <ArrowRight className="h-3.5 w-3.5" />
+              {get("nav_start_free", "Start Free")} <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
@@ -477,7 +477,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Social proof badge */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
+            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-0.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
               <div className="flex -space-x-1.5 sm:-space-x-2 shrink-0">
                 {[1,2,3].map(i => {
                   const img = get(`social_proof_avatar_${i}`);
