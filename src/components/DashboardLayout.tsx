@@ -19,6 +19,7 @@ import {
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
@@ -189,6 +190,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   </TooltipTrigger>
                   <TooltipContent side="bottom"><p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p></TooltipContent>
                 </Tooltip>
+
+                {/* Currency badge */}
+                <CurrencyBadge />
 
                 {/* Notifications */}
                 <NotificationBell />
