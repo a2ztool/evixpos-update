@@ -1159,7 +1159,7 @@ const POS = () => {
 
           {/* Mobile cart bar */}
           {cart.length > 0 && (
-            <button onClick={() => setMobileCartOpen(true)} className="lg:hidden fixed bottom-[calc(5rem+max(env(safe-area-inset-bottom),4px))] left-2 right-2 z-40 bg-primary text-primary-foreground px-4 py-3.5 flex items-center justify-between shadow-lg active:opacity-90 transition-opacity rounded-2xl">
+            <button onClick={() => setMobileCartOpen(true)} className="lg:hidden fixed bottom-[calc(6.5rem+max(env(safe-area-inset-bottom),12px))] left-3 right-3 z-40 bg-primary text-primary-foreground px-4 py-3.5 flex items-center justify-between shadow-lg active:opacity-90 transition-opacity rounded-2xl">
               <div className="flex items-center gap-2.5"><ShoppingCart className="h-5 w-5" /><span className="font-semibold text-sm">{cart.reduce((s, i) => s + i.quantity, 0)} items</span></div>
               <div className="flex items-center gap-2"><span className="font-bold">{format(total)}</span><ChevronDown className="h-4 w-4 rotate-180" /></div>
             </button>
