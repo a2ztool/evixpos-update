@@ -116,7 +116,7 @@ const SidebarProvider = React.forwardRef<
               ...style,
             } as React.CSSProperties
           }
-          className={cn("group/sidebar-wrapper w-full min-h-[100dvh] md:flex md:min-h-svh has-[[data-variant=inset]]:bg-sidebar", className)}
+          className={cn("group/sidebar-wrapper w-full md:flex md:min-h-svh has-[[data-variant=inset]]:bg-sidebar", className)}
           ref={ref}
           {...props}
         >
@@ -164,7 +164,7 @@ const Sidebar = React.forwardRef<
           }
           side={side}
         >
-          <div className="flex w-full flex-col min-h-[100dvh] max-h-none overflow-visible md:min-h-0 md:max-h-full md:overflow-hidden">{children}</div>
+          <div className="w-full overflow-visible md:flex md:min-h-0 md:max-h-full md:flex-col md:overflow-hidden">{children}</div>
         </SheetContent>
       </Sheet>
     );
@@ -330,10 +330,10 @@ const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"di
     <div
       ref={ref}
       data-sidebar="content"
-      className={cn(
-        "flex flex-1 flex-col gap-2 overflow-visible min-h-[100dvh] max-h-none md:min-h-0 md:max-h-full md:overflow-auto group-data-[collapsible=icon]:md:overflow-hidden",
-        className,
-      )}
+        className={cn(
+          "flex flex-col gap-2 overflow-visible md:min-h-0 md:max-h-full md:flex-1 md:overflow-auto group-data-[collapsible=icon]:md:overflow-hidden",
+          className,
+        )}
       {...props}
     />
   );

@@ -107,9 +107,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <div className="w-full min-h-[100dvh] bg-background md:flex">
+      <div className="w-full bg-background md:flex md:min-h-svh">
         <AppSidebar />
-        <div className="min-w-0 min-h-[100dvh] md:min-h-0 md:flex-1 md:flex md:flex-col">
+        <div className="min-w-0 md:min-h-0 md:flex-1 md:flex md:flex-col">
           {/* Top navbar — compact on mobile */}
           <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/40 pt-safe">
             <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4 lg:px-6">
