@@ -512,48 +512,40 @@ const CenterNavButton = ({
   isActive: boolean;
   onClick: () => void;
 }) => (
-  <div className="relative flex flex-col items-center -mt-6">
+  <div className="relative flex flex-col items-center">
     <motion.button onClick={onClick} whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.05 }} className="relative">
-      {/* Outer glow ring */}
+      {/* Soft colored halo (like reference) */}
       <div
         className={`absolute inset-0 rounded-full transition-all duration-500 ${
-          isActive ? "bg-primary/25 scale-[1.5] blur-lg" : "bg-primary/10 scale-[1.2] blur-md"
+          isActive ? "bg-primary/35 scale-[1.6] blur-xl" : "bg-primary/25 scale-[1.45] blur-lg"
         }`}
       />
 
-      <motion.div
-        animate={isActive ? { y: -5 } : { y: 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className="relative"
+      {/* Main circular FAB */}
+      <div
+        className={`relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+          isActive
+            ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_10px_30px_hsl(var(--primary)/0.55),0_2px_8px_hsl(var(--primary)/0.3)]"
+            : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_8px_24px_hsl(var(--primary)/0.45),0_2px_6px_hsl(var(--primary)/0.25)]"
+        }`}
       >
-        {/* Main button */}
-        <div
-          className={`relative w-[58px] h-[58px] rounded-full flex items-center justify-center transition-all duration-300 ${
-            isActive
-              ? "bg-gradient-to-b from-primary via-primary to-primary/90 shadow-[0_8px_32px_hsl(var(--primary)/0.5),0_2px_8px_hsl(var(--primary)/0.3)]"
-              : "bg-gradient-to-b from-primary via-primary/95 to-primary/85 shadow-[0_6px_24px_hsl(var(--primary)/0.35),0_2px_6px_hsl(var(--primary)/0.2)]"
-          }`}
-        >
-          {/* Top glossy shine */}
-          <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none" />
-          {/* Inner ring highlight */}
-          <div className="absolute inset-[3px] rounded-full border border-white/10 pointer-events-none" />
-          <Icon
-            className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
-            strokeWidth={2.2}
-          />
-        </div>
-
-        {/* Bottom reflection */}
-        <div className="absolute -bottom-1 left-3 right-3 h-2 rounded-full bg-primary/15 blur-sm" />
-      </motion.div>
+        {/* Top glossy shine */}
+        <div className="absolute inset-[2px] rounded-full bg-gradient-to-b from-white/35 via-white/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-[3px] rounded-full border border-white/15 pointer-events-none" />
+        <Icon
+          className="h-6 w-6 text-primary-foreground relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+          strokeWidth={2.4}
+        />
+      </div>
     </motion.button>
-    <motion.span
-      animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
-      className={`text-[10px] mt-2 font-bold tracking-wide ${isActive ? "text-primary" : "text-muted-foreground"}`}
-    >
-      {label}
-    </motion.span>
+    {label && (
+      <motion.span
+        animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
+        className={`text-[10px] mt-1.5 font-bold tracking-wide ${isActive ? "text-primary" : "text-muted-foreground"}`}
+      >
+        {label}
+      </motion.span>
+    )}
   </div>
 );
 
