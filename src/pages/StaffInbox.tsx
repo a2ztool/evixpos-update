@@ -341,29 +341,77 @@ const StaffInbox = () => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeChat || !storeId || !myId) return;
     const msg = newMessage.trim();
+    const replyToId = replyTo?.id ?? null;
+
     setNewMessage("");
+    setReplyTo(null);
 
     if (activeChatType === "direct") {
-      const insertData: any = {
-        store_id: storeId, sender_id: myId, receiver_id: activeChat,
-        message: msg, message_type: "text",
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: ChatMessage = {
+        id: tempId,
+        store_id: storeId,
+        sender_id: myId,
+        receiver_id: activeChat,
+        message: msg,
+        message_type: "text",
+        file_url: null,
+        file_name: null,
+        task_title: null,
+        task_status: null,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        reply_to_id: replyToId,
+        reactions: null,
+        deleted_for: null,
+        is_deleted_for_everyone: false,
       };
-      if (replyTo) insertData.reply_to_id = replyTo.id;
-      setReplyTo(null);
-      const { error } = await supabase.from("staff_messages").insert(insertData);
-      if (error) toast.error("Failed to send message");
-      else {
-        try {
-          const { notifyStaffMessage } = await import("@/lib/notificationTriggers");
-          await notifyStaffMessage(activeChat, "New message", msg);
-        } catch {}
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+      scrollToBottom();
+
+      const insertData: any = {
+        store_id: storeId,
+        sender_id: myId,
+        receiver_id: activeChat,
+        message: msg,
+        message_type: "text",
+      };
+      if (replyToId) insertData.reply_to_id = replyToId;
+
+      const { data, error } = await supabase
+        .from("staff_messages")
+        .insert(insertData)
+        .select("*")
+        .single();
+
+      if (error) {
+        setMessages((prev) => prev.filter((message) => message.id !== tempId));
+        setNewMessage(msg);
+        if (replyToId) {
+          const originalReply = messages.find((message) => message.id === replyToId) ?? null;
+          setReplyTo(originalReply);
+        }
+        toast.error("Failed to send message");
+        return;
       }
-    } else {
-      const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
-      if (replyTo) insertData.reply_to_id = replyTo.id;
-      setReplyTo(null);
-      await db.from("chat_group_messages").insert(insertData);
+
+      setMessages((prev) => {
+        const withoutTemp = prev.filter((message) => message.id !== tempId);
+        return withoutTemp.some((message) => message.id === data.id)
+          ? withoutTemp
+          : [...withoutTemp, data as ChatMessage];
+      });
+
+      void import("@/lib/notificationTriggers")
+        .then(({ notifyStaffMessage }) => notifyStaffMessage(activeChat, "New message", msg))
+        .catch(() => undefined);
+      return;
     }
+
+    const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
+    if (replyToId) insertData.reply_to_id = replyToId;
+    await db.from("chat_group_messages").insert(insertData);
   };
 
   // ─── Send task (new fields: name, term, link order, required info) ───
