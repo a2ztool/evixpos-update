@@ -465,21 +465,6 @@
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
-    /* Sticky page header — opt-in via .mobile-sticky-header */
-    .mobile-sticky-header {
-      position: sticky;
-      top: var(--header-height, 3rem);
-      z-index: 20;
-      background: hsl(var(--background) / 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      margin-left: -0.75rem;
-      margin-right: -0.75rem;
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid hsl(var(--border) / 0.4);
-    }
-  }
 }
 
 @layer utilities {
