@@ -261,13 +261,13 @@ const FloatingInbox = () => {
       {open && (
         <div
           className={cn(
-            "fixed z-50 bg-background overflow-visible md:overflow-hidden",
-            // Mobile: Bottom sheet style
-            "bottom-0 left-0 right-0 w-full min-h-[100dvh] h-auto rounded-t-[20px]",
+            "fixed z-50 bg-background overflow-hidden",
+            // Mobile: Bottom sheet, ~75vh max
+            "bottom-0 left-0 right-0 w-full h-[75dvh] max-h-[600px] rounded-t-[20px]",
             "shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.2)]",
-            // Desktop: Floating card bottom-right
+            // Desktop: Floating card, smaller height
             "md:bottom-8 md:right-8 md:left-auto md:top-auto",
-            "md:w-[360px] md:h-[70vh] md:max-h-[600px]",
+            "md:w-[360px] md:h-[520px] md:max-h-[calc(100dvh-6rem)]",
             "md:rounded-[20px]",
             "md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
             "md:border md:border-border/50"
@@ -314,7 +314,7 @@ const FloatingInbox = () => {
           {/* Messages - Scrollable */}
           <div 
             ref={scrollRef} 
-            className="relative px-3 pt-[76px] pb-[88px] space-y-3 bg-muted/20 overflow-visible md:absolute md:inset-0 md:top-[60px] md:bottom-[72px] md:overflow-y-auto"
+            className="absolute inset-0 top-[60px] bottom-[72px] px-3 py-3 space-y-3 bg-muted/20 overflow-y-auto"
           >
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm gap-2">
