@@ -603,9 +603,9 @@
     transform: translateY(-8px);
   }
 }
+/* Dashboard shell controls its own scroll; landing/auth pages scroll naturally */
 html,
 body,
 #root {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
