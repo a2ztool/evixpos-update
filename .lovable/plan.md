@@ -1,90 +1,82 @@
 
-
 ## Diagnosis
 
-Looking at the actual code:
+The mobile dashboard is still feeling “stuck” because the page has more than one thing competing for touch scroll:
 
-**`src/index.css` problems:**
-1. Heavy `!important` overrides on `html`, `body`, `#root`, `.h-screen`, `.min-h-svh`, sidebar wrappers — fragile and hard to reason about.
-2. Two stacked `@media (max-width: 767px)` and `@media (max-width: 736px)` blocks with overlapping rules.
-3. `overscroll-behavior-y: contain` on `body` (not the real blocker but noisy).
-4. Duplicate scrollbar-hiding rules.
+1. `src/components/DashboardAnalytics.tsx` mounts Recharts charts directly on the dashboard. On phones, chart surfaces often capture vertical touch gestures, which makes the page feel like it won’t scroll.
+2. `src/index.css` still has multiple mobile-wide overrides stacked together. The core body-scroll fix is there, but extra mobile polish rules are broad enough that they can still interfere with the intended single-scroll model.
+3. The dashboard shell (`src/components/DashboardLayout.tsx` + `src/components/ui/sidebar.tsx`) is mostly corrected now, so the remaining issue is likely not the bottom nav itself but touch handling inside dashboard content.
 
-**`src/components/DashboardLayout.tsx`:**
-- Root: `<div className="flex min-h-[100dvh] w-full bg-background">` — fine, uses `min-h` (grows), not `h-screen` (locks).
-- `<main className="flex-1 ... pb-24 sm:pb-4">` — already has `pb-24` for the bottom nav (~96px). Good.
-- `MobileNav` is `fixed bottom-0 ... z-50` rendered as a sibling to the sidebar wrapper (outside the flex column). Correct — it stays pinned to viewport.
+## What to build
 
-**Why scrolling broke previously:** The `!important` overrides forced `overflow: visible` on `html` AND `body` simultaneously, and at one point both were given `overflow-y: scroll`, creating a double-scroll-context conflict on iOS Safari. The fix is to designate **body** as the single scroll container and let everything else be `auto`/inherit naturally — no `!important` needed.
+Apply a very targeted mobile-only fix so the dashboard page scrolls naturally on phones, while keeping:
+- desktop/tablet behavior unchanged
+- bottom nav fixed at the bottom
+- existing layout and styling otherwise unchanged
 
-## Plan
+## Implementation plan
 
-### 1. Rewrite mobile section in `src/index.css` (clean, minimal, no `!important` except where neutralizing third-party utility classes)
+### 1. Keep `body` as the only mobile page scroller
+In `src/index.css`:
+- keep the existing mobile rule where `body` uses `overflow-y: auto` and `-webkit-overflow-scrolling: touch`
+- remove or tighten any extra mobile rules that broadly affect nested layout containers if they are not needed for scrolling
+- add one small safety rule so the dashboard app shell does not create its own vertical scroll context on mobile
 
-Replace the two overlapping mobile blocks with a single, well-commented block:
+Goal:
+- mobile document scroll happens on `body`
+- nested wrappers stay `overflow: visible` on mobile unless they truly need inner scrolling
 
-```css
-/* Mobile: single body-scroll model (≤767px) */
-@media (max-width: 767px) {
-  html, body, #root {
-    height: auto;
-    min-height: 100dvh;
-    overflow-x: hidden;
-  }
-  body {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: none; /* remove `contain` — was creating scroll boundary */
-  }
+### 2. Stop charts from hijacking touch scroll on mobile
+In `src/components/DashboardAnalytics.tsx`:
+- wrap the two chart areas in a mobile-safe container
+- on mobile, disable touch/pointer interaction on the Recharts surfaces so vertical swipe always scrolls the page
+- keep chart rendering visible; only turn off gesture capture on small screens
 
-  /* Neutralize Tailwind viewport-locked utilities so nested shells don't
-     trap the scroll. Only !important here because Tailwind utilities are. */
-  .h-screen, .min-h-screen, .h-svh, .min-h-svh {
-    height: auto !important;
-    min-height: 100dvh !important;
-  }
+This is the most likely fix for “scroll feels stuck on dashboard specifically,” because the dashboard is the main page with large interactive chart surfaces.
 
-  /* Sidebar shell + main must not create their own scroll container */
-  .group\/sidebar-wrapper,
-  [data-sidebar="content"],
-  main.flex-1 {
-    overflow: visible;
-    max-height: none;
-  }
+### 3. Preserve bottom nav exactly as-is
+In `src/components/DashboardLayout.tsx`:
+- keep `MobileNav` fixed
+- keep mobile bottom padding on `<main>` (`pb-24` or equivalent safe value)
+- only increase bottom spacing if needed to fully clear the nav on smaller phones with safe-area insets
 
-  /* Hide native scrollbar (already global, repeated for safety) */
-  body::-webkit-scrollbar { display: none; }
-  body { scrollbar-width: none; }
-}
+No nav positioning changes unless absolutely necessary.
+
+### 4. Verify shell components do not reintroduce a scroll trap
+In `src/components/ui/sidebar.tsx`:
+- keep desktop-only flex/height behavior under `md:...`
+- ensure mobile sidebar wrapper/content stay non-scrolling unless the sheet itself is open
+- do not change desktop sidebar behavior
+
+### 5. Leave admin/staff untouched unless the same pattern exists there
+This fix will target the dashboard path first. If the same “stuck” feeling exists on admin/staff pages after the dashboard fix, apply the same mobile touch-scroll rule only to their interactive chart/scroll-heavy areas.
+
+## Files to change
+
+- `src/index.css`
+- `src/components/DashboardAnalytics.tsx`
+- `src/components/DashboardLayout.tsx` (only if spacing needs a tiny mobile adjustment)
+- `src/components/ui/sidebar.tsx` (only if a leftover mobile overflow rule needs tightening)
+
+## Expected result
+
+- On mobile phones, dashboard scroll works with normal finger swipe
+- Charts no longer block vertical scrolling
+- Bottom nav remains fixed at the bottom
+- Content does not go under the bottom nav
+- Desktop and tablet behavior remain unchanged
+
+## Technical details
+
+Recommended mobile-only chart rule:
+- apply `pointer-events: none` / `touch-action: pan-y` to chart interaction layers on small screens only
+
+Recommended scroll model:
+```text
+mobile:
+html/body/#root -> grow naturally
+body -> single vertical scroller
+dashboard wrappers -> overflow visible
+fixed bottom nav -> stays viewport-fixed
+interactive charts -> do not intercept vertical swipe
 ```
-
-Remove the duplicated `@media (max-width: 736px)` block entirely.
-
-### 2. `src/components/DashboardLayout.tsx` — verify spacing only
-
-The layout is already correct:
-- Root flex container uses `min-h-[100dvh]` (grows, doesn't lock).
-- `<main>` has `pb-24 sm:pb-4` to clear the ~88px bottom nav.
-- `MobileNav` is `fixed bottom-0` with safe-area padding.
-
-No code change needed. Will verify the `pb-24` is sufficient (96px ≥ nav height 72px + safe-area).
-
-### 3. Keep desktop untouched
-
-Desktop scroll progress bar (`ScrollProgress.tsx`) stays. Desktop uses normal document scroll with `body` as container — already working.
-
-## What was wrong & why
-
-| Problem | Cause | Fix |
-|--------|-------|-----|
-| Mobile scroll froze | `overflow: visible !important` on `body` + `overflow-y: scroll !important` on `html` created competing scroll contexts on iOS | Single rule: `body { overflow-y: auto }`, `html { overflow-x: hidden }` |
-| Bottom nav drifted up | When earlier fixes set `position: fixed !important` globally or removed `min-h-[100dvh]` from root, the nav's containing block became something other than the viewport | Leave nav untouched (`fixed bottom-0` + safe-area), keep root as `min-h-[100dvh]` flex |
-| Content under nav | `<main>` needs bottom padding ≥ nav height + safe-area | Already present: `pb-24` on mobile |
-| Overscroll bounce trap | `overscroll-behavior-y: contain` on body | Change to `none` |
-
-## Files
-
-- `src/index.css` — replace the two mobile media blocks with one clean block
-- `src/App.tsx` — no change
-- `src/components/DashboardLayout.tsx` — no change
-
