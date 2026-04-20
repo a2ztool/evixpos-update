@@ -330,6 +330,20 @@ const StaffInbox = () => {
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, groups]);
 
+  // ─── Realtime: refresh groups when membership or groups change ───
+  useEffect(() => {
+    if (!storeId || !myId) return;
+    const channel = supabase.channel(`group-membership-${myId}-${storeId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_group_members" }, () => {
+        fetchGroups();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_groups", filter: `store_id=eq.${storeId}` }, () => {
+        fetchGroups();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, myId, fetchGroups]);
+
   // ─── Typing indicator via broadcast ───
   useEffect(() => {
     if (!activeChat || !myId) return;
