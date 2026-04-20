@@ -710,7 +710,7 @@ const StaffInbox = () => {
 
         <div className="flex flex-col md:flex-row rounded-xl border border-border overflow-hidden bg-card shadow-sm h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)] max-h-[calc(100dvh-10rem)]">
           {/* ─── LEFT: Conversation List ─── */}
-          <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col", showChat ? "hidden md:flex" : "flex")}>
+          <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -726,7 +726,7 @@ const StaffInbox = () => {
                 ))}
               </div>
             </div>
-            <ScrollArea className="md:flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               {loading && conversations.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
               ) : conversations.length === 0 ? (
@@ -784,7 +784,7 @@ const StaffInbox = () => {
           </div>
 
           {/* ─── RIGHT: Chat Area ─── */}
-          <div className={cn("flex-1 flex flex-col", !showChat ? "hidden md:flex" : "flex")}>
+          <div className={cn("flex-1 flex flex-col min-h-0", !showChat ? "hidden md:flex" : "flex")}>
             {!activeChat ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
@@ -992,7 +992,7 @@ const StaffInbox = () => {
                 </div>
 
                 {/* Messages */}
-                <div ref={scrollRef} className="px-4 py-4 space-y-3 bg-muted/30 overflow-visible md:flex-1 md:overflow-y-auto">
+                <div ref={scrollRef} className="flex-1 min-h-0 px-4 py-4 space-y-3 bg-muted/30 overflow-y-auto">
                   {visibleMessages.length === 0 && (
                     <div className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</div>
                   )}
