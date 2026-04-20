@@ -697,7 +697,7 @@ const AdminLandingEditor = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]">
+    <div className="flex flex-col min-h-[100dvh] md:h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-2rem)]">
       {/* Top Bar */}
       <div className="flex items-center justify-between gap-4 mb-4 shrink-0 flex-wrap">
         <div>
@@ -732,9 +732,9 @@ const AdminLandingEditor = () => {
       </div>
 
       {/* Main Layout */}
-      <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 gap-4 min-h-0 overflow-visible md:overflow-hidden">
         {/* Section Sidebar */}
-        <div className="w-60 shrink-0 bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-y-auto">
+        <div className="w-full md:w-60 shrink-0 bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-visible md:overflow-y-auto">
           <div className="p-2">
             {sortedSectionKeys.map((s) => {
               const sectionEdited = (sections[s] || []).filter((item) => edited[item.id] !== undefined).length;
@@ -810,7 +810,7 @@ const AdminLandingEditor = () => {
           </div>
 
           {/* Fields */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          <div className="flex-1 overflow-visible md:overflow-y-auto px-5 py-4 space-y-3">
             {activeSectionItems.map((item, idx) => {
               const current = edited[item.id] !== undefined ? edited[item.id] : item.value;
               const isModified = edited[item.id] !== undefined;
