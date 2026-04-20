@@ -34,6 +34,10 @@ const FloatingInbox = () => {
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const openRef = useRef(open);
+  const soundRef = useRef(soundEnabled);
+  useEffect(() => { openRef.current = open; }, [open]);
+  useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
 
   const storeId = staffInfo?.store_id;
   const myId = user?.id;
@@ -87,7 +91,7 @@ const FloatingInbox = () => {
   useEffect(() => {
     if (!storeId || !myId || !ownerId) return;
     const channel = supabase
-      .channel(`floating-inbox-${storeId}`)
+      .channel(`floating-inbox-${storeId}-${myId}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "staff_messages",
         filter: `store_id=eq.${storeId}`,
@@ -97,14 +101,14 @@ const FloatingInbox = () => {
           (msg.sender_id === ownerId && msg.receiver_id === myId) ||
           (msg.sender_id === myId && msg.receiver_id === ownerId);
         if (!isRelevant) return;
-        if (open) {
+        if (openRef.current) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           scrollToBottom();
           if (msg.receiver_id === myId) {
             supabase.from("staff_messages").update({ is_read: true }).eq("id", msg.id).then();
           }
         }
-        if (msg.receiver_id === myId && msg.sender_id !== myId && soundEnabled) {
+        if (msg.receiver_id === myId && msg.sender_id !== myId && soundRef.current) {
           playNotificationSound();
         }
         fetchUnreadCount();
@@ -118,7 +122,7 @@ const FloatingInbox = () => {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, myId, ownerId, open, soundEnabled, fetchUnreadCount]);
+  }, [storeId, myId, ownerId, fetchUnreadCount]);
 
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
