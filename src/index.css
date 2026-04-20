@@ -360,6 +360,86 @@
   .mobile-section-title {
     @apply text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3;
   }
+
+  /* ───────────────────────────────────────────────
+     APP-LIKE MOBILE POLISH (≤767px) — desktop untouched
+     Goal: native-app feel — compact padding, touch targets,
+     single-column forms, full-width primary buttons, smoother scroll.
+     ─────────────────────────────────────────────── */
+  @media (max-width: 767px) {
+    /* Smooth momentum scroll on the whole app */
+    html, body {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+
+    /* Tighten oversized desktop padding inside cards */
+    [data-slot="card"],
+    .premium-card {
+      border-radius: 1rem;
+    }
+    [data-slot="card-header"] {
+      padding: 0.875rem 1rem !important;
+    }
+    [data-slot="card-content"] {
+      padding: 0.875rem 1rem !important;
+    }
+    [data-slot="card-footer"] {
+      padding: 0.75rem 1rem !important;
+    }
+
+    /* Touch-friendly minimum hit area for interactive controls */
+    button,
+    [role="button"],
+    a.button,
+    [data-slot="button"] {
+      min-height: 40px;
+    }
+
+    /* Inside dialogs/sheets/forms: stack inputs single-column,
+       and make primary action buttons full-width for thumb reach. */
+    [data-slot="dialog-content"] .grid:not(.grid-cols-1),
+    [data-slot="sheet-content"] .grid:not(.grid-cols-1),
+    form .grid:not(.grid-cols-1) {
+      grid-template-columns: 1fr !important;
+      gap: 0.75rem !important;
+    }
+    [data-slot="dialog-footer"],
+    [data-slot="sheet-footer"] {
+      flex-direction: column-reverse !important;
+      gap: 0.5rem !important;
+    }
+    [data-slot="dialog-footer"] > [data-slot="button"],
+    [data-slot="sheet-footer"] > [data-slot="button"] {
+      width: 100% !important;
+    }
+
+    /* Tap feedback for buttons (subtle native bounce) */
+    [data-slot="button"]:active {
+      transform: scale(0.97);
+      transition: transform 0.08s ease-out;
+    }
+
+    /* Tighter default content gap on mobile */
+    main .space-y-6 > * + * { margin-top: 1rem; }
+    main .space-y-8 > * + * { margin-top: 1.25rem; }
+    main .gap-6 { gap: 0.75rem; }
+    main .gap-8 { gap: 1rem; }
+
+    /* Sticky page header — opt-in via .mobile-sticky-header */
+    .mobile-sticky-header {
+      position: sticky;
+      top: var(--header-height, 3rem);
+      z-index: 20;
+      background: hsl(var(--background) / 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      margin-left: -0.75rem;
+      margin-right: -0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid hsl(var(--border) / 0.4);
+    }
+  }
 }
 
 @layer utilities {
