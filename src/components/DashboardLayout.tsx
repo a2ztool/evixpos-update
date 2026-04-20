@@ -80,6 +80,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
+  const { symbol: currencySymbol, activeCurrency } = useCurrency();
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
   const initials = isStaff && staffInfo
@@ -191,8 +192,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   <TooltipContent side="bottom"><p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p></TooltipContent>
                 </Tooltip>
 
-                {/* Currency badge */}
-                <CurrencyBadge />
+                {/* Currency badge — single source of truth */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="hidden sm:flex items-center gap-1 h-8 px-2.5 rounded-md border border-border/60 bg-muted/40 text-xs font-semibold text-foreground/80">
+                      <span className="text-primary">{currencySymbol}</span>
+                      <span className="text-muted-foreground">{activeCurrency}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p className="text-xs">Display currency · Change in Settings</p></TooltipContent>
+                </Tooltip>
 
                 {/* Notifications */}
                 <NotificationBell />
