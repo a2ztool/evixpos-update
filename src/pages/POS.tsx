@@ -1189,8 +1189,8 @@ const POS = () => {
 
       {/* Variation Modal */}
       <Dialog open={variationModalOpen} onOpenChange={setVariationModalOpen}>
-        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden">
-          <div className="px-6 pt-6 pb-4 border-b border-border/50">
+        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="px-6 pt-6 pb-4 border-b border-border/50 flex-shrink-0">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle></DialogHeader>
             {variationProduct && (
               <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-muted/50">
@@ -1199,7 +1199,7 @@ const POS = () => {
               </div>
             )}
           </div>
-          <div className="px-6 py-4 space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="px-6 py-4 space-y-2 overflow-y-auto flex-1 min-h-0">
             {variationProduct && getVariations(variationProduct.id).map(v => (
               <button key={v.id} onClick={() => setSelectedVariation(v)} className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${selectedVariation?.id === v.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50"}`}>
                 <div>
