@@ -151,44 +151,22 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ─── Mobile: single body-scroll model (≤767px) ───
-     Body is the only scroll container. Html/#root grow naturally.
-     Desktop layout untouched. */
+  /* ─── Mobile: dual-scroll model (sidebar + main scroll independently) ───
+     The shell uses h-screen/overflow-hidden. Body must NOT scroll. */
   @media (max-width: 767px) {
     html,
     body,
     #root {
-      height: auto;
-      min-height: 100dvh;
-      overflow-x: hidden;
-    }
-    body {
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: none;
+      height: 100%;
+      overflow: hidden;
     }
 
-    /* Neutralize Tailwind viewport-locked utilities so nested shells
-       don't trap the scroll. !important needed — Tailwind utilities are. */
-    .h-screen,
-    .min-h-screen,
-    .h-svh,
-    .min-h-svh {
-      height: auto !important;
-      min-height: 100dvh !important;
-      max-height: none !important;
-    }
-
-    /* Sidebar shell + main must not create their own scroll container */
-
-    /* Recharts: don't hijack vertical swipe on mobile.
-       Allow page to scroll when finger is over a chart. */
+    /* Recharts: don't hijack vertical swipe on mobile */
     .recharts-wrapper,
     .recharts-surface,
     .recharts-responsive-container {
       touch-action: pan-y !important;
     }
-    /* Disable chart tooltips/hover layer pointer capture on mobile */
     .recharts-tooltip-wrapper,
     .recharts-active-dot {
       pointer-events: none !important;
@@ -204,27 +182,13 @@
       height: auto;
     }
 
-    p,
-    span,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    td,
-    th,
-    li,
-    a,
-    label,
-    dt,
-    dd {
+    p, span, h1, h2, h3, h4, h5, h6,
+    td, th, li, a, label, dt, dd {
       overflow-wrap: anywhere;
       word-break: break-word;
     }
 
-    pre,
-    code {
+    pre, code {
       white-space: pre-wrap;
       word-break: break-word;
     }
