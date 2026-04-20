@@ -499,18 +499,6 @@ const NavItem = ({
         {label}
       </span>
 
-      {/* Active indicator dot */}
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            exit={{ scaleX: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5),0_0_3px_hsl(var(--primary)/0.3)]"
-          />
-        )}
-      </AnimatePresence>
     </motion.button>
   );
 };
