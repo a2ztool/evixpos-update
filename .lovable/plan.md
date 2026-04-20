@@ -1,47 +1,90 @@
 
-The user wants two scroll UX improvements applied globally:
 
-**Mobile (≤767px):** already mostly done in `src/index.css` (scrollbar-width: none + ::-webkit-scrollbar display:none on body). Need to extend to all scroll containers and html.
+## Diagnosis
 
-**Desktop (≥768px):**
-1. Hide native vertical scrollbar (html/body) — keep scroll functional
-2. Add a fixed top progress bar (2px) that fills based on `window.scrollY / (scrollHeight - clientHeight)` using `--primary` (brand teal)
-3. Must work on every page including admin/staff routes
+Looking at the actual code:
 
-Best approach: a small global React component `ScrollProgress` mounted once in `App.tsx` (so it covers user, admin, staff dashboards — all share the same root). It listens to `scroll` on window with rAF throttling and sets a width on a fixed `div`. Hidden on mobile via Tailwind `hidden md:block`.
+**`src/index.css` problems:**
+1. Heavy `!important` overrides on `html`, `body`, `#root`, `.h-screen`, `.min-h-svh`, sidebar wrappers — fragile and hard to reason about.
+2. Two stacked `@media (max-width: 767px)` and `@media (max-width: 736px)` blocks with overlapping rules.
+3. `overscroll-behavior-y: contain` on `body` (not the real blocker but noisy).
+4. Duplicate scrollbar-hiding rules.
 
-CSS changes in `src/index.css`:
-- Add `scroll-behavior: smooth` to html (already present)
-- Hide scrollbar globally (mobile + desktop) via `scrollbar-width: none` and `::-webkit-scrollbar { display:none }` on `html, body`
-- Keep existing mobile overflow logic intact
+**`src/components/DashboardLayout.tsx`:**
+- Root: `<div className="flex min-h-[100dvh] w-full bg-background">` — fine, uses `min-h` (grows), not `h-screen` (locks).
+- `<main className="flex-1 ... pb-24 sm:pb-4">` — already has `pb-24` for the bottom nav (~96px). Good.
+- `MobileNav` is `fixed bottom-0 ... z-50` rendered as a sibling to the sidebar wrapper (outside the flex column). Correct — it stays pinned to viewport.
+
+**Why scrolling broke previously:** The `!important` overrides forced `overflow: visible` on `html` AND `body` simultaneously, and at one point both were given `overflow-y: scroll`, creating a double-scroll-context conflict on iOS Safari. The fix is to designate **body** as the single scroll container and let everything else be `auto`/inherit naturally — no `!important` needed.
 
 ## Plan
 
-### 1. Create `src/components/ScrollProgress.tsx`
-- Fixed `div` at top: `fixed top-0 left-0 h-[2px] bg-primary z-[100] transition-[width] duration-75 ease-out hidden md:block`
-- `useEffect` adds scroll listener on window, computes `scrollTop / (scrollHeight - clientHeight) * 100`, updates width via ref + rAF throttle
-- Listens on both `window` scroll and the actual scroll container (sidebar wrapper on desktop) — will detect by checking which one scrolls
+### 1. Rewrite mobile section in `src/index.css` (clean, minimal, no `!important` except where neutralizing third-party utility classes)
 
-### 2. Mount globally in `src/App.tsx`
-- Add `<ScrollProgress />` once inside the app root so it appears on all routes (landing, dashboard, admin, staff).
+Replace the two overlapping mobile blocks with a single, well-commented block:
 
-### 3. Update `src/index.css`
-- Hide native scrollbars on `html, body` (both mobile + desktop):
-  ```css
-  html, body { scrollbar-width: none; }
-  html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  ```
-- Ensure `html { scroll-behavior: smooth; }` (already present)
-- Keep existing mobile rules unchanged (they already work per last screenshot)
+```css
+/* Mobile: single body-scroll model (≤767px) */
+@media (max-width: 767px) {
+  html, body, #root {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none; /* remove `contain` — was creating scroll boundary */
+  }
 
-### 4. Edge cases
-- On desktop, the dashboard layout uses sidebar wrapper which may scroll internally. The ScrollProgress hook will check `document.documentElement.scrollHeight > clientHeight`; if not, fall back to listening on `main` or `[data-sidebar="content"]`. Implementation: listen on `window` AND on the closest scrolling ancestor detected at mount.
-- z-index `100` keeps it above sticky headers but below modals (which use z-50+ overlays — acceptable, progress bar at very top edge).
-- No layout shift: bar is `position: fixed`, doesn't take flow space.
+  /* Neutralize Tailwind viewport-locked utilities so nested shells don't
+     trap the scroll. Only !important here because Tailwind utilities are. */
+  .h-screen, .min-h-screen, .h-svh, .min-h-svh {
+    height: auto !important;
+    min-height: 100dvh !important;
+  }
 
-### Files to change
-- `src/components/ScrollProgress.tsx` (new)
-- `src/App.tsx` (mount component)
-- `src/index.css` (hide native scrollbars desktop, keep smooth scroll)
+  /* Sidebar shell + main must not create their own scroll container */
+  .group\/sidebar-wrapper,
+  [data-sidebar="content"],
+  main.flex-1 {
+    overflow: visible;
+    max-height: none;
+  }
 
-Result: mobile = clean app feel, desktop = thin teal progress bar at top instead of side scrollbar, works on every page.
+  /* Hide native scrollbar (already global, repeated for safety) */
+  body::-webkit-scrollbar { display: none; }
+  body { scrollbar-width: none; }
+}
+```
+
+Remove the duplicated `@media (max-width: 736px)` block entirely.
+
+### 2. `src/components/DashboardLayout.tsx` — verify spacing only
+
+The layout is already correct:
+- Root flex container uses `min-h-[100dvh]` (grows, doesn't lock).
+- `<main>` has `pb-24 sm:pb-4` to clear the ~88px bottom nav.
+- `MobileNav` is `fixed bottom-0` with safe-area padding.
+
+No code change needed. Will verify the `pb-24` is sufficient (96px ≥ nav height 72px + safe-area).
+
+### 3. Keep desktop untouched
+
+Desktop scroll progress bar (`ScrollProgress.tsx`) stays. Desktop uses normal document scroll with `body` as container — already working.
+
+## What was wrong & why
+
+| Problem | Cause | Fix |
+|--------|-------|-----|
+| Mobile scroll froze | `overflow: visible !important` on `body` + `overflow-y: scroll !important` on `html` created competing scroll contexts on iOS | Single rule: `body { overflow-y: auto }`, `html { overflow-x: hidden }` |
+| Bottom nav drifted up | When earlier fixes set `position: fixed !important` globally or removed `min-h-[100dvh]` from root, the nav's containing block became something other than the viewport | Leave nav untouched (`fixed bottom-0` + safe-area), keep root as `min-h-[100dvh]` flex |
+| Content under nav | `<main>` needs bottom padding ≥ nav height + safe-area | Already present: `pb-24` on mobile |
+| Overscroll bounce trap | `overscroll-behavior-y: contain` on body | Change to `none` |
+
+## Files
+
+- `src/index.css` — replace the two mobile media blocks with one clean block
+- `src/App.tsx` — no change
+- `src/components/DashboardLayout.tsx` — no change
+
