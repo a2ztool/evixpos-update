@@ -113,7 +113,7 @@ const AdminInbox = () => {
   const showChat = activeSession !== null;
 
   return (
-    <div className="h-[calc(100vh-5rem)] md:h-[calc(100vh-5rem)]">
+    <div className="min-h-0 md:h-[calc(100dvh-5rem)]">
       <div className="flex items-center gap-3 mb-3 md:mb-4">
         {/* Mobile back button */}
         {showChat && (
@@ -126,7 +126,7 @@ const AdminInbox = () => {
         {unreadCount > 0 && <Badge className="bg-emerald-600 text-white text-xs">{unreadCount}</Badge>}
       </div>
 
-      <div className="flex h-[calc(100%-2.5rem)] rounded-xl border border-slate-700 overflow-hidden bg-slate-800/50">
+      <div className="flex flex-col md:flex-row rounded-xl border border-slate-700 overflow-visible md:overflow-hidden bg-slate-800/50 md:h-[calc(100%-2.5rem)]">
         {/* Sessions list - hidden on mobile when chat is open */}
         <div className={cn(
           "w-full md:w-80 border-r border-slate-700 flex flex-col",
@@ -139,7 +139,7 @@ const AdminInbox = () => {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="md:flex-1">
             {loading ? (
               <div className="p-4 text-center text-slate-500 text-sm">Loading...</div>
             ) : filtered.length === 0 ? (
@@ -243,7 +243,7 @@ const AdminInbox = () => {
               </div>
 
               {/* Messages */}
-              <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 md:px-4 py-4 space-y-3">
+              <div ref={scrollRef} className="px-3 md:px-4 py-4 space-y-3 overflow-visible md:flex-1 md:overflow-y-auto">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex gap-2 ${msg.sender_type === "admin" ? "justify-end" : ""}`}>
                     {msg.sender_type === "visitor" && (

@@ -154,6 +154,11 @@
       max-height: none !important;
     }
 
+    #root {
+      height: auto;
+      overflow: visible;
+    }
+
     /* Kill fixed viewport heights inside the sidebar shell on mobile so the
        document (body) becomes the single scroll container. */
     .group\/sidebar-wrapper,
@@ -162,6 +167,7 @@
     [class*="sidebar-wrapper"] > div,
     main {
       height: auto !important;
+      min-height: 0 !important;
       max-height: none !important;
       overflow: visible !important;
     }
@@ -169,6 +175,12 @@
     /* Sidebar's own min-h-svh / h-svh would otherwise lock the flex shell
        to viewport height and trap scroll. */
     .min-h-svh { min-height: 100dvh !important; }
+    .h-svh { height: auto !important; }
+    .h-screen,
+    .min-h-screen {
+      height: auto !important;
+      min-height: 100dvh !important;
+    }
     main.flex-1 { overflow: visible !important; }
 
     /* Hide scrollbar UI for a native-app feel (page is still scrollable). */
