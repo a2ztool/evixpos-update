@@ -236,6 +236,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </PlansConfigProvider>
+    </CurrencyProvider>
     </StaffProvider>
     </StoreProvider>
     </LanguageProvider>
