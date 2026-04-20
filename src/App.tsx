@@ -155,6 +155,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <OfflineBanner />
+        <ScrollProgress />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
