@@ -124,6 +124,14 @@ const StaffInbox = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeChatRef = useRef<string | null>(activeChat);
+  const activeChatTypeRef = useRef(activeChatType);
+  const soundEnabledRef = useRef(soundEnabled);
+  const staffListRef = useRef(staffList);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+  useEffect(() => { activeChatTypeRef.current = activeChatType; }, [activeChatType]);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+  useEffect(() => { staffListRef.current = staffList; }, [staffList]);
 
   const storeId = isStaff ? staffInfo?.store_id : activeStore?.id;
   const myId = user?.id;
