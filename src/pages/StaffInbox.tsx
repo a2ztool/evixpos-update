@@ -992,7 +992,7 @@ const StaffInbox = () => {
                 </div>
 
                 {/* Messages */}
-                <div ref={scrollRef} className="px-4 py-4 space-y-3 bg-muted/30 overflow-visible md:flex-1 md:overflow-y-auto">
+                <div ref={scrollRef} className="flex-1 min-h-0 px-4 py-4 space-y-3 bg-muted/30 overflow-y-auto">
                   {visibleMessages.length === 0 && (
                     <div className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</div>
                   )}
