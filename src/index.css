@@ -151,14 +151,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ─── Mobile: dual-scroll model (sidebar + main scroll independently) ───
-     The shell uses h-screen/overflow-hidden. Body must NOT scroll. */
+  /* ─── Mobile: dashboard shell manages its own scroll. Landing/auth pages scroll naturally. ─── */
   @media (max-width: 767px) {
     html,
     body,
     #root {
-      height: 100%;
-      overflow: hidden;
+      min-height: 100%;
     }
 
     /* Recharts: don't hijack vertical swipe on mobile */
@@ -603,9 +601,9 @@
     transform: translateY(-8px);
   }
 }
+/* Dashboard shell controls its own scroll; landing/auth pages scroll naturally */
 html,
 body,
 #root {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }

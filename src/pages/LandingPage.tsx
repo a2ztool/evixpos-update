@@ -365,7 +365,7 @@ const LandingPage = () => {
             <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-2 sm:gap-3 relative">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
-              <Button size="sm" variant="secondary" className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
+              <Button size="sm" variant="secondary" className="h-5 sm:h-7 text-[9px] sm:text-xs px-1.5 sm:px-3 rounded-md shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
             </div>
           </div>
         )}
@@ -476,25 +476,25 @@ const LandingPage = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Social proof badge */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm">
-              <div className="flex -space-x-2">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6 sm:mb-8">
+            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
+              <div className="flex -space-x-1.5 sm:-space-x-2 shrink-0">
                 {[1,2,3].map(i => {
                   const img = get(`social_proof_avatar_${i}`);
                   return img ? (
-                    <img key={i} src={img} className="w-7 h-7 rounded-full border-2 border-card object-cover" alt="" />
+                    <img key={i} src={img} className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 border-card object-cover" alt="" />
                   ) : (
-                    <div key={i} className="w-7 h-7 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
-                      <Users className="h-3 w-3 text-primary-foreground" />
+                    <div key={i} className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
+                      <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary-foreground" />
                     </div>
                   );
                 })}
               </div>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-[11px] sm:text-sm font-medium text-muted-foreground line-clamp-1">
                 {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
               </span>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="h-7 px-3 text-xs font-semibold text-primary hover:text-primary">
-                Join Now <ArrowRight className="h-3 w-3 ml-1" />
+              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="h-5 sm:h-7 px-1.5 sm:px-3 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0">
+                Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
               </Button>
             </div>
           </motion.div>
