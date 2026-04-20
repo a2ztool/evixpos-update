@@ -118,6 +118,20 @@
     @apply border-border;
   }
 
+  /* ─── Hide native scrollbars globally (mobile + desktop).
+     Desktop uses the top progress bar instead; mobile is app-style. ─── */
+  html, body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
