@@ -124,6 +124,14 @@ const StaffInbox = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeChatRef = useRef<string | null>(activeChat);
+  const activeChatTypeRef = useRef(activeChatType);
+  const soundEnabledRef = useRef(soundEnabled);
+  const staffListRef = useRef(staffList);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+  useEffect(() => { activeChatTypeRef.current = activeChatType; }, [activeChatType]);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+  useEffect(() => { staffListRef.current = staffList; }, [staffList]);
 
   const storeId = isStaff ? staffInfo?.store_id : activeStore?.id;
   const myId = user?.id;
@@ -230,15 +238,17 @@ const StaffInbox = () => {
   useEffect(() => {
     if (!storeId || !myId) return;
     const channel = supabase
-      .channel(`staff-inbox-${storeId}`)
+      .channel(`staff-inbox-${storeId}-${myId}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "staff_messages",
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const msg = payload.new as ChatMessage;
-        if (activeChatType === "direct" && (
-          (msg.sender_id === activeChat && msg.receiver_id === myId) ||
-          (msg.sender_id === myId && msg.receiver_id === activeChat)
+        const ac = activeChatRef.current;
+        const act = activeChatTypeRef.current;
+        if (act === "direct" && (
+          (msg.sender_id === ac && msg.receiver_id === myId) ||
+          (msg.sender_id === myId && msg.receiver_id === ac)
         )) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           scrollToBottom();
@@ -247,9 +257,8 @@ const StaffInbox = () => {
           }
         }
         if (msg.receiver_id === myId && msg.sender_id !== myId) {
-          if (soundEnabled) playNotificationSound();
-          // Desktop push notification
-          const senderStaff = staffList.find(s => s.auth_user_id === msg.sender_id);
+          if (soundEnabledRef.current) playNotificationSound();
+          const senderStaff = staffListRef.current.find(s => s.auth_user_id === msg.sender_id);
           const senderName = senderStaff?.name || "Someone";
           sendDesktopNotification(`💬 ${senderName}`, msg.message?.slice(0, 100) || "New message");
         }
@@ -264,7 +273,7 @@ const StaffInbox = () => {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, myId, activeChat, activeChatType, soundEnabled, fetchUnreadCounts, staffList]);
+  }, [storeId, myId, fetchUnreadCounts]);
 
   // ─── Realtime group messages ───
   useEffect(() => {
