@@ -1217,7 +1217,7 @@ const POS = () => {
               </button>
             ))}
           </div>
-          <div className="border-t border-border/50 px-6 py-4 flex gap-2">
+          <div className="border-t border-border/50 px-6 py-4 flex gap-2 flex-shrink-0">
             <Button variant="outline" className="flex-1" onClick={() => setVariationModalOpen(false)}>Cancel</Button>
             <Button className="flex-1 gap-1" onClick={handleVariationConfirm} disabled={!selectedVariation}><Plus className="h-4 w-4" /> Add to Cart</Button>
           </div>
