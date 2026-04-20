@@ -593,22 +593,24 @@ const LandingPage = () => {
       </section>
 
       {/* ═══════════════════ TRUST STATS ═══════════════════ */}
-      {show("trust") && <section className="py-8 sm:py-10 border-y border-border/40 bg-muted/20 relative">
+      {show("trust") && <section className="py-6 sm:py-10 border-y border-border/40 bg-muted/20 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.04),transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-12 max-w-sm sm:max-w-none mx-auto">
             {[
               { val: get("stats_users", "3,000+"), label: get("stats_users_label", "Active Businesses"), icon: Users },
               { val: get("stats_stores", "1,983+"), label: get("stats_stores_label", "Online & Offline Stores"), icon: Store },
               { val: get("stats_orders", "50K+"), label: get("stats_orders_label", "Orders Processed"), icon: Package },
               { val: get("stats_uptime", "99.9%"), label: get("stats_uptime_label", "Uptime"), icon: Shield },
             ].map((s, idx) => (
-              <AnimItem key={s.label} delay={idx * 0.1} className="text-center group">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                  <s.icon className="h-5 w-5 text-primary" />
+              <AnimItem key={s.label} delay={idx * 0.1} className="flex sm:block items-center gap-3 sm:text-center group py-2 sm:py-0 px-3 sm:px-0 rounded-xl sm:rounded-none bg-card/40 sm:bg-transparent border sm:border-0 border-border/30">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center sm:mx-auto sm:mb-4 shrink-0 group-hover:bg-primary/20 sm:group-hover:scale-110 transition-all duration-300">
+                  <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
-                <div className="text-3xl sm:text-4xl font-black text-foreground mb-1">{s.val}</div>
-                <div className="text-sm text-muted-foreground font-medium">{s.label}</div>
+                <div className="flex-1 sm:flex-none flex items-baseline gap-2 sm:block">
+                  <div className="text-lg sm:text-3xl lg:text-4xl font-black text-foreground sm:mb-1">{s.val}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground font-medium">{s.label}</div>
+                </div>
               </AnimItem>
             ))}
           </div>
