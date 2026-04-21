@@ -414,7 +414,7 @@ const LandingPage = () => {
               </Button>
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-                className="md:hidden w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent/60 active:scale-95 transition-all duration-200"
+                className="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent/60 active:scale-95 transition-all duration-200"
               >
                 <div className="flex flex-col gap-1">
                   <span className={`w-4 h-0.5 bg-foreground rounded-full transition-all duration-300 ${mobileMenuOpen ? "rotate-45 translate-y-1.5" : ""}`} />
@@ -430,7 +430,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: -10, scale: 0.98 }} 
                 animate={{ opacity: 1, y: 0, scale: 1 }} 
                 exit={{ opacity: 0, y: -10 }} 
-                className="md:hidden max-w-5xl mx-auto mt-2.5 rounded-2xl border border-border/30 bg-background/90 backdrop-blur-2xl shadow-xl overflow-hidden"
+                className="lg:hidden max-w-5xl mx-auto mt-2.5 rounded-2xl border border-border/30 bg-background/90 backdrop-blur-2xl shadow-xl overflow-hidden"
               >
                 <div className="px-3 py-3 space-y-0.5">
                   {DEFAULT_NAV_LINKS.map((link, i) => (
