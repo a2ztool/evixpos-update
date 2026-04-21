@@ -3,18 +3,44 @@
 // — Web Audio API based, type-aware, debounced
 // — Audio unlock on first user gesture (mobile / autoplay policies)
 // — Resumes context on visibility change for background tab playback
+// — Honors masterEnabled / soundEnabled / quiet hours / event toggles
+// — DB sync helpers for cross-device preferences
 // ══════════════════════════════════════════════════════════════════
 import { SOUND_CATEGORY } from "@/lib/notificationTriggers";
+import { supabase } from "@/integrations/supabase/client";
 
-type Prefs = {
+export type EventPref = { enabled: boolean; sound: boolean; priority?: boolean };
+
+export type NotificationPrefs = {
   masterEnabled?: boolean;
   soundEnabled?: boolean;
   desktopNotifications?: boolean;
   volume?: number[];
-  eventPrefs?: Record<string, boolean>;
+  soundType?: string;
+  eventPrefs?: Record<string, EventPref>;
+  quietHours?: { enabled: boolean; start: string; end: string }; // "HH:mm"
 };
 
-export const getNotificationPrefs = (): Prefs => {
+// ──────────────────────────────────────────────────────────────────
+// Notification type → event-pref key mapping (used at runtime to gate)
+// ──────────────────────────────────────────────────────────────────
+const TYPE_TO_EVENT_KEY: Record<string, string> = {
+  order: "new_order",
+  order_pending: "new_order",
+  pos_sale: "new_order",
+  order_completed: "order_completed",
+  customer: "new_customer",
+  customer_due: "new_customer",
+  payment: "payment_received",
+  refund: "payment_received",
+  low_stock: "low_stock",
+  subscription: "subscription_expiring",
+  subscription_expired: "subscription_expiring",
+  integration: "woocommerce_order",
+  message: "new_message",
+};
+
+export const getNotificationPrefs = (): NotificationPrefs => {
   try {
     const saved = localStorage.getItem("notification_prefs");
     if (saved) return JSON.parse(saved);
@@ -22,12 +48,11 @@ export const getNotificationPrefs = (): Prefs => {
   return { masterEnabled: true, soundEnabled: true, volume: [70] };
 };
 
-export const setNotificationPrefs = (patch: Partial<Prefs>) => {
+export const setNotificationPrefs = (patch: Partial<NotificationPrefs>) => {
   try {
     const prev = getNotificationPrefs();
     const next = { ...prev, ...patch };
     localStorage.setItem("notification_prefs", JSON.stringify(next));
-    // Notify listeners (other tabs already get 'storage'; same-tab needs custom event)
     window.dispatchEvent(new CustomEvent("notification-prefs-changed", { detail: next }));
     return next;
   } catch {
@@ -36,7 +61,97 @@ export const setNotificationPrefs = (patch: Partial<Prefs>) => {
 };
 
 // ──────────────────────────────────────────────────────────────────
-// Shared AudioContext (one per page) + unlock
+// DB sync — preferences live in business_settings.notification_prefs
+// ──────────────────────────────────────────────────────────────────
+const resolveOwnerId = async (authUserId: string): Promise<string> => {
+  try {
+    const { data: staff } = await supabase
+      .from("staff_members")
+      .select("user_id")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+    return staff?.user_id || authUserId;
+  } catch {
+    return authUserId;
+  }
+};
+
+export const loadPrefsFromDB = async (): Promise<NotificationPrefs | null> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+    const ownerId = await resolveOwnerId(session.user.id);
+    const { data } = await (supabase as any)
+      .from("business_settings")
+      .select("notification_prefs")
+      .eq("user_id", ownerId)
+      .maybeSingle();
+    const prefs = data?.notification_prefs as NotificationPrefs | undefined;
+    if (prefs && Object.keys(prefs).length > 0) {
+      // Merge with localStorage so we keep any local-only fields
+      const merged = { ...getNotificationPrefs(), ...prefs };
+      localStorage.setItem("notification_prefs", JSON.stringify(merged));
+      window.dispatchEvent(new CustomEvent("notification-prefs-changed", { detail: merged }));
+      return merged;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+export const savePrefsToDB = async (prefs: NotificationPrefs): Promise<boolean> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return false;
+    const ownerId = await resolveOwnerId(session.user.id);
+    const { error } = await (supabase as any)
+      .from("business_settings")
+      .update({ notification_prefs: prefs })
+      .eq("user_id", ownerId);
+    return !error;
+  } catch {
+    return false;
+  }
+};
+
+// ──────────────────────────────────────────────────────────────────
+// Quiet hours / event-toggle gating
+// ──────────────────────────────────────────────────────────────────
+const isInQuietHours = (qh?: { enabled: boolean; start: string; end: string }): boolean => {
+  if (!qh?.enabled || !qh.start || !qh.end) return false;
+  const [sh, sm] = qh.start.split(":").map(Number);
+  const [eh, em] = qh.end.split(":").map(Number);
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return false;
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const start = sh * 60 + sm;
+  const end = eh * 60 + em;
+  // Handles overnight ranges (e.g. 22:00 → 07:00)
+  return start < end ? cur >= start && cur < end : cur >= start || cur < end;
+};
+
+export const isEventEnabled = (type: string): boolean => {
+  const prefs = getNotificationPrefs();
+  if (prefs.masterEnabled === false) return false;
+  const eventKey = TYPE_TO_EVENT_KEY[type];
+  if (!eventKey) return true; // unknown types default to enabled
+  const ep = prefs.eventPrefs?.[eventKey];
+  return ep?.enabled !== false;
+};
+
+export const isEventSoundEnabled = (type: string): boolean => {
+  const prefs = getNotificationPrefs();
+  if (prefs.masterEnabled === false || prefs.soundEnabled === false) return false;
+  if (isInQuietHours(prefs.quietHours)) return false;
+  const eventKey = TYPE_TO_EVENT_KEY[type];
+  if (!eventKey) return true;
+  const ep = prefs.eventPrefs?.[eventKey];
+  return ep?.sound !== false;
+};
+
+// ──────────────────────────────────────────────────────────────────
+// Shared AudioContext + unlock
 // ──────────────────────────────────────────────────────────────────
 let sharedCtx: AudioContext | null = null;
 let unlocked = false;
@@ -62,7 +177,6 @@ const unlockAudio = () => {
   const ctx = getCtx();
   if (!ctx) return;
   try {
-    // Tiny silent buffer to satisfy autoplay policies
     const buffer = ctx.createBuffer(1, 1, 22050);
     const src = ctx.createBufferSource();
     src.buffer = buffer;
@@ -72,7 +186,6 @@ const unlockAudio = () => {
   } catch {}
 };
 
-// Install once
 if (typeof window !== "undefined") {
   const onGesture = () => {
     unlockAudio();
@@ -87,13 +200,10 @@ if (typeof window !== "undefined") {
   window.addEventListener("touchstart", onGesture, { once: false });
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) getCtx(); // resume if suspended
+    if (!document.hidden) getCtx();
   });
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Tone scheduler — uses ONE shared context (no leaks)
-// ──────────────────────────────────────────────────────────────────
 const scheduleTone = (
   ctx: AudioContext,
   freq: number,
@@ -120,10 +230,10 @@ const scheduleTone = (
 export const playNotificationSound = (type: string = "info") => {
   const prefs = getNotificationPrefs();
   if (prefs.masterEnabled === false || prefs.soundEnabled === false) return;
+  if (isInQuietHours(prefs.quietHours)) return;
 
   const volume = ((prefs.volume?.[0] ?? 70) / 100) * 0.4;
   const category = SOUND_CATEGORY[type] || (type === "message" ? "info" : "info");
-
   const ctx = getCtx();
   if (!ctx) return;
 
@@ -150,7 +260,6 @@ export const playNotificationSound = (type: string = "info") => {
       scheduleTone(ctx, 300, 0, 0.4, volume * 0.7, "square");
       break;
     default:
-      // Distinct gentle two-tone for messages, single chime for info
       if (type === "message") {
         scheduleTone(ctx, 660, 0, 0.12, volume);
         scheduleTone(ctx, 990, 0.1, 0.18, volume * 0.85);
@@ -161,12 +270,9 @@ export const playNotificationSound = (type: string = "info") => {
   }
 };
 
-// ──────────────────────────────────────────────────────────────────
-// Debounce — prevent spam when many events fire rapidly
-// ──────────────────────────────────────────────────────────────────
+// Debounce
 let lastSoundTime = 0;
 const SOUND_DEBOUNCE_MS = 1500;
-
 export const debouncedPlaySound = (type: string) => {
   const now = Date.now();
   if (now - lastSoundTime < SOUND_DEBOUNCE_MS) return;
@@ -174,13 +280,12 @@ export const debouncedPlaySound = (type: string) => {
   playNotificationSound(type);
 };
 
-// ──────────────────────────────────────────────────────────────────
-// Desktop notification helper
-// ──────────────────────────────────────────────────────────────────
+// Desktop notification
 export const showDesktopNotification = (title: string, body: string, type: string) => {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   const prefs = getNotificationPrefs();
   if (prefs.masterEnabled === false || prefs.desktopNotifications === false) return;
+  if (isInQuietHours(prefs.quietHours)) return;
   try {
     new window.Notification(title, {
       body,
@@ -190,3 +295,12 @@ export const showDesktopNotification = (title: string, body: string, type: strin
     });
   } catch {}
 };
+
+// Auto-load DB prefs on auth change (cross-device sync)
+if (typeof window !== "undefined") {
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+      loadPrefsFromDB();
+    }
+  });
+}

@@ -2,6 +2,14 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { TYPE_EMOJI, TYPE_LABEL, SOUND_CATEGORY } from "@/lib/notificationTriggers";
+import {
+  loadPrefsFromDB,
+  savePrefsToDB,
+  setNotificationPrefs,
+  getNotificationPrefs,
+  type NotificationPrefs,
+} from "@/lib/notificationSound";
+import { useWebPush } from "@/hooks/useWebPush";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +29,7 @@ import {
   Bell, BellOff, BellRing, Volume2, VolumeX, Settings2, History,
   CheckCheck, Trash2, Search, Filter, AlertCircle, CheckCircle,
   AlertTriangle, Info, Star, StarOff, Zap, ShoppingCart, Users,
-  CreditCard, Package, RefreshCw, Clock,
+  CreditCard, Package, RefreshCw, Clock, Smartphone, MessageSquare, Moon, Loader2, X,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, isAfter } from "date-fns";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -37,6 +45,7 @@ const NOTIFICATION_EVENTS = [
   { key: "low_stock", label: "Low Stock Alert", icon: <Package className="h-4 w-4" />, description: "When a product stock falls below threshold" },
   { key: "subscription_expiring", label: "Subscription Expiring", icon: <Clock className="h-4 w-4" />, description: "When a customer subscription is about to expire" },
   { key: "woocommerce_order", label: "WooCommerce Order", icon: <Zap className="h-4 w-4" />, description: "When a new WooCommerce order syncs" },
+  { key: "new_message", label: "New Message", icon: <MessageSquare className="h-4 w-4" />, description: "When you receive a chat message" },
   { key: "campaign_sent", label: "Campaign Sent", icon: <Bell className="h-4 w-4" />, description: "When a marketing campaign email is sent" },
 ];
 
@@ -91,44 +100,100 @@ const typeConfig: Record<string, { icon: React.ReactNode; label: string; badgeCl
 // Tab 1: Notification Preferences
 // ═══════════════════════════════════════════
 const NotificationPreferencesTab = () => {
+  const { user } = useAuth();
   const [masterEnabled, setMasterEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [soundType, setSoundType] = useState("default");
   const [volume, setVolume] = useState([70]);
   const [desktopNotifications, setDesktopNotifications] = useState(false);
+  const [quietEnabled, setQuietEnabled] = useState(false);
+  const [quietStart, setQuietStart] = useState("22:00");
+  const [quietEnd, setQuietEnd] = useState("07:00");
   const [eventPrefs, setEventPrefs] = useState<Record<string, { enabled: boolean; sound: boolean; priority: boolean }>>(
     Object.fromEntries(NOTIFICATION_EVENTS.map((e) => [e.key, { enabled: true, sound: true, priority: false }]))
   );
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load prefs from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("notification_prefs");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.masterEnabled !== undefined) setMasterEnabled(parsed.masterEnabled);
-        if (parsed.soundEnabled !== undefined) setSoundEnabled(parsed.soundEnabled);
-        if (parsed.soundType) setSoundType(parsed.soundType);
-        if (parsed.volume) setVolume(parsed.volume);
-        if (parsed.desktopNotifications !== undefined) setDesktopNotifications(parsed.desktopNotifications);
-        if (parsed.eventPrefs) setEventPrefs(parsed.eventPrefs);
-      } catch {}
+  // Web Push state
+  const { status: pushStatus, subscribe: enablePush, unsubscribe: disablePush, isBlocked: pushBlocked } = useWebPush();
+  const [devices, setDevices] = useState<any[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+
+  const applyPrefs = useCallback((p: NotificationPrefs) => {
+    if (p.masterEnabled !== undefined) setMasterEnabled(p.masterEnabled);
+    if (p.soundEnabled !== undefined) setSoundEnabled(p.soundEnabled);
+    if (p.soundType) setSoundType(p.soundType);
+    if (p.volume) setVolume(p.volume);
+    if (p.desktopNotifications !== undefined) setDesktopNotifications(p.desktopNotifications);
+    if (p.eventPrefs) {
+      // Merge defaults so newly added events don't disappear
+      const merged: Record<string, { enabled: boolean; sound: boolean; priority: boolean }> = {};
+      NOTIFICATION_EVENTS.forEach((e) => {
+        const ex: any = (p.eventPrefs as any)[e.key];
+        merged[e.key] = {
+          enabled: ex?.enabled !== undefined ? ex.enabled : true,
+          sound: ex?.sound !== undefined ? ex.sound : true,
+          priority: ex?.priority ?? false,
+        };
+      });
+      setEventPrefs(merged);
+    }
+    if (p.quietHours) {
+      setQuietEnabled(!!p.quietHours.enabled);
+      if (p.quietHours.start) setQuietStart(p.quietHours.start);
+      if (p.quietHours.end) setQuietEnd(p.quietHours.end);
     }
   }, []);
 
-  const savePrefs = () => {
-    const prefs = { masterEnabled, soundEnabled, soundType, volume, desktopNotifications, eventPrefs };
-    localStorage.setItem("notification_prefs", JSON.stringify(prefs));
-    // Notify other components (NotificationBell) in same tab
-    window.dispatchEvent(new CustomEvent("notification-prefs-changed", { detail: prefs }));
-    toast.success("Notification preferences saved!");
+  // Load: try DB first, fall back to localStorage
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const local = getNotificationPrefs();
+      applyPrefs(local);
+      const fromDB = await loadPrefsFromDB();
+      if (!cancelled && fromDB) applyPrefs(fromDB);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [applyPrefs]);
+
+  // Load device list
+  const fetchDevices = useCallback(async () => {
+    if (!user) return;
+    setDevicesLoading(true);
+    const { data } = await (supabase as any)
+      .from("push_subscriptions")
+      .select("id, endpoint, user_agent, created_at, last_used_at, device_label")
+      .eq("user_id", user.id)
+      .order("last_used_at", { ascending: false });
+    setDevices(data || []);
+    setDevicesLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetchDevices(); }, [fetchDevices, pushStatus]);
+
+  const removeDevice = async (id: string) => {
+    await (supabase as any).from("push_subscriptions").delete().eq("id", id);
+    toast.success("Device removed");
+    fetchDevices();
+  };
+
+  const savePrefs = async () => {
+    setSaving(true);
+    const prefs: NotificationPrefs = {
+      masterEnabled, soundEnabled, soundType, volume, desktopNotifications,
+      eventPrefs, quietHours: { enabled: quietEnabled, start: quietStart, end: quietEnd },
+    };
+    setNotificationPrefs(prefs);
+    const ok = await savePrefsToDB(prefs);
+    setSaving(false);
+    toast.success(ok ? "Preferences saved & synced" : "Saved locally (sync failed)");
   };
 
   const toggleEvent = (key: string, field: "enabled" | "sound" | "priority") => {
-    setEventPrefs((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: !prev[key][field] },
-    }));
+    setEventPrefs((prev) => ({ ...prev, [key]: { ...prev[key], [field]: !prev[key][field] } }));
   };
 
   const enableAll = () => {
@@ -146,6 +211,16 @@ const NotificationPreferencesTab = () => {
       if (perm === "granted") toast.success("Desktop notifications enabled!");
       else toast.error("Permission denied");
     }
+  };
+
+  const friendlyDevice = (ua?: string) => {
+    if (!ua) return "Unknown device";
+    if (/iPhone|iPad/.test(ua)) return "iOS device";
+    if (/Android/.test(ua)) return "Android device";
+    if (/Macintosh/.test(ua)) return "Mac";
+    if (/Windows/.test(ua)) return "Windows PC";
+    if (/Linux/.test(ua)) return "Linux";
+    return "Browser";
   };
 
   return (
@@ -300,9 +375,147 @@ const NotificationPreferencesTab = () => {
         </CardContent>
       </Card>
 
-      <Button onClick={savePrefs} className="w-full sm:w-auto">
-        Save All Preferences
-      </Button>
+      {/* Background Push Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-primary" />
+            Background Push Notifications
+          </CardTitle>
+          <CardDescription>
+            Receive alerts even when this app or browser tab is closed.
+            {pushBlocked && " (Only works on the published app, not the editor preview.)"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="flex items-center gap-3">
+              {pushStatus === "subscribed" ? (
+                <BellRing className="h-5 w-5 text-primary" />
+              ) : (
+                <BellOff className="h-5 w-5 text-muted-foreground" />
+              )}
+              <div>
+                <p className="font-medium">
+                  {pushStatus === "subscribed" && "Push enabled on this device"}
+                  {pushStatus === "denied" && "Permission blocked in browser"}
+                  {(pushStatus === "default" || pushStatus === "loading") && "Not enabled"}
+                  {pushStatus === "unsupported" && "Not supported on this browser"}
+                  {pushStatus === "preview-blocked" && "Disabled in preview mode"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {pushStatus === "subscribed"
+                    ? "You'll receive system notifications even when the app is closed."
+                    : pushStatus === "denied"
+                    ? "Re-enable notification permission in your browser site settings."
+                    : "Get instant alerts for orders, messages, and important events."}
+                </p>
+              </div>
+            </div>
+            {pushStatus === "subscribed" ? (
+              <Button variant="outline" size="sm" onClick={disablePush}>Disable</Button>
+            ) : pushStatus === "default" ? (
+              <Button size="sm" onClick={enablePush}>Enable</Button>
+            ) : null}
+          </div>
+
+          {/* Device list */}
+          {devices.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Subscribed devices ({devices.length})</Label>
+                <Button variant="ghost" size="sm" onClick={fetchDevices} className="h-7 text-xs">
+                  <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+                </Button>
+              </div>
+              <div className="space-y-1.5">
+                {devices.map((d) => (
+                  <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-md border bg-muted/30 text-sm">
+                    <Smartphone className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{d.device_label || friendlyDevice(d.user_agent)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Last active {formatDistanceToNow(new Date(d.last_used_at || d.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeDevice(d.id)}
+                      title="Remove device"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {devicesLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading devices…
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quiet Hours */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Moon className="h-5 w-5 text-primary" />
+            Quiet Hours
+          </CardTitle>
+          <CardDescription>
+            Mute sounds and desktop alerts during this time range. Notifications still arrive silently in the bell.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Moon className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Do Not Disturb schedule</p>
+                <p className="text-sm text-muted-foreground">Currently {quietEnabled ? "enabled" : "disabled"}</p>
+              </div>
+            </div>
+            <Switch checked={quietEnabled} onCheckedChange={setQuietEnabled} />
+          </div>
+          {quietEnabled && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+              className="grid gap-4 sm:grid-cols-2 pl-8"
+            >
+              <div className="space-y-2">
+                <Label>Start time</Label>
+                <Input type="time" value={quietStart} onChange={(e) => setQuietStart(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>End time</Label>
+                <Input type="time" value={quietEnd} onChange={(e) => setQuietEnd(e.target.value)} />
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Overnight ranges are supported (e.g. 22:00 → 07:00).
+              </p>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-2">
+        <Button onClick={savePrefs} disabled={saving || loading} className="w-full sm:w-auto">
+          {saving ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</>
+          ) : (
+            "Save All Preferences"
+          )}
+        </Button>
+        {loading && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading from server…
+          </span>
+        )}
+      </div>
     </div>
   );
 };

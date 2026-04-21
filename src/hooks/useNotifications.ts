@@ -3,7 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SOUND_CATEGORY, TYPE_EMOJI, TYPE_LABEL } from "@/lib/notificationTriggers";
-import { debouncedPlaySound, showDesktopNotification } from "@/lib/notificationSound";
+import {
+  debouncedPlaySound,
+  showDesktopNotification,
+  isEventEnabled,
+  isEventSoundEnabled,
+} from "@/lib/notificationSound";
 
 export interface Notification {
   id: string;
@@ -60,11 +65,15 @@ export const useNotifications = () => {
           if (!initialLoadDone.current) return;
           const n = payload.new as Notification;
 
+          // Always keep in bell list (even if event is disabled — user can still see history)
           setNotifications((prev) => {
             if (prev.some((p) => p.id === n.id)) return prev;
             return [n, ...prev];
           });
           setUnreadCount((prev) => prev + 1);
+
+          // But gate toasts/sounds/desktop alerts on user preferences
+          if (!isEventEnabled(n.type)) return;
 
           const emoji = TYPE_EMOJI[n.type] || "🔔";
           const label = TYPE_LABEL[n.type] || "Notification";
@@ -78,7 +87,7 @@ export const useNotifications = () => {
             toast.success(`${emoji} ${n.message}`, { description: label });
           }
 
-          debouncedPlaySound(n.type);
+          if (isEventSoundEnabled(n.type)) debouncedPlaySound(n.type);
           showDesktopNotification(label, n.message, n.type);
         }
       )
