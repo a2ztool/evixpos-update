@@ -16,8 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard } from "lucide-react";
+import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard, Smartphone, Check } from "lucide-react";
 import InstallAppButton from "./InstallAppButton";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { toast } from "sonner";
 import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -77,6 +79,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
   const { plan } = useStorePlan();
+  const { canInstall, isInstalled, isStandalone, promptInstall } = usePWAInstall();
+  const appInstalled = isInstalled || isStandalone;
+  const handleInstallApp = async () => {
+    if (appInstalled) return;
+    if (canInstall) {
+      const ok = await promptInstall();
+      if (ok) toast.success("App installed!", { description: "EvixPOS is now on your device." });
+    } else {
+      toast.info("Install via your browser menu", {
+        description: "Open browser menu → 'Add to Home Screen' or 'Install App'.",
+      });
+    }
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
@@ -256,6 +271,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                         <Crown className="h-4 w-4 mr-2" /> My Plan
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem
+                      onClick={handleInstallApp}
+                      disabled={appInstalled}
+                      className="md:hidden"
+                    >
+                      {appInstalled ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2 text-primary" /> App Installed
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="h-4 w-4 mr-2 text-primary" /> Install App
+                        </>
+                      )}
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                       <LogOut className="h-4 w-4 mr-2" /> Log out
