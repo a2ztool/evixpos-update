@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard, Smartphone } from "lucide-react";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard } from "lucide-react";
+import InstallAppButton from "./InstallAppButton";
 import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -80,7 +80,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const { symbol: currencySymbol, activeCurrency } = useCurrency();
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
@@ -201,23 +200,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </Tooltip>
 
                 {/* Install App - desktop only */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs font-medium gap-1.5 border-primary/20 text-primary hover:bg-primary/5 hidden md:inline-flex"
-                      onClick={promptInstall}
-                      disabled={isInstalled}
-                    >
-                      <Smartphone className="h-3.5 w-3.5" />
-                      {isInstalled ? "✓ Installed" : "Install App"}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-xs">{isInstalled ? "App is installed" : "Install as app"}</p>
-                  </TooltipContent>
-                </Tooltip>
+                <InstallAppButton className="hidden md:inline-flex" />
 
                 {/* Currency badge — single source of truth */}
                 <Tooltip>
