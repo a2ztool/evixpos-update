@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
+import brandIcon from "@/assets/evixpos-icon.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useAuth } from "@/contexts/AuthContext";
@@ -262,10 +263,10 @@ const AppSidebar = () => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => navigate("/dashboard")}
-                    className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
+                    className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
                     aria-label="Dashboard"
                   >
-                    <span className="text-primary-foreground font-bold text-sm">E</span>
+                    <img src={brandIcon} alt="EvixPOS" className="h-full w-full object-cover" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">EvixPOS · {plan}</TooltipContent>
