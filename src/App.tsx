@@ -55,6 +55,7 @@ const MyPlan = lazyPage(() => import("./pages/MyPlan"));
 const SupportPage = lazyPage(() => import("./pages/SupportPage"));
 const StaffInbox = lazyPage(() => import("./pages/StaffInbox"));
 const Suppliers = lazyPage(() => import("./pages/Suppliers"));
+const OnlineSuppliersPurchases = lazyPage(() => import("./pages/OnlineSuppliersPurchases"));
 const Inventory = lazyPage(() => import("./pages/Inventory"));
 const Purchases = lazyPage(() => import("./pages/Purchases"));
 const CashRegister = lazyPage(() => import("./pages/CashRegister"));
@@ -196,6 +197,7 @@ const App = () => {
             <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
             <Route path="/notification-center" element={<P><NotificationCenter /></P>} />
             <Route path="/inventory" element={<P perm="products.view"><Inventory /></P>} />
+            <Route path="/online/suppliers-purchases" element={<P perm="products.edit"><OnlineSuppliersPurchases /></P>} />
             <Route path="/offline/suppliers" element={<P perm="products.view"><Suppliers /></P>} />
             <Route path="/offline/purchases" element={<P perm="products.edit"><Purchases /></P>} />
             <Route path="/offline/cash-register" element={<P perm="pos.access"><CashRegister /></P>} />
