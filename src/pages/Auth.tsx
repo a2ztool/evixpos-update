@@ -30,6 +30,14 @@ const Auth = () => {
   const { session } = useAuth();
   const [searchParams] = useSearchParams();
 
+  // Detect OAuth callback (Supabase returns tokens in hash, or `code` query for PKCE)
+  const isOAuthCallback =
+    typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token") ||
+      window.location.hash.includes("error") ||
+      searchParams.has("code"));
+  const [processingOAuth, setProcessingOAuth] = useState(isOAuthCallback);
+
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
 
   // Rotating brand highlights (testimonial-style strip)
@@ -54,11 +62,21 @@ const Auth = () => {
         .eq("user_id", session.user.id)
         .eq("role", "admin")
         .maybeSingle();
-      if (roleData) navigate("/admin/dashboard");
-      else navigate("/dashboard");
+      // Clean OAuth params from URL before navigating
+      if (window.location.hash || searchParams.has("code")) {
+        window.history.replaceState({}, document.title, "/auth");
+      }
+      navigate(roleData ? "/admin/dashboard" : "/dashboard", { replace: true });
     };
     checkAdminRedirect();
-  }, [session, navigate]);
+  }, [session, navigate, searchParams]);
+
+  // Safety: if OAuth callback hash exists but session never resolves, stop spinner
+  useEffect(() => {
+    if (!processingOAuth) return;
+    const t = setTimeout(() => setProcessingOAuth(false), 8000);
+    return () => clearTimeout(t);
+  }, [processingOAuth]);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -163,11 +181,15 @@ const Auth = () => {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
-    if (error) toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async () => {
@@ -185,6 +207,18 @@ const Auth = () => {
   const Highlight = highlights[highlightIdx].icon;
   const strengthLabel = ["Too short", "Weak", "Fair", "Good", "Strong"][pwStrength];
   const strengthColor = ["bg-muted", "bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-primary"][pwStrength];
+
+  // OAuth callback loading screen — shown while Supabase processes Google sign-in tokens
+  if (processingOAuth && !session) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-4">
+        <img src={evixLogo} alt="EvixPos" className="h-12 w-auto mb-8" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4" />
+        <p className="text-sm font-medium text-foreground">Signing you in…</p>
+        <p className="text-xs text-muted-foreground mt-1">Verifying your Google account</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-primary/5 via-background to-background relative overflow-hidden">
