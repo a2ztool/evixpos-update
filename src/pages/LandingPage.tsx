@@ -361,12 +361,17 @@ const LandingPage = () => {
       <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style={{ backdropFilter: scrolled ? 'blur(20px)' : 'blur(0px)', background: scrolled ? 'hsl(var(--background) / 0.85)' : 'transparent' }}>
         {/* ANNOUNCEMENT BANNER — collapses on scroll */}
         {bannerActive && (
-          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[10px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 opacity-0' : 'h-8 sm:max-h-12 opacity-100'}`}>
+          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[10px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 opacity-0' : 'h-10 sm:h-14 opacity-100'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
-            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-8 sm:h-auto flex items-center justify-center gap-1.5 sm:gap-3 relative leading-none">
-              <Sparkles className="h-2.5 w-2.5 sm:h-4 sm:w-4 shrink-0" />
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-full flex items-center justify-center gap-1.5 sm:gap-3 relative leading-none">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1 leading-none">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
-              <Button size="sm" variant="secondary" className="!h-[20px] sm:!h-7 text-[9px] sm:text-xs px-2 sm:px-3 py-0 leading-none rounded shrink-0 min-h-0" onClick={() => navigate("/auth")}>
+              <Button
+                size="sm"
+                onClick={() => navigate("/auth")}
+                className="!h-6 sm:!h-8 text-[10px] sm:text-xs px-2.5 sm:px-4 py-0 leading-none rounded-full shrink-0 min-h-0 font-semibold bg-gradient-to-r from-white to-white/90 text-primary hover:from-white hover:to-white shadow-[0_4px_14px_-2px_hsl(0_0%_0%/0.25)] hover:shadow-[0_6px_20px_-2px_hsl(0_0%_0%/0.35)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 border border-white/40"
+              >
+                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 text-primary" />
                 {get("banner_cta", "Claim Offer")}
               </Button>
             </div>
