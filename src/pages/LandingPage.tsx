@@ -363,7 +363,7 @@ const LandingPage = () => {
         {bannerActive && (
           <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[10px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 opacity-0' : 'h-8 sm:max-h-12 opacity-100'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
-            <div className="max-w-7xl mx-auto px-2 sm:px-4 h-8 sm:h-auto flex items-center justify-center gap-1.5 sm:gap-3 relative leading-none">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-8 sm:h-auto flex items-center justify-center gap-1.5 sm:gap-3 relative leading-none">
               <Sparkles className="h-2.5 w-2.5 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1 leading-none">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
               <Button size="sm" variant="secondary" className="!h-[20px] sm:!h-7 text-[9px] sm:text-xs px-2 sm:px-3 py-0 leading-none rounded shrink-0 min-h-0" onClick={() => navigate("/auth")}>
