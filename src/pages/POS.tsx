@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -1157,12 +1158,12 @@ const POS = () => {
             </div>
           )}
 
-          {/* Mobile cart bar — floats above bottom nav */}
-          {cart.length > 0 && (
+          {/* Mobile cart bar — floats above bottom nav (portaled to body to escape transformed ancestors) */}
+          {cart.length > 0 && createPortal(
             <button
               onClick={() => setMobileCartOpen(true)}
-              className="lg:hidden fixed left-1/2 z-40 bg-primary text-primary-foreground pl-5 pr-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl shadow-primary/30 active:opacity-90 rounded-full w-[calc(100%-28px)] max-w-[440px] ring-1 ring-primary-foreground/10 animate-cart-pop-up"
-              style={{ bottom: "calc(82px + 10px + max(env(safe-area-inset-bottom), 0px))" }}
+              className="lg:hidden fixed left-1/2 -translate-x-1/2 z-[60] bg-primary text-primary-foreground pl-5 pr-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl shadow-primary/30 active:opacity-90 rounded-full w-[calc(100%-28px)] max-w-[440px] ring-1 ring-primary-foreground/10 animate-cart-pop-up"
+              style={{ bottom: "calc(88px + max(env(safe-area-inset-bottom), 0px))" }}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative">
@@ -1177,7 +1178,8 @@ const POS = () => {
                 <span className="font-bold text-base">{format(total)}</span>
                 <ChevronDown className="h-4 w-4 rotate-180 opacity-80" />
               </div>
-            </button>
+            </button>,
+            document.body
           )}
         </div>
 
