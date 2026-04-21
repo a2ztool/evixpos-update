@@ -163,11 +163,15 @@ const Auth = () => {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
-    if (error) toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async () => {
