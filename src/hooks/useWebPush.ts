@@ -126,7 +126,7 @@ export const useWebPush = () => {
       const auth = json.keys?.auth!;
 
       // Upsert by endpoint (unique). Insert; on conflict, ignore (already saved).
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("push_subscriptions")
         .upsert(
           {
@@ -159,7 +159,7 @@ export const useWebPush = () => {
       if (sub) {
         const endpoint = sub.endpoint;
         await sub.unsubscribe();
-        await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+        await (supabase as any).from("push_subscriptions").delete().eq("endpoint", endpoint);
       }
       setStatus("default");
       toast.success("Push notifications disabled");
