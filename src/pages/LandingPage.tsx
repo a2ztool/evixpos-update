@@ -388,7 +388,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-2 shrink-0">
               <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className={`w-auto transition-all duration-300 ${scrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"}`} />
             </div>
-            <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+            <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
               {DEFAULT_NAV_LINKS.map((link) => (
                 <button key={link.href} onClick={() => smoothScroll(link.href)} className="relative px-4 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-all duration-200 group">
                   <span className="relative z-10">{get(link.labelKey, link.defaultLabel)}</span>
