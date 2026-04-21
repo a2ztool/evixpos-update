@@ -80,7 +80,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const { symbol: currencySymbol, activeCurrency } = useCurrency();
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
