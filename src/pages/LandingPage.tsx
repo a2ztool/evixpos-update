@@ -487,37 +487,41 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Social proof badge */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6 sm:mb-8">
-            <div className="relative rounded-full p-[1.5px] max-w-[95vw] group isolate">
-              {/* Animated gradient border ring */}
+            <div className="relative inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 rounded-full bg-card shadow-sm h-7 sm:h-8 max-w-[95vw]">
+              {/* Animated gradient BORDER only (mask trick) */}
               <span
                 aria-hidden
-                className="absolute inset-0 rounded-full -z-10"
+                className="pointer-events-none absolute inset-0 rounded-full"
                 style={{
+                  padding: "1.5px",
                   background:
-                    "conic-gradient(from 0deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.15) 25%, hsl(var(--primary)) 50%, hsl(var(--primary)/0.15) 75%, hsl(var(--primary)) 100%)",
+                    "conic-gradient(from 0deg, hsl(var(--primary)) 0deg, hsl(var(--primary)/0.1) 90deg, hsl(var(--primary)) 180deg, hsl(var(--primary)/0.1) 270deg, hsl(var(--primary)) 360deg)",
+                  WebkitMask:
+                    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                  WebkitMaskComposite: "xor",
+                  mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                  maskComposite: "exclude",
                   animation: "spin-slow 4s linear infinite",
                 }}
               />
-              <div className="relative inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 rounded-full bg-card shadow-sm h-7 sm:h-8">
-                <div className="flex -space-x-1 sm:-space-x-2 shrink-0">
-                  {[1,2,3].map(i => {
-                    const img = get(`social_proof_avatar_${i}`);
-                    return img ? (
-                      <img key={i} src={img} className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-card object-cover" alt="" />
-                    ) : (
-                      <div key={i} className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
-                        <Users className="h-2 w-2 sm:h-3 sm:w-3 text-primary-foreground" />
-                      </div>
-                    );
-                  })}
-                </div>
-                <span className="text-[10px] sm:text-[13px] font-medium text-muted-foreground line-clamp-1 leading-none">
-                  {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
-                </span>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="!h-5 sm:!h-6 px-1.5 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0 leading-none min-h-0">
-                  Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
-                </Button>
+              <div className="flex -space-x-1 sm:-space-x-2 shrink-0">
+                {[1,2,3].map(i => {
+                  const img = get(`social_proof_avatar_${i}`);
+                  return img ? (
+                    <img key={i} src={img} className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-card object-cover" alt="" />
+                  ) : (
+                    <div key={i} className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
+                      <Users className="h-2 w-2 sm:h-3 sm:w-3 text-primary-foreground" />
+                    </div>
+                  );
+                })}
               </div>
+              <span className="text-[10px] sm:text-[13px] font-medium text-muted-foreground line-clamp-1 leading-none">
+                {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="!h-5 sm:!h-6 px-1.5 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0 leading-none min-h-0">
+                Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
+              </Button>
             </div>
           </motion.div>
 
