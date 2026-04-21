@@ -79,6 +79,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
   const { plan } = useStorePlan();
+  const { canInstall, isInstalled, isStandalone, promptInstall } = usePWAInstall();
+  const appInstalled = isInstalled || isStandalone;
+  const handleInstallApp = async () => {
+    if (appInstalled) return;
+    if (canInstall) {
+      const ok = await promptInstall();
+      if (ok) toast.success("App installed!", { description: "EvixPOS is now on your device." });
+    } else {
+      toast.info("Install via your browser menu", {
+        description: "Open browser menu → 'Add to Home Screen' or 'Install App'.",
+      });
+    }
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
