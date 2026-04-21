@@ -1,8 +1,9 @@
 {
+  "id": "/",
   "name": "EvixPOS - Smart POS & Business Management",
   "short_name": "EvixPOS",
   "description": "The modern platform for managing your business — POS, Orders, Inventory & more.",
-  "start_url": "/app",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -20,6 +21,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "EvixPOS Dashboard"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "EvixPOS Dashboard"
     }
   ],
   "categories": ["business", "productivity", "finance"],
