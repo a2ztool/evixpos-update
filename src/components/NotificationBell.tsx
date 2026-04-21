@@ -3,33 +3,48 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useMessageUnread } from "@/hooks/useMessageUnread";
 import { TYPE_EMOJI, TYPE_LABEL } from "@/lib/notificationTriggers";
+import { getNotificationPrefs, setNotificationPrefs, playNotificationSound } from "@/lib/notificationSound";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
   const { unreadCount: msgUnread } = useMessageUnread();
   const navigate = useNavigate();
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    try {
-      const prefs = JSON.parse(localStorage.getItem("notification_prefs") || "{}");
-      return prefs.soundEnabled !== false;
-    } catch { return true; }
-  });
+  const [soundEnabled, setSoundEnabled] = useState(() => getNotificationPrefs().soundEnabled !== false);
+  const [volume, setVolume] = useState<number[]>(() => getNotificationPrefs().volume ?? [70]);
+
+  // Sync with changes from Settings page (or other tabs)
+  useEffect(() => {
+    const sync = () => {
+      const p = getNotificationPrefs();
+      setSoundEnabled(p.soundEnabled !== false);
+      setVolume(p.volume ?? [70]);
+    };
+    window.addEventListener("notification-prefs-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("notification-prefs-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
-    try {
-      const prefs = JSON.parse(localStorage.getItem("notification_prefs") || "{}");
-      prefs.soundEnabled = next;
-      localStorage.setItem("notification_prefs", JSON.stringify(prefs));
-    } catch {}
+    setNotificationPrefs({ soundEnabled: next });
+    if (next) playNotificationSound("info"); // preview
+  };
+
+  const handleVolume = (v: number[]) => {
+    setVolume(v);
+    setNotificationPrefs({ volume: v });
   };
 
   const totalBadge = unreadCount + msgUnread;
