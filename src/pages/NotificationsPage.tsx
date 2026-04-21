@@ -2,6 +2,14 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { TYPE_EMOJI, TYPE_LABEL, SOUND_CATEGORY } from "@/lib/notificationTriggers";
+import {
+  loadPrefsFromDB,
+  savePrefsToDB,
+  setNotificationPrefs,
+  getNotificationPrefs,
+  type NotificationPrefs,
+} from "@/lib/notificationSound";
+import { useWebPush } from "@/hooks/useWebPush";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +29,7 @@ import {
   Bell, BellOff, BellRing, Volume2, VolumeX, Settings2, History,
   CheckCheck, Trash2, Search, Filter, AlertCircle, CheckCircle,
   AlertTriangle, Info, Star, StarOff, Zap, ShoppingCart, Users,
-  CreditCard, Package, RefreshCw, Clock,
+  CreditCard, Package, RefreshCw, Clock, Smartphone, MessageSquare, Moon, Loader2, X,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, isAfter } from "date-fns";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -37,6 +45,7 @@ const NOTIFICATION_EVENTS = [
   { key: "low_stock", label: "Low Stock Alert", icon: <Package className="h-4 w-4" />, description: "When a product stock falls below threshold" },
   { key: "subscription_expiring", label: "Subscription Expiring", icon: <Clock className="h-4 w-4" />, description: "When a customer subscription is about to expire" },
   { key: "woocommerce_order", label: "WooCommerce Order", icon: <Zap className="h-4 w-4" />, description: "When a new WooCommerce order syncs" },
+  { key: "new_message", label: "New Message", icon: <MessageSquare className="h-4 w-4" />, description: "When you receive a chat message" },
   { key: "campaign_sent", label: "Campaign Sent", icon: <Bell className="h-4 w-4" />, description: "When a marketing campaign email is sent" },
 ];
 
