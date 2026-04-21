@@ -1,44 +1,82 @@
 
-## Product Image Upload — RLS Problem Fix
+## Product image upload RLS fix — Manual SQL (Option B)
 
-আপনার Supabase backend-এ `product-images` storage bucket এবং তার RLS policies set up নেই, এই কারণে upload-এর সময় "row-level security policy" error আসছে।
+আপনি manual route choose করেছেন। নিচের SQL Supabase Dashboard → SQL Editor → **New query** তে paste করে **Run** করুন। এটা idempotent (একাধিকবার চালানো safe) এবং আপনার project-এর actual helper signature `public.is_store_member(_store_id uuid)` use করে।
 
-### সমাধান (আমি migration লিখে দেব)
+### Steps
 
-একটি SQL migration তৈরি করব যা automatically নিচের কাজগুলো করবে:
+1. খুলুন: https://supabase.com/dashboard/project/vuuesqrdjuqnduhiihwz/sql/new
+2. নিচের পুরো SQL paste করুন
+3. **Run** চাপুন → "Success. No rows returned" দেখলে সফল
+4. Dashboard → Products → Add Product → image upload test করুন
 
-**১. Storage bucket তৈরি**
-- Bucket name: `product-images`
-- Public read access (যাতে product image সবাই দেখতে পারে)
-- File size limit: 5MB
-- Allowed types: PNG, JPEG, WEBP, GIF
+### SQL to run
 
-**২. RLS policies setup (storage.objects-এ)**
+```sql
+-- 1. Create or update product-images bucket (public, 5MB, image-only)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'product-images',
+  'product-images',
+  true,
+  5242880,
+  ARRAY['image/png','image/jpeg','image/webp','image/gif']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-| Policy | Who | What |
-|--------|-----|------|
-| Public SELECT | সবাই | Image দেখতে পারবে |
-| Authenticated INSERT | Store owner / staff member | শুধু নিজের store-এর folder-এ upload করতে পারবে |
-| Authenticated UPDATE | Store owner / staff member | শুধু নিজের store-এর image edit করতে পারবে |
-| Authenticated DELETE | Store owner / staff member | শুধু নিজের store-এর image delete করতে পারবে |
+-- 2. Drop existing policies (safe re-run)
+DROP POLICY IF EXISTS "Public read product images" ON storage.objects;
+DROP POLICY IF EXISTS "Store members can upload product images" ON storage.objects;
+DROP POLICY IF EXISTS "Store members can update product images" ON storage.objects;
+DROP POLICY IF EXISTS "Store members can delete product images" ON storage.objects;
 
-File path pattern: `{store_id}/{uuid}.{ext}` — এই path-এর প্রথম folder থেকে `store_id` extract করে `public.is_store_member(store_id, auth.uid())` helper দিয়ে check করা হবে। ফলে এক store-এর user অন্য store-এর image-এ touch করতে পারবে না।
+-- 3. Public SELECT — সবাই product image দেখতে পারবে
+CREATE POLICY "Public read product images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
 
-### আপনাকে যা করতে হবে
+-- 4. INSERT — শুধু store member তার নিজের store folder-এ upload করতে পারবে
+CREATE POLICY "Store members can upload product images"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'product-images'
+  AND public.is_store_member(((storage.foldername(name))[1])::uuid)
+);
 
-আপনি Supabase use করছেন (Lovable Cloud না), তাই migration apply করার দু'টো অপশন:
+-- 5. UPDATE
+CREATE POLICY "Store members can update product images"
+ON storage.objects FOR UPDATE TO authenticated
+USING (
+  bucket_id = 'product-images'
+  AND public.is_store_member(((storage.foldername(name))[1])::uuid)
+);
 
-**Option A — সবচেয়ে সহজ (recommended):**
-আমাকে শুধু "OK" বলুন। আমি migration file তৈরি করে দেব, এটি automatically আপনার linked Supabase project (`vuuesqrdjuqnduhiihwz` — Pos Panel [ezyfy])-এ apply হয়ে যাবে। আপনাকে dashboard-এ গিয়ে কিছু করতে হবে না।
+-- 6. DELETE
+CREATE POLICY "Store members can delete product images"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'product-images'
+  AND public.is_store_member(((storage.foldername(name))[1])::uuid)
+);
+```
 
-**Option B — Manual:**
-যদি নিজে চালাতে চান, আমি SQL দেব, আপনি Supabase Dashboard → SQL Editor-এ paste করে Run করবেন।
+### Verification checklist
 
-### Verification
+- ✅ "Success. No rows returned" message
+- ✅ Storage → Buckets-এ `product-images` bucket দেখা যাচ্ছে
+- ✅ Pro/Business plan-এ Products → Add Product → image upload কাজ করছে, RLS error নেই
+- ✅ Image preview render হচ্ছে public URL সহ
+- ✅ Free plan-এ আগের মতোই URL-only behavior
 
-Migration apply হওয়ার পর:
-1. Dashboard → Products → Add Product → Image upload করে দেখবেন
-2. Pro/Business plan থাকতে হবে (Free plan-এ শুধু URL allow)
-3. সফল হলে preview সাথে সাথে দেখাবে, error আর আসবে না
+### যদি error আসে
 
-কোন option choose করছেন জানান (অথবা শুধু "OK" / "করো" বলুন — আমি Option A ধরে এগোবো)।
+Error-এর screenshot পাঠাবেন। Common cases:
+- `function is_store_member does not exist` → helper migration আগে run হয়নি
+- `policy already exists` → SQL re-run করুন (DROP statements handle করে দেবে)
+
+### Frontend-এ কোনো change লাগবে না
+
+`src/components/ProductImageField.tsx` already correct path pattern `{storeId}/{uuid}.{ext}` use করছে, যা policy-র সাথে সরাসরি match করে। Migration apply হওয়া মাত্রই upload কাজ করবে।
