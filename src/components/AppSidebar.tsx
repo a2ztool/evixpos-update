@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
 import brandLogo from "@/assets/evixPos.png";
+import brandIcon from "@/assets/evixpos-icon.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { prefetchRoute } from "@/lib/routePrefetch";
 import { useAuth } from "@/contexts/AuthContext";
@@ -210,7 +211,7 @@ const AppSidebar = () => {
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu className="px-2 space-y-0.5">{items.map(renderItem)}</SidebarMenu>
+        <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">{items.map(renderItem)}</SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
   );
@@ -262,10 +263,10 @@ const AppSidebar = () => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => navigate("/dashboard")}
-                    className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
+                    className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
                     aria-label="Dashboard"
                   >
-                    <span className="text-primary-foreground font-bold text-sm">E</span>
+                    <img src={brandIcon} alt="EvixPOS" className="h-full w-full object-cover" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">EvixPOS · {plan}</TooltipContent>
@@ -290,7 +291,7 @@ const AppSidebar = () => {
               {t.salesProducts}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredOrders.length > 0 && renderCollapsible(t.orders, ShoppingCart, filteredOrders, ordersOpen, setOrdersOpen, "/orders")}
                 {filteredProducts.length > 0 && renderCollapsible(t.productCatalog, Package, filteredProducts, productsOpen, setProductsOpen, "/products")}
               </SidebarMenu>
@@ -308,7 +309,7 @@ const AppSidebar = () => {
               {t.performance}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredFinance.length > 0 && renderCollapsible(t.finances, CreditCard, filteredFinance, financeOpen, setFinanceOpen, "/finance")}
                 {hasPermission("reports.view") && renderItem({ title: t.reports, icon: BarChart3, path: "/reports" })}
               </SidebarMenu>
@@ -322,7 +323,7 @@ const AppSidebar = () => {
               {t.systemGrowth}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredIntegrations.length > 0 && renderCollapsible(t.integrations, Plug, filteredIntegrations, integrationsOpen, setIntegrationsOpen, "/integrations")}
                 {showReferral && renderItem({ title: t.referral, icon: Gift, path: "/referral", feature: "referral" })}
               </SidebarMenu>
@@ -336,7 +337,7 @@ const AppSidebar = () => {
               {t.supportSection}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {renderMessages()}
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
