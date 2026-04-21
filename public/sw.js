@@ -1,15 +1,43 @@
 // ════════════════════════════════════════════════════════════════
-// Service Worker: handles Web Push when app is closed/backgrounded
+// Service Worker: handles Web Push + version-aware lifecycle
 // ════════════════════════════════════════════════════════════════
-// IMPORTANT: This SW only handles push events. It does NOT cache
-// app assets (no offline mode), avoiding stale-content issues.
+// IMPORTANT: This SW does NOT cache app HTML/JS/CSS. Vite already
+// hashes static assets, and HTML is fetched network-first by the
+// browser (no SW fetch handler). This avoids stale-content issues.
+//
+// Bump SW_VERSION whenever you want to force all installed PWAs to
+// pick up the new service worker. Any byte change to this file also
+// triggers the browser's update check automatically.
+
+const SW_VERSION = "v3-2026-04-21";
 
 self.addEventListener("install", (event) => {
+  // Activate this SW immediately, replacing any waiting one
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      // Take control of all open clients right away
+      await self.clients.claim();
+      // Clean up any legacy caches from earlier versions
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      // Notify open pages that a new SW is now active
+      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      clients.forEach((c) => c.postMessage({ type: "SW_ACTIVATED", version: SW_VERSION }));
+    })()
+  );
+});
+
+// Allow page to ask SW to skip waiting on demand
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  } else if (event.data?.type === "GET_VERSION") {
+    event.ports[0]?.postMessage({ version: SW_VERSION });
+  }
 });
 
 // Push event — show OS notification
@@ -42,14 +70,12 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      // Try to focus an existing app window
       for (const client of clients) {
         if ("focus" in client) {
           client.postMessage({ type: "NOTIFICATION_CLICK", payload: event.notification.data });
           return client.focus();
         }
       }
-      // Otherwise open a new one
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }

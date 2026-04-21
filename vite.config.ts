@@ -2,10 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
+// NOTE: We deliberately do NOT use vite-plugin-pwa.
+// Its Workbox-generated SW caches HTML aggressively, which causes
+// installed PWAs to show stale UI after deploys. Instead, we use a
+// hand-written push-only service worker at /public/sw.js that does
+// NOT cache HTML — Vite already hashes JS/CSS so they're cache-safe,
+// and HTML is fetched fresh on every load.
 export default defineConfig(({ mode }) => ({
+  define: {
+    __BUILD_TIME__: JSON.stringify(Date.now().toString()),
+  },
   server: {
     host: "::",
     port: 8080,
@@ -16,29 +24,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: {
-        enabled: false, // Never register SW in dev/preview
-      },
-      includeAssets: ["favicon.png", "pwa-icon-192.png", "pwa-icon-512.png"],
-      manifest: false, // We use our own public/manifest.json
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,woff2}"],
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*supabase\.co\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-            },
-          },
-        ],
-      },
-    }),
   ].filter(Boolean),
   resolve: {
     alias: {
