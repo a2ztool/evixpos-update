@@ -20,6 +20,11 @@ if (isPreviewHost || isInIframe) {
   navigator.serviceWorker?.getRegistrations().then((regs) => {
     regs.forEach((r) => r.unregister());
   });
+} else if ("serviceWorker" in navigator) {
+  // Production: register push service worker (silent — does not auto-prompt)
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
