@@ -50,7 +50,7 @@ export const useNotifications = () => {
 
     if (!user) return;
 
-    const channelName = `notif-rt-${user.id}-${Date.now()}`;
+    const channelName = `notif-rt-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -109,9 +109,8 @@ export const useNotifications = () => {
             return prev;
           });
         }
-      );
-
-    channel.subscribe();
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
