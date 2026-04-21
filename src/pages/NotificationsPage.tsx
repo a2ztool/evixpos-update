@@ -100,44 +100,100 @@ const typeConfig: Record<string, { icon: React.ReactNode; label: string; badgeCl
 // Tab 1: Notification Preferences
 // ═══════════════════════════════════════════
 const NotificationPreferencesTab = () => {
+  const { user } = useAuth();
   const [masterEnabled, setMasterEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [soundType, setSoundType] = useState("default");
   const [volume, setVolume] = useState([70]);
   const [desktopNotifications, setDesktopNotifications] = useState(false);
+  const [quietEnabled, setQuietEnabled] = useState(false);
+  const [quietStart, setQuietStart] = useState("22:00");
+  const [quietEnd, setQuietEnd] = useState("07:00");
   const [eventPrefs, setEventPrefs] = useState<Record<string, { enabled: boolean; sound: boolean; priority: boolean }>>(
     Object.fromEntries(NOTIFICATION_EVENTS.map((e) => [e.key, { enabled: true, sound: true, priority: false }]))
   );
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load prefs from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("notification_prefs");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.masterEnabled !== undefined) setMasterEnabled(parsed.masterEnabled);
-        if (parsed.soundEnabled !== undefined) setSoundEnabled(parsed.soundEnabled);
-        if (parsed.soundType) setSoundType(parsed.soundType);
-        if (parsed.volume) setVolume(parsed.volume);
-        if (parsed.desktopNotifications !== undefined) setDesktopNotifications(parsed.desktopNotifications);
-        if (parsed.eventPrefs) setEventPrefs(parsed.eventPrefs);
-      } catch {}
+  // Web Push state
+  const { status: pushStatus, subscribe: enablePush, unsubscribe: disablePush, isBlocked: pushBlocked } = useWebPush();
+  const [devices, setDevices] = useState<any[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+
+  const applyPrefs = useCallback((p: NotificationPrefs) => {
+    if (p.masterEnabled !== undefined) setMasterEnabled(p.masterEnabled);
+    if (p.soundEnabled !== undefined) setSoundEnabled(p.soundEnabled);
+    if (p.soundType) setSoundType(p.soundType);
+    if (p.volume) setVolume(p.volume);
+    if (p.desktopNotifications !== undefined) setDesktopNotifications(p.desktopNotifications);
+    if (p.eventPrefs) {
+      // Merge defaults so newly added events don't disappear
+      const merged: Record<string, { enabled: boolean; sound: boolean; priority: boolean }> = {};
+      NOTIFICATION_EVENTS.forEach((e) => {
+        const ex: any = (p.eventPrefs as any)[e.key];
+        merged[e.key] = {
+          enabled: ex?.enabled !== undefined ? ex.enabled : true,
+          sound: ex?.sound !== undefined ? ex.sound : true,
+          priority: ex?.priority ?? false,
+        };
+      });
+      setEventPrefs(merged);
+    }
+    if (p.quietHours) {
+      setQuietEnabled(!!p.quietHours.enabled);
+      if (p.quietHours.start) setQuietStart(p.quietHours.start);
+      if (p.quietHours.end) setQuietEnd(p.quietHours.end);
     }
   }, []);
 
-  const savePrefs = () => {
-    const prefs = { masterEnabled, soundEnabled, soundType, volume, desktopNotifications, eventPrefs };
-    localStorage.setItem("notification_prefs", JSON.stringify(prefs));
-    // Notify other components (NotificationBell) in same tab
-    window.dispatchEvent(new CustomEvent("notification-prefs-changed", { detail: prefs }));
-    toast.success("Notification preferences saved!");
+  // Load: try DB first, fall back to localStorage
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const local = getNotificationPrefs();
+      applyPrefs(local);
+      const fromDB = await loadPrefsFromDB();
+      if (!cancelled && fromDB) applyPrefs(fromDB);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [applyPrefs]);
+
+  // Load device list
+  const fetchDevices = useCallback(async () => {
+    if (!user) return;
+    setDevicesLoading(true);
+    const { data } = await (supabase as any)
+      .from("push_subscriptions")
+      .select("id, endpoint, user_agent, created_at, last_used_at, device_label")
+      .eq("user_id", user.id)
+      .order("last_used_at", { ascending: false });
+    setDevices(data || []);
+    setDevicesLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetchDevices(); }, [fetchDevices, pushStatus]);
+
+  const removeDevice = async (id: string) => {
+    await (supabase as any).from("push_subscriptions").delete().eq("id", id);
+    toast.success("Device removed");
+    fetchDevices();
+  };
+
+  const savePrefs = async () => {
+    setSaving(true);
+    const prefs: NotificationPrefs = {
+      masterEnabled, soundEnabled, soundType, volume, desktopNotifications,
+      eventPrefs, quietHours: { enabled: quietEnabled, start: quietStart, end: quietEnd },
+    };
+    setNotificationPrefs(prefs);
+    const ok = await savePrefsToDB(prefs);
+    setSaving(false);
+    toast.success(ok ? "Preferences saved & synced" : "Saved locally (sync failed)");
   };
 
   const toggleEvent = (key: string, field: "enabled" | "sound" | "priority") => {
-    setEventPrefs((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: !prev[key][field] },
-    }));
+    setEventPrefs((prev) => ({ ...prev, [key]: { ...prev[key], [field]: !prev[key][field] } }));
   };
 
   const enableAll = () => {
@@ -155,6 +211,16 @@ const NotificationPreferencesTab = () => {
       if (perm === "granted") toast.success("Desktop notifications enabled!");
       else toast.error("Permission denied");
     }
+  };
+
+  const friendlyDevice = (ua?: string) => {
+    if (!ua) return "Unknown device";
+    if (/iPhone|iPad/.test(ua)) return "iOS device";
+    if (/Android/.test(ua)) return "Android device";
+    if (/Macintosh/.test(ua)) return "Mac";
+    if (/Windows/.test(ua)) return "Windows PC";
+    if (/Linux/.test(ua)) return "Linux";
+    return "Browser";
   };
 
   return (
