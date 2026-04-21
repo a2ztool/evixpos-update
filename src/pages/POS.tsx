@@ -1159,7 +1159,7 @@ const POS = () => {
           )}
 
           {/* Mobile cart bar — floats above bottom nav (portaled to body to escape transformed ancestors) */}
-          {cart.length > 0 && createPortal(
+          {cart.length > 0 && !mobileCartOpen && !checkoutOpen && createPortal(
             <button
               onClick={() => setMobileCartOpen(true)}
               className="lg:hidden fixed left-1/2 -translate-x-1/2 z-[60] bg-primary text-primary-foreground pl-5 pr-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl shadow-primary/30 active:opacity-90 rounded-full w-[calc(100%-28px)] max-w-[440px] ring-1 ring-primary-foreground/10 animate-cart-pop-up"
