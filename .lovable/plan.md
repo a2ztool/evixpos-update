@@ -1,82 +1,54 @@
 
-## Diagnosis
 
-The mobile dashboard is still feeling “stuck” because the page has more than one thing competing for touch scroll:
+## Goal
+Make real PWA install prompt work properly on mobile dashboard AND add an install button to the landing page.
 
-1. `src/components/DashboardAnalytics.tsx` mounts Recharts charts directly on the dashboard. On phones, chart surfaces often capture vertical touch gestures, which makes the page feel like it won’t scroll.
-2. `src/index.css` still has multiple mobile-wide overrides stacked together. The core body-scroll fix is there, but extra mobile polish rules are broad enough that they can still interfere with the intended single-scroll model.
-3. The dashboard shell (`src/components/DashboardLayout.tsx` + `src/components/ui/sidebar.tsx`) is mostly corrected now, so the remaining issue is likely not the bottom nav itself but touch handling inside dashboard content.
+## Root cause of current behavior
+- `beforeinstallprompt` event only fires **once per session** in Chrome. If the user dismissed it once (or browser didn't fire it yet due to engagement heuristics), `deferredPrompt` stays `null` → fallback manual instructions show.
+- iOS Safari & Firefox **never** fire `beforeinstallprompt` — manual instructions are the only option there (this is a browser limitation, not fixable in code).
+- Landing page currently has no install entry point.
 
-## What to build
+## Plan
 
-Apply a very targeted mobile-only fix so the dashboard page scrolls naturally on phones, while keeping:
-- desktop/tablet behavior unchanged
-- bottom nav fixed at the bottom
-- existing layout and styling otherwise unchanged
+### 1. Improve PWA installability signals (`public/manifest.json` + `index.html`)
+- Add `id: "/"` to manifest (helps Chrome track install state reliably).
+- Change `start_url` from `/app` to `/dashboard` (post-login landing).
+- Add `screenshots` array with at least one `form_factor: "narrow"` entry — Chrome requires this for the **richer install UI** on Android and shows the prompt more aggressively. Use existing landing page screenshots.
+- Verify `display: "standalone"` and icon `purpose: "any maskable"` (already correct).
 
-## Implementation plan
+### 2. Persist `deferredPrompt` properly (`src/hooks/usePWAInstall.ts`)
+- Currently the event is captured fine, but if the user opens the dropdown AFTER the event fired and was garbage-collected, it's lost. Store the prompt in a **module-level singleton** so it survives component remounts across the app (sidebar → dashboard → landing all share the same prompt instance).
+- Also re-check `isStandalone` on every focus event so "Installed" state updates instantly after install.
 
-### 1. Keep `body` as the only mobile page scroller
-In `src/index.css`:
-- keep the existing mobile rule where `body` uses `overflow-y: auto` and `-webkit-overflow-scrolling: touch`
-- remove or tighten any extra mobile rules that broadly affect nested layout containers if they are not needed for scrolling
-- add one small safety rule so the dashboard app shell does not create its own vertical scroll context on mobile
+### 3. Smarter install button behavior (`src/components/InstallAppButton.tsx`)
+- On Chrome/Edge/Android Chrome → trigger native prompt directly (current behavior works when prompt is available).
+- When prompt is unavailable on a browser that DOES support PWA (Chrome but event didn't fire yet) → show a small toast: "Use your browser menu → Install app" instead of the big modal.
+- Keep the detailed modal only for iOS Safari and Firefox (where native install is genuinely impossible).
+- Hide the button entirely when already in standalone mode.
 
-Goal:
-- mobile document scroll happens on `body`
-- nested wrappers stay `overflow: visible` on mobile unless they truly need inner scrolling
+### 4. Add Install button to Landing Page (`src/pages/LandingPage.tsx`)
+- Add `<InstallAppButton />` in the sticky navbar (desktop: between language switcher and "Start Free"; mobile: inside the mobile menu).
+- Also add a dedicated **"Install App"** CTA card in the hero section or footer area so first-time visitors see the option without logging in.
+- Reuse the existing `InstallAppButton` component — no new component needed.
 
-### 2. Stop charts from hijacking touch scroll on mobile
-In `src/components/DashboardAnalytics.tsx`:
-- wrap the two chart areas in a mobile-safe container
-- on mobile, disable touch/pointer interaction on the Recharts surfaces so vertical swipe always scrolls the page
-- keep chart rendering visible; only turn off gesture capture on small screens
+### 5. Add visibility refresh
+- In `usePWAInstall`, listen to `appinstalled` event globally and update `isInstalled` immediately so the button switches to "✓ Installed" without a page refresh.
 
-This is the most likely fix for “scroll feels stuck on dashboard specifically,” because the dashboard is the main page with large interactive chart surfaces.
+## Files to edit
+- `public/manifest.json` — add `id`, fix `start_url`, add screenshots field
+- `index.html` — no change needed (already correct)
+- `src/hooks/usePWAInstall.ts` — module-level prompt cache + appinstalled listener
+- `src/components/InstallAppButton.tsx` — smarter fallback (toast vs modal)
+- `src/pages/LandingPage.tsx` — add install button to navbar + mobile menu
+- `src/components/DashboardLayout.tsx` — no change (already has it in profile dropdown)
 
-### 3. Preserve bottom nav exactly as-is
-In `src/components/DashboardLayout.tsx`:
-- keep `MobileNav` fixed
-- keep mobile bottom padding on `<main>` (`pb-24` or equivalent safe value)
-- only increase bottom spacing if needed to fully clear the nav on smaller phones with safe-area insets
+## Important caveats (browser limitations — not bugs)
+- **iOS Safari**: cannot auto-install via JS. Manual "Share → Add to Home Screen" is the ONLY way. Modal will still show for iOS users.
+- **Firefox desktop**: doesn't support PWA install at all.
+- **Preview/iframe**: install prompt is disabled by design (already handled in `pwaUpdate.ts`). Test on the **published URL** (`newevix.lovable.app`) in a real Chrome window.
 
-No nav positioning changes unless absolutely necessary.
+## After implementation — how to test
+1. Open `https://newevix.lovable.app` in **Chrome on Android** (or desktop Chrome) → "Install App" button should fire native browser install dialog directly.
+2. After install → button shows "✓ Installed" and is disabled.
+3. On iOS Safari → modal with "Add to Home Screen" instructions (browser limitation).
 
-### 4. Verify shell components do not reintroduce a scroll trap
-In `src/components/ui/sidebar.tsx`:
-- keep desktop-only flex/height behavior under `md:...`
-- ensure mobile sidebar wrapper/content stay non-scrolling unless the sheet itself is open
-- do not change desktop sidebar behavior
-
-### 5. Leave admin/staff untouched unless the same pattern exists there
-This fix will target the dashboard path first. If the same “stuck” feeling exists on admin/staff pages after the dashboard fix, apply the same mobile touch-scroll rule only to their interactive chart/scroll-heavy areas.
-
-## Files to change
-
-- `src/index.css`
-- `src/components/DashboardAnalytics.tsx`
-- `src/components/DashboardLayout.tsx` (only if spacing needs a tiny mobile adjustment)
-- `src/components/ui/sidebar.tsx` (only if a leftover mobile overflow rule needs tightening)
-
-## Expected result
-
-- On mobile phones, dashboard scroll works with normal finger swipe
-- Charts no longer block vertical scrolling
-- Bottom nav remains fixed at the bottom
-- Content does not go under the bottom nav
-- Desktop and tablet behavior remain unchanged
-
-## Technical details
-
-Recommended mobile-only chart rule:
-- apply `pointer-events: none` / `touch-action: pan-y` to chart interaction layers on small screens only
-
-Recommended scroll model:
-```text
-mobile:
-html/body/#root -> grow naturally
-body -> single vertical scroller
-dashboard wrappers -> overflow visible
-fixed bottom nav -> stays viewport-fixed
-interactive charts -> do not intercept vertical swipe
-```
