@@ -564,23 +564,28 @@ const NotificationCenterTab = () => {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {[
-          { label: "Total", value: notifications.length, icon: <Bell className="h-4 w-4 text-primary" /> },
-          { label: "Unread", value: unreadCount, icon: <BellRing className="h-4 w-4 text-amber-500" /> },
-          { label: "Success", value: notifications.filter((n) => n.type === "success").length, icon: <CheckCircle className="h-4 w-4 text-emerald-500" /> },
-          { label: "Errors", value: notifications.filter((n) => n.type === "error").length, icon: <AlertCircle className="h-4 w-4 text-destructive" /> },
-        ].map((s) => (
-          <Card key={s.label}>
-            <CardContent className="p-3 flex items-center gap-3">
-              {s.icon}
-              <div>
-                <p className="text-xl font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+          { label: "Total", value: notifications.length, icon: Bell, gradient: "from-primary/10 to-primary/5", iconBg: "bg-primary/15", iconColor: "text-primary", ring: "ring-primary/20" },
+          { label: "Unread", value: unreadCount, icon: BellRing, gradient: "from-amber-500/10 to-amber-500/5", iconBg: "bg-amber-500/15", iconColor: "text-amber-600 dark:text-amber-400", ring: "ring-amber-500/20" },
+          { label: "Success", value: notifications.filter((n) => n.type === "success").length, icon: CheckCircle, gradient: "from-emerald-500/10 to-emerald-500/5", iconBg: "bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400", ring: "ring-emerald-500/20" },
+          { label: "Errors", value: notifications.filter((n) => n.type === "error").length, icon: AlertCircle, gradient: "from-destructive/10 to-destructive/5", iconBg: "bg-destructive/15", iconColor: "text-destructive", ring: "ring-destructive/20" },
+        ].map((s) => {
+          const Icon = s.icon;
+          return (
+            <Card key={s.label} className={`relative overflow-hidden border ring-1 ${s.ring} bg-gradient-to-br ${s.gradient} hover:shadow-md transition-shadow`}>
+              <CardContent className="p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className={`shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-lg ${s.iconBg} flex items-center justify-center`}>
+                  <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.iconColor}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xl sm:text-2xl font-bold leading-tight truncate">{s.value}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground font-medium truncate">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Actions */}
