@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Plus, Search, Truck, ShoppingBag, Edit2, Eye, Wallet, DollarSign,
-  AlertTriangle, Phone, Mail, CheckCircle2, History, Package,
+  Plus, Search, Truck, ShoppingBag, Edit2, Eye,
+  AlertTriangle, Phone, Mail, CheckCircle2, History, Package, BookOpen, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ const OnlineSuppliersPurchases = () => {
 
   const [tab, setTab] = useState<"suppliers" | "purchases">("suppliers");
   const [search, setSearch] = useState("");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   // Supplier dialog
   const [supDialog, setSupDialog] = useState(false);
@@ -250,18 +252,48 @@ const OnlineSuppliersPurchases = () => {
         {/* Header */}
         <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30">
                 <Truck className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Suppliers & Purchases</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">Manage vendors and procurement in one place</p>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">Suppliers & Purchases</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Manage vendors and procurement in one place</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+                <SheetTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5"><BookOpen className="h-4 w-4" /> Guide</Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary" /> Suppliers & Purchases Guide</SheetTitle>
+                    <SheetDescription>Master vendor management and procurement in 6 steps.</SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-5 space-y-3 text-sm">
+                    {[
+                      { t: "1. Add a Supplier", d: "Click 'Supplier' to store vendor name, phone, email and address. Phone enables WhatsApp follow-ups later." },
+                      { t: "2. Record a Purchase", d: "Click 'Purchase', pick the supplier, enter product name, quantity, unit price, paid amount and date." },
+                      { t: "3. Auto Status", d: "Paid ≥ Total → Paid · Paid > 0 → Partial · Paid = 0 → Unpaid. Unpaid balance auto-adds to supplier's due." },
+                      { t: "4. Stats Overview", d: "Top cards show Total Purchase, Paid, Due and total Records — your procurement health at a glance." },
+                      { t: "5. View History", d: "Click 'History' on any supplier card to see every purchase made with that vendor." },
+                      { t: "6. Search & Tabs", d: "Use the search bar to filter suppliers or purchases. Switch tabs to focus on one list at a time." },
+                    ].map((s, i) => (
+                      <div key={i} className="rounded-lg border bg-card p-3">
+                        <p className="font-semibold text-foreground">{s.t}</p>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.d}</p>
+                      </div>
+                    ))}
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <p className="font-semibold text-primary flex items-center gap-1.5"><ShieldCheck className="h-4 w-4" /> Pro Tip</p>
+                      <p className="text-xs text-muted-foreground mt-1">Always link purchases to suppliers — that way the system tracks running dues automatically and you never lose payment history.</p>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
               <Button size="sm" variant="outline" onClick={() => { setSupEditId(null); setSupForm({ name: "", phone: "", email: "", address: "", notes: "" }); setSupDialog(true); }} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Supplier
+                <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Supplier</span><span className="xs:hidden">Sup.</span>
               </Button>
               <Button size="sm" onClick={() => setPurDialog(true)} className="gap-1.5 shadow-lg shadow-primary/30">
                 <Plus className="h-4 w-4" /> Purchase
@@ -271,47 +303,47 @@ const OnlineSuppliersPurchases = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card><CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Total Purchase</p>
-                <p className="text-lg sm:text-xl font-bold mt-0.5">{format(stats.total)}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          <Card className="overflow-hidden"><CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Total Purchase</p>
+                <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{format(stats.total)}</p>
               </div>
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
                 <ShoppingBag className="h-4 w-4 text-primary" />
               </div>
             </div>
           </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Paid</p>
-                <p className="text-lg sm:text-xl font-bold mt-0.5 text-emerald-600">{format(stats.paid)}</p>
+          <Card className="overflow-hidden"><CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Paid</p>
+                <p className="text-base sm:text-xl font-bold mt-0.5 text-emerald-600 truncate">{format(stats.paid)}</p>
               </div>
-              <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               </div>
             </div>
           </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Due</p>
-                <p className="text-lg sm:text-xl font-bold mt-0.5 text-destructive">{format(stats.due)}</p>
+          <Card className="overflow-hidden"><CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Due</p>
+                <p className="text-base sm:text-xl font-bold mt-0.5 text-destructive truncate">{format(stats.due)}</p>
               </div>
-              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg bg-destructive/10 flex items-center justify-center">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
               </div>
             </div>
           </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Records</p>
-                <p className="text-lg sm:text-xl font-bold mt-0.5">{stats.count}</p>
+          <Card className="overflow-hidden"><CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Records</p>
+                <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{stats.count}</p>
               </div>
-              <div className="h-9 w-9 rounded-lg bg-accent/40 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg bg-accent/40 flex items-center justify-center">
                 <Package className="h-4 w-4" />
               </div>
             </div>
