@@ -7,6 +7,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useStoreMode } from "@/hooks/useStoreMode";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -89,6 +90,7 @@ type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const { isOffline, isOnline } = useStoreMode();
@@ -745,7 +747,7 @@ const POS = () => {
         </Button>
       </div>
       <Select value={customerId} onValueChange={setCustomerId}>
-        <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+        <SelectTrigger><SelectValue placeholder={t.selectCustomer} /></SelectTrigger>
         <SelectContent>
           {customers.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ""}</SelectItem>
@@ -940,7 +942,7 @@ const POS = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Select Customer</h3>
+              <h3 className="text-base font-semibold">{t.selectCustomerHeading}</h3>
               <Button variant="outline" size="sm" className="gap-1" onClick={() => setNewCustOpen(true)}><UserPlus className="h-3.5 w-3.5" /> New</Button>
             </div>
             <Select value={customerId} onValueChange={setCustomerId}>
@@ -953,7 +955,7 @@ const POS = () => {
       case 1:
         return (
           <div className="space-y-3">
-            <h3 className="text-base font-semibold">Review Cart ({cart.reduce((s, i) => s + i.quantity, 0)} items)</h3>
+            <h3 className="text-base font-semibold">{t.reviewCart} ({cart.reduce((s, i) => s + i.quantity, 0)} {t.items.toLowerCase()})</h3>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {cart.map(item => {
                 const key = getCartItemKey(item);
@@ -978,7 +980,7 @@ const POS = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Payment Method</h3>
+              <h3 className="text-base font-semibold">{t.paymentMethod}</h3>
               {isOffline && (
                 <Button variant={splitMode ? "default" : "outline"} size="sm" className="gap-1 h-7 text-xs" onClick={() => setSplitMode(!splitMode)}>
                   <Split className="h-3 w-3" /> Split
@@ -1018,14 +1020,14 @@ const POS = () => {
       case 3:
         return (
           <div className="space-y-4">
-            <h3 className="text-base font-semibold">Order Notes (Optional)</h3>
+            <h3 className="text-base font-semibold">{t.orderNotes} ({t.optional})</h3>
             <Textarea placeholder="Add any notes..." value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} className="min-h-[100px]" />
           </div>
         );
       case 4:
         return (
           <div className="space-y-4">
-            <h3 className="text-base font-semibold">Order Summary</h3>
+            <h3 className="text-base font-semibold">{t.orderSummary}</h3>
             <div className="rounded-lg border p-4 space-y-3 bg-muted/30">
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Customer</span><span className="font-medium">{selectedCustomer?.name || "—"}</span></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Items</span><span className="font-medium">{cart.reduce((s, i) => s + i.quantity, 0)}</span></div>

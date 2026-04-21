@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -101,6 +102,7 @@ const paymentColors: Record<string, string> = {
 
 const Orders = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const [searchParams] = useSearchParams();
@@ -604,7 +606,7 @@ const fetchProducts = async () => {
   return (
     <DashboardLayout>
       <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Orders</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{t.orders}</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>
             <History className="h-4 w-4" />
@@ -627,7 +629,7 @@ const fetchProducts = async () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search orders..."
+            placeholder={t.searchOrders}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -635,7 +637,7 @@ const fetchProducts = async () => {
         </div>
         <Select value={timeFilter} onValueChange={setTimeFilter}>
           <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="All Time" />
+            <SelectValue placeholder={t.allTime} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Time</SelectItem>
@@ -646,7 +648,7 @@ const fetchProducts = async () => {
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="All Status" />
+            <SelectValue placeholder={t.allStatus} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
@@ -657,7 +659,7 @@ const fetchProducts = async () => {
         </Select>
         <Select value={paymentFilter} onValueChange={setPaymentFilter}>
           <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="All Payments" />
+            <SelectValue placeholder={t.allPayments} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Payments</SelectItem>
@@ -674,7 +676,7 @@ const fetchProducts = async () => {
           <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <ClipboardList className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">No orders yet</h3>
+          <h3 className="text-lg font-semibold mb-1">{t.noOrdersYet}</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Create a <button className="text-primary underline" onClick={() => setCreateOpen(true)}>manual order</button> or{" "}
             <span className="text-primary underline cursor-pointer">sync from WooCommerce</span>.
@@ -727,14 +729,14 @@ const fetchProducts = async () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>{t.orderId}</TableHead>
+                  <TableHead>{t.customer}</TableHead>
+                  <TableHead>{t.amount}</TableHead>
+                  <TableHead>{t.status}</TableHead>
+                  <TableHead>{t.payment}</TableHead>
+                  <TableHead>{t.method}</TableHead>
+                  <TableHead>{t.source}</TableHead>
+                  <TableHead>{t.date}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -836,9 +838,9 @@ const fetchProducts = async () => {
 
             {/* Product */}
             <div className="space-y-2">
-              <Label>Product *</Label>
+              <Label>{t.product} *</Label>
               <Input
-                placeholder="Enter product name"
+                placeholder={t.enterProductName}
                 value={formProductName}
                 onChange={(e) => setFormProductName(e.target.value)}
                 list="product-list"
@@ -852,7 +854,7 @@ const fetchProducts = async () => {
 
             {/* Date & Time */}
             <div className="space-y-2">
-              <Label>Date & Time</Label>
+              <Label>{t.dateTime}</Label>
               <Input
                 type="datetime-local"
                 value={formDateTime}
@@ -863,7 +865,7 @@ const fetchProducts = async () => {
             {/* Amount & Cost */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Amount Paid ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Label>{t.amountPaid} ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -872,7 +874,7 @@ const fetchProducts = async () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cost Price ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Label>{t.costPrice} ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -885,7 +887,7 @@ const fetchProducts = async () => {
             {/* Discount */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Discount</Label>
+                <Label>{t.discount}</Label>
                 <Input
                   type="number"
                   value={formDiscount}
@@ -893,7 +895,7 @@ const fetchProducts = async () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t.type}</Label>
                 <Select value={formDiscountType} onValueChange={setFormDiscountType}>
                   <SelectTrigger>
                     <SelectValue />
@@ -918,7 +920,7 @@ const fetchProducts = async () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Payment Method</Label>
+                  <Label>{t.paymentMethod}</Label>
                   <button
                     type="button"
                     onClick={() => navigate("/settings?tab=payment")}
@@ -942,7 +944,7 @@ const fetchProducts = async () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Source</Label>
+                <Label>{t.source}</Label>
                 <Select value={formSource} onValueChange={setFormSource}>
                   <SelectTrigger>
                     <SelectValue />
@@ -1201,7 +1203,7 @@ const fetchProducts = async () => {
                 <>
                   <Separator />
                   <div>
-                    <h3 className="font-semibold mb-1 text-sm">Notes</h3>
+                    <h3 className="font-semibold mb-1 text-sm">{t.notes}</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedOrder.notes}</p>
                   </div>
                 </>
@@ -1210,7 +1212,7 @@ const fetchProducts = async () => {
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-2">Items</h3>
+                <h3 className="font-semibold mb-2">{t.items}</h3>
                 {orderItems.length === 0 ? (
                   <p className="text-muted-foreground text-sm">No items</p>
                 ) : (

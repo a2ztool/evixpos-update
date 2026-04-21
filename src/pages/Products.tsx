@@ -6,6 +6,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,7 @@ const emptyForm = {
 
 const Products = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
@@ -423,7 +425,7 @@ const Products = () => {
             <span className="text-border">/</span>
             <span className="text-primary">Catalog</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Products</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{t.products}</h1>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button
@@ -433,11 +435,11 @@ const Products = () => {
             className="gap-1.5 h-9 flex-1 sm:flex-initial"
           >
             <Upload className="h-4 w-4" />
-            Import
+            {t.import}
           </Button>
           <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-initial" onClick={openAdd}>
             <Plus className="h-4 w-4" />
-            Add Product
+            {t.addProduct}
           </Button>
           <Button
             variant="outline"
@@ -490,7 +492,7 @@ const Products = () => {
         <div className="relative sm:flex-1 sm:min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, SKU, or category..."
+            placeholder={t.searchProducts}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 border-0 bg-transparent shadow-none focus-visible:ring-1"
@@ -532,7 +534,7 @@ const Products = () => {
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
             <SelectTrigger className="h-8 text-xs w-[135px] shrink-0">
               <ArrowUpDown className="h-3 w-3 mr-1" />
-              <SelectValue placeholder="Sort" />
+              <SelectValue placeholder={t.sort} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="newest">Newest first</SelectItem>
@@ -593,7 +595,7 @@ const Products = () => {
           <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <Package className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">{products.length === 0 ? "No products yet" : "No products match filters"}</h3>
+          <h3 className="text-lg font-semibold mb-1">{products.length === 0 ? t.noProductsYet : t.noProductsMatch}</h3>
           <p className="text-sm text-muted-foreground mb-4 text-center px-4">
             {products.length === 0 ? "Add your first product with pricing and variations." : "Try adjusting your search or filters."}
           </p>
@@ -891,18 +893,18 @@ const Products = () => {
           <div className="space-y-5 mt-6">
             {/* Name */}
             <div className="space-y-2">
-              <Label>Product Name *</Label>
+              <Label>{t.productName} *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" />
             </div>
 
             {/* SKU & Category */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>SKU</Label>
+                <Label>{t.sku}</Label>
                 <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="" />
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>{t.category}</Label>
                 <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="" />
               </div>
             </div>
@@ -917,18 +919,18 @@ const Products = () => {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t.description}</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
 
             {/* Base Cost & Base Selling */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Base Cost (৳)</Label>
+                <Label>{t.baseCost} (৳)</Label>
                 <Input type="number" value={form.base_cost} onChange={(e) => setForm({ ...form, base_cost: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Base Selling (৳)</Label>
+                <Label>{t.baseSelling} (৳)</Label>
                 <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
               </div>
             </div>
@@ -941,7 +943,7 @@ const Products = () => {
 
             {/* Stock Quantity */}
             <div className="space-y-2">
-              <Label>Stock Quantity</Label>
+              <Label>{t.stockQuantity}</Label>
               <Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Leave empty for unlimited" />
               <p className="text-xs text-muted-foreground">Leave empty for unlimited stock</p>
             </div>
@@ -949,7 +951,7 @@ const Products = () => {
             {/* Toggles */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Active</Label>
+                <Label>{t.active}</Label>
                 <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
               </div>
             </div>
