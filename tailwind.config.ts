@@ -104,6 +104,10 @@ export default {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
+        "cart-pop-up": {
+          "0%": { opacity: "0", transform: "translate(-50%, 24px) scale(0.96)" },
+          "100%": { opacity: "1", transform: "translate(-50%, 0) scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -111,6 +115,7 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "cart-pop-up": "cart-pop-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
     },
   },
