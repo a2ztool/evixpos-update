@@ -1415,27 +1415,37 @@ const LandingPage = () => {
             <div className="lg:col-span-2">
               <h4 className="font-semibold text-sm mb-2.5 sm:mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col1_title", "Product")}</h4>
               <ul className="space-y-1.5 sm:space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => smoothScroll("#features")} className="hover:text-primary transition-colors">{get("nav_features", "Features")}</button></li>
-                <li><button onClick={() => smoothScroll("#pricing")} className="hover:text-primary transition-colors">{get("nav_pricing", "Pricing")}</button></li>
-                <li><button onClick={() => smoothScroll("#how-it-works")} className="hover:text-primary transition-colors">{get("footer_link_how", "How It Works")}</button></li>
-                <li><button onClick={() => smoothScroll("#screenshots")} className="hover:text-primary transition-colors">{get("footer_link_screenshots", "Screenshots")}</button></li>
+                <li><button onClick={() => smoothScroll("#features")} className="hover:text-primary transition-colors text-left">{get("nav_features", "Features")}</button></li>
+                <li><button onClick={() => smoothScroll("#pricing")} className="hover:text-primary transition-colors text-left">{get("nav_pricing", "Pricing")}</button></li>
+                <li><button onClick={() => smoothScroll("#how-it-works")} className="hover:text-primary transition-colors text-left">{get("footer_link_how", "How It Works")}</button></li>
+                <li><button onClick={() => smoothScroll("#screenshots")} className="hover:text-primary transition-colors text-left">{get("footer_link_screenshots", "Screenshots")}</button></li>
+                <li><button onClick={() => smoothScroll("#integrations")} className="hover:text-primary transition-colors text-left">{get("footer_link_integrations", "Integrations")}</button></li>
+                <li><button onClick={() => smoothScroll("#faq")} className="hover:text-primary transition-colors text-left">{get("footer_link_updates", "What's New")}</button></li>
+                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors text-left">{get("footer_link_demo", "Request Demo")}</button></li>
               </ul>
             </div>
             <div className="lg:col-span-2">
               <h4 className="font-semibold text-sm mb-2.5 sm:mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col2_title", "Company")}</h4>
               <ul className="space-y-1.5 sm:space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => smoothScroll("#about")} className="hover:text-primary transition-colors">{get("nav_about", "About Us")}</button></li>
-                <li><button onClick={() => smoothScroll("#testimonials")} className="hover:text-primary transition-colors">{get("nav_reviews", "Reviews")}</button></li>
-                <li><button onClick={() => smoothScroll("#faq")} className="hover:text-primary transition-colors">{get("nav_faq", "FAQ")}</button></li>
+                <li><button onClick={() => smoothScroll("#about")} className="hover:text-primary transition-colors text-left">{get("nav_about", "About Us")}</button></li>
+                <li><button onClick={() => smoothScroll("#testimonials")} className="hover:text-primary transition-colors text-left">{get("nav_reviews", "Reviews")}</button></li>
+                <li><button onClick={() => smoothScroll("#faq")} className="hover:text-primary transition-colors text-left">{get("nav_faq", "FAQ")}</button></li>
                 <li><a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="hover:text-primary transition-colors">{get("footer_link_contact", "Contact")}</a></li>
+                <li><button onClick={() => setPolicyModal("privacy")} className="hover:text-primary transition-colors text-left">{get("footer_link_privacy", "Privacy")}</button></li>
+                <li><button onClick={() => setPolicyModal("terms")} className="hover:text-primary transition-colors text-left">{get("footer_link_terms", "Terms")}</button></li>
+                <li><button onClick={() => setPolicyModal("refund")} className="hover:text-primary transition-colors text-left">{get("footer_link_refund", "Refund Policy")}</button></li>
               </ul>
             </div>
             <div className="lg:col-span-2">
               <h4 className="font-semibold text-sm mb-2.5 sm:mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col3_title", "Account")}</h4>
               <ul className="space-y-1.5 sm:space-y-3 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">{get("footer_link_login", "Login")}</button></li>
-                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors">{get("footer_link_signup", "Sign Up Free")}</button></li>
-                <li><button onClick={() => navigate("/dashboard")} className="hover:text-primary transition-colors">{get("footer_link_dashboard", "Dashboard")}</button></li>
+                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors text-left">{get("footer_link_login", "Login")}</button></li>
+                <li><button onClick={() => navigate("/auth")} className="hover:text-primary transition-colors text-left">{get("footer_link_signup", "Sign Up Free")}</button></li>
+                <li><button onClick={() => navigate("/dashboard")} className="hover:text-primary transition-colors text-left">{get("footer_link_dashboard", "Dashboard")}</button></li>
+                <li><button onClick={() => navigate("/dashboard/my-plan")} className="hover:text-primary transition-colors text-left">{get("footer_link_billing", "My Plan")}</button></li>
+                <li><button onClick={() => navigate("/dashboard/support")} className="hover:text-primary transition-colors text-left">{get("footer_link_support", "Support")}</button></li>
+                <li><a href={`https://wa.me/${get("brand_whatsapp", "+91 8101949890").replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{get("footer_link_whatsapp", "WhatsApp Us")}</a></li>
+                <li><a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="hover:text-primary transition-colors">{get("footer_link_email", "Email Us")}</a></li>
               </ul>
             </div>
             <div className="col-span-2 sm:col-span-2 lg:col-span-3">
