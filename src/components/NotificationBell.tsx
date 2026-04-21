@@ -92,6 +92,23 @@ const NotificationBell = () => {
           </div>
         </div>
 
+        {/* Compact volume slider */}
+        {soundEnabled && (
+          <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30">
+            <VolumeX className="h-3 w-3 text-muted-foreground shrink-0" />
+            <Slider
+              value={volume}
+              onValueChange={handleVolume}
+              max={100}
+              step={5}
+              className="flex-1"
+              aria-label="Notification volume"
+            />
+            <Volume2 className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{volume[0]}%</span>
+          </div>
+        )}
+
         {/* Unread messages shortcut */}
         {msgUnread > 0 && (
           <div
