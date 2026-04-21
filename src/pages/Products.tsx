@@ -425,7 +425,7 @@ const Products = () => {
             <span className="text-border">/</span>
             <span className="text-primary">Catalog</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Products</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{t.products}</h1>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           <Button
@@ -435,11 +435,11 @@ const Products = () => {
             className="gap-1.5 h-9 flex-1 sm:flex-initial"
           >
             <Upload className="h-4 w-4" />
-            Import
+            {t.import}
           </Button>
           <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-initial" onClick={openAdd}>
             <Plus className="h-4 w-4" />
-            Add Product
+            {t.addProduct}
           </Button>
           <Button
             variant="outline"
@@ -492,7 +492,7 @@ const Products = () => {
         <div className="relative sm:flex-1 sm:min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, SKU, or category..."
+            placeholder={t.searchProducts}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 border-0 bg-transparent shadow-none focus-visible:ring-1"
@@ -534,7 +534,7 @@ const Products = () => {
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
             <SelectTrigger className="h-8 text-xs w-[135px] shrink-0">
               <ArrowUpDown className="h-3 w-3 mr-1" />
-              <SelectValue placeholder="Sort" />
+              <SelectValue placeholder={t.sort} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="newest">Newest first</SelectItem>
@@ -595,7 +595,7 @@ const Products = () => {
           <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <Package className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">{products.length === 0 ? "No products yet" : "No products match filters"}</h3>
+          <h3 className="text-lg font-semibold mb-1">{products.length === 0 ? t.noProductsYet : t.noProductsMatch}</h3>
           <p className="text-sm text-muted-foreground mb-4 text-center px-4">
             {products.length === 0 ? "Add your first product with pricing and variations." : "Try adjusting your search or filters."}
           </p>
