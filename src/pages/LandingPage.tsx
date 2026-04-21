@@ -360,12 +360,12 @@ const LandingPage = () => {
       <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style={{ backdropFilter: scrolled ? 'blur(20px)' : 'blur(0px)', background: scrolled ? 'hsl(var(--background) / 0.85)' : 'transparent' }}>
         {/* ANNOUNCEMENT BANNER — collapses on scroll */}
         {bannerActive && (
-          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-xs sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-12 py-1 sm:py-2.5 opacity-100'}`}>
+          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[10px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-10 py-0.5 sm:py-2.5 opacity-100'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
-            <div className="max-w-7xl mx-auto px-4 flex items-center justify-center gap-2 sm:gap-3 relative">
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-center gap-1.5 sm:gap-3 relative">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
-              <Button size="sm" variant="secondary" className="h-[18px] sm:h-7 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0 leading-none rounded-md shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
+              <Button size="sm" variant="secondary" className="h-[16px] sm:h-7 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0 leading-none rounded shrink-0" onClick={() => navigate("/auth")}>{get("banner_cta", "Claim Offer")}</Button>
             </div>
           </div>
         )}
@@ -405,7 +405,7 @@ const LandingPage = () => {
             <Button 
               size="sm" 
               onClick={() => navigate("/auth")} 
-              className="gap-1 sm:gap-1.5 text-[11px] sm:text-[13px] font-semibold h-7 sm:h-10 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-[0.96] transition-all duration-200 py-[6px] px-[12px]"
+              className="gap-1 sm:gap-1.5 text-[11px] sm:text-[13px] font-semibold h-6 sm:h-10 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-[0.96] transition-all duration-200 py-0 px-2.5"
             >
               {get("nav_start_free", "Start Free")} <ArrowRight className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
             </Button>
@@ -477,23 +477,23 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           {/* Social proof badge */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2.5 sm:px-5 py-0.5 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
+            <div className="inline-flex items-center gap-1.5 sm:gap-3 px-2 sm:px-5 py-0 sm:py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm max-w-[95vw]">
               <div className="flex -space-x-1.5 sm:-space-x-2 shrink-0">
                 {[1,2,3].map(i => {
                   const img = get(`social_proof_avatar_${i}`);
                   return img ? (
-                    <img key={i} src={img} className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 border-card object-cover" alt="" />
+                    <img key={i} src={img} className="w-4 h-4 sm:w-7 sm:h-7 rounded-full border-2 border-card object-cover" alt="" />
                   ) : (
-                    <div key={i} className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
-                      <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary-foreground" />
+                    <div key={i} className="w-4 h-4 sm:w-7 sm:h-7 rounded-full border-2 border-card bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
+                      <Users className="h-2 w-2 sm:h-3 sm:w-3 text-primary-foreground" />
                     </div>
                   );
                 })}
               </div>
-              <span className="text-[11px] sm:text-sm font-medium text-muted-foreground line-clamp-1">
+              <span className="text-[10px] sm:text-sm font-medium text-muted-foreground line-clamp-1 py-1 sm:py-0">
                 {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
               </span>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="h-5 sm:h-7 px-1.5 sm:px-3 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="h-4 sm:h-7 px-1 sm:px-3 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0">
                 Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
               </Button>
             </div>
