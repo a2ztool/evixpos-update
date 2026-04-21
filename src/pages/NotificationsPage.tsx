@@ -119,6 +119,8 @@ const NotificationPreferencesTab = () => {
   const savePrefs = () => {
     const prefs = { masterEnabled, soundEnabled, soundType, volume, desktopNotifications, eventPrefs };
     localStorage.setItem("notification_prefs", JSON.stringify(prefs));
+    // Notify other components (NotificationBell) in same tab
+    window.dispatchEvent(new CustomEvent("notification-prefs-changed", { detail: prefs }));
     toast.success("Notification preferences saved!");
   };
 
