@@ -893,18 +893,18 @@ const Products = () => {
           <div className="space-y-5 mt-6">
             {/* Name */}
             <div className="space-y-2">
-              <Label>Product Name *</Label>
+              <Label>{t.productName} *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" />
             </div>
 
             {/* SKU & Category */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>SKU</Label>
+                <Label>{t.sku}</Label>
                 <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="" />
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>{t.category}</Label>
                 <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="" />
               </div>
             </div>
@@ -919,18 +919,18 @@ const Products = () => {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t.description}</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
 
             {/* Base Cost & Base Selling */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Base Cost (৳)</Label>
+                <Label>{t.baseCost} (৳)</Label>
                 <Input type="number" value={form.base_cost} onChange={(e) => setForm({ ...form, base_cost: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Base Selling (৳)</Label>
+                <Label>{t.baseSelling} (৳)</Label>
                 <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
               </div>
             </div>
@@ -943,7 +943,7 @@ const Products = () => {
 
             {/* Stock Quantity */}
             <div className="space-y-2">
-              <Label>Stock Quantity</Label>
+              <Label>{t.stockQuantity}</Label>
               <Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Leave empty for unlimited" />
               <p className="text-xs text-muted-foreground">Leave empty for unlimited stock</p>
             </div>
@@ -951,7 +951,7 @@ const Products = () => {
             {/* Toggles */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Active</Label>
+                <Label>{t.active}</Label>
                 <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
               </div>
             </div>
