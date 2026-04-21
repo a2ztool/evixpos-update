@@ -388,7 +388,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-2 shrink-0">
               <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className={`w-auto transition-all duration-300 ${scrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"}`} />
             </div>
-            <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+            <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
               {DEFAULT_NAV_LINKS.map((link) => (
                 <button key={link.href} onClick={() => smoothScroll(link.href)} className="relative px-4 py-2 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-all duration-200 group">
                   <span className="relative z-10">{get(link.labelKey, link.defaultLabel)}</span>
@@ -414,7 +414,7 @@ const LandingPage = () => {
               </Button>
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-                className="md:hidden w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent/60 active:scale-95 transition-all duration-200"
+                className="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent/60 active:scale-95 transition-all duration-200"
               >
                 <div className="flex flex-col gap-1">
                   <span className={`w-4 h-0.5 bg-foreground rounded-full transition-all duration-300 ${mobileMenuOpen ? "rotate-45 translate-y-1.5" : ""}`} />
@@ -430,7 +430,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: -10, scale: 0.98 }} 
                 animate={{ opacity: 1, y: 0, scale: 1 }} 
                 exit={{ opacity: 0, y: -10 }} 
-                className="md:hidden max-w-5xl mx-auto mt-2.5 rounded-2xl border border-border/30 bg-background/90 backdrop-blur-2xl shadow-xl overflow-hidden"
+                className="lg:hidden max-w-5xl mx-auto mt-2.5 rounded-2xl border border-border/30 bg-background/90 backdrop-blur-2xl shadow-xl overflow-hidden"
               >
                 <div className="px-3 py-3 space-y-0.5">
                   {DEFAULT_NAV_LINKS.map((link, i) => (
