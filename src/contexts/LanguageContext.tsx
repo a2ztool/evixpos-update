@@ -157,57 +157,71 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export const useLanguage = () => useContext(LanguageContext);
 
+// Resolve the owner user_id for the current auth user.
+// Staff members inherit their store owner's language preference.
+const resolveOwnerId = async (authUserId: string): Promise<string> => {
+  const { data: staff } = await supabase
+    .from("staff_members")
+    .select("user_id")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+  return staff?.user_id || authUserId;
+};
+
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = localStorage.getItem("app_language") as Lang;
     return saved && translations[saved] ? saved : "en";
   });
-  const [dbLoaded, setDbLoaded] = useState(false);
 
-  // Load language preference from DB on auth change
+  // Load language from DB on auth state change (handles login, refresh, switch user)
   useEffect(() => {
-    if (dbLoaded) return;
+    let cancelled = false;
 
-    const loadLangFromDb = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
+    const loadLangFromDb = async (authUserId: string) => {
+      const ownerId = await resolveOwnerId(authUserId);
       const { data } = await supabase
         .from("business_settings")
         .select("app_language")
-        .eq("user_id", session.user.id)
+        .eq("user_id", ownerId)
         .limit(1)
         .maybeSingle();
 
+      if (cancelled) return;
       if (data?.app_language && translations[data.app_language as Lang]) {
         setLangState(data.app_language as Lang);
         localStorage.setItem("app_language", data.app_language);
       }
-      setDbLoaded(true);
     };
 
-    loadLangFromDb();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !dbLoaded) {
-        loadLangFromDb();
-      }
+    // Initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) loadLangFromDb(session.user.id);
     });
 
-    return () => subscription.unsubscribe();
-  }, [dbLoaded]);
+    // Re-sync whenever auth changes (login / token refresh / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) loadLangFromDb(session.user.id);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const changeLang = async (newLang: Lang) => {
     setLangState(newLang);
     localStorage.setItem("app_language", newLang);
 
-    // Persist to DB
+    // Persist to DB against the owner's settings (staff updates owner's pref)
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
+      const ownerId = await resolveOwnerId(session.user.id);
       await supabase
         .from("business_settings")
         .update({ app_language: newLang })
-        .eq("user_id", session.user.id);
+        .eq("user_id", ownerId);
     }
   };
 
