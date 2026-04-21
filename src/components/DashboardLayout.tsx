@@ -271,6 +271,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                         <Crown className="h-4 w-4 mr-2" /> My Plan
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem
+                      onClick={handleInstallApp}
+                      disabled={appInstalled}
+                      className="md:hidden"
+                    >
+                      {appInstalled ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2 text-primary" /> App Installed
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="h-4 w-4 mr-2 text-primary" /> Install App
+                        </>
+                      )}
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                       <LogOut className="h-4 w-4 mr-2" /> Log out
