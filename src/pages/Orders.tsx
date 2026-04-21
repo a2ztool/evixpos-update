@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -101,6 +102,7 @@ const paymentColors: Record<string, string> = {
 
 const Orders = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const [searchParams] = useSearchParams();
