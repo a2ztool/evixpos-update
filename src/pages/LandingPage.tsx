@@ -10,7 +10,8 @@ import {
   Download, Apple, MonitorSmartphone, Heart, ThumbsUp, Quote,
   Rocket, BarChart, Palette, Settings, AlertTriangle, Lightbulb,
   XCircle, ArrowDown, ChevronRight, Eye, Workflow, Database,
-  Timer, Repeat, FileText, Bot, Crown
+  Timer, Repeat, FileText, Bot, Crown,
+  Facebook, Instagram, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,7 @@ import screenshotAnalytics from "@/assets/screenshot-analytics.jpg";
 import screenshotPos from "@/assets/screenshot-pos.jpg";
 import mobileAppMockup from "@/assets/mobile-app-mockup.png";
 import brandLogo from "@/assets/evixPos.png";
+import brandLogoMark from "@/assets/evixpos-logo-mark.png";
 
 /* ─── icon arrays for dynamic sections ─── */
 const FEATURE_ICONS = [ShoppingCart, Repeat, Users, BarChart3, Bot, Globe, CreditCard, Layers, Target, Sparkles];
@@ -1328,8 +1330,8 @@ const LandingPage = () => {
         <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-primary/8 rounded-full blur-[80px]" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <AnimSection>
-            <motion.div whileHover={{ scale: 1.05 }} className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-primary/20">
-              <Zap className="h-10 w-10 text-primary" />
+            <motion.div whileHover={{ scale: 1.05 }} className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30 border border-primary/20 overflow-hidden">
+              <img src={get("brand_logo_mark") || brandLogoMark} alt={get("brand_name", "EvixPOS")} className="w-14 h-14 object-contain" />
             </motion.div>
              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5">
                {get("cta_title", "Ready to Unify Your Online & Offline Business?")}
