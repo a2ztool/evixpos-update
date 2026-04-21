@@ -616,7 +616,7 @@ const Products = () => {
                     className={`premium-card p-3 sm:p-4 group relative transition-all hover:shadow-md ${isSel ? "ring-2 ring-primary" : ""}`}
                   >
                     <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity data-[checked=true]:opacity-100" data-checked={isSel}>
-                      <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} />
+                      <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} className="h-5 w-5 rounded-full border-primary/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary [&_svg]:h-3 [&_svg]:w-3" />
                     </div>
                     <div className="aspect-square w-full rounded-lg bg-muted overflow-hidden mb-3 relative">
                       {p.image_url ? (
@@ -666,7 +666,7 @@ const Products = () => {
                   return (
                     <div key={p.id} className={`mobile-card transition-all ${isSel ? "ring-2 ring-primary" : ""}`}>
                       <div className="flex items-start gap-3">
-                        <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} className="mt-1" />
+                        <Checkbox checked={isSel} onCheckedChange={() => toggleSelect(p.id)} className="mt-1 h-5 w-5 rounded-full border-primary/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary [&_svg]:h-3 [&_svg]:w-3" />
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
                         ) : (
