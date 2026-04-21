@@ -111,6 +111,34 @@ const NotificationBell = () => {
           </div>
         )}
 
+        {/* Web Push enable/status row */}
+        {pushStatus !== "unsupported" && pushStatus !== "preview-blocked" && (
+          <div className="flex items-center gap-2 px-3 py-2 border-b">
+            {pushStatus === "subscribed" ? (
+              <>
+                <BellRing className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-xs flex-1">Background push enabled</span>
+                <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={disablePush}>
+                  Disable
+                </Button>
+              </>
+            ) : pushStatus === "denied" ? (
+              <>
+                <BellOff className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs flex-1 text-muted-foreground">Push blocked in browser settings</span>
+              </>
+            ) : (
+              <>
+                <BellOff className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs flex-1">Get alerts when app is closed</span>
+                <Button size="sm" className="h-6 text-[11px] px-2" onClick={enablePush}>
+                  Enable
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Unread messages shortcut */}
         {msgUnread > 0 && (
           <div
