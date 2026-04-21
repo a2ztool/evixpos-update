@@ -7,6 +7,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useStoreMode } from "@/hooks/useStoreMode";
 import { useCurrency } from "@/hooks/useCurrency";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -89,6 +90,7 @@ type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const { isOffline, isOnline } = useStoreMode();

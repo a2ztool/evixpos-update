@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const CHART_COLORS = [
 
 const Reports = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { format: formatPrice } = useCurrency();
   const [orders, setOrders] = useState<any[]>([]);
