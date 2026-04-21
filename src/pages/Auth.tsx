@@ -13,7 +13,7 @@ import {
   Zap, Eye, EyeOff, ArrowRight, Gift, Check, Sparkles,
   ShieldCheck, Lock, Star, TrendingUp, Globe, Award,
 } from "lucide-react";
-import evixIcon from "@/assets/evixpos-icon.png";
+import evixLogo from "@/assets/evixpos-logo.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -193,15 +193,10 @@ const Auth = () => {
       <div className="absolute -top-20 -right-40 w-[400px] h-[400px] rounded-full bg-primary/8 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] rounded-full bg-primary/5 blur-[180px] pointer-events-none" />
 
-      {/* Top Brand Bar */}
-      <header className="relative z-10 px-4 sm:px-8 py-4 flex items-center justify-between">
-        <button onClick={() => navigate("/")} className="flex items-center gap-2 group">
-          <div className="h-9 w-9 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center overflow-hidden">
-            <img src={evixIcon} alt="EvixPOS" className="h-7 w-7 rounded-md" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">
-            evix<span className="text-primary">Pos</span>
-          </span>
+      {/* Top Brand Bar — centered on mobile, split on desktop */}
+      <header className="relative z-10 px-4 sm:px-8 py-4 flex items-center justify-center sm:justify-between">
+        <button onClick={() => navigate("/")} className="flex items-center group">
+          <img src={evixLogo} alt="EvixPos" className="h-9 sm:h-10 w-auto object-contain" />
         </button>
         <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-primary" />
@@ -322,9 +317,14 @@ const Auth = () => {
                       </div>
                     </div>
 
-                    {/* Remember me */}
+                    {/* Remember me — circular checkbox */}
                     <div className="flex items-center gap-2">
-                      <Checkbox id="remember" checked={rememberMe} onCheckedChange={(v) => setRememberMe(!!v)} />
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(v) => setRememberMe(!!v)}
+                        className="h-4 w-4 rounded-full border-primary/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary [&_svg]:h-3 [&_svg]:w-3"
+                      />
                       <Label htmlFor="remember" className="text-xs font-medium text-muted-foreground cursor-pointer select-none">
                         Keep me signed in for 30 days
                       </Label>
