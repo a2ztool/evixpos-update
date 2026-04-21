@@ -50,6 +50,25 @@ interface Translations {
   email: string;
   phone: string;
   address: string;
+  filter: string;
+  export: string;
+  import: string;
+  loading: string;
+  noResults: string;
+  view: string;
+  date: string;
+  amount: string;
+  total: string;
+  quantity: string;
+  price: string;
+  category: string;
+  description: string;
+  notes: string;
+  optional: string;
+  required: string;
+  yes: string;
+  no: string;
+  all: string;
   // Sections
   overview: string;
   salesProducts: string;
@@ -73,6 +92,48 @@ interface Translations {
   stores: string;
   profile: string;
   general: string;
+  // Products page
+  addProduct: string;
+  productName: string;
+  sku: string;
+  baseCost: string;
+  baseSelling: string;
+  stockQuantity: string;
+  searchProducts: string;
+  sort: string;
+  noProductsYet: string;
+  noProductsMatch: string;
+  variations: string;
+  variationName: string;
+  // Orders page
+  orderId: string;
+  customer: string;
+  payment: string;
+  method: string;
+  source: string;
+  searchOrders: string;
+  allTime: string;
+  allStatus: string;
+  allPayments: string;
+  noOrdersYet: string;
+  product: string;
+  selectCustomer: string;
+  enterProductName: string;
+  dateTime: string;
+  amountPaid: string;
+  costPrice: string;
+  discount: string;
+  type: string;
+  paymentMethod: string;
+  items: string;
+  // POS page
+  selectCustomerHeading: string;
+  reviewCart: string;
+  orderNotes: string;
+  orderSummary: string;
+  // Reports page
+  reportsAnalytics: string;
+  finance: string;
 }
 
 const translations: Record<Lang, Translations> = {
