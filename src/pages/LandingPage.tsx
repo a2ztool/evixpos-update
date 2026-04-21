@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import VideoModal from "@/components/VideoModal";
 import LandingChatbot from "@/components/LandingChatbot";
+import InstallAppButton from "@/components/InstallAppButton";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -396,6 +397,9 @@ const LandingPage = () => {
               ))}
             </div>
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+              <div className="hidden md:flex">
+                <InstallAppButton />
+              </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -444,6 +448,9 @@ const LandingPage = () => {
                       {get(link.labelKey, link.defaultLabel)}
                     </motion.button>
                   ))}
+                  <div className="pt-2 px-2 pb-1 flex justify-center">
+                    <InstallAppButton />
+                  </div>
                   <div className="pt-2 px-2 pb-1 flex gap-2">
                     <Button 
                       variant="outline" 
