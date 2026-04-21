@@ -12,6 +12,7 @@
 import { toast } from "sonner";
 
 // Vite injects a fresh hash on every build → great as a build id
+declare const __BUILD_TIME__: string;
 const BUILD_ID = (import.meta.env.VITE_BUILD_ID as string | undefined) || `${import.meta.env.MODE}-${__BUILD_TIME__}`;
 const STORAGE_KEY = "evix_build_id";
 const UPDATE_POLL_MS = 60_000;
