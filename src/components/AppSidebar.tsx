@@ -64,6 +64,7 @@ const AppSidebar = () => {
     { title: "Loyalty Points", icon: Star, path: "/offline/loyalty", perm: "customers.view", offlineOnly: true },
   ];
   const offlineOpsItems: NavItem[] = [
+    { title: "Suppliers & Purchases", icon: Truck, path: "/online/suppliers-purchases", perm: "products.edit", onlineOnly: true },
     { title: "Suppliers", icon: Truck, path: "/offline/suppliers", perm: "products.view", offlineOnly: true },
     { title: "Purchases", icon: ShoppingBag, path: "/offline/purchases", perm: "products.edit", offlineOnly: true },
     { title: "Cash Register", icon: Wallet, path: "/offline/cash-register", perm: "pos.access", offlineOnly: true },
