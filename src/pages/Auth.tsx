@@ -30,6 +30,14 @@ const Auth = () => {
   const { session } = useAuth();
   const [searchParams] = useSearchParams();
 
+  // Detect OAuth callback (Supabase returns tokens in hash, or `code` query for PKCE)
+  const isOAuthCallback =
+    typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token") ||
+      window.location.hash.includes("error") ||
+      searchParams.has("code"));
+  const [processingOAuth, setProcessingOAuth] = useState(isOAuthCallback);
+
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
 
   // Rotating brand highlights (testimonial-style strip)
