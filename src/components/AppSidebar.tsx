@@ -211,7 +211,7 @@ const AppSidebar = () => {
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu className="px-2 space-y-0.5">{items.map(renderItem)}</SidebarMenu>
+        <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">{items.map(renderItem)}</SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
   );
@@ -291,7 +291,7 @@ const AppSidebar = () => {
               {t.salesProducts}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredOrders.length > 0 && renderCollapsible(t.orders, ShoppingCart, filteredOrders, ordersOpen, setOrdersOpen, "/orders")}
                 {filteredProducts.length > 0 && renderCollapsible(t.productCatalog, Package, filteredProducts, productsOpen, setProductsOpen, "/products")}
               </SidebarMenu>
@@ -309,7 +309,7 @@ const AppSidebar = () => {
               {t.performance}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredFinance.length > 0 && renderCollapsible(t.finances, CreditCard, filteredFinance, financeOpen, setFinanceOpen, "/finance")}
                 {hasPermission("reports.view") && renderItem({ title: t.reports, icon: BarChart3, path: "/reports" })}
               </SidebarMenu>
@@ -323,7 +323,7 @@ const AppSidebar = () => {
               {t.systemGrowth}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredIntegrations.length > 0 && renderCollapsible(t.integrations, Plug, filteredIntegrations, integrationsOpen, setIntegrationsOpen, "/integrations")}
                 {showReferral && renderItem({ title: t.referral, icon: Gift, path: "/referral", feature: "referral" })}
               </SidebarMenu>
@@ -337,7 +337,7 @@ const AppSidebar = () => {
               {t.supportSection}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
+              <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {renderMessages()}
                 {showMyPlan && renderItem({ title: t.myPlan, icon: Crown, path: "/my-plan" })}
                 {renderItem({ title: t.support, icon: Headphones, path: "/support" })}
