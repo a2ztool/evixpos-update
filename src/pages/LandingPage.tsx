@@ -1387,10 +1387,30 @@ const LandingPage = () => {
                 <div className="w-8 h-8 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors"><Mail className="h-4 w-4" /></div>
                 {get("brand_email", "support@evixpos.com")}
               </a>
-              <a href={`https://wa.me/${get("brand_whatsapp", "+91 8101949890").replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-primary transition-colors group">
+              <a href={`https://wa.me/${get("brand_whatsapp", "+91 8101949890").replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-primary transition-colors group mb-5">
                 <div className="w-8 h-8 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors"><MessageSquare className="h-4 w-4" /></div>
                 {get("brand_whatsapp", "+91 8101949890")}
               </a>
+              {/* Social icons */}
+              <div className="flex items-center gap-2">
+                {[
+                  { url: get("social_facebook", "https://facebook.com/evixpos"), Icon: Facebook, label: "Facebook" },
+                  { url: get("social_instagram", "https://instagram.com/evixpos"), Icon: Instagram, label: "Instagram" },
+                  { url: get("social_youtube", "https://youtube.com/@evixpos"), Icon: Youtube, label: "YouTube" },
+                  { url: `mailto:${get("brand_email", "support@evixpos.com")}`, Icon: Mail, label: "Email" },
+                ].map(({ url, Icon, label }) => (
+                  <a
+                    key={label}
+                    href={url}
+                    target={url.startsWith("mailto:") ? undefined : "_blank"}
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="w-9 h-9 rounded-lg bg-primary/5 hover:bg-primary hover:text-primary-foreground text-muted-foreground flex items-center justify-center transition-all hover:scale-110 hover:shadow-md hover:shadow-primary/20"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
             </div>
             <div className="lg:col-span-2">
               <h4 className="font-semibold text-sm mb-2.5 sm:mb-4 text-foreground tracking-wide uppercase text-[11px]">{get("footer_col1_title", "Product")}</h4>
