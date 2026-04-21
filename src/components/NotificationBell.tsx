@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, Volume2, VolumeX, MessageSquare } from "lucide-react";
+import { Bell, CheckCheck, Volume2, VolumeX, MessageSquare, BellRing, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useMessageUnread } from "@/hooks/useMessageUnread";
+import { useWebPush } from "@/hooks/useWebPush";
 import { TYPE_EMOJI, TYPE_LABEL } from "@/lib/notificationTriggers";
 import { getNotificationPrefs, setNotificationPrefs, playNotificationSound } from "@/lib/notificationSound";
 import { formatDistanceToNow } from "date-fns";
@@ -16,6 +17,7 @@ import { useEffect, useState } from "react";
 const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
   const { unreadCount: msgUnread } = useMessageUnread();
+  const { status: pushStatus, subscribe: enablePush, unsubscribe: disablePush } = useWebPush();
   const navigate = useNavigate();
   const [soundEnabled, setSoundEnabled] = useState(() => getNotificationPrefs().soundEnabled !== false);
   const [volume, setVolume] = useState<number[]>(() => getNotificationPrefs().volume ?? [70]);
