@@ -319,7 +319,7 @@ const Reports = () => {
                 <div className="p-2 rounded-xl bg-primary/15">
                   <BarChart3 className="h-5 w-5 text-primary" />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Reports & Analytics</h1>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t.reportsAnalytics}</h1>
                 <Badge className="bg-gradient-to-r from-primary to-primary/70 text-primary-foreground border-0 text-[10px] px-2 py-0.5">
                   <Sparkles className="h-2.5 w-2.5 mr-1" /> PRO
                 </Badge>
@@ -498,10 +498,10 @@ const Reports = () => {
             {/* Tabs */}
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="w-full grid grid-cols-4 h-10">
-                <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
-                <TabsTrigger value="orders" className="text-xs gap-1.5"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">Orders</span></TabsTrigger>
-                <TabsTrigger value="products" className="text-xs gap-1.5"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
-                <TabsTrigger value="finance" className="text-xs gap-1.5"><DollarSign className="h-3.5 w-3.5" /><span className="hidden sm:inline">Finance</span></TabsTrigger>
+                <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.overview}</span></TabsTrigger>
+                <TabsTrigger value="orders" className="text-xs gap-1.5"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.orders}</span></TabsTrigger>
+                <TabsTrigger value="products" className="text-xs gap-1.5"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.products}</span></TabsTrigger>
+                <TabsTrigger value="finance" className="text-xs gap-1.5"><DollarSign className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.finance}</span></TabsTrigger>
               </TabsList>
 
               {/* OVERVIEW TAB */}
