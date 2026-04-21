@@ -16,8 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard } from "lucide-react";
+import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard, Smartphone, Check } from "lucide-react";
 import InstallAppButton from "./InstallAppButton";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { toast } from "sonner";
 import BackButton from "./BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
