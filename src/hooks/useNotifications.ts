@@ -3,7 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SOUND_CATEGORY, TYPE_EMOJI, TYPE_LABEL } from "@/lib/notificationTriggers";
-import { debouncedPlaySound, showDesktopNotification } from "@/lib/notificationSound";
+import {
+  debouncedPlaySound,
+  showDesktopNotification,
+  isEventEnabled,
+  isEventSoundEnabled,
+} from "@/lib/notificationSound";
 
 export interface Notification {
   id: string;
