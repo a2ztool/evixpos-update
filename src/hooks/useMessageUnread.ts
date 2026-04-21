@@ -43,10 +43,10 @@ export const useMessageUnread = () => {
     fetchCount();
     intervalRef.current = setInterval(fetchCount, 10000);
 
-    // Realtime subscription — sound on incoming messages
+    // Realtime subscription — chain .on().subscribe() in one expression
     let channel: ReturnType<typeof supabase.channel> | null = null;
     if (storeId && myId) {
-      const channelName = `msg-sound-${myId}-${Date.now()}`;
+      const channelName = `msg-sound-${myId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       channel = supabase
         .channel(channelName)
         .on(
@@ -60,14 +60,13 @@ export const useMessageUnread = () => {
           (payload) => {
             if (!initialLoadDone.current) return;
             const msg = payload.new as { sender_id?: string; store_id?: string };
-            // Ignore self-echoes and cross-store leaks
             if (!msg || msg.sender_id === myId) return;
             if (msg.store_id && msg.store_id !== storeId) return;
             setUnreadCount((prev) => prev + 1);
             debouncedPlaySound("message");
           }
-        );
-      channel.subscribe();
+        )
+        .subscribe();
     }
 
     return () => {
