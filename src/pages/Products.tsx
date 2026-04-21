@@ -6,6 +6,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,7 @@ const emptyForm = {
 
 const Products = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
   const { limits } = useSubscription();
