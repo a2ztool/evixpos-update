@@ -30,9 +30,13 @@ import {
   CheckCheck, Trash2, Search, Filter, AlertCircle, CheckCircle,
   AlertTriangle, Info, Star, StarOff, Zap, ShoppingCart, Users,
   CreditCard, Package, RefreshCw, Clock, Smartphone, MessageSquare, Moon, Loader2, X,
+  Sparkles, Send, MoonStar, Wifi, WifiOff,
 } from "lucide-react";
 import { format, formatDistanceToNow, subDays, isAfter } from "date-fns";
 import { useNotifications } from "@/hooks/useNotifications";
+import PageGuide from "@/components/PageGuide";
+import { playNotificationSound, showDesktopNotification } from "@/lib/notificationSound";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 // ═══════════════════════════════════════════
 // Notification event definitions
@@ -805,18 +809,124 @@ const NotificationLogsTab = () => {
 // Main Page
 // ═══════════════════════════════════════════
 const NotificationsPage = () => {
-  const { unreadCount } = useNotifications();
+  const { user } = useAuth();
+  const { notifications, unreadCount } = useNotifications();
+  const [snoozeUntil, setSnoozeUntil] = useState<number | null>(() => {
+    const v = localStorage.getItem("notif_snooze_until");
+    return v ? Number(v) : null;
+  });
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const isSnoozed = snoozeUntil && snoozeUntil > now;
+  const snoozeRemaining = isSnoozed ? formatDistanceToNow(snoozeUntil!) : null;
+
+  const snooze = (minutes: number) => {
+    const until = Date.now() + minutes * 60_000;
+    localStorage.setItem("notif_snooze_until", String(until));
+    setSnoozeUntil(until);
+    // Also flip masterEnabled off temporarily
+    setNotificationPrefs({ masterEnabled: false });
+    toast.success(`Snoozed for ${minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}`);
+  };
+
+  const cancelSnooze = () => {
+    localStorage.removeItem("notif_snooze_until");
+    setSnoozeUntil(null);
+    setNotificationPrefs({ masterEnabled: true });
+    toast.success("Snooze cancelled");
+  };
+
+  const sendTestNotification = async () => {
+    if (!user) return;
+    // Insert into notifications table — triggers realtime + sound + push
+    const { error } = await supabase.from("notifications").insert({
+      user_id: user.id,
+      type: "info",
+      message: "🔔 Test notification — your alert system is working!",
+      is_read: false,
+    } as any);
+    if (error) {
+      toast.error("Failed to send test");
+    } else {
+      // Also play immediately for instant feedback
+      playNotificationSound("info");
+      showDesktopNotification("Test Notification", "Your alert system is working!", "info");
+      toast.success("Test notification sent");
+    }
+  };
+
+  const guideSteps = [
+    { title: "Master Switch", description: "Top of Preferences tab — turn ALL alerts on/off globally with one toggle." },
+    { title: "Per-Event Control", description: "Choose which events (orders, messages, low stock) play sound, show toast, or are marked priority." },
+    { title: "Background Push", description: "Enable Web Push to receive alerts even when the app is closed. Manage subscribed devices below." },
+    { title: "Quiet Hours", description: "Set Do Not Disturb time window. Notifications still arrive in the bell silently." },
+    { title: "Snooze", description: "Use the Snooze button up top to mute everything for 1h / 4h / today." },
+    { title: "Test", description: "Click 'Test Notification' to fire a sample alert and verify sound, toast & push are working." },
+  ];
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Bell className="h-5 w-5 text-primary" />
+      {/* Premium Hero Header */}
+      <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Bell className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-bold">Notifications</h1>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Sparkles className="h-3 w-3 mr-1" /> Live
+                </Badge>
+                {isSnoozed && (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-200">
+                    <MoonStar className="h-3 w-3 mr-1" /> Snoozed · {snoozeRemaining}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                {unreadCount > 0 ? (
+                  <><span className="font-semibold text-primary">{unreadCount} unread</span> · {notifications.length} total</>
+                ) : (
+                  "All caught up — manage preferences, view alerts & delivery logs"
+                )}
+              </p>
+            </div>
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-2xl sm:text-3xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground text-sm">Manage notification preferences, view alerts & delivery logs</p>
+
+          {/* Quick action bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={sendTestNotification} className="gap-1.5">
+              <Send className="h-3.5 w-3.5" /> Test
+            </Button>
+
+            {isSnoozed ? (
+              <Button variant="outline" size="sm" onClick={cancelSnooze} className="gap-1.5">
+                <X className="h-3.5 w-3.5" /> Cancel Snooze
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <MoonStar className="h-3.5 w-3.5" /> Snooze
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => snooze(60)}>For 1 hour</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => snooze(240)}>For 4 hours</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => snooze(8 * 60)}>Until tonight (8h)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => snooze(24 * 60)}>For 24 hours</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            <PageGuide title="How to use Notifications" steps={guideSteps} />
           </div>
         </div>
       </div>
