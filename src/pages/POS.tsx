@@ -1245,7 +1245,7 @@ const POS = () => {
 
       {/* Checkout Stepper */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogContent className="!inset-auto !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 !rounded-2xl !w-[calc(100%-24px)] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
           <div className="border-b border-border/50 px-6 pt-6 pb-4 flex-shrink-0">
             <DialogHeader className="mb-4"><DialogTitle className="text-lg">Checkout</DialogTitle></DialogHeader>
             <div className="flex items-center gap-1">
