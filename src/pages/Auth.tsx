@@ -208,6 +208,18 @@ const Auth = () => {
   const strengthLabel = ["Too short", "Weak", "Fair", "Good", "Strong"][pwStrength];
   const strengthColor = ["bg-muted", "bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-primary"][pwStrength];
 
+  // OAuth callback loading screen — shown while Supabase processes Google sign-in tokens
+  if (processingOAuth && !session) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-4">
+        <img src={evixLogo} alt="EvixPos" className="h-12 w-auto mb-8" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4" />
+        <p className="text-sm font-medium text-foreground">Signing you in…</p>
+        <p className="text-xs text-muted-foreground mt-1">Verifying your Google account</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-primary/5 via-background to-background relative overflow-hidden">
       {/* Decorative blobs */}
