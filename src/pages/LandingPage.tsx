@@ -360,12 +360,12 @@ const LandingPage = () => {
       <div className="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style={{ backdropFilter: scrolled ? 'blur(20px)' : 'blur(0px)', background: scrolled ? 'hsl(var(--background) / 0.85)' : 'transparent' }}>
         {/* ANNOUNCEMENT BANNER — collapses on scroll */}
         {bannerActive && (
-          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[9px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 opacity-0' : 'h-6 sm:max-h-12 opacity-100'}`}>
+          <div className={`bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground text-center text-[10px] sm:text-sm font-medium relative overflow-hidden transition-all duration-300 ${scrolled ? 'max-h-0 opacity-0' : 'h-8 sm:max-h-12 opacity-100'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,hsl(0_0%_100%/0.1),transparent)] animate-[shimmer_3s_ease-in-out_infinite]" />
-            <div className="max-w-7xl mx-auto px-2 sm:px-4 h-6 sm:h-auto flex items-center justify-center gap-1 sm:gap-3 relative leading-none">
-              <Sparkles className="h-2 w-2 sm:h-4 sm:w-4 shrink-0" />
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 h-8 sm:h-auto flex items-center justify-center gap-1.5 sm:gap-3 relative leading-none">
+              <Sparkles className="h-2.5 w-2.5 sm:h-4 sm:w-4 shrink-0" />
               <span className="line-clamp-1 leading-none">{get("banner_subtitle", "Now with Offline POS + Online Store in one panel — Get 50% off your first 3 months!")}</span>
-              <Button size="sm" variant="secondary" className="!h-[16px] sm:!h-7 text-[8px] sm:text-xs px-1.5 sm:px-3 py-0 leading-none rounded shrink-0 min-h-0" onClick={() => navigate("/auth")}>
+              <Button size="sm" variant="secondary" className="!h-[20px] sm:!h-7 text-[9px] sm:text-xs px-2 sm:px-3 py-0 leading-none rounded shrink-0 min-h-0" onClick={() => navigate("/auth")}>
                 {get("banner_cta", "Claim Offer")}
               </Button>
             </div>
@@ -380,8 +380,8 @@ const LandingPage = () => {
             transition={{ duration: 0.5 }}
             className={`max-w-5xl mx-auto flex items-center justify-between px-3 sm:px-6 lg:px-7 transition-all duration-500 ease-out ${
               scrolled
-                ? "h-10 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
-                : "h-11 sm:h-16 rounded-[18px] sm:rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
+                ? "h-12 sm:h-14 rounded-2xl bg-card/90 backdrop-blur-2xl border border-border/60 shadow-[0_8px_32px_-4px_hsl(var(--foreground)/0.15)]"
+                : "h-14 sm:h-16 rounded-[18px] sm:rounded-[22px] bg-card/60 backdrop-blur-xl border border-border/30 shadow-[0_12px_40px_-6px_hsl(var(--foreground)/0.1)]"
             }`}
           >
             <div className="flex items-center gap-2 shrink-0">
@@ -407,7 +407,7 @@ const LandingPage = () => {
               <Button 
                 size="sm" 
                 onClick={() => navigate("/auth")} 
-                className="gap-1 sm:gap-1.5 text-[10px] sm:text-[13px] font-semibold !h-5 sm:!h-10 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-[0.96] transition-all duration-200 py-0 px-2 leading-none min-h-0"
+                className="gap-1 sm:gap-1.5 text-[11px] sm:text-[13px] font-semibold !h-7 sm:!h-10 sm:px-5 rounded-full bg-primary hover:bg-primary/90 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-[0.96] transition-all duration-200 py-0 px-2.5 leading-none min-h-0"
               >
                 {get("nav_start_free", "Start Free")} <ArrowRight className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
               </Button>
