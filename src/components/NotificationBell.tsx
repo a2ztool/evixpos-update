@@ -201,7 +201,7 @@ const NotificationBell = () => {
               variant="ghost"
               size="sm"
               className="w-full text-xs text-primary hover:text-primary"
-              onClick={() => navigate("/notification-center")}
+              onClick={() => navigate("/integrations/notifications")}
             >
               View All Notifications →
             </Button>
