@@ -1157,11 +1157,26 @@ const POS = () => {
             </div>
           )}
 
-          {/* Mobile cart bar */}
+          {/* Mobile cart bar — floats above bottom nav */}
           {cart.length > 0 && (
-            <button onClick={() => setMobileCartOpen(true)} className="lg:hidden fixed bottom-[calc(5rem+max(env(safe-area-inset-bottom),8px))] left-1/2 -translate-x-1/2 z-40 bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between shadow-xl active:opacity-90 transition-opacity rounded-2xl w-[calc(100%-32px)] max-w-[420px]">
-              <div className="flex items-center gap-2.5"><ShoppingCart className="h-5 w-5" /><span className="font-semibold text-sm">{cart.reduce((s, i) => s + i.quantity, 0)} items</span></div>
-              <div className="flex items-center gap-2"><span className="font-bold">{format(total)}</span><ChevronDown className="h-4 w-4 rotate-180" /></div>
+            <button
+              onClick={() => setMobileCartOpen(true)}
+              className="lg:hidden fixed left-1/2 z-40 bg-primary text-primary-foreground pl-5 pr-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl shadow-primary/30 active:opacity-90 rounded-full w-[calc(100%-28px)] max-w-[440px] ring-1 ring-primary-foreground/10 animate-cart-pop-up"
+              style={{ bottom: "calc(82px + 10px + max(env(safe-area-inset-bottom), 0px))" }}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="absolute -top-1.5 -right-2 bg-primary-foreground text-primary text-[10px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                    {cart.reduce((s, i) => s + i.quantity, 0)}
+                  </span>
+                </div>
+                <span className="font-semibold text-sm">{cart.reduce((s, i) => s + i.quantity, 0)} items</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-base">{format(total)}</span>
+                <ChevronDown className="h-4 w-4 rotate-180 opacity-80" />
+              </div>
             </button>
           )}
         </div>
