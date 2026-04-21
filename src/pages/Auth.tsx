@@ -62,11 +62,21 @@ const Auth = () => {
         .eq("user_id", session.user.id)
         .eq("role", "admin")
         .maybeSingle();
-      if (roleData) navigate("/admin/dashboard");
-      else navigate("/dashboard");
+      // Clean OAuth params from URL before navigating
+      if (window.location.hash || searchParams.has("code")) {
+        window.history.replaceState({}, document.title, "/auth");
+      }
+      navigate(roleData ? "/admin/dashboard" : "/dashboard", { replace: true });
     };
     checkAdminRedirect();
-  }, [session, navigate]);
+  }, [session, navigate, searchParams]);
+
+  // Safety: if OAuth callback hash exists but session never resolves, stop spinner
+  useEffect(() => {
+    if (!processingOAuth) return;
+    const t = setTimeout(() => setProcessingOAuth(false), 8000);
+    return () => clearTimeout(t);
+  }, [processingOAuth]);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
