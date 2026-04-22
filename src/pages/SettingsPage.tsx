@@ -29,6 +29,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
 import { toast } from "sonner";
+import { businessSettingsSchema, storeAddSchema, staffMemberSchema, profileUpdateSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 // ─── Payment Gateway Catalog ───
 interface GatewayDef {
@@ -284,6 +286,10 @@ const SettingsPage = () => {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [tabSearch, setTabSearch] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const generalValidation = useFormValidation(businessSettingsSchema);
+  const storeValidation = useFormValidation(storeAddSchema);
+  const staffValidation = useFormValidation(staffMemberSchema);
+  const profileValidation = useFormValidation(profileUpdateSchema);
 
   useEffect(() => {
     const tab = searchParams.get("tab") as Tab;
@@ -452,12 +458,9 @@ const SettingsPage = () => {
   };
 
   const addStaffMember = async () => {
-    if (!user || !newStaff.name || !newStaff.email || !newStaff.password) {
-      toast.error(lang === "bn" ? "নাম, ইমেইল ও পাসওয়ার্ড দিন" : "Name, email and password are required");
-      return;
-    }
-    if (newStaff.password.length < 6) {
-      toast.error(lang === "bn" ? "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে" : "Password must be at least 6 characters");
+    if (!user) return;
+    if (!staffValidation.validateAll(newStaff)) {
+      toast.error(lang === "bn" ? "ফর্মে কিছু ভুল আছে" : "Please fix the errors below");
       return;
     }
     setStaffCreating(true);
@@ -514,7 +517,11 @@ const SettingsPage = () => {
   const canCreateStore = stores.length < storeLimit;
 
   const addStore = async () => {
-    if (!user || !newStore.name) return;
+    if (!user) return;
+    if (!storeValidation.validateAll(newStore)) {
+      toast.error(lang === "bn" ? "ফর্মে কিছু ভুল আছে" : "Please fix the errors below");
+      return;
+    }
     if (!canCreateStore) {
       toast.error(lang === "bn" ? "স্টোর লিমিট পূর্ণ। আরো স্টোর যোগ করতে প্ল্যান আপগ্রেড করুন।" : "Store limit reached. Please upgrade your plan to add more stores.");
       navigate("/my-plan");
@@ -540,6 +547,10 @@ const SettingsPage = () => {
   // ─── Profile ───
   const saveProfile = async () => {
     if (!user) return;
+    if (!profileValidation.validateAll(profileForm)) {
+      toast.error(lang === "bn" ? "ফর্মে কিছু ভুল আছে" : "Please fix the errors below");
+      return;
+    }
     await supabase.from("profiles").update({ name: profileForm.name }).eq("id", user.id);
     if (profileForm.newPassword) {
       const { error } = await supabase.auth.updateUser({ password: profileForm.newPassword });
@@ -593,22 +604,27 @@ const SettingsPage = () => {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5"><Label>{lang === "bn" ? "ব্যবসার নাম" : lang === "hi" ? "व्यवसाय का नाम" : "Business Name"}</Label>
-          <Input value={settings.business_name} onChange={e => setSettings(p => ({ ...p, business_name: e.target.value }))} /></div>
+          <Input value={settings.business_name} onChange={e => { setSettings(p => ({ ...p, business_name: e.target.value })); generalValidation.clearField("business_name"); }} error={!!generalValidation.getError("business_name")} />
+          {generalValidation.getError("business_name") && <p className="text-xs text-destructive animate-fade-in">{generalValidation.getError("business_name")}</p>}</div>
         <div className="space-y-1.5"><Label>{lang === "bn" ? "ব্যবসার ইমেইল" : lang === "hi" ? "व्यवसाय ईमेल" : "Business Email"}</Label>
-          <Input value={settings.business_email} onChange={e => setSettings(p => ({ ...p, business_email: e.target.value }))} type="email" /></div>
+          <Input value={settings.business_email} onChange={e => { setSettings(p => ({ ...p, business_email: e.target.value })); generalValidation.clearField("business_email"); }} type="email" error={!!generalValidation.getError("business_email")} />
+          {generalValidation.getError("business_email") && <p className="text-xs text-destructive animate-fade-in">{generalValidation.getError("business_email")}</p>}</div>
       </div>
       <div className="space-y-1.5">
         <Label>Store URL (Slug)</Label>
         <div className="flex">
           <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground"><span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">evixpos.com/f/</span></span>
-          <Input className="rounded-l-none" value={settings.store_slug} onChange={e => setSettings(p => ({ ...p, store_slug: e.target.value }))} />
+          <Input className="rounded-l-none" value={settings.store_slug} onChange={e => { setSettings(p => ({ ...p, store_slug: e.target.value })); generalValidation.clearField("store_slug"); }} error={!!generalValidation.getError("store_slug")} />
         </div>
+        {generalValidation.getError("store_slug") && <p className="text-xs text-destructive animate-fade-in">{generalValidation.getError("store_slug")}</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5"><Label>{lang === "bn" ? "শপ / ওয়েবসাইট URL" : "Shop / Website URL"}</Label>
-          <Input value={settings.shop_url} onChange={e => setSettings(p => ({ ...p, shop_url: e.target.value }))} /></div>
+          <Input value={settings.shop_url} onChange={e => { setSettings(p => ({ ...p, shop_url: e.target.value })); generalValidation.clearField("shop_url"); }} error={!!generalValidation.getError("shop_url")} />
+          {generalValidation.getError("shop_url") && <p className="text-xs text-destructive animate-fade-in">{generalValidation.getError("shop_url")}</p>}</div>
         <div className="space-y-1.5"><Label>{lang === "bn" ? "ব্যবসার ফোন (WhatsApp)" : "Business Phone (WhatsApp)"}</Label>
-          <Input value={settings.business_phone} onChange={e => setSettings(p => ({ ...p, business_phone: e.target.value }))} /></div>
+          <Input value={settings.business_phone} onChange={e => { setSettings(p => ({ ...p, business_phone: e.target.value })); generalValidation.clearField("business_phone"); }} error={!!generalValidation.getError("business_phone")} />
+          {generalValidation.getError("business_phone") && <p className="text-xs text-destructive animate-fade-in">{generalValidation.getError("business_phone")}</p>}</div>
       </div>
       {/* Logo Section */}
       <div className="space-y-3">
@@ -987,20 +1003,30 @@ const SettingsPage = () => {
 
   const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[] }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => (
     <div className="space-y-4 mt-2">
-      <div className="space-y-1.5"><Label>{t.name}</Label><Input value={data.name} onChange={e => setter((p: any) => ({ ...p, name: e.target.value }))} /></div>
+      <div className="space-y-1.5"><Label>{t.name}</Label>
+        <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
+        {isNew && staffValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("name")}</p>}
+      </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5"><Label>{t.email}</Label><Input value={data.email} onChange={e => setter((p: any) => ({ ...p, email: e.target.value }))} type="email" disabled={!isNew} /></div>
-        <div className="space-y-1.5"><Label>{t.phone}</Label><Input value={data.phone} onChange={e => setter((p: any) => ({ ...p, phone: e.target.value }))} /></div>
+        <div className="space-y-1.5"><Label>{t.email}</Label>
+          <Input value={data.email} onChange={e => { setter((p: any) => ({ ...p, email: e.target.value })); if (isNew) staffValidation.clearField("email"); }} type="email" disabled={!isNew} error={isNew && !!staffValidation.getError("email")} />
+          {isNew && staffValidation.getError("email") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("email")}</p>}
+        </div>
+        <div className="space-y-1.5"><Label>{t.phone}</Label>
+          <Input value={data.phone} onChange={e => { setter((p: any) => ({ ...p, phone: e.target.value })); if (isNew) staffValidation.clearField("phone"); }} error={isNew && !!staffValidation.getError("phone")} />
+          {isNew && staffValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("phone")}</p>}
+        </div>
       </div>
       {isNew && (
         <div className="space-y-1.5">
           <Label>{lang === "bn" ? "পাসওয়ার্ড" : "Password"}</Label>
           <div className="relative">
-            <Input type={showPassword ? "text" : "password"} value={data.password || ""} onChange={e => setter((p: any) => ({ ...p, password: e.target.value }))} placeholder={lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters"} />
+            <Input type={showPassword ? "text" : "password"} value={data.password || ""} onChange={e => { setter((p: any) => ({ ...p, password: e.target.value })); staffValidation.clearField("password"); }} placeholder={lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters"} error={!!staffValidation.getError("password")} />
             <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          {staffValidation.getError("password") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("password")}</p>}
           <p className="text-xs text-muted-foreground">{lang === "bn" ? "স্টাফ এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করবে" : "Staff will use this email & password to login"}</p>
         </div>
       )}
@@ -1139,9 +1165,18 @@ const SettingsPage = () => {
               <DialogContent>
                 <DialogHeader><DialogTitle>{t.add} Store</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
-                  <div className="space-y-1.5"><Label>{t.name}</Label><Input value={newStore.name} onChange={e => setNewStore(p => ({ ...p, name: e.target.value }))} /></div>
-                  <div className="space-y-1.5"><Label>{t.address}</Label><Input value={newStore.address} onChange={e => setNewStore(p => ({ ...p, address: e.target.value }))} /></div>
-                  <div className="space-y-1.5"><Label>{t.phone}</Label><Input value={newStore.phone} onChange={e => setNewStore(p => ({ ...p, phone: e.target.value }))} /></div>
+                  <div className="space-y-1.5"><Label>{t.name}</Label>
+                    <Input value={newStore.name} onChange={e => { setNewStore(p => ({ ...p, name: e.target.value })); storeValidation.clearField("name"); }} error={!!storeValidation.getError("name")} />
+                    {storeValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{storeValidation.getError("name")}</p>}
+                  </div>
+                  <div className="space-y-1.5"><Label>{t.address}</Label>
+                    <Input value={newStore.address} onChange={e => { setNewStore(p => ({ ...p, address: e.target.value })); storeValidation.clearField("address"); }} error={!!storeValidation.getError("address")} />
+                    {storeValidation.getError("address") && <p className="text-xs text-destructive animate-fade-in">{storeValidation.getError("address")}</p>}
+                  </div>
+                  <div className="space-y-1.5"><Label>{t.phone}</Label>
+                    <Input value={newStore.phone} onChange={e => { setNewStore(p => ({ ...p, phone: e.target.value })); storeValidation.clearField("phone"); }} error={!!storeValidation.getError("phone")} />
+                    {storeValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{storeValidation.getError("phone")}</p>}
+                  </div>
                   <Button onClick={addStore} className="w-full">{t.add}</Button>
                 </div>
               </DialogContent>
