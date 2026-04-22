@@ -16,7 +16,6 @@ import BackButton from "@/components/BackButton";
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Users", path: "/admin/users", icon: Users },
-  { label: "Hierarchy", path: "/admin/hierarchy", icon: Network },
   { label: "Stores", path: "/admin/stores", icon: Store },
   { label: "Payments", path: "/admin/payments", icon: Wallet, badgeKey: "payments" as const },
   { label: "Gateways", path: "/admin/gateways", icon: CreditCard },
