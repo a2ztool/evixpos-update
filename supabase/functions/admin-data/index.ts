@@ -37,13 +37,28 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return errorResponse("Unauthorized", 401);
 
-    const { data: roleData } = await supabase
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) return errorResponse("Not an admin", 403);
+      .in("role", ["admin", "super_admin", "support_admin", "finance_admin"]);
+    if (!roleRows || roleRows.length === 0) return errorResponse("Not an admin", 403);
+    const adminRoles: string[] = roleRows.map((r: any) => r.role);
+    const isSuperAdmin = adminRoles.includes("super_admin") || adminRoles.includes("admin");
+    const can = (...allowed: string[]) => allowed.some((r) => adminRoles.includes(r));
+
+    // Permission gate for tier-restricted actions
+    const FINANCE_ACTIONS = new Set([
+      "get_finance_metrics","get_plan_payments","review_plan_payment","get_auto_payment_logs",
+      "get_payment_gateways","create_payment_gateway","update_payment_gateway","delete_payment_gateway",
+      "export_payments","export_finance",
+    ]);
+    const SUPPORT_ACTIONS = new Set(["get_users","get_user_details","get_stores","get_store_details","impersonate_user"]);
+    const SUPER_ONLY = new Set([
+      "admin_change_user_plan","admin_extend_plan","update_plans_config","toggle_store","delete_store",
+      "send_broadcast","delete_broadcast","update_system_setting","update_feature_flag","update_system_template",
+      "set_user_role","remove_user_role",
+    ]);
 
     const body = await req.json();
     const action = body.action;
