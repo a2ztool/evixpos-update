@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,8 @@ import {
   Bell, Clock, CheckCircle2, XCircle, AlertTriangle, Download,
   BarChart3, PieChart, Calendar, DollarSign, ArrowUpRight,
   ArrowDownRight, Eye, Zap, ShieldCheck, Timer, HelpCircle, Sparkles,
-  Activity, Target, Lightbulb, TrendingDown, Repeat, Crown, Filter
+  Activity, Target, Lightbulb, TrendingDown, Repeat, Crown, Filter,
+  MessageSquareText, Save, RotateCw
 } from "lucide-react";
 import { differenceInDays, addDays, format as fnsFormat, subDays } from "date-fns";
 import {
@@ -83,6 +85,27 @@ const emptyForm = {
   notes: "",
 };
 
+const DEFAULT_WA_TEMPLATE = `Hi {customer_name}, your subscription for "{product_name}" ({variation}) {status_text}. Please renew to continue the service. Thank you!`;
+const TEMPLATE_STORAGE_KEY = "subscription_wa_template";
+
+const renderTemplate = (
+  tpl: string,
+  data: { customer_name: string; product_name: string; variation: string; days_left: number; end_date: string; price: string; store_name: string }
+) => {
+  const statusText = data.days_left <= 0
+    ? "has expired"
+    : `will expire in ${data.days_left} day${data.days_left === 1 ? "" : "s"} (${data.end_date})`;
+  return tpl
+    .replace(/\{customer_name\}/g, data.customer_name)
+    .replace(/\{product_name\}/g, data.product_name)
+    .replace(/\{variation\}/g, data.variation)
+    .replace(/\{days_left\}/g, String(data.days_left))
+    .replace(/\{end_date\}/g, data.end_date)
+    .replace(/\{price\}/g, data.price)
+    .replace(/\{store_name\}/g, data.store_name)
+    .replace(/\{status_text\}/g, statusText);
+};
+
 const Subscriptions = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
@@ -102,6 +125,12 @@ const Subscriptions = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [calc, setCalc] = useState({ planPrice: 0, costPrice: 0, customers: 0, duration: "1 Month" });
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [waTemplate, setWaTemplate] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_WA_TEMPLATE;
+    return localStorage.getItem(TEMPLATE_STORAGE_KEY) || DEFAULT_WA_TEMPLATE;
+  });
+  const [templateDraft, setTemplateDraft] = useState(waTemplate);
 
   const fetchAll = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -351,11 +380,23 @@ const Subscriptions = () => {
     if (error) toast.error(error.message); else toast.success("Renewed successfully! 🔄");
   };
 
+  const buildReminderMessage = (s: Subscription, customerName: string) => {
+    const daysLeft = getDaysLeft(s.end_date);
+    return renderTemplate(waTemplate, {
+      customer_name: customerName,
+      product_name: s.product_name,
+      variation: s.variation,
+      days_left: daysLeft,
+      end_date: s.end_date ? fnsFormat(new Date(s.end_date), "dd MMM yyyy") : "—",
+      price: `${symbol}${Number(s.price).toFixed(0)}`,
+      store_name: activeStore?.name || "",
+    });
+  };
+
   const sendWhatsAppReminder = (s: Subscription) => {
     const customer = customers.find((c) => c.id === s.customer_id);
     if (!customer?.phone) { toast.error("Customer has no phone number"); return; }
-    const daysLeft = getDaysLeft(s.end_date);
-    const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+    const message = buildReminderMessage(s, customer.name);
     window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("WhatsApp opened");
   };
@@ -398,8 +439,7 @@ const Subscriptions = () => {
     for (const s of targets) {
       const customer = customers.find((c) => c.id === s.customer_id);
       if (!customer?.phone) { skipped++; continue; }
-      const daysLeft = getDaysLeft(s.end_date);
-      const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+      const message = buildReminderMessage(s, customer.name);
       window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
       opened++;
       // small delay so the browser doesn't block multi-window opens
@@ -519,6 +559,9 @@ const Subscriptions = () => {
                 <Progress value={healthScore} className="h-1.5 mt-2" />
               </div>
               <div className="flex flex-col gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="gap-1.5 w-full justify-center">
+                  <MessageSquareText className="h-4 w-4" /> <span className="hidden sm:inline">Template</span>
+                </Button>
                 <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 w-full justify-center">
                   <Download className="h-4 w-4" /> <span className="hidden sm:inline">Export</span>
                 </Button>
@@ -1220,6 +1263,86 @@ const Subscriptions = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* WhatsApp Message Template Editor */}
+        <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquareText className="h-5 w-5 text-green-600" />
+                WhatsApp Reminder Template
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Customize the message sent when you click <span className="font-medium">Remind</span>. Use the placeholders below — they get replaced automatically per customer.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  "{customer_name}", "{product_name}", "{variation}", "{days_left}",
+                  "{end_date}", "{price}", "{store_name}", "{status_text}",
+                ].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setTemplateDraft((p) => p + " " + tag)}
+                    className="text-[11px] font-mono px-2 py-1.5 rounded-md border bg-muted/40 hover:bg-primary/10 hover:border-primary/40 transition-colors text-left truncate"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Message template</Label>
+                <Textarea
+                  value={templateDraft}
+                  onChange={(e) => setTemplateDraft(e.target.value)}
+                  rows={6}
+                  className="text-sm font-mono"
+                  placeholder={DEFAULT_WA_TEMPLATE}
+                />
+              </div>
+
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wide">Live Preview</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {renderTemplate(templateDraft || DEFAULT_WA_TEMPLATE, {
+                    customer_name: "Rishi Mali",
+                    product_name: "Canva Premium",
+                    variation: "1 Month",
+                    days_left: 3,
+                    end_date: fnsFormat(addDays(new Date(), 3), "dd MMM yyyy"),
+                    price: `${symbol}100`,
+                    store_name: activeStore?.name || "Your Store",
+                  })}
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setTemplateDraft(DEFAULT_WA_TEMPLATE)}
+                className="gap-1.5"
+              >
+                <RotateCw className="h-4 w-4" /> Reset
+              </Button>
+              <Button
+                onClick={() => {
+                  const next = (templateDraft || "").trim() || DEFAULT_WA_TEMPLATE;
+                  setWaTemplate(next);
+                  localStorage.setItem(TEMPLATE_STORAGE_KEY, next);
+                  setTemplateOpen(false);
+                  toast.success("Template saved");
+                }}
+                className="gap-1.5"
+              >
+                <Save className="h-4 w-4" /> Save Template
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
