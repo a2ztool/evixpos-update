@@ -70,6 +70,36 @@ export type Database = {
           },
         ]
       }
+      admin_activity_feed: {
+        Row: {
+          created_at: string
+          event_label: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_label?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_label?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
@@ -3163,6 +3193,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_any_admin: { Args: { _user_id: string }; Returns: boolean }
       is_chat_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
