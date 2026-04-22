@@ -151,21 +151,23 @@ const StaffInbox = () => {
   useEffect(() => { requestNotifPermission(); }, []);
 
   // ─── Fetch contacts ───
+  // Staff: do NOT fetch other staff. Only the store owner is shown as a direct contact (added via ownerContact).
+  // Owner: fetch all staff in this store.
   const fetchContacts = useCallback(async () => {
     if (!storeId || !myId) return;
     setLoading(true);
+    if (isStaff) {
+      // Staff users only see the owner (added separately) — no global staff directory access.
+      setStaffList([]);
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("staff_members")
       .select("id, name, email, role, auth_user_id, is_active")
       .eq("store_id", storeId)
       .eq("is_active", true);
-    if (data) {
-      if (isStaff) {
-        setStaffList(data.filter(s => s.auth_user_id !== myId) as StaffMember[]);
-      } else {
-        setStaffList(data as StaffMember[]);
-      }
-    }
+    if (data) setStaffList(data as StaffMember[]);
     setLoading(false);
   }, [storeId, myId, isStaff]);
 
