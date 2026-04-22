@@ -46,20 +46,25 @@ const AdminUsers = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const loadUsers = () => adminCall("get_users").then(setUsers);
+  const loadUsers = () => adminCall("get_users").then((data) => data && setUsers(data));
   useEffect(() => { loadUsers(); }, [adminCall]);
 
   const filtered = useMemo(() => {
     let list = users;
     if (search) { const q = search.toLowerCase(); list = list.filter((u) => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)); }
     if (planFilter !== "all") list = list.filter((u) => u.plan === planFilter);
+    if (statusFilter === "active") list = list.filter((u) => !u.is_suspended);
+    if (statusFilter === "suspended") list = list.filter((u) => u.is_suspended);
     return list;
-  }, [users, search, planFilter]);
+  }, [users, search, planFilter, statusFilter]);
 
-  useEffect(() => { setCurrentPage(1); }, [search, planFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, planFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -67,6 +72,30 @@ const AdminUsers = () => {
   const changePlan = async (storeId: string, newPlan: string) => {
     await adminCall("change_plan", { store_id: storeId, new_plan: newPlan });
     toast.success("Plan updated"); loadUsers();
+  };
+
+  const handleSuspend = async (u: UserRow) => {
+    setBusyId(u.id);
+    const res = await adminCall("suspend_user", { user_id: u.id });
+    setBusyId(null);
+    if (res?.success) { toast.success(`Suspended ${u.email}`); loadUsers(); }
+  };
+
+  const handleUnsuspend = async (u: UserRow) => {
+    setBusyId(u.id);
+    const res = await adminCall("unsuspend_user", { user_id: u.id });
+    setBusyId(null);
+    if (res?.success) { toast.success(`Reactivated ${u.email}`); loadUsers(); }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    const u = confirmDelete;
+    setBusyId(u.id);
+    const res = await adminCall("delete_user", { user_id: u.id, confirm: "DELETE" });
+    setBusyId(null);
+    setConfirmDelete(null);
+    if (res?.success) { toast.success(`Deleted ${u.email} and all related data`); loadUsers(); }
   };
 
   const planColor = (plan: string) => {
