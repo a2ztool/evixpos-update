@@ -466,6 +466,16 @@ const FloatingInbox = () => {
                 </div>
               </>
             )}
+            {view === "chat" && activeConv?.type === "group" && (
+              <Button
+                variant="ghost" size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setTaskOpen(true)}
+                title="Assign Task"
+              >
+                <ListTodo className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost" size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
