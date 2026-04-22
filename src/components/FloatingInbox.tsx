@@ -4,9 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  MessageSquare, Send, Volume2, VolumeX, Paperclip, X, ChevronDown, ArrowLeft, Users
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  MessageSquare, Send, Volume2, VolumeX, Paperclip, X, ChevronDown, ArrowLeft, Users, ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
