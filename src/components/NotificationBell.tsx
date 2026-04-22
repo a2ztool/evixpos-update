@@ -62,9 +62,9 @@ const NotificationBell = () => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
-                className="absolute -top-1 -right-1"
+                className="absolute -top-0.5 -right-0.5 pointer-events-none"
               >
-                <Badge className="h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse">
+                <Badge className="h-4 min-w-4 px-1 flex items-center justify-center text-[10px] font-bold leading-none rounded-full border-2 border-background">
                   {totalBadge > 99 ? "99+" : totalBadge}
                 </Badge>
               </motion.div>
