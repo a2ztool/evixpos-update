@@ -27,6 +27,7 @@ const Auth = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [pwStrength, setPwStrength] = useState(0);
   const [highlightIdx, setHighlightIdx] = useState(0);
+  const [termsError, setTermsError] = useState(false);
   const loginForm = useFormValidation(loginSchema);
   const signupForm = useFormValidation(signupSchema);
   const navigate = useNavigate();
@@ -141,8 +142,6 @@ const Auth = () => {
     }
     setLoading(false);
   };
-
-  const [termsError, setTermsError] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
