@@ -350,9 +350,11 @@ const StaffInbox = () => {
   useEffect(() => {
     if (!storeId || !myId) return;
     const channel = supabase.channel(`group-membership-${myId}-${storeId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_group_members" }, () => {
+      // Listen specifically for THIS user being added/removed as a member
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_group_members", filter: `user_id=eq.${myId}` }, () => {
         fetchGroups();
       })
+      // Listen for group create/update/delete in this store
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_groups", filter: `store_id=eq.${storeId}` }, () => {
         fetchGroups();
       })
