@@ -158,6 +158,9 @@ const AdminUsers = () => {
                     <p className="text-xs text-slate-400 truncate mt-0.5">{u.email}</p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {u.is_suspended && (
+                      <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                    )}
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
                     <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
                   </div>
@@ -175,6 +178,18 @@ const AdminUsers = () => {
                     )}
                     <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 px-2">
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    {u.is_suspended ? (
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 px-2">
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 px-2">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -251,9 +266,18 @@ const AdminUsers = () => {
                             </TooltipProvider>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="outline" className={planColor(u.plan)}>{u.plan}</Badge>
-                              <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8"><Eye className="h-4 w-4" /></Button>
+                              {u.is_suspended && (
+                                <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                              )}
+                              <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="View"><Eye className="h-4 w-4" /></Button>
+                              {u.is_suspended ? (
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="Reactivate"><RotateCcw className="h-4 w-4" /></Button>
+                              ) : (
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
+                              )}
+                              <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Delete"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -309,6 +333,25 @@ const AdminUsers = () => {
           )}
         </>
       )}
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-400" /> Delete user permanently?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300">
+              This will permanently delete <span className="font-semibold text-white">{confirmDelete?.email}</span> and ALL related data: stores, staff, products, orders, customers, subscriptions and reports. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+              Yes, delete everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
