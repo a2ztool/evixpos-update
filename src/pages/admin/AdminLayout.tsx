@@ -106,8 +106,8 @@ const AdminLayout = () => {
   return (
     <div className="min-h-[100dvh] md:min-h-screen flex bg-slate-900">
       {/* Sidebar - hidden on mobile */}
-      <aside className="hidden md:flex w-64 bg-slate-800 border-r border-slate-700 flex-col">
-        <div className="p-4 border-b border-slate-700 flex items-center gap-3">
+      <aside className="hidden md:flex w-64 bg-slate-800 border-r border-slate-700 flex-col h-screen sticky top-0">
+        <div className="p-4 border-b border-slate-700 flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 rounded-xl bg-emerald-600/20 flex items-center justify-center">
             <ShieldCheck className="h-5 w-5 text-emerald-400" />
           </div>
@@ -116,7 +116,7 @@ const AdminLayout = () => {
             <p className="text-xs text-slate-400">Control Panel</p>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.path}
@@ -143,16 +143,6 @@ const AdminLayout = () => {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-slate-700">
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-start text-slate-400 hover:text-red-400 hover:bg-red-500/10"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
       </aside>
 
       {/* Mobile top bar — compact app-style */}
