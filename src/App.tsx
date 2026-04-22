@@ -98,6 +98,9 @@ const AdminPlansPricing = lazyPage(() => import("./pages/admin/AdminPlansPricing
 const AdminAuditLogs = lazyPage(() => import("./pages/admin/AdminAuditLogs"));
 const AdminBroadcasts = lazyPage(() => import("./pages/admin/AdminBroadcasts"));
 const AdminMaintenance = lazyPage(() => import("./pages/admin/AdminMaintenance"));
+const AdminRoles = lazyPage(() => import("./pages/admin/AdminRoles"));
+const AdminDataExport = lazyPage(() => import("./pages/admin/AdminDataExport"));
+const AdminLiveActivity = lazyPage(() => import("./pages/admin/AdminLiveActivity"));
 const AdminFeatureFlags = lazyPage(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminTemplates = lazyPage(() => import("./pages/admin/AdminTemplates"));
 const AdminFinance = lazyPage(() => import("./pages/admin/AdminFinance"));
@@ -249,6 +252,9 @@ const App = () => {
               <Route path="/admin/feature-flags" element={<AdminFeatureFlags />} />
               <Route path="/admin/templates" element={<AdminTemplates />} />
               <Route path="/admin/finance" element={<AdminFinance />} />
+              <Route path="/admin/roles" element={<AdminRoles />} />
+              <Route path="/admin/export" element={<AdminDataExport />} />
+              <Route path="/admin/activity" element={<AdminLiveActivity />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

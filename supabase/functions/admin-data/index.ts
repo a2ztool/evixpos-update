@@ -37,17 +37,44 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return errorResponse("Unauthorized", 401);
 
-    const { data: roleData } = await supabase
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) return errorResponse("Not an admin", 403);
+      .in("role", ["admin", "super_admin", "support_admin", "finance_admin"]);
+    if (!roleRows || roleRows.length === 0) return errorResponse("Not an admin", 403);
+    const adminRoles: string[] = roleRows.map((r: any) => r.role);
+    const isSuperAdmin = adminRoles.includes("super_admin") || adminRoles.includes("admin");
+    const can = (...allowed: string[]) => allowed.some((r) => adminRoles.includes(r));
+
+    // Permission gate for tier-restricted actions
+    const FINANCE_ACTIONS = new Set([
+      "get_finance_metrics","get_plan_payments","review_plan_payment","get_auto_payment_logs",
+      "get_payment_gateways","create_payment_gateway","update_payment_gateway","delete_payment_gateway",
+      "export_payments","export_finance",
+    ]);
+    const SUPPORT_ACTIONS = new Set(["get_users","get_user_details","get_stores","get_store_details","impersonate_user"]);
+    const SUPER_ONLY = new Set([
+      "admin_change_user_plan","admin_extend_plan","update_plans_config","toggle_store","delete_store",
+      "send_broadcast","delete_broadcast","update_system_setting","update_feature_flag","update_system_template",
+      "set_user_role","remove_user_role",
+    ]);
 
     const body = await req.json();
     const action = body.action;
     const params = body.params || {};
+
+    // Tier-based authorization
+    if (SUPER_ONLY.has(action) && !isSuperAdmin) {
+      return errorResponse("Only super admins can perform this action", 403);
+    }
+    if (FINANCE_ACTIONS.has(action) && !can("admin","super_admin","finance_admin")) {
+      return errorResponse("Finance admin role required", 403);
+    }
+    if (SUPPORT_ACTIONS.has(action) && !can("admin","super_admin","support_admin")) {
+      return errorResponse("Support admin role required", 403);
+    }
+
 
     // ─── GET STATS ───
     if (action === "get_stats") {
@@ -1130,6 +1157,122 @@ Deno.serve(async (req) => {
         refundTotal,
         upcomingRenewals: upcomingRenewals || 0,
       });
+    }
+
+    // ─── PHASE 3: ADMIN ROLES MANAGEMENT ───
+    if (action === "list_admin_roles") {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("id, user_id, role")
+        .in("role", ["admin","super_admin","support_admin","finance_admin"]);
+      if (error) return errorResponse(error.message);
+      const ids = (data || []).map((r: any) => r.user_id);
+      const { data: profiles } = ids.length
+        ? await supabase.from("profiles").select("id, email, name").in("id", ids)
+        : { data: [] };
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const merged = (data || []).map((r: any) => ({ ...r, ...(profileMap.get(r.user_id) || {}) }));
+      return json(merged);
+    }
+
+    if (action === "set_user_role") {
+      const { user_id, role } = params as { user_id: string; role: string };
+      if (!user_id || !role) return errorResponse("user_id and role required");
+      if (!["admin","super_admin","support_admin","finance_admin"].includes(role)) {
+        return errorResponse("Invalid admin role");
+      }
+      const { error } = await supabase.from("user_roles").upsert({ user_id, role }, { onConflict: "user_id,role" });
+      if (error) return errorResponse(error.message);
+      const { data: prof } = await supabase.from("profiles").select("email").eq("id", user_id).maybeSingle();
+      await logAction("set_user_role", "user", user_id, prof?.email || "", { role });
+      return json({ success: true });
+    }
+
+    if (action === "remove_user_role") {
+      const { user_id, role } = params as { user_id: string; role: string };
+      if (!user_id || !role) return errorResponse("user_id and role required");
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
+      if (error) return errorResponse(error.message);
+      await logAction("remove_user_role", "user", user_id, "", { role });
+      return json({ success: true });
+    }
+
+    // ─── PHASE 3: LIVE ACTIVITY FEED ───
+    if (action === "get_activity_feed") {
+      const { limit = 100, event_type } = params as { limit?: number; event_type?: string };
+      let q = supabase.from("admin_activity_feed").select("*").order("created_at", { ascending: false }).limit(Number(limit));
+      if (event_type) q = q.eq("event_type", event_type);
+      const { data, error } = await q;
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "get_activity_stats") {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const types = ["signup","order","payment"];
+      const counts: Record<string, number> = {};
+      for (const t of types) {
+        const { count } = await supabase
+          .from("admin_activity_feed")
+          .select("id", { count: "exact", head: true })
+          .eq("event_type", t)
+          .gte("created_at", since);
+        counts[t] = count || 0;
+      }
+      return json({ last_24h: counts });
+    }
+
+    // ─── PHASE 3: DATA EXPORT (CSV/JSON) ───
+    if (action === "export_data") {
+      const { dataset, format = "csv" } = params as { dataset: string; format?: "csv" | "json" };
+      const allowed: Record<string, { table: string; columns: string }> = {
+        users: { table: "profiles", columns: "id, email, name, created_at, is_suspended" },
+        stores: { table: "stores", columns: "*" },
+        payments: { table: "plan_payments", columns: "id, user_id, plan, amount, currency, status, created_at, transaction_id" },
+        orders: { table: "orders", columns: "id, user_id, store_id, total_amount, payment_status, status, created_at" },
+        subscriptions: { table: "subscriptions", columns: "*" },
+      };
+      const cfg = allowed[dataset];
+      if (!cfg) return errorResponse("Invalid dataset");
+      // Tier-restricted exports
+      if (!isSuperAdmin && !can("admin")) {
+        const financeOnly = ["payments","subscriptions"];
+        const supportOnly = ["users","stores","orders"];
+        if (can("finance_admin") && !financeOnly.includes(dataset)) {
+          return errorResponse("Finance role can only export payments/subscriptions");
+        }
+        if (can("support_admin") && !supportOnly.includes(dataset)) {
+          return errorResponse("Support role can only export users/stores/orders");
+        }
+      }
+      const { data, error } = await supabase.from(cfg.table).select(cfg.columns).limit(10000);
+      if (error) return errorResponse(error.message);
+      const rows = (data as any[]) || [];
+
+      await logAction("export_data", "dataset", dataset, dataset, { format, count: rows.length });
+
+      if (format === "json") {
+        return new Response(JSON.stringify(rows, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${dataset}.json"` },
+        });
+      }
+      if (rows.length === 0) {
+        return new Response("", { headers: { ...corsHeaders, "Content-Type": "text/csv" } });
+      }
+      const headers = Object.keys(rows[0]);
+      const escape = (v: any) => {
+        if (v === null || v === undefined) return "";
+        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+      return new Response(csv, {
+        headers: { ...corsHeaders, "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="${dataset}.csv"` },
+      });
+    }
+
+    if (action === "get_admin_context") {
+      return json({ roles: adminRoles, isSuperAdmin });
     }
 
     // ─── UNKNOWN ACTION ───
