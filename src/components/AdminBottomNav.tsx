@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Wallet, Inbox, MoreHorizontal, Ticket, Zap } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, Inbox, MoreHorizontal, Ticket, Zap, Megaphone, ScrollText, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Store, CreditCard, Tag, BarChart3, Settings, Globe, LogOut } from "lucide-react";
@@ -19,6 +19,9 @@ const moreItems = [
   { icon: Zap, path: "/admin/auto-payments", label: "Auto Pay" },
   { icon: Tag, path: "/admin/coupons", label: "Coupons" },
   { icon: BarChart3, path: "/admin/reports", label: "Reports" },
+  { icon: Megaphone, path: "/admin/broadcasts", label: "Broadcasts" },
+  { icon: ScrollText, path: "/admin/audit-logs", label: "Audit Logs" },
+  { icon: Wrench, path: "/admin/maintenance", label: "Maintenance" },
   { icon: Settings, path: "/admin/settings", label: "Settings" },
   { icon: Globe, path: "/admin/landing", label: "Landing Page" },
   { icon: Ticket, path: "/admin/support", label: "Support" },
