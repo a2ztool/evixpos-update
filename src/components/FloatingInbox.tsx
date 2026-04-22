@@ -665,6 +665,55 @@ const FloatingInbox = () => {
           )}
         </div>
       )}
+
+      {/* Assign Task Dialog (group only) */}
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListTodo className="h-4 w-4 text-primary" />
+              Assign Task
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Task Name</Label>
+              <Input
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder="e.g. Update product listing"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Term / Deadline</Label>
+              <Input
+                value={taskTerm}
+                onChange={(e) => setTaskTerm(e.target.value)}
+                placeholder="e.g. By tomorrow 5 PM"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Required Info / Notes</Label>
+              <Textarea
+                value={taskRequiredInfo}
+                onChange={(e) => setTaskRequiredInfo(e.target.value)}
+                placeholder="Details about the task..."
+                className="mt-1 min-h-[80px]"
+              />
+            </div>
+            <Button
+              onClick={sendTask}
+              disabled={!taskName.trim()}
+              className="w-full"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send Task
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
