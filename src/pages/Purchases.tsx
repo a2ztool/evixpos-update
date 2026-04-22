@@ -438,11 +438,24 @@ const Purchases = () => {
                       <div className="grid grid-cols-3 gap-3">
                         <div>
                           <Label className="text-xs">Quantity *</Label>
-                          <Input type="number" min="1" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} />
+                          <Input
+                            type="number" min="1"
+                            value={form.quantity}
+                            onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))}
+                            error={Number(form.quantity) <= 0}
+                          />
+                          {Number(form.quantity) <= 0 && <p className="text-xs text-destructive animate-fade-in">Quantity must be greater than 0</p>}
                         </div>
                         <div>
                           <Label className="text-xs">Unit Price *</Label>
-                          <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))} placeholder="0.00" />
+                          <Input
+                            type="number" min="0" step="0.01"
+                            value={form.unit_price}
+                            onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))}
+                            placeholder="0.00"
+                            error={form.unit_price !== "" && Number(form.unit_price) <= 0}
+                          />
+                          {form.unit_price !== "" && Number(form.unit_price) <= 0 && <p className="text-xs text-destructive animate-fade-in">Unit price must be greater than 0</p>}
                         </div>
                         <div>
                           <Label className="text-xs">Total</Label>
@@ -479,7 +492,14 @@ const Purchases = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <Label className="text-xs">Paid Amount</Label>
-                          <Input type="number" min="0" step="0.01" value={form.paid_amount} onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))} placeholder="0.00" />
+                          <Input
+                            type="number" min="0" step="0.01"
+                            value={form.paid_amount}
+                            onChange={e => setForm(p => ({ ...p, paid_amount: e.target.value }))}
+                            placeholder="0.00"
+                            error={Number(form.paid_amount) > computedTotal}
+                          />
+                          {Number(form.paid_amount) > computedTotal && <p className="text-xs text-destructive animate-fade-in">Paid amount cannot exceed total</p>}
                         </div>
                         <div>
                           <Label className="text-xs">Payment Method</Label>
