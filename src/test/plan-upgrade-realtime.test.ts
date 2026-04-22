@@ -109,7 +109,6 @@ describe("Plan upgrade Free → Pro propagates instantly to owner + all staff da
   beforeEach(() => {
     subsByOwner.clear();
     listeners.clear();
-    fromMock.mockClear();
     channelMock.mockClear();
   });
 
