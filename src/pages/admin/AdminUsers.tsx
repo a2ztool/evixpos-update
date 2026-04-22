@@ -52,6 +52,9 @@ const AdminUsers = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<UserRow | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [detailsTarget, setDetailsTarget] = useState<UserRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const navigate = useNavigate();
 
