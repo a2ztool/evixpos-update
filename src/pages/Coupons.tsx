@@ -17,7 +17,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { validateWithToast, couponSchema } from "@/lib/validations";
+import { couponSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import {
   Plus, Tag, Search, Trash2, Pencil, Copy, HelpCircle, LayoutGrid, List,
   TicketPercent, CheckCircle2, XCircle, TrendingUp, Sparkles, Calendar,
@@ -76,6 +77,7 @@ const Coupons = () => {
   const [maxUses, setMaxUses] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [expiresAt, setExpiresAt] = useState("");
+  const formValidation = useFormValidation(couponSchema);
 
   const fetchCoupons = async () => {
     if (!user || !activeStore) return;
@@ -111,10 +113,10 @@ const Coupons = () => {
 
   const handleSave = async () => {
     if (!user || !activeStore) return;
-    const parsed = validateWithToast(couponSchema, {
+    const ok = formValidation.validateAll({
       code: code.toUpperCase(), type, value, minOrder: minOrder, maxUses: maxUses,
-    }, toast.error);
-    if (!parsed) return;
+    });
+    if (!ok) { toast.error("Please fix the errors below"); return; }
 
     const payload = {
       code: code.toUpperCase(), type, value: parseFloat(value),
@@ -451,18 +453,25 @@ const Coupons = () => {
             <SheetDescription>{editId ? "Update coupon details" : "Set up a new discount code"}</SheetDescription>
           </SheetHeader>
           <div className="space-y-5 mt-6">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Coupon Code *</Label>
               <div className="flex gap-2">
-                <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. SAVE20" className="flex-1 font-mono uppercase" />
+                <Input
+                  value={code}
+                  onChange={(e) => { setCode(e.target.value.toUpperCase()); formValidation.clearField("code"); }}
+                  error={!!formValidation.getError("code")}
+                  placeholder="e.g. SAVE20"
+                  className="flex-1 font-mono uppercase"
+                />
                 <Button variant="outline" size="sm" onClick={generateCode} className="gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" /> Generate
                 </Button>
               </div>
+              {formValidation.getError("code") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("code")}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Discount Type</Label>
                 <Select value={type} onValueChange={(v) => setType(v as "fixed" | "percentage")}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -472,24 +481,44 @@ const Coupons = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Value *</Label>
-                <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "percentage" ? "e.g. 20" : "e.g. 100"} />
+                <Input
+                  type="number" min="0"
+                  value={value}
+                  onChange={(e) => { setValue(e.target.value); formValidation.clearField("value"); }}
+                  error={!!formValidation.getError("value")}
+                  placeholder={type === "percentage" ? "e.g. 20" : "e.g. 100"}
+                />
+                {formValidation.getError("value") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("value")}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Min Order (৳)</Label>
-                <Input type="number" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} />
+                <Input
+                  type="number" min="0"
+                  value={minOrder}
+                  onChange={(e) => { setMinOrder(e.target.value); formValidation.clearField("minOrder"); }}
+                  error={!!formValidation.getError("minOrder")}
+                />
+                {formValidation.getError("minOrder") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("minOrder")}</p>}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Max Uses</Label>
-                <Input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+                <Input
+                  type="number" min="0"
+                  value={maxUses}
+                  onChange={(e) => { setMaxUses(e.target.value); formValidation.clearField("maxUses"); }}
+                  error={!!formValidation.getError("maxUses")}
+                  placeholder="Unlimited"
+                />
+                {formValidation.getError("maxUses") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("maxUses")}</p>}
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Expiry Date</Label>
               <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
             </div>

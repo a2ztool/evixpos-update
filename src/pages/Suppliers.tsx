@@ -21,7 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
-import { validateWithToast, supplierSchema } from "@/lib/validations";
+import { supplierSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate, differenceInDays, subDays } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RTooltip, CartesianGrid } from "recharts";
 
@@ -43,6 +44,7 @@ const Suppliers = () => {
   const [historyDialog, setHistoryDialog] = useState<any>(null);
   const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
   const [guideOpen, setGuideOpen] = useState(false);
+  const formValidation = useFormValidation(supplierSchema);
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ["suppliers", storeId],
@@ -91,8 +93,7 @@ const Suppliers = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const parsed = validateWithToast(supplierSchema, form, toast.error);
-      if (!parsed) throw new Error("Validation failed");
+      if (!formValidation.validateAll(form)) throw new Error("Please fix the errors below");
       if (editId) {
         const { error } = await supabase.from("suppliers").update({
           name: form.name, phone: form.phone, email: form.email,
@@ -336,13 +337,60 @@ const Suppliers = () => {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} Supplier</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Supplier name" /></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+880..." /></div>
-                      <div><Label>Email</Label><Input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="Email" /></div>
+                    <div className="space-y-1.5">
+                      <Label>Name *</Label>
+                      <Input
+                        value={form.name}
+                        onChange={e => { setForm(p => ({ ...p, name: e.target.value })); formValidation.clearField("name"); }}
+                        error={!!formValidation.getError("name")}
+                        placeholder="Supplier name"
+                      />
+                      {formValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("name")}</p>}
                     </div>
-                    <div><Label>Address</Label><Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} placeholder="Address" /></div>
-                    <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Internal notes" rows={2} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Phone</Label>
+                        <Input
+                          value={form.phone}
+                          onChange={e => { setForm(p => ({ ...p, phone: e.target.value })); formValidation.clearField("phone"); }}
+                          error={!!formValidation.getError("phone")}
+                          placeholder="+880..."
+                        />
+                        {formValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("phone")}</p>}
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Email</Label>
+                        <Input
+                          value={form.email}
+                          onChange={e => { setForm(p => ({ ...p, email: e.target.value })); formValidation.clearField("email"); }}
+                          error={!!formValidation.getError("email")}
+                          placeholder="Email"
+                        />
+                        {formValidation.getError("email") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("email")}</p>}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Address</Label>
+                      <Input
+                        value={form.address}
+                        onChange={e => { setForm(p => ({ ...p, address: e.target.value })); formValidation.clearField("address"); }}
+                        error={!!formValidation.getError("address")}
+                        placeholder="Address"
+                      />
+                      {formValidation.getError("address") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("address")}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={form.notes}
+                        onChange={e => { setForm(p => ({ ...p, notes: e.target.value })); formValidation.clearField("notes"); }}
+                        aria-invalid={!!formValidation.getError("notes")}
+                        className={formValidation.getError("notes") ? "border-destructive focus-visible:ring-destructive" : ""}
+                        placeholder="Internal notes"
+                        rows={2}
+                      />
+                      {formValidation.getError("notes") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("notes")}</p>}
+                    </div>
                     <Button onClick={() => saveMutation.mutate()} disabled={!form.name || saveMutation.isPending} className="w-full">
                       {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Add Supplier"}
                     </Button>

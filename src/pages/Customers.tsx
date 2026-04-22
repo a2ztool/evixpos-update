@@ -29,7 +29,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { validateWithToast, customerSchema } from "@/lib/validations";
+import { customerSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import {
   Plus, Trash2, Pencil, Eye, Search, Upload, Users, Phone, CloudUpload, FileDown, Dna, Star,
   CreditCard, ShoppingBag, Sparkles, BookOpen, ChevronDown, TrendingUp, AlertTriangle, Crown,
@@ -86,6 +87,7 @@ const Customers = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const formValidation = useFormValidation(customerSchema);
   const [search, setSearch] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyCustomer, setHistoryCustomer] = useState("");
@@ -278,8 +280,7 @@ const Customers = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = validateWithToast(customerSchema, form, toast.error);
-    if (!parsed) return;
+    if (!formValidation.validateAll(form)) { toast.error("Please fix the errors below"); return; }
     if (editId) {
       const { error } = await supabase.from("customers").update(form).eq("id", editId);
       if (error) toast.error(error.message);
@@ -852,32 +853,74 @@ const Customers = () => {
             <SheetTitle>{editId ? "Edit Customer" : "Add Customer"}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Full Name *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="Customer name" />
+              <Input
+                value={form.name}
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); formValidation.clearField("name"); }}
+                error={!!formValidation.getError("name")}
+                placeholder="Customer name"
+              />
+              {formValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("name")}</p>}
             </div>
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder="email@example.com" />
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => { setForm({ ...form, email: e.target.value }); formValidation.clearField("email"); }}
+                error={!!formValidation.getError("email")}
+                placeholder="email@example.com"
+              />
+              {formValidation.getError("email") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("email")}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Phone</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone number..." className="pl-9" />
+                <Input
+                  value={form.phone}
+                  onChange={(e) => { setForm({ ...form, phone: e.target.value }); formValidation.clearField("phone"); }}
+                  error={!!formValidation.getError("phone")}
+                  placeholder="Phone number..."
+                  className="pl-9"
+                />
               </div>
+              {formValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("phone")}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Address</Label>
-              <Textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Full address" rows={3} />
+              <Textarea
+                value={form.address}
+                onChange={(e) => { setForm({ ...form, address: e.target.value }); formValidation.clearField("address"); }}
+                aria-invalid={!!formValidation.getError("address")}
+                className={formValidation.getError("address") ? "border-destructive focus-visible:ring-destructive" : ""}
+                placeholder="Full address"
+                rows={3}
+              />
+              {formValidation.getError("address") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("address")}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Tags (comma separated)</Label>
-              <Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="vip, reseller" />
+              <Input
+                value={form.tags}
+                onChange={(e) => { setForm({ ...form, tags: e.target.value }); formValidation.clearField("tags"); }}
+                error={!!formValidation.getError("tags")}
+                placeholder="vip, reseller"
+              />
+              {formValidation.getError("tags") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("tags")}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes..." rows={3} />
+              <Textarea
+                value={form.notes}
+                onChange={(e) => { setForm({ ...form, notes: e.target.value }); formValidation.clearField("notes"); }}
+                aria-invalid={!!formValidation.getError("notes")}
+                className={formValidation.getError("notes") ? "border-destructive focus-visible:ring-destructive" : ""}
+                placeholder="Additional notes..."
+                rows={3}
+              />
+              {formValidation.getError("notes") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("notes")}</p>}
             </div>
             <Button type="submit" className="w-full">{editId ? "Update Customer" : "Save Customer"}</Button>
           </form>
