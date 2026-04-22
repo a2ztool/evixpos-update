@@ -19,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { validateWithToast, productSchema } from "@/lib/validations";
+import { productSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { Plus, Trash2, Pencil, Search, Package, Upload, Download, CloudUpload, X, Layers, HelpCircle, LayoutGrid, List as ListIcon, CheckSquare, ArrowUpDown, AlertTriangle, CheckCircle2, XCircle, Boxes, Sparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -93,6 +94,7 @@ const Products = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [saving, setSaving] = useState(false);
+  const formValidation = useFormValidation(productSchema);
 
   // Track which products have variations (for badge)
   const [variationCounts, setVariationCounts] = useState<Record<string, number>>({});
@@ -190,12 +192,12 @@ const Products = () => {
   };
 
   const handleSubmit = async () => {
-    const parsed = validateWithToast(productSchema, {
+    const ok = formValidation.validateAll({
       name: form.name, sku: form.sku, category: form.category,
       image_url: form.image_url, description: form.description,
       base_cost: form.base_cost, price: form.price, stock: form.stock,
-    }, toast.error);
-    if (!parsed) return;
+    });
+    if (!ok) { toast.error("Please fix the errors below"); return; }
     setSaving(true);
     const payload = {
       name: form.name,
@@ -892,46 +894,98 @@ const Products = () => {
           </SheetHeader>
           <div className="space-y-5 mt-6">
             {/* Name */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t.productName} *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Product name" />
+              <Input
+                value={form.name}
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); formValidation.clearField("name"); }}
+                error={!!formValidation.getError("name")}
+                placeholder="Product name"
+              />
+              {formValidation.getError("name") && (
+                <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("name")}</p>
+              )}
             </div>
 
             {/* SKU & Category */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>{t.sku}</Label>
-                <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="" />
+                <Input
+                  value={form.sku}
+                  onChange={(e) => { setForm({ ...form, sku: e.target.value }); formValidation.clearField("sku"); }}
+                  error={!!formValidation.getError("sku")}
+                  placeholder=""
+                />
+                {formValidation.getError("sku") && (
+                  <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("sku")}</p>
+                )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>{t.category}</Label>
-                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="" />
+                <Input
+                  value={form.category}
+                  onChange={(e) => { setForm({ ...form, category: e.target.value }); formValidation.clearField("category"); }}
+                  error={!!formValidation.getError("category")}
+                  placeholder=""
+                />
+                {formValidation.getError("category") && (
+                  <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>
+                )}
               </div>
             </div>
 
             {/* Product Image — plan-gated */}
             <ProductImageField
               value={form.image_url}
-              onChange={(url) => setForm({ ...form, image_url: url })}
+              onChange={(url) => { setForm({ ...form, image_url: url }); formValidation.clearField("image_url"); }}
               storeId={activeStore?.id}
             />
+            {formValidation.getError("image_url") && (
+              <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("image_url")}</p>
+            )}
 
 
             {/* Description */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t.description}</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+              <Textarea
+                value={form.description}
+                onChange={(e) => { setForm({ ...form, description: e.target.value }); formValidation.clearField("description"); }}
+                aria-invalid={!!formValidation.getError("description")}
+                className={formValidation.getError("description") ? "border-destructive focus-visible:ring-destructive" : ""}
+                rows={3}
+              />
+              {formValidation.getError("description") && (
+                <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("description")}</p>
+              )}
             </div>
 
             {/* Base Cost & Base Selling */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>{t.baseCost} (৳)</Label>
-                <Input type="number" value={form.base_cost} onChange={(e) => setForm({ ...form, base_cost: e.target.value })} />
+                <Input
+                  type="number" min="0"
+                  value={form.base_cost}
+                  onChange={(e) => { setForm({ ...form, base_cost: e.target.value }); formValidation.clearField("base_cost"); }}
+                  error={!!formValidation.getError("base_cost")}
+                />
+                {formValidation.getError("base_cost") && (
+                  <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("base_cost")}</p>
+                )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>{t.baseSelling} (৳)</Label>
-                <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                <Input
+                  type="number" min="0"
+                  value={form.price}
+                  onChange={(e) => { setForm({ ...form, price: e.target.value }); formValidation.clearField("price"); }}
+                  error={!!formValidation.getError("price")}
+                />
+                {formValidation.getError("price") && (
+                  <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("price")}</p>
+                )}
               </div>
             </div>
 
@@ -942,10 +996,20 @@ const Products = () => {
             </div>
 
             {/* Stock Quantity */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t.stockQuantity}</Label>
-              <Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Leave empty for unlimited" />
-              <p className="text-xs text-muted-foreground">Leave empty for unlimited stock</p>
+              <Input
+                type="number" min="0"
+                value={form.stock}
+                onChange={(e) => { setForm({ ...form, stock: e.target.value }); formValidation.clearField("stock"); }}
+                error={!!formValidation.getError("stock")}
+                placeholder="Leave empty for unlimited"
+              />
+              {formValidation.getError("stock") ? (
+                <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("stock")}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Leave empty for unlimited stock</p>
+              )}
             </div>
 
             {/* Toggles */}

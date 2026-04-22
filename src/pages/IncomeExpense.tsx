@@ -19,7 +19,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { validateWithToast, transactionSchema } from "@/lib/validations";
+import { transactionSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, DollarSign, Wallet, PiggyBank, BarChart3,
@@ -79,6 +80,7 @@ const IncomeExpense = () => {
     note: "",
     created_at: new Date()
   });
+  const formValidation = useFormValidation(transactionSchema);
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -250,10 +252,10 @@ const IncomeExpense = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = validateWithToast(transactionSchema, {
+    const ok = formValidation.validateAll({
       type: form.type, amount: form.amount, category: form.category, note: form.note,
-    }, toast.error);
-    if (!parsed) return;
+    });
+    if (!ok) { toast.error("Please fix the errors below"); return; }
     const payload = {
       type: form.type, amount: Number(form.amount), category: form.category,
       note: form.note, is_paid: true, created_at: form.created_at.toISOString()
@@ -917,23 +919,35 @@ const IncomeExpense = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Amount ({symbol}) *</Label>
-                <Input type="number" step="0.01" min="0" value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="0.00" required className="text-lg font-semibold rounded-xl" />
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={form.amount}
+                  onChange={(e) => { setForm({ ...form, amount: e.target.value }); formValidation.clearField("amount"); }}
+                  error={!!formValidation.getError("amount")}
+                  placeholder="0.00"
+                  className="text-lg font-semibold rounded-xl"
+                />
+                {formValidation.getError("amount") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("amount")}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <Select value={form.category} onValueChange={(v) => { setForm({ ...form, category: v }); formValidation.clearField("category"); }}>
+                  <SelectTrigger className={`rounded-xl ${formValidation.getError("category") ? "border-destructive" : ""}`}><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  placeholder="Or type a custom category..." className="text-sm rounded-xl" />
+                <Input
+                  value={form.category}
+                  onChange={(e) => { setForm({ ...form, category: e.target.value }); formValidation.clearField("category"); }}
+                  error={!!formValidation.getError("category")}
+                  placeholder="Or type a custom category..."
+                  className="text-sm rounded-xl"
+                />
+                {formValidation.getError("category") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>}
               </div>
 
               <div className="space-y-2">
@@ -952,10 +966,17 @@ const IncomeExpense = () => {
                 </Popover>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Note</Label>
-                <Textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
-                  rows={3} placeholder="Add a note..." className="rounded-xl" />
+                <Textarea
+                  value={form.note}
+                  onChange={(e) => { setForm({ ...form, note: e.target.value }); formValidation.clearField("note"); }}
+                  aria-invalid={!!formValidation.getError("note")}
+                  className={`rounded-xl ${formValidation.getError("note") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  rows={3}
+                  placeholder="Add a note..."
+                />
+                {formValidation.getError("note") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("note")}</p>}
               </div>
 
               <Button type="submit" className="w-full rounded-xl" size="lg">

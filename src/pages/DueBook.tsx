@@ -20,7 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { validateWithToast, dueSchema } from "@/lib/validations";
+import { dueSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -84,6 +85,7 @@ const DueBook = () => {
     note: "",
     due_date: "",
   });
+  const formValidation = useFormValidation(dueSchema);
   const [statusFilter, setStatusFilter] = useState("unpaid");
   const [typeFilter, setTypeFilter] = useState("all");
   const [datePreset, setDatePreset] = useState("all");
@@ -244,10 +246,10 @@ const DueBook = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalNote = buildNote(form.phone, form.note);
-    const parsed = validateWithToast(dueSchema, {
+    const ok = formValidation.validateAll({
       type: form.type, amount: form.amount, category: form.category, note: finalNote,
-    }, toast.error);
-    if (!parsed) return;
+    });
+    if (!ok) { toast.error("Please fix the errors below"); return; }
     const payload = {
       type: form.type as "income" | "expense",
       amount: Number(form.amount),
@@ -991,14 +993,29 @@ const DueBook = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Amount ({symbol}) *</Label>
-                <Input type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="Enter amount" required className="rounded-xl" />
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={form.amount}
+                  onChange={(e) => { setForm({ ...form, amount: e.target.value }); formValidation.clearField("amount"); }}
+                  error={!!formValidation.getError("amount")}
+                  placeholder="Enter amount"
+                  className="rounded-xl"
+                />
+                {formValidation.getError("amount") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("amount")}</p>}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Person / Category</Label>
-                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g., John Doe, Office Rent" className="rounded-xl" />
+                <Input
+                  value={form.category}
+                  onChange={(e) => { setForm({ ...form, category: e.target.value }); formValidation.clearField("category"); }}
+                  error={!!formValidation.getError("category")}
+                  placeholder="e.g., John Doe, Office Rent"
+                  className="rounded-xl"
+                />
+                {formValidation.getError("category") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>}
               </div>
 
               <div className="space-y-2">
@@ -1012,9 +1029,17 @@ const DueBook = () => {
                 <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} className="rounded-xl" />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Note</Label>
-                <Textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={3} placeholder="Additional details..." className="rounded-xl" />
+                <Textarea
+                  value={form.note}
+                  onChange={(e) => { setForm({ ...form, note: e.target.value }); formValidation.clearField("note"); }}
+                  aria-invalid={!!formValidation.getError("note")}
+                  className={`rounded-xl ${formValidation.getError("note") ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  rows={3}
+                  placeholder="Additional details..."
+                />
+                {formValidation.getError("note") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("note")}</p>}
               </div>
 
               <Button type="submit" className="w-full gap-2 rounded-xl">
