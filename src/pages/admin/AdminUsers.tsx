@@ -10,7 +10,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle, Ban, Trash2, RotateCcw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle, Ban, Trash2, RotateCcw, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreInfo { id: string; name: string; plan: string; }
