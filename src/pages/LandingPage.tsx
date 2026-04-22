@@ -393,7 +393,7 @@ const LandingPage = () => {
             }`}
           >
             <div className="flex items-center gap-2 shrink-0">
-              <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} className={`w-auto transition-all duration-300 ${scrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"}`} />
+              <img src={get("brand_logo") || brandLogo} alt={get("brand_name", "EvixPOS")} width={140} height={32} loading="eager" decoding="async" fetchPriority="high" className={`w-auto transition-all duration-300 ${scrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"}`} />
             </div>
             <div className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
               {DEFAULT_NAV_LINKS.map((link) => (
