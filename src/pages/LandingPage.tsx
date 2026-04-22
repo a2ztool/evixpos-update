@@ -38,6 +38,7 @@ import screenshotOrders from "@/assets/screenshot-orders.jpg";
 import screenshotAnalytics from "@/assets/screenshot-analytics.jpg";
 import screenshotPos from "@/assets/screenshot-pos.jpg";
 import mobileAppMockup from "@/assets/mobile-app-mockup.png";
+import evixLogo from "@/assets/evixpos-logo.png";
 import brandLogo from "@/assets/evixPos.png";
 import brandLogoMark from "@/assets/evixpos-logo-mark.png";
 
@@ -337,10 +338,20 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] md:min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse"><Zap className="h-6 w-6 text-primary" /></div>
-          <div className="h-1.5 w-32 bg-muted rounded-full overflow-hidden"><div className="h-full w-1/2 bg-primary rounded-full animate-[shimmer_1s_ease-in-out_infinite]" /></div>
+      <div className="min-h-[100dvh] md:min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-background to-primary/5">
+        <div className="flex flex-col items-center gap-6">
+          {/* Logo with floating + pulse animation */}
+          <div className="relative">
+            <div className="absolute inset-0 rounded-3xl bg-primary/20 blur-2xl animate-pulse" />
+            <div className="relative animate-[float_2.4s_ease-in-out_infinite]">
+              <img src={evixLogo} alt="EvixPOS" className="h-14 w-auto drop-shadow-xl" />
+            </div>
+          </div>
+          {/* SaaS-style indeterminate progress bar */}
+          <div className="h-1 w-48 bg-muted rounded-full overflow-hidden relative">
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full animate-[loadingBar_1.4s_ease-in-out_infinite]" />
+          </div>
+          <p className="text-xs font-medium text-muted-foreground tracking-wide animate-pulse">Loading your experience…</p>
         </div>
       </div>
     );
