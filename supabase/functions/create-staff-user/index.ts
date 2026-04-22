@@ -99,6 +99,40 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Plan-based staff limit check (Free=1, Pro=3, Business=10)
+    const { data: planRow } = await supabaseAdmin
+      .from("subscriptions")
+      .select("plan")
+      .eq("user_id", caller.id)
+      .eq("status", "active")
+      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const ownerPlan = (planRow?.plan as string) ?? "free";
+    const STAFF_LIMITS: Record<string, number> = { free: 1, pro: 3, business: 10 };
+    const maxStaff = STAFF_LIMITS[ownerPlan] ?? 1;
+    const { count: activeStaffCount } = await supabaseAdmin
+      .from("staff_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", caller.id)
+      .eq("is_active", true);
+    if ((activeStaffCount ?? 0) >= maxStaff) {
+      return new Response(
+        JSON.stringify({
+          error: `Staff limit reached. Your ${ownerPlan.toUpperCase()} plan allows up to ${maxStaff} staff member(s). Please upgrade to add more.`,
+          code: "STAFF_LIMIT_REACHED",
+          plan: ownerPlan,
+          limit: maxStaff,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Try to create auth user for staff
     let authUserId: string;
     const { data: authData, error: authError } =
