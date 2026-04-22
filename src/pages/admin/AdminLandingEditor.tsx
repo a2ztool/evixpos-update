@@ -557,46 +557,78 @@ const AdminLandingEditor = () => {
     toast.success(`Deleted "${key}"`);
   };
 
-  /* ── Seed all missing keys ── */
+  /* ── Seed all missing keys + reconcile any known key whose section drifted ── */
   const handleSeedAllKeys = async () => {
     setSeeding(true);
     try {
-      const existingKeys = new Set(items.map(i => i.key));
-      const toUpsert: { key: string; value: string; section: string; content_type: string; sort_order: number }[] = [];
-      
+      const existingByKey = new Map(items.map(i => [i.key, i]));
+      const toInsert: { key: string; value: string; section: string; content_type: string; sort_order: number }[] = [];
+      const toFix: { id: string; section: string }[] = [];
+
       for (const [section, keys] of Object.entries(ALL_LANDING_KEYS)) {
         keys.forEach((k, idx) => {
-          if (!existingKeys.has(k.key)) {
-            toUpsert.push({
+          const existing = existingByKey.get(k.key);
+          if (!existing) {
+            toInsert.push({
               key: k.key,
               value: k.defaultValue,
               section,
               content_type: k.type,
               sort_order: idx,
             });
+          } else if (existing.section !== section) {
+            // Known key sitting under the wrong section — heal it
+            toFix.push({ id: existing.id, section });
           }
         });
       }
 
-      if (toUpsert.length === 0) {
-        toast.info("All keys already exist!");
+      if (toInsert.length === 0 && toFix.length === 0) {
+        toast.info("All keys already exist and are in the right section!");
         setSeeding(false);
         return;
       }
 
-      // Use upsert to avoid duplicate key errors
-      const { data, error } = await supabase
-        .from("landing_content")
-        .upsert(toUpsert, { onConflict: "key", ignoreDuplicates: true })
-        .select();
-      if (error) {
-        toast.error("Failed to seed keys: " + error.message);
-      } else {
-        // Merge new items, avoiding duplicates in state
-        const newItems = (data as ContentItem[]).filter(d => !existingKeys.has(d.key));
-        setItems(prev => [...prev, ...newItems]);
-        toast.success(`Seeded ${toUpsert.length} key(s) successfully!`);
+      // Heal misplaced rows first
+      await Promise.all(
+        toFix.map(({ id, section }) =>
+          supabase.from("landing_content").update({ section }).eq("id", id)
+        )
+      );
+
+      let insertedCount = 0;
+      if (toInsert.length > 0) {
+        const { data, error } = await supabase
+          .from("landing_content")
+          .upsert(toInsert, { onConflict: "key", ignoreDuplicates: true })
+          .select();
+        if (error) {
+          toast.error("Failed to seed keys: " + error.message);
+          setSeeding(false);
+          return;
+        }
+        const newItems = (data as ContentItem[]).filter(d => !existingByKey.has(d.key));
+        insertedCount = newItems.length;
+        setItems(prev => [
+          ...prev.map(i => {
+            const fix = toFix.find(f => f.id === i.id);
+            return fix ? { ...i, section: fix.section } : i;
+          }),
+          ...newItems,
+        ]);
+      } else if (toFix.length > 0) {
+        setItems(prev =>
+          prev.map(i => {
+            const fix = toFix.find(f => f.id === i.id);
+            return fix ? { ...i, section: fix.section } : i;
+          })
+        );
       }
+
+      const parts = [];
+      if (insertedCount > 0) parts.push(`Added ${insertedCount} field(s)`);
+      if (toFix.length > 0) parts.push(`Fixed ${toFix.length} misplaced field(s)`);
+      toast.success(parts.join(" • "));
     } catch {
       toast.error("Failed to seed keys");
     } finally {
