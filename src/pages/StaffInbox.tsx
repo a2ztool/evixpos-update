@@ -920,7 +920,11 @@ const StaffInbox = () => {
                                       autoFocus
                                     />
                                   </div>
-                                  <div className="max-h-64 overflow-y-auto">
+                                  <div
+                                    className="max-h-64 overflow-y-auto overscroll-contain"
+                                    onWheel={(e) => e.stopPropagation()}
+                                    onTouchMove={(e) => e.stopPropagation()}
+                                  >
                                     {loadingOrders ? (
                                       <div className="p-4 text-xs text-center text-muted-foreground">Loading orders...</div>
                                     ) : (() => {
