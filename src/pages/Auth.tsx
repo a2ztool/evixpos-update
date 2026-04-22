@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { validateWithToast, loginSchema, signupSchema } from "@/lib/validations";
+import { loginSchema, signupSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Zap, Eye, EyeOff, ArrowRight, Gift, Check, Sparkles,
