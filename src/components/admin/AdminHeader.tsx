@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, Clock, LogOut, RefreshCw, Search, ShieldCheck, Wallet, Inbox as InboxIcon, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
