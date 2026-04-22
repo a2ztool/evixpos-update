@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AuthContextType {
   session: Session | null;
@@ -23,7 +24,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up listener FIRST to catch all auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Then restore session from storage — listener above will also fire
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -39,6 +38,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Suspension enforcement: check own profile and (if staff) owner profile.
+  // Force sign-out if suspended and listen to realtime changes.
+  useEffect(() => {
+    if (!session?.user) return;
+    const uid = session.user.id;
+    let cancelled = false;
+
+    const enforce = async () => {
+      // Resolve owner id if this user is staff
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("user_id")
+        .eq("auth_user_id", uid)
+        .eq("is_active", true)
+        .maybeSingle();
+      const ownerId = staffRow?.user_id || uid;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_suspended")
+        .eq("id", ownerId)
+        .maybeSingle();
+
+      if (!cancelled && profile?.is_suspended) {
+        toast.error("Your account has been suspended by admin.");
+        await supabase.auth.signOut();
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth";
+        }
+      }
+      return ownerId;
+    };
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    enforce().then((ownerId) => {
+      if (cancelled || !ownerId) return;
+      channel = supabase
+        .channel(`profile-suspension-${ownerId}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${ownerId}` },
+          (payload: { new?: { is_suspended?: boolean } }) => {
+            if (payload.new?.is_suspended) {
+              toast.error("Your account has been suspended by admin.");
+              supabase.auth.signOut().finally(() => {
+                if (typeof window !== "undefined") window.location.href = "/auth";
+              });
+            }
+          },
+        )
+        .subscribe();
+    });
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
