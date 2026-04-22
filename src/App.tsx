@@ -98,6 +98,9 @@ const AdminPlansPricing = lazyPage(() => import("./pages/admin/AdminPlansPricing
 const AdminAuditLogs = lazyPage(() => import("./pages/admin/AdminAuditLogs"));
 const AdminBroadcasts = lazyPage(() => import("./pages/admin/AdminBroadcasts"));
 const AdminMaintenance = lazyPage(() => import("./pages/admin/AdminMaintenance"));
+const AdminFeatureFlags = lazyPage(() => import("./pages/admin/AdminFeatureFlags"));
+const AdminTemplates = lazyPage(() => import("./pages/admin/AdminTemplates"));
+const AdminFinance = lazyPage(() => import("./pages/admin/AdminFinance"));
 
 // ─── QueryClient with aggressive caching for instant navigation ───
 const queryClient = new QueryClient({
@@ -243,6 +246,9 @@ const App = () => {
               <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
               <Route path="/admin/broadcasts" element={<AdminBroadcasts />} />
               <Route path="/admin/maintenance" element={<AdminMaintenance />} />
+              <Route path="/admin/feature-flags" element={<AdminFeatureFlags />} />
+              <Route path="/admin/templates" element={<AdminTemplates />} />
+              <Route path="/admin/finance" element={<AdminFinance />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

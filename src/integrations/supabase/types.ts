@@ -1121,6 +1121,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          allowed_plans: Json
+          created_at: string
+          description: string | null
+          enabled: boolean
+          flag_key: string
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_plans?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          flag_key: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_plans?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          flag_key?: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       google_sheets_config: {
         Row: {
           created_at: string
@@ -2961,6 +2994,45 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      system_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          subject: string
+          template_key: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          subject?: string
+          template_key: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+          variables?: Json
         }
         Relationships: []
       }
