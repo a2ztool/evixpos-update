@@ -59,6 +59,7 @@ const AdminUserDetails = () => {
   const navigate = useNavigate();
   const { adminCall, loading } = useAdmin();
   const [data, setData] = useState<UserDetails | null>(null);
+  const [showSuspension, setShowSuspension] = useState(false);
 
   useEffect(() => {
     if (userId) adminCall("get_user_details", { user_id: userId }).then(setData);
