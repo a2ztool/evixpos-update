@@ -3,7 +3,7 @@ import { Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
-  LayoutDashboard, Users, Store, BarChart3, LogOut, ShieldCheck, Settings, Tag, CreditCard, Wallet, Globe, Inbox, Ticket, Zap, Gift, DollarSign, Network, ScrollText, Megaphone, Wrench
+  LayoutDashboard, Users, Store, BarChart3, LogOut, ShieldCheck, Settings, Tag, CreditCard, Wallet, Globe, Inbox, Ticket, Zap, Gift, DollarSign, Network, ScrollText, Megaphone, Wrench, Flag, Mail, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,9 @@ const NAV_ITEMS = [
   { label: "Broadcasts", path: "/admin/broadcasts", icon: Megaphone },
   { label: "Audit Logs", path: "/admin/audit-logs", icon: ScrollText },
   { label: "Maintenance", path: "/admin/maintenance", icon: Wrench },
+  { label: "Feature Flags", path: "/admin/feature-flags", icon: Flag },
+  { label: "Templates", path: "/admin/templates", icon: Mail },
+  { label: "Finance", path: "/admin/finance", icon: TrendingUp },
   { label: "Settings", path: "/admin/settings", icon: Settings },
   { label: "Plans & Pricing", path: "/admin/plans-pricing", icon: DollarSign },
   { label: "Landing Page", path: "/admin/landing", icon: Globe },
