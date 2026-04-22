@@ -85,6 +85,7 @@ const DueBook = () => {
     note: "",
     due_date: "",
   });
+  const formValidation = useFormValidation(dueSchema);
   const [statusFilter, setStatusFilter] = useState("unpaid");
   const [typeFilter, setTypeFilter] = useState("all");
   const [datePreset, setDatePreset] = useState("all");

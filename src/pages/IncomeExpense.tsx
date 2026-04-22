@@ -80,6 +80,7 @@ const IncomeExpense = () => {
     note: "",
     created_at: new Date()
   });
+  const formValidation = useFormValidation(transactionSchema);
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
