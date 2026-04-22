@@ -85,6 +85,27 @@ const emptyForm = {
   notes: "",
 };
 
+const DEFAULT_WA_TEMPLATE = `Hi {customer_name}, your subscription for "{product_name}" ({variation}) {status_text}. Please renew to continue the service. Thank you!`;
+const TEMPLATE_STORAGE_KEY = "subscription_wa_template";
+
+const renderTemplate = (
+  tpl: string,
+  data: { customer_name: string; product_name: string; variation: string; days_left: number; end_date: string; price: string; store_name: string }
+) => {
+  const statusText = data.days_left <= 0
+    ? "has expired"
+    : `will expire in ${data.days_left} day${data.days_left === 1 ? "" : "s"} (${data.end_date})`;
+  return tpl
+    .replace(/\{customer_name\}/g, data.customer_name)
+    .replace(/\{product_name\}/g, data.product_name)
+    .replace(/\{variation\}/g, data.variation)
+    .replace(/\{days_left\}/g, String(data.days_left))
+    .replace(/\{end_date\}/g, data.end_date)
+    .replace(/\{price\}/g, data.price)
+    .replace(/\{store_name\}/g, data.store_name)
+    .replace(/\{status_text\}/g, statusText);
+};
+
 const Subscriptions = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
