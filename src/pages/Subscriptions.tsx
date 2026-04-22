@@ -439,8 +439,7 @@ const Subscriptions = () => {
     for (const s of targets) {
       const customer = customers.find((c) => c.id === s.customer_id);
       if (!customer?.phone) { skipped++; continue; }
-      const daysLeft = getDaysLeft(s.end_date);
-      const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+      const message = buildReminderMessage(s, customer.name);
       window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
       opened++;
       // small delay so the browser doesn't block multi-window opens
