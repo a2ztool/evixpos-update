@@ -420,10 +420,8 @@ const MobileNav = () => {
             <CenterNavButton
               icon={MessageSquare}
               label=""
-              isActive={false}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("toggle-floating-inbox"));
-              }}
+              isActive={location.pathname === "/staff-inbox"}
+              onClick={() => navigate("/staff-inbox")}
             />
           ) : (
             <CenterNavButton
