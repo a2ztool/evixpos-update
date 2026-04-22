@@ -659,13 +659,13 @@ const StaffInbox = () => {
 
   const conversations = useMemo((): ConversationItem[] => {
     const items: ConversationItem[] = [];
-    if (filterTab === "all" || filterTab === "direct") {
+    if (filterTab === "chats") {
       allContacts.forEach(c => {
         if (!c.auth_user_id) return;
         items.push({ id: c.auth_user_id, type: "direct", name: c.name, role: c.role, email: c.email, unread: unreadCounts[c.auth_user_id] || 0 });
       });
     }
-    if (filterTab === "all" || filterTab === "groups") {
+    if (filterTab === "groups") {
       groups.forEach(g => {
         items.push({ id: g.id, type: "group", name: g.name, icon: g.icon, unread: 0 });
       });
