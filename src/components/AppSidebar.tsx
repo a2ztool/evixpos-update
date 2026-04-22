@@ -266,7 +266,7 @@ const AppSidebar = () => {
                     className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
                     aria-label="Dashboard"
                   >
-                    <img src={brandIcon} alt="EvixPOS" className="h-full w-full object-cover" />
+                    <img src={brandIcon} alt="EvixPOS" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" className="h-full w-full object-cover" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">EvixPOS · {plan}</TooltipContent>
@@ -274,7 +274,7 @@ const AppSidebar = () => {
             </TooltipProvider>
           ) : (
             <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 group min-w-0">
-              <img src={brandLogo} alt="EvixPOS" className="h-7 w-auto transition-transform group-hover:scale-105" />
+              <img src={brandLogo} alt="EvixPOS" width={120} height={28} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-auto transition-transform group-hover:scale-105" />
               <span className="text-[10px] bg-gradient-to-r from-primary/15 to-primary/5 ring-1 ring-primary/20 px-1.5 py-0.5 rounded font-semibold text-primary uppercase tracking-wide">
                 {plan}
               </span>
