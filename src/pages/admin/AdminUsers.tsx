@@ -80,10 +80,14 @@ const AdminUsers = () => {
     toast.success("Plan updated"); loadUsers();
   };
 
-  const handleSuspend = async (u: UserRow) => {
+  const handleSuspend = async () => {
+    if (!suspendTarget) return;
+    const u = suspendTarget;
     setBusyId(u.id);
-    const res = await adminCall("suspend_user", { user_id: u.id });
+    const res = await adminCall("suspend_user", { user_id: u.id, reason: suspendReason.trim() || null });
     setBusyId(null);
+    setSuspendTarget(null);
+    setSuspendReason("");
     if (res?.success) { toast.success(`Suspended ${u.email}`); loadUsers(); }
   };
 
