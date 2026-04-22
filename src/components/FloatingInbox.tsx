@@ -60,6 +60,10 @@ const FloatingInbox = () => {
   const [taskName, setTaskName] = useState("");
   const [taskTerm, setTaskTerm] = useState("");
   const [taskRequiredInfo, setTaskRequiredInfo] = useState("");
+  const [taskOrderId, setTaskOrderId] = useState<string | null>(null);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderResults, setOrderResults] = useState<{ id: string; label: string }[]>([]);
+  const [showOrderDropdown, setShowOrderDropdown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef(open);
