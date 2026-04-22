@@ -71,14 +71,16 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 /** Simulates an admin/owner upgrading the plan in the DB and broadcasting realtime. */
-function upgradeOwnerPlan(ownerId: string, newPlan: Sub["plan"]) {
+async function upgradeOwnerPlan(ownerId: string, newPlan: Sub["plan"]) {
   subsByOwner.set(ownerId, { plan: newPlan, status: "active", end_date: null });
   const list = realtimeListeners.get(ownerId) ?? [];
-  // eslint-disable-next-line no-console
-  console.log("[upgrade] firing", list.length, "listeners");
-  for (const cb of list) {
-    try { cb(); } catch (e) { console.log("[cb-error]", e); }
-  }
+  // Fire each callback and AWAIT its async body to complete
+  await Promise.all(
+    list.map(async (cb) => {
+      try { await (cb as () => unknown | Promise<unknown>)(); }
+      catch (e) { /* eslint-disable-next-line no-console */ console.log("[cb-error]", e); }
+    })
+  );
 }
 
 /** Replicates the resolution logic of useStorePlan: staff inherits owner's plan. */
