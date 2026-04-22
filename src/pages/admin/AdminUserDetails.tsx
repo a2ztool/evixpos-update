@@ -21,7 +21,15 @@ interface StoreWithStats {
 }
 
 interface UserDetails {
-  profile: { id: string; name: string; email: string; created_at: string };
+  profile: {
+    id: string;
+    name: string;
+    email: string;
+    created_at: string;
+    is_suspended?: boolean;
+    suspended_at?: string | null;
+    suspended_reason?: string | null;
+  };
   stores: StoreWithStats[];
   plan_info?: {
     plan: string;
