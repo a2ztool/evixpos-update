@@ -263,6 +263,20 @@ const FloatingInbox = () => {
     }
   };
 
+  const sendTask = async () => {
+    if (!taskName.trim() || !activeConv || activeConv.type !== "group" || !storeId || !myId) return;
+    let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
+    if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
+    if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
+    const { error } = await db.from("chat_group_messages").insert({
+      group_id: activeConv.id, sender_id: myId, message: fullMessage, type: "task",
+    });
+    if (error) { toast.error("Failed to send task"); return; }
+    toast.success("Task assigned!");
+    setTaskName(""); setTaskTerm(""); setTaskRequiredInfo("");
+    setTaskOpen(false);
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConv || !storeId || !myId) return;
     const msg = newMessage.trim();
