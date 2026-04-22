@@ -9,7 +9,7 @@
 // pick up the new service worker. Any byte change to this file also
 // triggers the browser's update check automatically.
 
-const SW_VERSION = "v3-2026-04-21";
+const SW_VERSION = "v4-2026-04-22-validation";
 
 self.addEventListener("install", (event) => {
   // Activate this SW immediately, replacing any waiting one
