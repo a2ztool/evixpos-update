@@ -824,8 +824,8 @@ Deno.serve(async (req) => {
       const { email } = params;
       if (!email) return errorResponse("email required");
 
-      const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "";
-      const redirectTo = origin ? `${origin}/reset-password` : undefined;
+      // Always use the canonical custom domain for password reset links
+      const redirectTo = "https://evixpos.com/reset-password";
 
       const { data, error } = await supabase.auth.admin.generateLink({
         type: "recovery",
