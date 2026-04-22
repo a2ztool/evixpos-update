@@ -559,6 +559,9 @@ const Subscriptions = () => {
                 <Progress value={healthScore} className="h-1.5 mt-2" />
               </div>
               <div className="flex flex-col gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="gap-1.5 w-full justify-center">
+                  <MessageSquareText className="h-4 w-4" /> <span className="hidden sm:inline">Template</span>
+                </Button>
                 <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 w-full justify-center">
                   <Download className="h-4 w-4" /> <span className="hidden sm:inline">Export</span>
                 </Button>
