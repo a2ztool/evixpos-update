@@ -714,6 +714,133 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // ─── GET USER HIERARCHY (Owner → Stores → Staff) ───
+    if (action === "get_user_hierarchy") {
+      const [profilesRes, storesRes, staffRes, subsRes] = await Promise.all([
+        supabase.from("profiles").select("id, name, email, created_at, is_suspended, suspended_at, suspended_reason").order("created_at", { ascending: false }),
+        supabase.from("stores").select("id, name, user_id, is_active, created_at"),
+        supabase.from("staff_members").select("id, user_id, store_id, name, email, phone, role, is_active, auth_user_id, created_at"),
+        supabase.from("subscriptions").select("user_id, plan, status, end_date").eq("status", "active").in("plan", ["free", "pro", "business"]),
+      ]);
+
+      const profiles = profilesRes.data || [];
+      const stores = storesRes.data || [];
+      const staff = staffRes.data || [];
+      const subs = subsRes.data || [];
+
+      // Best plan per user
+      const levels: Record<string, number> = { free: 0, pro: 1, business: 2 };
+      const planMap: Record<string, { plan: string; end_date: string | null }> = {};
+      subs.forEach((s: any) => {
+        const cur = planMap[s.user_id];
+        if (!cur || (levels[s.plan] || 0) > (levels[cur.plan] || 0)) {
+          planMap[s.user_id] = { plan: s.plan, end_date: s.end_date };
+        }
+      });
+
+      // Auth users map → password_status (whether they have an encrypted_password set)
+      const authMap: Record<string, { has_password: boolean; last_sign_in_at: string | null }> = {};
+      try {
+        let page = 1;
+        while (true) {
+          const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+          if (error) break;
+          for (const u of data.users || []) {
+            authMap[u.id] = {
+              has_password: !!(u as any).encrypted_password || (u.identities || []).some((i: any) => i.provider === "email"),
+              last_sign_in_at: u.last_sign_in_at || null,
+            };
+          }
+          if (!data.users || data.users.length < 1000) break;
+          page++;
+          if (page > 20) break;
+        }
+      } catch (_e) { /* ignore */ }
+
+      // Group stores by owner, staff by store
+      const storesByOwner: Record<string, any[]> = {};
+      stores.forEach((s: any) => {
+        (storesByOwner[s.user_id] ||= []).push(s);
+      });
+      const staffByStore: Record<string, any[]> = {};
+      const staffByOwnerNoStore: Record<string, any[]> = {};
+      staff.forEach((m: any) => {
+        if (m.store_id) (staffByStore[m.store_id] ||= []).push(m);
+        else (staffByOwnerNoStore[m.user_id] ||= []).push(m);
+      });
+
+      const result = profiles.map((p: any) => {
+        const ownerPlan = planMap[p.id]?.plan || "free";
+        const ownerEnd = planMap[p.id]?.end_date || null;
+        const ownerStores = (storesByOwner[p.id] || []).map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          is_active: s.is_active,
+          created_at: s.created_at,
+          staff: (staffByStore[s.id] || []).map((m: any) => ({
+            id: m.id,
+            auth_user_id: m.auth_user_id,
+            name: m.name,
+            email: m.email,
+            phone: m.phone,
+            role: m.role,
+            is_active: m.is_active,
+            password_set: m.auth_user_id ? !!authMap[m.auth_user_id]?.has_password : false,
+            last_sign_in_at: m.auth_user_id ? authMap[m.auth_user_id]?.last_sign_in_at || null : null,
+          })),
+        }));
+        return {
+          id: p.id,
+          name: p.name,
+          email: p.email,
+          created_at: p.created_at,
+          is_suspended: !!p.is_suspended,
+          suspended_at: p.suspended_at || null,
+          suspended_reason: p.suspended_reason || null,
+          plan: ownerPlan,
+          plan_end_date: ownerEnd,
+          password_set: !!authMap[p.id]?.has_password,
+          last_sign_in_at: authMap[p.id]?.last_sign_in_at || null,
+          stores: ownerStores,
+          unassigned_staff: (staffByOwnerNoStore[p.id] || []).map((m: any) => ({
+            id: m.id,
+            auth_user_id: m.auth_user_id,
+            name: m.name,
+            email: m.email,
+            phone: m.phone,
+            role: m.role,
+            is_active: m.is_active,
+            password_set: m.auth_user_id ? !!authMap[m.auth_user_id]?.has_password : false,
+            last_sign_in_at: m.auth_user_id ? authMap[m.auth_user_id]?.last_sign_in_at || null : null,
+          })),
+        };
+      });
+
+      return json(result);
+    }
+
+    // ─── RESET USER PASSWORD (generate recovery link, never expose plain password) ───
+    if (action === "reset_user_password") {
+      const { email } = params;
+      if (!email) return errorResponse("email required");
+
+      const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "";
+      const redirectTo = origin ? `${origin}/reset-password` : undefined;
+
+      const { data, error } = await supabase.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
+      if (error) return errorResponse(error.message);
+
+      return json({
+        success: true,
+        action_link: (data as any)?.properties?.action_link || null,
+        email,
+      });
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
