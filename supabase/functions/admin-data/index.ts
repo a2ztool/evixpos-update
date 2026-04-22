@@ -841,6 +841,180 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─────────────────────────────────────────────────
+    // PHASE 1: Audit Log / Broadcasts / Maintenance / Impersonate
+    // ─────────────────────────────────────────────────
+
+    // Helper: write an audit log entry (best-effort, never throws)
+    const logAction = async (act: string, target_type = "", target_id = "", target_label = "", details: Record<string, unknown> = {}) => {
+      try {
+        await supabase.from("admin_audit_logs").insert({
+          admin_id: user.id,
+          admin_email: user.email || "",
+          action: act,
+          target_type,
+          target_id,
+          target_label,
+          details,
+          ip_address: req.headers.get("x-forwarded-for") || "",
+          user_agent: req.headers.get("user-agent") || "",
+        });
+      } catch (_) { /* swallow */ }
+    };
+
+    // ─── AUDIT LOGS ───
+    if (action === "get_audit_logs") {
+      const { search = "", action_filter = "", limit = 200 } = params;
+      let q = supabase.from("admin_audit_logs").select("*").order("created_at", { ascending: false }).limit(Number(limit));
+      if (action_filter) q = q.eq("action", action_filter);
+      if (search) q = q.or(`admin_email.ilike.%${search}%,target_label.ilike.%${search}%,action.ilike.%${search}%`);
+      const { data, error } = await q;
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "log_admin_action") {
+      const { act, target_type = "", target_id = "", target_label = "", details = {} } = params;
+      if (!act) return errorResponse("act required");
+      await logAction(act, target_type, target_id, target_label, details);
+      return json({ success: true });
+    }
+
+    // ─── BROADCASTS ───
+    if (action === "get_broadcasts") {
+      const { data, error } = await supabase.from("broadcasts").select("*").order("created_at", { ascending: false }).limit(100);
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "send_broadcast") {
+      const { title = "", message = "", target_type = "all", target_value = "", channel = "in_app" } = params;
+      if (!title || !message) return errorResponse("title and message required");
+
+      // Resolve recipient user_ids
+      let recipientIds: string[] = [];
+      if (target_type === "all") {
+        const { data } = await supabase.from("profiles").select("id");
+        recipientIds = (data || []).map((p: any) => p.id);
+      } else if (target_type === "suspended") {
+        const { data } = await supabase.from("profiles").select("id").eq("is_suspended", true);
+        recipientIds = (data || []).map((p: any) => p.id);
+      } else if (target_type === "active") {
+        const { data } = await supabase.from("profiles").select("id").eq("is_suspended", false);
+        recipientIds = (data || []).map((p: any) => p.id);
+      } else if (target_type === "plan") {
+        const { data } = await supabase.from("subscriptions").select("user_id").eq("plan", target_value).eq("status", "active");
+        recipientIds = Array.from(new Set((data || []).map((s: any) => s.user_id).filter(Boolean)));
+      } else if (target_type === "user" && target_value) {
+        recipientIds = [target_value];
+      }
+
+      // Insert in-app notifications in batches
+      if (channel === "in_app" || channel === "both") {
+        const rows = recipientIds.map((uid) => ({
+          user_id: uid,
+          title,
+          message,
+          type: "broadcast",
+          is_read: false,
+        }));
+        // Insert in chunks of 500
+        for (let i = 0; i < rows.length; i += 500) {
+          const chunk = rows.slice(i, i + 500);
+          if (chunk.length > 0) {
+            await supabase.from("notifications").insert(chunk);
+          }
+        }
+      }
+
+      // Record the broadcast
+      const { data: bc, error: bcErr } = await supabase.from("broadcasts").insert({
+        admin_id: user.id,
+        title,
+        message,
+        target_type,
+        target_value,
+        channel,
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        recipients_count: recipientIds.length,
+      }).select().single();
+      if (bcErr) return errorResponse(bcErr.message);
+
+      await logAction("send_broadcast", "broadcast", bc.id, title, { recipients: recipientIds.length, target_type, target_value });
+      return json({ success: true, broadcast: bc, recipients: recipientIds.length });
+    }
+
+    if (action === "delete_broadcast") {
+      const { id } = params;
+      if (!id) return errorResponse("id required");
+      const { error } = await supabase.from("broadcasts").delete().eq("id", id);
+      if (error) return errorResponse(error.message);
+      await logAction("delete_broadcast", "broadcast", id);
+      return json({ success: true });
+    }
+
+    // ─── MAINTENANCE MODE / SYSTEM SETTINGS ───
+    if (action === "get_system_setting") {
+      const { key } = params;
+      if (!key) return errorResponse("key required");
+      const { data, error } = await supabase.from("system_settings").select("*").eq("key", key).maybeSingle();
+      if (error) return errorResponse(error.message);
+      return json(data);
+    }
+
+    if (action === "update_system_setting") {
+      const { key, value, description } = params;
+      if (!key) return errorResponse("key required");
+      const { data, error } = await supabase.from("system_settings")
+        .upsert({ key, value, description: description || "", updated_by: user.id, updated_at: new Date().toISOString() }, { onConflict: "key" })
+        .select().single();
+      if (error) return errorResponse(error.message);
+      await logAction("update_system_setting", "system_setting", key, key, { value });
+      return json(data);
+    }
+
+    // ─── IMPERSONATE USER (generate magic link) ───
+    if (action === "impersonate_user") {
+      const { target_user_id, reason = "" } = params;
+      if (!target_user_id) return errorResponse("target_user_id required");
+
+      // Get target user email
+      const { data: profile } = await supabase.from("profiles").select("email").eq("id", target_user_id).maybeSingle();
+      if (!profile?.email) return errorResponse("Target user not found");
+
+      // Generate magic link
+      const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: profile.email,
+        options: { redirectTo: "https://evixpos.com/dashboard" },
+      });
+      if (linkErr) return errorResponse(linkErr.message);
+
+      // Record the impersonation session
+      await supabase.from("impersonation_sessions").insert({
+        admin_id: user.id,
+        target_user_id,
+        target_email: profile.email,
+        reason,
+        is_active: true,
+      });
+
+      await logAction("impersonate_user", "user", target_user_id, profile.email, { reason });
+
+      return json({
+        success: true,
+        action_link: (linkData as any)?.properties?.action_link || null,
+        email: profile.email,
+      });
+    }
+
+    if (action === "get_impersonation_sessions") {
+      const { data, error } = await supabase.from("impersonation_sessions").select("*").order("started_at", { ascending: false }).limit(100);
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
