@@ -106,8 +106,13 @@ const StaffInbox = () => {
   // Task fields matching reference design
   const [taskName, setTaskName] = useState("");
   const [taskTerm, setTaskTerm] = useState("");
-  const [taskLinkOrder, setTaskLinkOrder] = useState("");
+  const [taskLinkOrder, setTaskLinkOrder] = useState(""); // order id
+  const [taskLinkOrderLabel, setTaskLinkOrderLabel] = useState(""); // friendly label
   const [taskRequiredInfo, setTaskRequiredInfo] = useState("");
+  const [orderOptions, setOrderOptions] = useState<Array<{ id: string; label: string; sub: string }>>([]);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderPickerOpen, setOrderPickerOpen] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupIcon, setNewGroupIcon] = useState("💬");
