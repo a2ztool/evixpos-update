@@ -18,15 +18,16 @@ const subsByOwner = new Map<string, Sub>();
 const listeners = new Map<string, Array<() => Promise<void> | void>>();
 
 function makeFromBuilder() {
-  const filter: { userId?: string } = {};
+  let userId: string | undefined;
   const b: any = {
     select: () => b,
-    eq: (col: string, val: string) => { if (col === "user_id") filter.userId = val; return b; },
+    eq: (col: string, val: string) => { if (col === "user_id") userId = val; return b; },
     is: () => b, in: () => b, order: () => b, limit: () => b,
-    maybeSingle: async () => ({
-      data: filter.userId ? subsByOwner.get(filter.userId) ?? null : null,
-      error: null,
-    }),
+    maybeSingle: async () => {
+      const captured = userId; // snapshot before await
+      await Promise.resolve();
+      return { data: captured ? subsByOwner.get(captured) ?? null : null, error: null };
+    },
   };
   return b;
 }
