@@ -3180,7 +3180,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "super_admin"
+        | "support_admin"
+        | "finance_admin"
       integration_type: "woocommerce" | "whatsapp"
       order_status: "pending" | "completed" | "cancelled"
       product_type: "digital" | "physical"
@@ -3313,7 +3318,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "super_admin",
+        "support_admin",
+        "finance_admin",
+      ],
       integration_type: ["woocommerce", "whatsapp"],
       order_status: ["pending", "completed", "cancelled"],
       product_type: ["digital", "physical"],
