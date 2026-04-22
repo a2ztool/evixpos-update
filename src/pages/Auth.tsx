@@ -105,6 +105,26 @@ const Auth = () => {
       else if (error.status === 429) toast.error("Too many attempts. Please wait.");
       else toast.error(error.message || "Login failed.");
     } else if (data.user) {
+      // Block suspended owners + their staff
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("user_id")
+        .eq("auth_user_id", data.user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      const ownerId = staffRow?.user_id || data.user.id;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_suspended")
+        .eq("id", ownerId)
+        .maybeSingle();
+      if (profile?.is_suspended) {
+        await supabase.auth.signOut();
+        toast.error("Your account has been suspended. Please contact support.");
+        setLoading(false);
+        return;
+      }
+
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
