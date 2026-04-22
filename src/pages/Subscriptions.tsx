@@ -380,11 +380,23 @@ const Subscriptions = () => {
     if (error) toast.error(error.message); else toast.success("Renewed successfully! 🔄");
   };
 
+  const buildReminderMessage = (s: Subscription, customerName: string) => {
+    const daysLeft = getDaysLeft(s.end_date);
+    return renderTemplate(waTemplate, {
+      customer_name: customerName,
+      product_name: s.product_name,
+      variation: s.variation,
+      days_left: daysLeft,
+      end_date: s.end_date ? fnsFormat(new Date(s.end_date), "dd MMM yyyy") : "—",
+      price: `${symbol}${Number(s.price).toFixed(0)}`,
+      store_name: activeStore?.name || "",
+    });
+  };
+
   const sendWhatsAppReminder = (s: Subscription) => {
     const customer = customers.find((c) => c.id === s.customer_id);
     if (!customer?.phone) { toast.error("Customer has no phone number"); return; }
-    const daysLeft = getDaysLeft(s.end_date);
-    const message = `Hi ${customer.name}, your subscription for "${s.product_name}" (${s.variation}) ${daysLeft <= 0 ? "has expired" : `will expire in ${daysLeft} days (${fnsFormat(new Date(s.end_date!), "dd MMM yyyy")})`}. Please renew to continue the service. Thank you!`;
+    const message = buildReminderMessage(s, customer.name);
     window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("WhatsApp opened");
   };
