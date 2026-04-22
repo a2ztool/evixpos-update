@@ -263,6 +263,7 @@ export type Database = {
           default_currency: string
           id: string
           logo_url: string
+          notification_prefs: Json | null
           payment_methods: Json
           shop_url: string
           show_payment_in_pos: boolean
@@ -283,6 +284,7 @@ export type Database = {
           default_currency?: string
           id?: string
           logo_url?: string
+          notification_prefs?: Json | null
           payment_methods?: Json
           shop_url?: string
           show_payment_in_pos?: boolean
@@ -303,6 +305,7 @@ export type Database = {
           default_currency?: string
           id?: string
           logo_url?: string
+          notification_prefs?: Json | null
           payment_methods?: Json
           shop_url?: string
           show_payment_in_pos?: boolean
@@ -382,6 +385,108 @@ export type Database = {
           },
         ]
       }
+      chat_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_group_messages: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          id: string
+          message: string
+          sender_id: string
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          id?: string
+          message: string
+          sender_id: string
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          id?: string
+          message?: string
+          sender_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          icon: string | null
+          id: string
+          name: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          icon?: string | null
+          id?: string
+          name: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_groups_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -449,6 +554,56 @@ export type Database = {
           visitor_name?: string
         }
         Relationships: []
+      }
+      chat_tasks: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          created_at: string | null
+          description: string | null
+          group_id: string
+          id: string
+          order_id: string | null
+          priority: string | null
+          status: string | null
+          term: string | null
+          title: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          created_at?: string | null
+          description?: string | null
+          group_id: string
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          status?: string | null
+          term?: string | null
+          title: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          created_at?: string | null
+          description?: string | null
+          group_id?: string
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          status?: string | null
+          term?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_tasks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {
@@ -1207,6 +1362,9 @@ export type Database = {
           id: string
           is_read: boolean
           message: string
+          role: string | null
+          store_id: string | null
+          title: string | null
           type: string
           user_id: string
         }
@@ -1215,6 +1373,9 @@ export type Database = {
           id?: string
           is_read?: boolean
           message: string
+          role?: string | null
+          store_id?: string | null
+          title?: string | null
           type?: string
           user_id: string
         }
@@ -1223,10 +1384,21 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string
+          role?: string | null
+          store_id?: string | null
+          title?: string | null
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_forms: {
         Row: {
@@ -1408,6 +1580,7 @@ export type Database = {
           mode: string
           payment_details: Json | null
           qr_code_url: string | null
+          required_fields: Json
           sort_order: number
           updated_at: string
         }
@@ -1423,6 +1596,7 @@ export type Database = {
           mode?: string
           payment_details?: Json | null
           qr_code_url?: string | null
+          required_fields?: Json
           sort_order?: number
           updated_at?: string
         }
@@ -1438,8 +1612,48 @@ export type Database = {
           mode?: string
           payment_details?: Json | null
           qr_code_url?: string | null
+          required_fields?: Json
           sort_order?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      plan_history: {
+        Row: {
+          action: string | null
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          new_plan: string | null
+          new_volume: number | null
+          old_plan: string | null
+          old_volume: number | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_plan?: string | null
+          new_volume?: number | null
+          old_plan?: string | null
+          old_volume?: number | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_plan?: string | null
+          new_volume?: number | null
+          old_plan?: string | null
+          old_volume?: number | null
+          user_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1452,6 +1666,7 @@ export type Database = {
           expires_at: string | null
           gateway_id: string | null
           id: string
+          payment_data: Json
           plan: string
           proof_url: string | null
           reviewed_at: string | null
@@ -1469,6 +1684,7 @@ export type Database = {
           expires_at?: string | null
           gateway_id?: string | null
           id?: string
+          payment_data?: Json
           plan?: string
           proof_url?: string | null
           reviewed_at?: string | null
@@ -1486,6 +1702,7 @@ export type Database = {
           expires_at?: string | null
           gateway_id?: string | null
           id?: string
+          payment_data?: Json
           plan?: string
           proof_url?: string | null
           reviewed_at?: string | null
@@ -1511,6 +1728,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plans_config: {
+        Row: {
+          created_at: string | null
+          customer_limit: number
+          id: string
+          plan_type: string
+          price_inr: number
+          product_limit: number
+          store_limit: number
+          updated_at: string | null
+          volume: number
+        }
+        Insert: {
+          created_at?: string | null
+          customer_limit?: number
+          id?: string
+          plan_type: string
+          price_inr?: number
+          product_limit?: number
+          store_limit?: number
+          updated_at?: string | null
+          volume?: number
+        }
+        Update: {
+          created_at?: string | null
+          customer_limit?: number
+          id?: string
+          plan_type?: string
+          price_inr?: number
+          product_limit?: number
+          store_limit?: number
+          updated_at?: string | null
+          volume?: number
+        }
+        Relationships: []
       }
       platform_coupons: {
         Row: {
@@ -1770,6 +2023,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_label: string | null
+          endpoint: string
+          id: string
+          last_used_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_label?: string | null
+          endpoint: string
+          id?: string
+          last_used_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_label?: string | null
+          endpoint?: string
+          id?: string
+          last_used_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       referral_settings: {
         Row: {
@@ -2305,6 +2594,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          billing_type: string | null
           cost_price: number
           customer_id: string | null
           end_date: string | null
@@ -2319,8 +2609,10 @@ export type Database = {
           store_id: string | null
           user_id: string
           variation: string
+          volume: number | null
         }
         Insert: {
+          billing_type?: string | null
           cost_price?: number
           customer_id?: string | null
           end_date?: string | null
@@ -2335,8 +2627,10 @@ export type Database = {
           store_id?: string | null
           user_id: string
           variation?: string
+          volume?: number | null
         }
         Update: {
+          billing_type?: string | null
           cost_price?: number
           customer_id?: string | null
           end_date?: string | null
@@ -2351,6 +2645,7 @@ export type Database = {
           store_id?: string | null
           user_id?: string
           variation?: string
+          volume?: number | null
         }
         Relationships: [
           {
@@ -2636,7 +2931,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_chat_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_store_member: { Args: { _store_id: string }; Returns: boolean }
+      is_store_owner: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
       store_has_min_plan: {
         Args: { _min_plan: string; _store_id: string }
         Returns: boolean

@@ -1,13 +1,1 @@
 project_id = "vuuesqrdjuqnduhiihwz"
-
-[functions.google-sheets-sync]
-verify_jwt = false
-
-[functions.subscription-renewal-reminders]
-verify_jwt = false
-
-[functions.check-plan-expiry]
-verify_jwt = false
-
-[functions.send-push]
-verify_jwt = false
