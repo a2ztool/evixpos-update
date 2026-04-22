@@ -108,6 +108,14 @@ export default {
           "0%": { opacity: "0", transform: "translate(-50%, 24px) scale(0.96)" },
           "100%": { opacity: "1", transform: "translate(-50%, 0) scale(1)" },
         },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px) scale(1)" },
+          "50%": { transform: "translateY(-8px) scale(1.03)" },
+        },
+        "loadingBar": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
