@@ -10,7 +10,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle, Ban, Trash2, RotateCcw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle, Ban, Trash2, RotateCcw, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreInfo { id: string; name: string; plan: string; }
@@ -49,6 +52,9 @@ const AdminUsers = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<UserRow | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [detailsTarget, setDetailsTarget] = useState<UserRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -74,10 +80,14 @@ const AdminUsers = () => {
     toast.success("Plan updated"); loadUsers();
   };
 
-  const handleSuspend = async (u: UserRow) => {
+  const handleSuspend = async () => {
+    if (!suspendTarget) return;
+    const u = suspendTarget;
     setBusyId(u.id);
-    const res = await adminCall("suspend_user", { user_id: u.id });
+    const res = await adminCall("suspend_user", { user_id: u.id, reason: suspendReason.trim() || null });
     setBusyId(null);
+    setSuspendTarget(null);
+    setSuspendReason("");
     if (res?.success) { toast.success(`Suspended ${u.email}`); loadUsers(); }
   };
 
@@ -159,12 +169,26 @@ const AdminUsers = () => {
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {u.is_suspended && (
-                      <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                      <button onClick={() => setDetailsTarget(u)} className="inline-flex">
+                        <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30 cursor-pointer hover:bg-red-500/30 gap-0.5">
+                          <Ban className="h-2.5 w-2.5" />Suspended
+                        </Badge>
+                      </button>
                     )}
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
                     <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
                   </div>
                 </div>
+                {u.is_suspended && u.suspended_reason && (
+                  <div className="mt-2 px-2.5 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-[11px] text-red-300 line-clamp-2">
+                      <span className="font-semibold">Reason:</span> {u.suspended_reason}
+                    </p>
+                    {u.suspended_at && (
+                      <p className="text-[10px] text-red-400/70 mt-0.5">Since {new Date(u.suspended_at).toLocaleString()}</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" />{u.storeCount}</span>
@@ -184,7 +208,7 @@ const AdminUsers = () => {
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => { setSuspendTarget(u); setSuspendReason(""); }} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
                         <Ban className="h-4 w-4" />
                       </Button>
                     )}
@@ -269,16 +293,28 @@ const AdminUsers = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="outline" className={planColor(u.plan)}>{u.plan}</Badge>
                               {u.is_suspended && (
-                                <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                                <button onClick={() => setDetailsTarget(u)} className="inline-flex" title="View suspension details">
+                                  <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30 cursor-pointer hover:bg-red-500/30 gap-0.5">
+                                    <Ban className="h-2.5 w-2.5" />Suspended
+                                  </Badge>
+                                </button>
+                              )}
+                              {u.is_suspended && (
+                                <Button variant="ghost" size="icon" onClick={() => setDetailsTarget(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Suspension details"><Info className="h-4 w-4" /></Button>
                               )}
                               <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="View"><Eye className="h-4 w-4" /></Button>
                               {u.is_suspended ? (
                                 <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="Reactivate"><RotateCcw className="h-4 w-4" /></Button>
                               ) : (
-                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => { setSuspendTarget(u); setSuspendReason(""); }} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
                               )}
                               <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Delete"><Trash2 className="h-4 w-4" /></Button>
                             </div>
+                            {u.is_suspended && u.suspended_reason && (
+                              <p className="text-[11px] text-red-300/80 mt-1.5 line-clamp-1" title={u.suspended_reason}>
+                                <span className="font-semibold">Reason:</span> {u.suspended_reason}
+                              </p>
+                            )}
                           </TableCell>
                         </TableRow>
                         {u.stores.length > 0 && (
@@ -352,6 +388,72 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Suspend with reason modal */}
+      <Dialog open={!!suspendTarget} onOpenChange={(open) => { if (!open) { setSuspendTarget(null); setSuspendReason(""); } }}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-amber-400" /> Suspend user
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Suspend <span className="font-semibold text-white">{suspendTarget?.email}</span>. They (and their staff) will be signed out and blocked from access. Data is preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="suspend-reason" className="text-slate-300">Reason (optional)</Label>
+            <Textarea
+              id="suspend-reason"
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+              placeholder="e.g. Payment fraud, ToS violation..."
+              className="bg-slate-700 border-slate-600 text-white min-h-[80px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setSuspendTarget(null); setSuspendReason(""); }} className="text-slate-300 hover:text-white hover:bg-slate-700">Cancel</Button>
+            <Button onClick={handleSuspend} disabled={busyId === suspendTarget?.id} className="bg-amber-600 hover:bg-amber-500 text-white">
+              {busyId === suspendTarget?.id ? "Suspending..." : "Suspend"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspension details modal */}
+      <Dialog open={!!detailsTarget} onOpenChange={(open) => !open && setDetailsTarget(null)}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-400" /> Suspension details
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {detailsTarget?.name || detailsTarget?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Suspended at</p>
+              <p className="text-white">
+                {detailsTarget?.suspended_at ? new Date(detailsTarget.suspended_at).toLocaleString() : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Reason</p>
+              <p className="text-white whitespace-pre-wrap bg-slate-700/50 rounded-lg p-3 border border-slate-700 min-h-[60px]">
+                {detailsTarget?.suspended_reason || <span className="text-slate-500 italic">No reason provided</span>}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDetailsTarget(null)} className="text-slate-300 hover:text-white hover:bg-slate-700">Close</Button>
+            {detailsTarget && (
+              <Button onClick={() => { const t = detailsTarget; setDetailsTarget(null); handleUnsuspend(t); }} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5">
+                <RotateCcw className="h-4 w-4" /> Reactivate
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

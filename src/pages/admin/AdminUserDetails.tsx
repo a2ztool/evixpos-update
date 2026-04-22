@@ -5,7 +5,8 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle, Crown } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle, Crown, Ban, Info } from "lucide-react";
 
 interface StoreWithStats {
   id: string;
@@ -20,7 +21,15 @@ interface StoreWithStats {
 }
 
 interface UserDetails {
-  profile: { id: string; name: string; email: string; created_at: string };
+  profile: {
+    id: string;
+    name: string;
+    email: string;
+    created_at: string;
+    is_suspended?: boolean;
+    suspended_at?: string | null;
+    suspended_reason?: string | null;
+  };
   stores: StoreWithStats[];
   plan_info?: {
     plan: string;
@@ -50,6 +59,7 @@ const AdminUserDetails = () => {
   const navigate = useNavigate();
   const { adminCall, loading } = useAdmin();
   const [data, setData] = useState<UserDetails | null>(null);
+  const [showSuspension, setShowSuspension] = useState(false);
 
   useEffect(() => {
     if (userId) adminCall("get_user_details", { user_id: userId }).then(setData);
@@ -72,6 +82,31 @@ const AdminUserDetails = () => {
 
   return (
     <div className="space-y-6">
+      {/* Suspension banner */}
+      {profile.is_suspended && (
+        <Card className="bg-red-500/10 border-red-500/40">
+          <CardContent className="p-4 flex items-start gap-3">
+            <Ban className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-red-300">Account suspended</p>
+                <Button variant="ghost" size="sm" onClick={() => setShowSuspension(true)} className="text-red-300 hover:text-red-200 hover:bg-red-500/20 h-7 px-2 text-xs gap-1">
+                  <Info className="h-3.5 w-3.5" /> View details
+                </Button>
+              </div>
+              {profile.suspended_reason && (
+                <p className="text-xs text-red-200/90 mt-1 line-clamp-2">
+                  <span className="font-semibold">Reason:</span> {profile.suspended_reason}
+                </p>
+              )}
+              {profile.suspended_at && (
+                <p className="text-[11px] text-red-300/70 mt-0.5">Since {new Date(profile.suspended_at).toLocaleString()}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Plan Info Card */}
       {plan_info && (
         <Card className="bg-slate-800 border-slate-700">
@@ -194,6 +229,37 @@ const AdminUserDetails = () => {
         ))}
         {stores.length === 0 && <p className="text-slate-500">No stores.</p>}
       </div>
+
+      {/* Suspension details modal */}
+      <Dialog open={showSuspension} onOpenChange={setShowSuspension}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-400" /> Suspension details
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {profile.name || profile.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Suspended at</p>
+              <p className="text-white">
+                {profile.suspended_at ? new Date(profile.suspended_at).toLocaleString() : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Reason</p>
+              <p className="text-white whitespace-pre-wrap bg-slate-700/50 rounded-lg p-3 border border-slate-700 min-h-[60px]">
+                {profile.suspended_reason || <span className="text-slate-500 italic">No reason provided</span>}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSuspension(false)} className="text-slate-300 hover:text-white hover:bg-slate-700">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
