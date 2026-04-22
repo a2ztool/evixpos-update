@@ -758,6 +758,7 @@ const Subscriptions = () => {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="select-all"
+                    className="h-4 w-4 shrink-0"
                     checked={filtered.length > 0 && filtered.every(s => selectedIds.has(s.id))}
                     onCheckedChange={(c) => {
                       if (c) setSelectedIds(new Set(filtered.map(s => s.id)));
@@ -806,7 +807,7 @@ const Subscriptions = () => {
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start gap-2">
                             <Checkbox
-                              className="mt-0.5"
+                              className="mt-0.5 h-4 w-4 shrink-0"
                               checked={selectedIds.has(s.id)}
                               onCheckedChange={() => toggleSelect(s.id)}
                             />
