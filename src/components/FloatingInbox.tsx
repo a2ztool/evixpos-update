@@ -268,17 +268,38 @@ const FloatingInbox = () => {
     }
   };
 
+  // Search orders for "Link Order"
+  useEffect(() => {
+    if (!taskOpen || !storeId) return;
+    const t = setTimeout(async () => {
+      const term = orderSearch.trim();
+      let q = db.from("orders").select("id, total_amount, customer_id, created_at, customers(name)").eq("store_id", storeId).order("created_at", { ascending: false }).limit(8);
+      if (term) {
+        // try to match by id prefix
+        q = q.ilike("id", `${term}%`);
+      }
+      const { data } = await q;
+      setOrderResults((data || []).map((o: any) => ({
+        id: o.id,
+        label: `#${String(o.id).slice(0, 8)} · ${o.customers?.name || "Walk-in"} · ${Number(o.total_amount || 0).toFixed(2)}`,
+      })));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [orderSearch, taskOpen, storeId]);
+
   const sendTask = async () => {
     if (!taskName.trim() || !activeConv || activeConv.type !== "group" || !storeId || !myId) return;
     let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
     if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
+    if (taskOrderId) fullMessage += `\n**Linked Order:** #${taskOrderId.slice(0, 8)}`;
     if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
     const { error } = await db.from("chat_group_messages").insert({
       group_id: activeConv.id, sender_id: myId, message: fullMessage, type: "task",
     });
     if (error) { toast.error("Failed to send task"); return; }
-    toast.success("Task assigned!");
+    toast.success("Task created!");
     setTaskName(""); setTaskTerm(""); setTaskRequiredInfo("");
+    setTaskOrderId(null); setOrderSearch("");
     setTaskOpen(false);
   };
 
