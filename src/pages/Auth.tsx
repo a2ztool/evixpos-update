@@ -27,6 +27,8 @@ const Auth = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [pwStrength, setPwStrength] = useState(0);
   const [highlightIdx, setHighlightIdx] = useState(0);
+  const loginForm = useFormValidation(loginSchema);
+  const signupForm = useFormValidation(signupSchema);
   const navigate = useNavigate();
   const { session } = useAuth();
   const [searchParams] = useSearchParams();
@@ -96,14 +98,17 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = validateWithToast(loginSchema, { email, password }, toast.error);
-    if (!parsed) return;
+    if (!loginForm.validateAll({ email, password })) return;
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.email, password: parsed.password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message?.includes("Invalid login credentials")) toast.error("Invalid email or password.");
-      else if (error.message?.includes("Email not confirmed")) toast.error("Please verify your email first.");
-      else if (error.status === 429) toast.error("Too many attempts. Please wait.");
+      if (error.message?.includes("Invalid login credentials")) {
+        loginForm.setFieldError("password", "Invalid email or password");
+        toast.error("Invalid email or password.");
+      } else if (error.message?.includes("Email not confirmed")) {
+        loginForm.setFieldError("email", "Please verify your email first");
+        toast.error("Please verify your email first.");
+      } else if (error.status === 429) toast.error("Too many attempts. Please wait.");
       else toast.error(error.message || "Login failed.");
     } else if (data.user) {
       // Block suspended owners + their staff
@@ -137,14 +142,16 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const [termsError, setTermsError] = useState(false);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validData = signupForm.validateAll({ name, email, password, referralCode: referralCode || undefined });
     if (!agreeTerms) {
-      toast.error("Please accept the Terms of Service to continue.");
-      return;
+      setTermsError(true);
     }
-    const parsed = validateWithToast(signupSchema, { name, email, password, referralCode: referralCode || undefined }, toast.error);
-    if (!parsed) return;
+    if (!validData || !agreeTerms) return;
+    setTermsError(false);
     setLoading(true);
 
     let referrerId: string | null = null;
