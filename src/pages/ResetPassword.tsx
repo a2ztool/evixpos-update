@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KeyRound, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { validateWithToast, resetPasswordSchema } from "@/lib/validations";
+import { resetPasswordSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -14,18 +15,15 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
+  const form = useFormValidation(resetPasswordSchema);
 
   useEffect(() => {
-    // Supabase puts tokens in the URL hash after email redirect
     const hash = window.location.hash;
     if (hash && hash.includes("type=recovery")) {
       setReady(true);
     } else {
-      // Also listen for auth state change (recovery event)
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setReady(true);
-        }
+        if (event === "PASSWORD_RECOVERY") setReady(true);
       });
       return () => subscription.unsubscribe();
     }
@@ -33,14 +31,12 @@ const ResetPassword = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = validateWithToast(resetPasswordSchema, { password, confirmPassword }, toast.error);
-    if (!parsed) return;
+    if (!form.validateAll({ password, confirmPassword })) return;
 
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-
       toast.success("Password updated successfully!");
       setTimeout(() => navigate("/auth"), 1500);
     } catch (err: any) {
@@ -68,22 +64,32 @@ const ResetPassword = () => {
             </div>
           ) : (
             <form onSubmit={handleReset} className="space-y-4">
-              <Input
-                type="password"
-                placeholder="New Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-              />
-              <Input
-                type="password"
-                placeholder="Confirm New Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-              />
+              <div className="space-y-1.5">
+                <Input
+                  type="password"
+                  placeholder="New Password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); form.clearField("password"); }}
+                  error={!!form.getError("password")}
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+                />
+                {form.getError("password") && (
+                  <p className="text-xs text-destructive animate-fade-in">{form.getError("password")}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Input
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); form.clearField("confirmPassword"); }}
+                  error={!!form.getError("confirmPassword")}
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+                />
+                {form.getError("confirmPassword") && (
+                  <p className="text-xs text-destructive animate-fade-in">{form.getError("confirmPassword")}</p>
+                )}
+              </div>
               <Button type="submit" disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                   <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Update Password</span>

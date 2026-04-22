@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { validateWithToast, loginSchema } from "@/lib/validations";
+import { loginSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ const AdminLogin = () => {
   const [pendingRedirect, setPendingRedirect] = useState(false);
   const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const form = useFormValidation(loginSchema);
 
   // If already logged in as admin and pending redirect, go to dashboard
   useEffect(() => {
@@ -57,12 +59,11 @@ const AdminLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = validateWithToast(loginSchema, { email, password }, toast.error);
-    if (!parsed) return;
+    if (!form.validateAll({ email, password })) return;
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.email, password: parsed.password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
       // Check admin role in user_roles table
@@ -84,7 +85,9 @@ const AdminLogin = () => {
       // once AuthContext has updated its session state
       setPendingRedirect(true);
     } catch (err: any) {
-      toast.error(err.message || "Login failed");
+      const msg = err.message || "Login failed";
+      if (msg.includes("Invalid login credentials")) form.setFieldError("password", "Invalid email or password");
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -102,22 +105,32 @@ const AdminLogin = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Admin Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-            />
+            <div className="space-y-1.5">
+              <Input
+                type="email"
+                placeholder="Admin Email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); form.clearField("email"); }}
+                error={!!form.getError("email")}
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+              />
+              {form.getError("email") && (
+                <p className="text-xs text-destructive animate-fade-in">{form.getError("email")}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); form.clearField("password"); }}
+                error={!!form.getError("password")}
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
+              />
+              {form.getError("password") && (
+                <p className="text-xs text-destructive animate-fade-in">{form.getError("password")}</p>
+              )}
+            </div>
             <Button type="submit" disabled={loading || pendingRedirect} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
               {loading || pendingRedirect ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login as Admin"}
             </Button>
