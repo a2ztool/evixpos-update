@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { Navigate } from "react-router-dom";
+import SuspensionGuard from "@/components/SuspensionGuard";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -19,12 +20,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!session) return <Navigate to="/auth" replace />;
 
   // Staff users skip onboarding — they use their assigned store
-  if (isStaff) return <>{children}</>;
+  if (isStaff) return <SuspensionGuard>{children}</SuspensionGuard>;
 
   // First-time owner with no stores → onboarding
   if (stores.length === 0) return <Navigate to="/onboarding" replace />;
 
-  return <>{children}</>;
+  return <SuspensionGuard>{children}</SuspensionGuard>;
 };
 
 export default ProtectedRoute;
