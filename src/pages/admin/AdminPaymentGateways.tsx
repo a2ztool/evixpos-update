@@ -367,17 +367,31 @@ const AdminPaymentGateways = () => {
 
               <div>
                 <Label className="text-slate-300">Gateway Name</Label>
-                <Input className="bg-slate-700 border-slate-600" placeholder="e.g. bKash, UPI, Stripe" value={form.gateway_name} onChange={e => setForm(f => ({ ...f, gateway_name: e.target.value }))} />
+                <Input
+                  className="bg-slate-700 border-slate-600"
+                  placeholder="e.g. bKash, UPI, Stripe"
+                  value={form.gateway_name}
+                  error={!!v.getError("gateway_name")}
+                  onChange={e => { setForm(f => ({ ...f, gateway_name: e.target.value })); v.clearField("gateway_name"); }}
+                />
+                {v.getError("gateway_name") && <p className="text-xs text-destructive mt-1">{v.getError("gateway_name")}</p>}
               </div>
 
               <div>
                 <Label className="text-slate-300">Icon URL (optional)</Label>
                 <div className="flex items-center gap-3">
-                  <Input className="bg-slate-700 border-slate-600 flex-1" placeholder="https://..." value={form.icon_url} onChange={e => setForm(f => ({ ...f, icon_url: e.target.value }))} />
+                  <Input
+                    className="bg-slate-700 border-slate-600 flex-1"
+                    placeholder="https://..."
+                    value={form.icon_url}
+                    error={!!v.getError("icon_url")}
+                    onChange={e => { setForm(f => ({ ...f, icon_url: e.target.value })); v.clearField("icon_url"); }}
+                  />
                   {(form.icon_url || getIconForGateway({ ...form } as any)) && (
                     <img src={form.icon_url || getIconForGateway({ ...form } as any)} alt="" className="h-8 w-8 rounded bg-white p-0.5 object-contain" />
                   )}
                 </div>
+                {v.getError("icon_url") && <p className="text-xs text-destructive mt-1">{v.getError("icon_url")}</p>}
                 <p className="text-[10px] text-slate-500 mt-1">Leave empty for auto-detected icon</p>
               </div>
 
