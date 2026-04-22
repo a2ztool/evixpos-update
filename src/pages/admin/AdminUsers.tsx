@@ -388,6 +388,72 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Suspend with reason modal */}
+      <Dialog open={!!suspendTarget} onOpenChange={(open) => { if (!open) { setSuspendTarget(null); setSuspendReason(""); } }}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-amber-400" /> Suspend user
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              Suspend <span className="font-semibold text-white">{suspendTarget?.email}</span>. They (and their staff) will be signed out and blocked from access. Data is preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="suspend-reason" className="text-slate-300">Reason (optional)</Label>
+            <Textarea
+              id="suspend-reason"
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+              placeholder="e.g. Payment fraud, ToS violation..."
+              className="bg-slate-700 border-slate-600 text-white min-h-[80px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setSuspendTarget(null); setSuspendReason(""); }} className="text-slate-300 hover:text-white hover:bg-slate-700">Cancel</Button>
+            <Button onClick={handleSuspend} disabled={busyId === suspendTarget?.id} className="bg-amber-600 hover:bg-amber-500 text-white">
+              {busyId === suspendTarget?.id ? "Suspending..." : "Suspend"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspension details modal */}
+      <Dialog open={!!detailsTarget} onOpenChange={(open) => !open && setDetailsTarget(null)}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-400" /> Suspension details
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {detailsTarget?.name || detailsTarget?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Suspended at</p>
+              <p className="text-white">
+                {detailsTarget?.suspended_at ? new Date(detailsTarget.suspended_at).toLocaleString() : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Reason</p>
+              <p className="text-white whitespace-pre-wrap bg-slate-700/50 rounded-lg p-3 border border-slate-700 min-h-[60px]">
+                {detailsTarget?.suspended_reason || <span className="text-slate-500 italic">No reason provided</span>}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDetailsTarget(null)} className="text-slate-300 hover:text-white hover:bg-slate-700">Close</Button>
+            {detailsTarget && (
+              <Button onClick={() => { const t = detailsTarget; setDetailsTarget(null); handleUnsuspend(t); }} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5">
+                <RotateCcw className="h-4 w-4" /> Reactivate
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
