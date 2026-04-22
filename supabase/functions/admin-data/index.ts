@@ -1015,6 +1015,123 @@ Deno.serve(async (req) => {
       return json(data || []);
     }
 
+    // ─── FEATURE FLAGS ───
+    if (action === "get_feature_flags") {
+      const { data, error } = await supabase.from("feature_flags").select("*").order("flag_key");
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "update_feature_flag") {
+      const { id, enabled, allowed_plans, label, description } = params;
+      if (!id) return errorResponse("id required");
+      const patch: any = { updated_at: new Date().toISOString() };
+      if (typeof enabled === "boolean") patch.enabled = enabled;
+      if (Array.isArray(allowed_plans)) patch.allowed_plans = allowed_plans;
+      if (typeof label === "string") patch.label = label;
+      if (typeof description === "string") patch.description = description;
+      const { data, error } = await supabase.from("feature_flags").update(patch).eq("id", id).select().single();
+      if (error) return errorResponse(error.message);
+      await logAction("update_feature_flag", "feature_flag", id, data?.flag_key, patch);
+      return json(data);
+    }
+
+    // ─── SYSTEM TEMPLATES ───
+    if (action === "get_system_templates") {
+      const { data, error } = await supabase.from("system_templates").select("*").order("template_key");
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "update_system_template") {
+      const { id, subject, body: tplBody, is_active, label } = params;
+      if (!id) return errorResponse("id required");
+      const patch: any = { updated_at: new Date().toISOString() };
+      if (typeof subject === "string") patch.subject = subject;
+      if (typeof tplBody === "string") patch.body = tplBody;
+      if (typeof is_active === "boolean") patch.is_active = is_active;
+      if (typeof label === "string") patch.label = label;
+      const { data, error } = await supabase.from("system_templates").update(patch).eq("id", id).select().single();
+      if (error) return errorResponse(error.message);
+      await logAction("update_system_template", "system_template", id, data?.template_key, patch);
+      return json(data);
+    }
+
+    // ─── FINANCE METRICS (MRR/ARR/Churn/Revenue trend) ───
+    if (action === "get_finance_metrics") {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Active subs by plan
+      const { data: subs } = await supabase.from("subscriptions").select("plan, status, start_date, end_date").eq("status", "active");
+      const planCounts: Record<string, number> = { free: 0, pro: 0, business: 0 };
+      (subs || []).forEach((s: any) => { if (s.plan in planCounts) planCounts[s.plan]++; });
+
+      // Pull plan prices (use lowest tier as approximation)
+      const { data: planConfigs } = await supabase.from("plans_config").select("plan_type, price_inr, volume").order("volume");
+      const proPrice = planConfigs?.find((p: any) => p.plan_type === "pro")?.price_inr || 349;
+      const bizPrice = planConfigs?.find((p: any) => p.plan_type === "business")?.price_inr || 449;
+
+      const mrr = planCounts.pro * proPrice + planCounts.business * bizPrice;
+      const arr = mrr * 12;
+
+      // Approved payments last 30 vs 60 days for revenue trend
+      const { data: recentPayments } = await supabase
+        .from("plan_payments")
+        .select("amount, currency, status, created_at")
+        .eq("status", "approved")
+        .gte("created_at", sixtyDaysAgo);
+      let revenue30 = 0, revenuePrev30 = 0;
+      (recentPayments || []).forEach((p: any) => {
+        const t = new Date(p.created_at).getTime();
+        if (t >= new Date(thirtyDaysAgo).getTime()) revenue30 += Number(p.amount);
+        else revenuePrev30 += Number(p.amount);
+      });
+
+      // Churn = expired subs in last 30d / active 30d ago
+      const { count: expiredCount } = await supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "expired")
+        .gte("end_date", thirtyDaysAgo);
+      const totalActive = planCounts.pro + planCounts.business;
+      const churnRate = totalActive > 0 ? ((expiredCount || 0) / totalActive) * 100 : 0;
+
+      // Failed payments
+      const { count: failedPayments } = await supabase
+        .from("plan_payments")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "rejected")
+        .gte("created_at", thirtyDaysAgo);
+
+      // Refunds last 30d
+      const { data: refunds } = await supabase.from("refunds").select("refund_amount").gte("created_at", thirtyDaysAgo);
+      const refundTotal = (refunds || []).reduce((s: number, r: any) => s + Number(r.refund_amount || 0), 0);
+
+      // Upcoming renewals (next 7 days)
+      const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: upcomingRenewals } = await supabase
+        .from("subscriptions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .lte("end_date", sevenDaysAhead)
+        .gte("end_date", now.toISOString());
+
+      return json({
+        mrr,
+        arr,
+        planCounts,
+        revenue30,
+        revenuePrev30,
+        revenueGrowthPct: revenuePrev30 > 0 ? ((revenue30 - revenuePrev30) / revenuePrev30) * 100 : 0,
+        churnRate,
+        failedPayments: failedPayments || 0,
+        refundTotal,
+        upcomingRenewals: upcomingRenewals || 0,
+      });
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
