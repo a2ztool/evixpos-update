@@ -15,7 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
-import { validateWithToast, supportTicketSchema } from "@/lib/validations";
+import { supportTicketSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Ticket, Plus, Search, Filter, Clock, CheckCircle2, AlertCircle, XCircle,
@@ -125,6 +126,7 @@ const SupportPage = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<SupportTicket | null>(null);
   const [form, setForm] = useState({ subject: "", description: "", category: "pos", priority: "medium" });
+  const formValidation = useFormValidation(supportTicketSchema);
 
   // Ticket detail / messages
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -198,8 +200,10 @@ const SupportPage = () => {
 
   const handleCreateTicket = async () => {
     if (!user) return;
-    const parsed = validateWithToast(supportTicketSchema, form, toast.error);
-    if (!parsed) return;
+    if (!formValidation.validateAll(form)) {
+      toast.error("Please fix the errors below");
+      return;
+    }
     
     // Generate auto ticket ID: EVX-XXXX
     const ticketCount = tickets.length;
@@ -234,7 +238,7 @@ const SupportPage = () => {
     if (!error) { toast.success("Ticket deleted"); fetchTickets(); } else toast.error("Delete failed");
   };
 
-  const resetForm = () => { setForm({ subject: "", description: "", category: "general", priority: "medium" }); setEditingTicket(null); };
+  const resetForm = () => { setForm({ subject: "", description: "", category: "general", priority: "medium" }); setEditingTicket(null); formValidation.clearErrors(); };
 
   const openEdit = (t: SupportTicket) => {
     setEditingTicket(t);
@@ -417,11 +421,13 @@ const SupportPage = () => {
                     <div className="space-y-4 mt-6">
                       <div>
                         <label className="text-sm font-medium mb-1.5 block">Subject *</label>
-                        <Input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} placeholder="Brief summary of your issue" />
+                        <Input value={form.subject} onChange={e => { setForm(p => ({ ...p, subject: e.target.value })); formValidation.clearField("subject"); }} placeholder="Brief summary of your issue" error={!!formValidation.getError("subject")} />
+                        {formValidation.getError("subject") && <p className="text-xs text-destructive mt-1 animate-fade-in">{formValidation.getError("subject")}</p>}
                       </div>
                       <div>
                         <label className="text-sm font-medium mb-1.5 block">Description</label>
-                        <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe your issue in detail..." rows={5} />
+                        <Textarea value={form.description} onChange={e => { setForm(p => ({ ...p, description: e.target.value })); formValidation.clearField("description"); }} placeholder="Describe your issue in detail..." rows={5} className={formValidation.getError("description") ? "border-destructive" : ""} />
+                        {formValidation.getError("description") && <p className="text-xs text-destructive mt-1 animate-fade-in">{formValidation.getError("description")}</p>}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
