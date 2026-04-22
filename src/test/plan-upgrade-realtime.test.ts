@@ -64,7 +64,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 async function adminUpgradePlan(ownerId: string, newPlan: Plan) {
   subsByOwner.set(ownerId, { plan: newPlan, status: "active", end_date: null });
   const arr = listeners.get(ownerId) ?? [];
-  // Await each callback's full async chain (so dashboards finish updating)
+  // eslint-disable-next-line no-console
+  console.log("[upgrade]", arr.length, "listeners,", arr.map(c => c.toString().slice(0,40)));
   await Promise.all(arr.map(async (cb) => { await cb(); }));
 }
 
