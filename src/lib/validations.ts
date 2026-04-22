@@ -184,6 +184,84 @@ export const sendWhatsAppSchema = z.object({
   message: requiredTextField("Message", 4096),
 });
 
+// ─── Subscription ───
+
+export const subscriptionSchema = z.object({
+  customer_id: z.string().optional(),
+  product_name: requiredTextField("Product name", 200),
+  variation: z.string().min(1, "Variation is required"),
+  start_date: z.string().min(1, "Start date is required"),
+  price: requiredPositiveNumber("Price"),
+  cost_price: positiveNumber("Cost price"),
+  notes: textField("Notes", 1000),
+});
+
+// ─── Loyalty / Credit Adjustments ───
+
+export const loyaltyAdjustSchema = z.object({
+  points: requiredPositiveNumber("Points"),
+  notes: textField("Note", 300),
+});
+
+export const loyaltyRedeemSchema = z.object({
+  points: requiredPositiveNumber("Points"),
+});
+
+export const creditPaymentSchema = z.object({
+  amount: requiredPositiveNumber("Amount"),
+  payment_method: z.string().min(1, "Payment method is required"),
+});
+
+export const creditLimitSchema = z.object({
+  credit_limit: positiveNumber("Credit limit"),
+});
+
+// ─── Order Form ───
+
+export const orderFormSchema = z.object({
+  name: requiredTextField("Form name", 100),
+  slug: z.string().trim().max(60, "Slug too long")
+    .refine(v => v === "" || /^[a-z0-9-]+$/.test(v), "Slug must be lowercase letters, numbers and hyphens only"),
+  description: textField("Description", 1000),
+});
+
+// ─── Business / Store Settings ───
+
+export const businessSettingsSchema = z.object({
+  business_name: requiredTextField("Business name", 100),
+  business_email: emailField(false),
+  business_phone: phoneField(false),
+  store_slug: z.string().trim().max(60, "Slug too long")
+    .refine(v => v === "" || /^[a-z0-9-]+$/.test(v), "Slug must be lowercase letters, numbers and hyphens only"),
+  shop_url: urlField(false),
+  logo_url: urlField(false),
+  tax_rate: z.number().min(0, "Tax rate cannot be negative").max(100, "Tax rate cannot exceed 100"),
+});
+
+export const storeAddSchema = z.object({
+  name: requiredTextField("Store name", 100),
+  address: textField("Address", 500),
+  phone: phoneField(false),
+});
+
+export const staffMemberSchema = z.object({
+  name: nameField("Staff name"),
+  email: emailField(),
+  phone: phoneField(false),
+  password: passwordField,
+});
+
+export const staffEditSchema = z.object({
+  name: nameField("Staff name"),
+  email: emailField(),
+  phone: phoneField(false),
+});
+
+export const profileUpdateSchema = z.object({
+  name: nameField("Full name"),
+  newPassword: z.string().refine(v => v === "" || v.length >= 6, "Password must be at least 6 characters"),
+});
+
 // ─── Admin Settings ───
 
 export const adminEmailSchema = z.object({
