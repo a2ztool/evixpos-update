@@ -125,6 +125,12 @@ const Subscriptions = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [calc, setCalc] = useState({ planPrice: 0, costPrice: 0, customers: 0, duration: "1 Month" });
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [waTemplate, setWaTemplate] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_WA_TEMPLATE;
+    return localStorage.getItem(TEMPLATE_STORAGE_KEY) || DEFAULT_WA_TEMPLATE;
+  });
+  const [templateDraft, setTemplateDraft] = useState(waTemplate);
 
   const fetchAll = useCallback(async () => {
     if (!activeStore || !user) return;
