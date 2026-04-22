@@ -1263,6 +1263,86 @@ const Subscriptions = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* WhatsApp Message Template Editor */}
+        <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquareText className="h-5 w-5 text-green-600" />
+                WhatsApp Reminder Template
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Customize the message sent when you click <span className="font-medium">Remind</span>. Use the placeholders below — they get replaced automatically per customer.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  "{customer_name}", "{product_name}", "{variation}", "{days_left}",
+                  "{end_date}", "{price}", "{store_name}", "{status_text}",
+                ].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setTemplateDraft((p) => p + " " + tag)}
+                    className="text-[11px] font-mono px-2 py-1.5 rounded-md border bg-muted/40 hover:bg-primary/10 hover:border-primary/40 transition-colors text-left truncate"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Message template</Label>
+                <Textarea
+                  value={templateDraft}
+                  onChange={(e) => setTemplateDraft(e.target.value)}
+                  rows={6}
+                  className="text-sm font-mono"
+                  placeholder={DEFAULT_WA_TEMPLATE}
+                />
+              </div>
+
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wide">Live Preview</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {renderTemplate(templateDraft || DEFAULT_WA_TEMPLATE, {
+                    customer_name: "Rishi Mali",
+                    product_name: "Canva Premium",
+                    variation: "1 Month",
+                    days_left: 3,
+                    end_date: fnsFormat(addDays(new Date(), 3), "dd MMM yyyy"),
+                    price: `${symbol}100`,
+                    store_name: activeStore?.name || "Your Store",
+                  })}
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setTemplateDraft(DEFAULT_WA_TEMPLATE)}
+                className="gap-1.5"
+              >
+                <RotateCw className="h-4 w-4" /> Reset
+              </Button>
+              <Button
+                onClick={() => {
+                  const next = (templateDraft || "").trim() || DEFAULT_WA_TEMPLATE;
+                  setWaTemplate(next);
+                  localStorage.setItem(TEMPLATE_STORAGE_KEY, next);
+                  setTemplateOpen(false);
+                  toast.success("Template saved");
+                }}
+                className="gap-1.5"
+              >
+                <Save className="h-4 w-4" /> Save Template
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
