@@ -64,7 +64,8 @@ vi.mock("@/integrations/supabase/client", () => ({
 async function adminUpgradePlan(ownerId: string, newPlan: Plan) {
   subsByOwner.set(ownerId, { plan: newPlan, status: "active", end_date: null });
   const arr = listeners.get(ownerId) ?? [];
-  await Promise.all(arr.map((cb) => Promise.resolve().then(() => cb())));
+  // Await each callback's full async chain (so dashboards finish updating)
+  await Promise.all(arr.map(async (cb) => { await cb(); }));
 }
 
 /** Replicates useStorePlan.fetchPlan resolution. */
