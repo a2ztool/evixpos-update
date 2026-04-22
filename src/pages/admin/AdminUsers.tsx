@@ -293,16 +293,28 @@ const AdminUsers = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="outline" className={planColor(u.plan)}>{u.plan}</Badge>
                               {u.is_suspended && (
-                                <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                                <button onClick={() => setDetailsTarget(u)} className="inline-flex" title="View suspension details">
+                                  <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30 cursor-pointer hover:bg-red-500/30 gap-0.5">
+                                    <Ban className="h-2.5 w-2.5" />Suspended
+                                  </Badge>
+                                </button>
+                              )}
+                              {u.is_suspended && (
+                                <Button variant="ghost" size="icon" onClick={() => setDetailsTarget(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Suspension details"><Info className="h-4 w-4" /></Button>
                               )}
                               <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="View"><Eye className="h-4 w-4" /></Button>
                               {u.is_suspended ? (
                                 <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="Reactivate"><RotateCcw className="h-4 w-4" /></Button>
                               ) : (
-                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => { setSuspendTarget(u); setSuspendReason(""); }} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
                               )}
                               <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Delete"><Trash2 className="h-4 w-4" /></Button>
                             </div>
+                            {u.is_suspended && u.suspended_reason && (
+                              <p className="text-[11px] text-red-300/80 mt-1.5 line-clamp-1" title={u.suspended_reason}>
+                                <span className="font-semibold">Reason:</span> {u.suspended_reason}
+                              </p>
+                            )}
                           </TableCell>
                         </TableRow>
                         {u.stores.length > 0 && (
