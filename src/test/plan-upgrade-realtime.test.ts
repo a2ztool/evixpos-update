@@ -32,6 +32,8 @@ const fromMock = vi.fn((table: string) => {
     limit: () => builder,
     maybeSingle: async () => {
       const sub = userIdFilter ? subsByOwner.get(userIdFilter) ?? null : null;
+      // eslint-disable-next-line no-console
+      console.log("[query] user_id=", userIdFilter, "->", sub);
       return { data: sub, error: null };
     },
   };
