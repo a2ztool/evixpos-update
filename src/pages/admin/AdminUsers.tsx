@@ -19,6 +19,7 @@ interface UserRow {
   plan: string; storeCount: number; stores: StoreInfo[];
   start_date: string | null; end_date: string | null;
   remaining_days: number | null; plan_status: string;
+  is_suspended?: boolean; suspended_at?: string | null; suspended_reason?: string | null;
 }
 
 const ITEMS_PER_PAGE = 15;
