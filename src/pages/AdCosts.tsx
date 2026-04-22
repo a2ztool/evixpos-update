@@ -258,9 +258,16 @@ const AdCosts = () => {
     setSheetOpen(true);
   };
 
+  const [campaignError, setCampaignError] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.campaign_name.trim()) { toast.error("Campaign name is required"); return; }
+    if (!form.campaign_name.trim()) {
+      setCampaignError("Campaign name is required");
+      toast.error("Campaign name is required");
+      return;
+    }
+    setCampaignError("");
     const payload = {
       platform: form.platform, campaign_name: form.campaign_name.trim(),
       amount: Number(form.amount) || 0, impressions: Number(form.impressions) || 0,
