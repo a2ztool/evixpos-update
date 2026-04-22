@@ -35,6 +35,8 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
+import { subscriptionSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 interface Subscription {
   id: string;
@@ -131,6 +133,7 @@ const Subscriptions = () => {
     return localStorage.getItem(TEMPLATE_STORAGE_KEY) || DEFAULT_WA_TEMPLATE;
   });
   const [templateDraft, setTemplateDraft] = useState(waTemplate);
+  const formValidation = useFormValidation(subscriptionSchema);
 
   const fetchAll = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -305,7 +308,7 @@ const Subscriptions = () => {
   }, [subs, search, statusFilter]);
 
   // Handlers
-  const openAdd = () => { setEditId(null); setForm(emptyForm); setSheetOpen(true); };
+  const openAdd = () => { setEditId(null); setForm(emptyForm); formValidation.clearErrors(); setSheetOpen(true); };
   const openEdit = (s: Subscription) => {
     setEditId(s.id);
     setForm({
@@ -322,7 +325,10 @@ const Subscriptions = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.product_name.trim()) { toast.error("Product name is required"); return; }
+    if (!formValidation.validateAll(form)) {
+      toast.error("Please fix the errors below");
+      return;
+    }
     const endDate = getEndDate(form.start_date, form.variation);
     const payload = {
       customer_id: form.customer_id || null,
@@ -1216,7 +1222,8 @@ const Subscriptions = () => {
 
               <div className="space-y-2">
                 <Label>Product Name *</Label>
-                <Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} required placeholder="e.g., Netflix Premium" />
+                <Input value={form.product_name} onChange={(e) => { setForm({ ...form, product_name: e.target.value }); formValidation.clearField("product_name"); }} required placeholder="e.g., Netflix Premium" error={!!formValidation.getError("product_name")} />
+                {formValidation.getError("product_name") && <p className="text-xs text-destructive mt-1 animate-fade-in">{formValidation.getError("product_name")}</p>}
               </div>
 
               <div className="space-y-2">
@@ -1243,11 +1250,13 @@ const Subscriptions = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Price ({symbol})</Label>
-                  <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0" />
+                  <Input type="number" step="0.01" value={form.price} onChange={(e) => { setForm({ ...form, price: e.target.value }); formValidation.clearField("price"); }} placeholder="0" error={!!formValidation.getError("price")} />
+                  {formValidation.getError("price") && <p className="text-xs text-destructive mt-1 animate-fade-in">{formValidation.getError("price")}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Cost ({symbol})</Label>
-                  <Input type="number" step="0.01" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} placeholder="0" />
+                  <Input type="number" step="0.01" value={form.cost_price} onChange={(e) => { setForm({ ...form, cost_price: e.target.value }); formValidation.clearField("cost_price"); }} placeholder="0" error={!!formValidation.getError("cost_price")} />
+                  {formValidation.getError("cost_price") && <p className="text-xs text-destructive mt-1 animate-fade-in">{formValidation.getError("cost_price")}</p>}
                 </div>
               </div>
 
