@@ -531,7 +531,7 @@ const Auth = () => {
                       className="w-full h-11 rounded-xl font-semibold bg-gradient-to-r from-primary to-primary/85 hover:from-primary/90 hover:to-primary/75 text-primary-foreground gap-2 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/35 hover:-translate-y-0.5"
                       disabled={loading}
                     >
-                      {loading ? "Creating account..." : "Start 14-day Free Trial"}
+                      {loading ? "Creating account..." : "Start Free Trial"}
                       {!loading && <ArrowRight className="h-4 w-4" />}
                     </Button>
 
