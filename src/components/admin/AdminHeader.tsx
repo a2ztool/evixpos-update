@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/command";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 type NavItem = { label: string; path: string; icon: React.ComponentType<{ className?: string }> };
 
