@@ -53,6 +53,8 @@ const channelMock = vi.fn((_name: string) => {
         const list = realtimeListeners.get(ownerId) ?? [];
         list.push(cb);
         realtimeListeners.set(ownerId, list);
+        // eslint-disable-next-line no-console
+        console.log("[sub]", ownerId, "now has", list.length, "listeners");
       }
       return ch;
     },
