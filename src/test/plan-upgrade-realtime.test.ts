@@ -157,11 +157,8 @@ describe("Plan upgrade Free → Pro propagates to owner + staff dashboards in re
     await subscribeDashboard(staffStoreA, (p) => staffAPlan.push(p));
     await subscribeDashboard(staffStoreB, (p) => staffBPlan.push(p));
 
-    // 🔼 Owner upgrades Free → Pro
-    upgradeOwnerPlan(ownerId, "pro");
-
-    // Allow microtasks (async fetchPlan) to flush — wait for all 3 callbacks
-    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    // 🔼 Owner upgrades Free → Pro (await all subscribers to settle)
+    await upgradeOwnerPlan(ownerId, "pro");
 
     // Assert: every dashboard reflects Pro instantly
     expect(ownerPlan.at(-1)).toBe("pro");
