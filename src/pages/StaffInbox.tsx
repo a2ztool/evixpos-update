@@ -100,7 +100,7 @@ const StaffInbox = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [filterTab, setFilterTab] = useState<"all" | "direct" | "groups">("all");
+  const [filterTab, setFilterTab] = useState<"chats" | "groups">("chats");
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
