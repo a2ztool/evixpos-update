@@ -89,7 +89,14 @@ async function mountDashboard(session: { isStaff: boolean; userId: string; owner
   supabase.channel(`user-plan-${planUserId}`).on(
     "postgres_changes",
     { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${planUserId}` },
-    async () => { state.plan = await fetchPlan(session); }
+    async () => {
+      // eslint-disable-next-line no-console
+      console.log("[fire]", session.isStaff ? "staff" : "owner", session.userId);
+      const next = await fetchPlan(session);
+      // eslint-disable-next-line no-console
+      console.log("[update]", session.userId, "->", next);
+      state.plan = next;
+    }
   ).subscribe();
   return state;
 }
