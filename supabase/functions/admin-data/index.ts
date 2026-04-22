@@ -234,6 +234,9 @@ Deno.serve(async (req) => {
 
         return {
           id: p.id, name: p.name, email: p.email, created_at: p.created_at,
+          is_suspended: !!p.is_suspended,
+          suspended_at: p.suspended_at || null,
+          suspended_reason: p.suspended_reason || null,
           plan: subInfo.plan, start_date: subInfo.start_date, end_date: subInfo.end_date,
           remaining_days: remainingDays, plan_status: planStatus,
           storeCount: userStores.length,
