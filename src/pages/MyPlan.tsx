@@ -152,6 +152,16 @@ const MyPlan = () => {
       });
   }, [user, activeStore, currencyDetected]);
   const [yearly, setYearly] = useState(false);
+  const [referralCode, setReferralCode] = useState<string>("");
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("referral_settings")
+      .select("referral_code")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.referral_code) setReferralCode(data.referral_code); });
+  }, [user]);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [activeBanner, setActiveBanner] = useState<PlatformCoupon | null>(null);
@@ -889,7 +899,7 @@ const MyPlan = () => {
               <h3 className="font-bold text-lg">Invite Friends & Earn 20% Commission</h3>
               <p className="text-sm text-muted-foreground">Share your referral link. Earn 20% recurring commission for every friend who upgrades to a paid plan.</p>
             </div>
-            <Button variant="outline" className="gap-2 flex-shrink-0" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?ref=YOUR_CODE`); toast.success("Referral link copied!"); }}>
+            <Button variant="outline" className="gap-2 flex-shrink-0" onClick={() => { const link = referralCode ? `https://evixpos.com/auth?tab=signup&ref=${referralCode}` : "https://evixpos.com"; navigator.clipboard.writeText(link); toast.success("Referral link copied!"); }}>
               <Copy className="h-4 w-4" /> Copy Link
             </Button>
           </CardContent>
