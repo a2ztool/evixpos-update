@@ -1159,6 +1159,122 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── PHASE 3: ADMIN ROLES MANAGEMENT ───
+    if (action === "list_admin_roles") {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("id, user_id, role")
+        .in("role", ["admin","super_admin","support_admin","finance_admin"]);
+      if (error) return errorResponse(error.message);
+      const ids = (data || []).map((r: any) => r.user_id);
+      const { data: profiles } = ids.length
+        ? await supabase.from("profiles").select("id, email, name").in("id", ids)
+        : { data: [] };
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const merged = (data || []).map((r: any) => ({ ...r, ...(profileMap.get(r.user_id) || {}) }));
+      return json(merged);
+    }
+
+    if (action === "set_user_role") {
+      const { user_id, role } = params as { user_id: string; role: string };
+      if (!user_id || !role) return errorResponse("user_id and role required");
+      if (!["admin","super_admin","support_admin","finance_admin"].includes(role)) {
+        return errorResponse("Invalid admin role");
+      }
+      const { error } = await supabase.from("user_roles").upsert({ user_id, role }, { onConflict: "user_id,role" });
+      if (error) return errorResponse(error.message);
+      const { data: prof } = await supabase.from("profiles").select("email").eq("id", user_id).maybeSingle();
+      await logAction("set_user_role", "user", user_id, prof?.email || "", { role });
+      return json({ success: true });
+    }
+
+    if (action === "remove_user_role") {
+      const { user_id, role } = params as { user_id: string; role: string };
+      if (!user_id || !role) return errorResponse("user_id and role required");
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
+      if (error) return errorResponse(error.message);
+      await logAction("remove_user_role", "user", user_id, "", { role });
+      return json({ success: true });
+    }
+
+    // ─── PHASE 3: LIVE ACTIVITY FEED ───
+    if (action === "get_activity_feed") {
+      const { limit = 100, event_type } = params as { limit?: number; event_type?: string };
+      let q = supabase.from("admin_activity_feed").select("*").order("created_at", { ascending: false }).limit(Number(limit));
+      if (event_type) q = q.eq("event_type", event_type);
+      const { data, error } = await q;
+      if (error) return errorResponse(error.message);
+      return json(data || []);
+    }
+
+    if (action === "get_activity_stats") {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const types = ["signup","order","payment"];
+      const counts: Record<string, number> = {};
+      for (const t of types) {
+        const { count } = await supabase
+          .from("admin_activity_feed")
+          .select("id", { count: "exact", head: true })
+          .eq("event_type", t)
+          .gte("created_at", since);
+        counts[t] = count || 0;
+      }
+      return json({ last_24h: counts });
+    }
+
+    // ─── PHASE 3: DATA EXPORT (CSV/JSON) ───
+    if (action === "export_data") {
+      const { dataset, format = "csv" } = params as { dataset: string; format?: "csv" | "json" };
+      const allowed: Record<string, { table: string; columns: string }> = {
+        users: { table: "profiles", columns: "id, email, name, created_at, is_suspended" },
+        stores: { table: "stores", columns: "*" },
+        payments: { table: "plan_payments", columns: "id, user_id, plan, amount, currency, status, created_at, transaction_id" },
+        orders: { table: "orders", columns: "id, user_id, store_id, total_amount, payment_status, status, created_at" },
+        subscriptions: { table: "subscriptions", columns: "*" },
+      };
+      const cfg = allowed[dataset];
+      if (!cfg) return errorResponse("Invalid dataset");
+      // Tier-restricted exports
+      if (!isSuperAdmin && !can("admin")) {
+        const financeOnly = ["payments","subscriptions"];
+        const supportOnly = ["users","stores","orders"];
+        if (can("finance_admin") && !financeOnly.includes(dataset)) {
+          return errorResponse("Finance role can only export payments/subscriptions");
+        }
+        if (can("support_admin") && !supportOnly.includes(dataset)) {
+          return errorResponse("Support role can only export users/stores/orders");
+        }
+      }
+      const { data, error } = await supabase.from(cfg.table).select(cfg.columns).limit(10000);
+      if (error) return errorResponse(error.message);
+      const rows = (data as any[]) || [];
+
+      await logAction("export_data", "dataset", dataset, dataset, { format, count: rows.length });
+
+      if (format === "json") {
+        return new Response(JSON.stringify(rows, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${dataset}.json"` },
+        });
+      }
+      if (rows.length === 0) {
+        return new Response("", { headers: { ...corsHeaders, "Content-Type": "text/csv" } });
+      }
+      const headers = Object.keys(rows[0]);
+      const escape = (v: any) => {
+        if (v === null || v === undefined) return "";
+        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+      return new Response(csv, {
+        headers: { ...corsHeaders, "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="${dataset}.csv"` },
+      });
+    }
+
+    if (action === "get_admin_context") {
+      return json({ roles: adminRoles, isSuperAdmin });
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
