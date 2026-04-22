@@ -441,6 +441,10 @@ const SettingsPage = () => {
 
   // ─── Staff ───
   const storeFilteredStaff = staff.filter(s => !activeStore || (s as any).store_id === activeStore.id || !(s as any).store_id);
+  const PLAN_STAFF_LIMITS: Record<string, number> = { free: 1, pro: 3, business: 10 };
+  const staffLimit = PLAN_STAFF_LIMITS[plan] ?? 1;
+  const activeStaffCount = staff.filter(s => s.is_active).length;
+  const canAddStaff = activeStaffCount < staffLimit;
 
   const applyRolePreset = (role: string, setter: (v: any) => void) => {
     const presets = ROLE_PRESETS[role] ?? [];
@@ -1033,18 +1037,42 @@ const SettingsPage = () => {
 
   const renderStaff = () => (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><UsersRound className="h-5 w-5 text-primary" /></div>
           <div><h2 className="font-bold text-lg">{t.staff}</h2><p className="text-sm text-muted-foreground">{lang === "bn" ? "টিম ও তাদের পারমিশন ম্যানেজ করুন" : "Manage your team and permissions"}</p></div>
         </div>
-        <Dialog open={staffDialog} onOpenChange={setStaffDialog}>
-          <DialogTrigger asChild><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> {t.add} {t.staff}</Button></DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{t.add} {t.staff}</DialogTitle></DialogHeader>
-            {renderStaffForm(newStaff, setNewStaff, addStaffMember, t.add, true)}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Badge variant={canAddStaff ? "secondary" : "destructive"} className="gap-1">
+            <UsersRound className="h-3 w-3" />
+            {activeStaffCount}/{staffLimit} {lang === "bn" ? "ব্যবহৃত" : "used"} · {(plan ?? "free").toUpperCase()}
+          </Badge>
+          {canAddStaff ? (
+            <Dialog open={staffDialog} onOpenChange={setStaffDialog}>
+              <DialogTrigger asChild><Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> {t.add} {t.staff}</Button></DialogTrigger>
+              <DialogContent className="max-h-[85vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>{t.add} {t.staff}</DialogTitle></DialogHeader>
+                {renderStaffForm(newStaff, setNewStaff, addStaffMember, t.add, true)}
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => {
+                toast.error(
+                  lang === "bn"
+                    ? `${(plan ?? "free").toUpperCase()} প্ল্যানে সর্বোচ্চ ${staffLimit} জন স্টাফ। আপগ্রেড করুন।`
+                    : `${(plan ?? "free").toUpperCase()} plan allows up to ${staffLimit} staff. Upgrade to add more.`
+                );
+                navigate("/my-plan");
+              }}
+            >
+              <Crown className="h-4 w-4" /> {lang === "bn" ? "আপগ্রেড করুন" : "Upgrade to add"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Edit Staff Dialog */}
