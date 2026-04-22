@@ -345,12 +345,15 @@ const Auth = () => {
                         id="login-email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
+                        onChange={(e) => { setEmail(e.target.value); loginForm.clearField("email"); }}
                         autoComplete="email"
+                        error={!!loginForm.getError("email")}
                         className="h-11 rounded-xl bg-background/50 border-border/50 focus:border-primary/60"
                         placeholder="name@company.com"
                       />
+                      {loginForm.getError("email") && (
+                        <p className="text-xs text-destructive animate-fade-in">{loginForm.getError("email")}</p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
@@ -365,9 +368,9 @@ const Auth = () => {
                           id="login-password"
                           type={showPassword ? "text" : "password"}
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
+                          onChange={(e) => { setPassword(e.target.value); loginForm.clearField("password"); }}
                           autoComplete="current-password"
+                          error={!!loginForm.getError("password")}
                           className="h-11 rounded-xl pl-9 pr-10 bg-background/50 border-border/50 focus:border-primary/60"
                           placeholder="Enter password"
                         />
@@ -379,6 +382,9 @@ const Auth = () => {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      {loginForm.getError("password") && (
+                        <p className="text-xs text-destructive animate-fade-in">{loginForm.getError("password")}</p>
+                      )}
                     </div>
 
                     {/* Remember me — circular checkbox */}
@@ -413,12 +419,15 @@ const Auth = () => {
                       <Input
                         id="signup-name"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
+                        onChange={(e) => { setName(e.target.value); signupForm.clearField("name"); }}
                         autoComplete="name"
+                        error={!!signupForm.getError("name")}
                         className="h-11 rounded-xl bg-background/50 border-border/50 focus:border-primary/60"
                         placeholder="Your full name"
                       />
+                      {signupForm.getError("name") && (
+                        <p className="text-xs text-destructive animate-fade-in">{signupForm.getError("name")}</p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="signup-email" className="text-sm font-medium">Work Email</Label>
@@ -426,12 +435,15 @@ const Auth = () => {
                         id="signup-email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
+                        onChange={(e) => { setEmail(e.target.value); signupForm.clearField("email"); }}
                         autoComplete="email"
+                        error={!!signupForm.getError("email")}
                         className="h-11 rounded-xl bg-background/50 border-border/50 focus:border-primary/60"
                         placeholder="name@company.com"
                       />
+                      {signupForm.getError("email") && (
+                        <p className="text-xs text-destructive animate-fade-in">{signupForm.getError("email")}</p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="signup-password" className="text-sm font-medium">Create Password</Label>
@@ -441,10 +453,10 @@ const Auth = () => {
                           id="signup-password"
                           type={showPassword ? "text" : "password"}
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
+                          onChange={(e) => { setPassword(e.target.value); signupForm.clearField("password"); }}
                           minLength={6}
                           autoComplete="new-password"
+                          error={!!signupForm.getError("password")}
                           className="h-11 rounded-xl pl-9 pr-10 bg-background/50 border-border/50 focus:border-primary/60"
                           placeholder="Min. 6 characters"
                         />
@@ -466,7 +478,10 @@ const Auth = () => {
                                 className={`h-1 flex-1 rounded-full transition-colors ${i < pwStrength ? strengthColor : "bg-muted"}`}
                               />
                             ))}
-                          </div>
+                      </div>
+                      {signupForm.getError("password") && (
+                        <p className="text-xs text-destructive animate-fade-in">{signupForm.getError("password")}</p>
+                      )}
                           <p className="text-[10px] text-muted-foreground font-medium">
                             Password strength: <span className="text-foreground">{strengthLabel}</span>
                           </p>
@@ -482,19 +497,33 @@ const Auth = () => {
                       <Input
                         id="signup-referral"
                         value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        onChange={(e) => { setReferralCode(e.target.value.toUpperCase()); signupForm.clearField("referralCode"); }}
+                        error={!!signupForm.getError("referralCode")}
                         className="h-11 rounded-xl font-mono tracking-wider uppercase bg-background/50 border-border/50 focus:border-primary/60"
                         placeholder="XXXXXXXX"
                         maxLength={8}
                       />
+                      {signupForm.getError("referralCode") && (
+                        <p className="text-xs text-destructive animate-fade-in">{signupForm.getError("referralCode")}</p>
+                      )}
                     </div>
 
                     {/* Terms */}
-                    <div className="flex items-start gap-2 pt-1">
-                      <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(v) => setAgreeTerms(!!v)} className="mt-0.5" />
-                      <Label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer leading-relaxed select-none">
-                        I agree to the <a href="#" className="text-primary font-medium hover:underline">Terms</a> and <a href="#" className="text-primary font-medium hover:underline">Privacy Policy</a>
-                      </Label>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          id="terms"
+                          checked={agreeTerms}
+                          onCheckedChange={(v) => { setAgreeTerms(!!v); if (v) setTermsError(false); }}
+                          className={`mt-0.5 ${termsError ? "border-destructive" : ""}`}
+                        />
+                        <Label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer leading-relaxed select-none">
+                          I agree to the <a href="#" className="text-primary font-medium hover:underline">Terms</a> and <a href="#" className="text-primary font-medium hover:underline">Privacy Policy</a>
+                        </Label>
+                      </div>
+                      {termsError && (
+                        <p className="text-xs text-destructive animate-fade-in pl-6">You must accept the Terms to continue</p>
+                      )}
                     </div>
 
                     <Button
