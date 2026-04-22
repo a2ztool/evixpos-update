@@ -1611,7 +1611,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Content card with breadcrumb header */}
-          <Card className="border-border/50">
+          <Card className="border-border/50 w-full max-w-4xl mx-auto lg:mx-0">
             {activeMeta && (
               <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-border/40 bg-muted/20 rounded-t-2xl">
                 <div className="flex items-center gap-2 text-xs min-w-0">
