@@ -768,11 +768,11 @@ const StaffInbox = () => {
                 <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 text-sm rounded-xl h-9" />
               </div>
               <div className="flex gap-1">
-                {(["all", "direct", "groups"] as const).map(tab => (
+                {(["chats", "groups"] as const).map(tab => (
                   <button key={tab} onClick={() => setFilterTab(tab)}
-                    className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize",
+                    className={cn("flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize",
                       filterTab === tab ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent")}>
-                    {tab}
+                    {tab === "chats" ? "Chats" : "Groups"}
                   </button>
                 ))}
               </div>
