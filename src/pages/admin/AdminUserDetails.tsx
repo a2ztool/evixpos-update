@@ -229,6 +229,37 @@ const AdminUserDetails = () => {
         ))}
         {stores.length === 0 && <p className="text-slate-500">No stores.</p>}
       </div>
+
+      {/* Suspension details modal */}
+      <Dialog open={showSuspension} onOpenChange={setShowSuspension}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-400" /> Suspension details
+            </DialogTitle>
+            <DialogDescription className="text-slate-300">
+              {profile.name || profile.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Suspended at</p>
+              <p className="text-white">
+                {profile.suspended_at ? new Date(profile.suspended_at).toLocaleString() : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Reason</p>
+              <p className="text-white whitespace-pre-wrap bg-slate-700/50 rounded-lg p-3 border border-slate-700 min-h-[60px]">
+                {profile.suspended_reason || <span className="text-slate-500 italic">No reason provided</span>}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSuspension(false)} className="text-slate-300 hover:text-white hover:bg-slate-700">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
