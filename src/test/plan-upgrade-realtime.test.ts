@@ -54,7 +54,7 @@ const channelMock = vi.fn(() => {
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    from: () => fromMock(),
+    from: () => makeFromBuilder(),
     channel: () => channelMock(),
     removeChannel: vi.fn(),
   },
