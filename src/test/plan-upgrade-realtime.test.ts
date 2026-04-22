@@ -73,10 +73,14 @@ async function adminUpgradePlan(ownerId: string, newPlan: Plan) {
 async function fetchPlan(session: { isStaff: boolean; userId: string; ownerId?: string }): Promise<Plan> {
   const { supabase } = await import("@/integrations/supabase/client");
   const planUserId = session.isStaff ? session.ownerId! : session.userId;
+  // eslint-disable-next-line no-console
+  console.log("[fetchPlan]", session.userId, "isStaff=", session.isStaff, "planUserId=", planUserId);
   const { data } = await supabase.from("subscriptions").select().eq("user_id", planUserId)
     .eq("status", "active").is("customer_id", null).in("plan", ["free", "pro", "business"])
     .order("start_date", { ascending: false }).limit(1).maybeSingle();
   const sub = data as Sub | null;
+  // eslint-disable-next-line no-console
+  console.log("[fetchPlan-result]", session.userId, "data=", sub);
   const expired = sub?.end_date && new Date(sub.end_date) < new Date();
   return (expired ? "free" : (sub?.plan ?? "free")) as Plan;
 }
