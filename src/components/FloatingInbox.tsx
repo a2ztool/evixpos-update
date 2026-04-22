@@ -692,51 +692,107 @@ const FloatingInbox = () => {
         </div>
       )}
 
-      {/* Assign Task Dialog (group only) */}
-      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ListTodo className="h-4 w-4 text-primary" />
-              Assign Task
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Task Name</Label>
+      {/* Create Task Card Dialog (group only) */}
+      <Dialog open={taskOpen} onOpenChange={(o) => { setTaskOpen(o); if (!o) setShowOrderDropdown(false); }}>
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl">
+          <div className="px-6 pt-6 pb-2">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg">
+                <ClipboardList className="h-5 w-5 text-primary" />
+                Create Task Card
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="px-6 pb-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                <Package className="h-3.5 w-3.5" />
+                Subscription Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="e.g. Update product listing"
-                className="mt-1"
+                placeholder="e.g., Premium Plan"
+                className="h-10 rounded-lg focus-visible:ring-primary/40"
               />
             </div>
-            <div>
-              <Label className="text-xs">Term / Deadline</Label>
-              <Input
-                value={taskTerm}
-                onChange={(e) => setTaskTerm(e.target.value)}
-                placeholder="e.g. By tomorrow 5 PM"
-                className="mt-1"
-              />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Term
+                </Label>
+                <Input
+                  value={taskTerm}
+                  onChange={(e) => setTaskTerm(e.target.value)}
+                  placeholder="e.g., 1 Month"
+                  className="h-10 rounded-lg"
+                />
+              </div>
+              <div className="space-y-1.5 relative">
+                <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                  <Link2 className="h-3.5 w-3.5" />
+                  Link Order
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={taskOrderId ? `#${taskOrderId.slice(0, 8)}` : orderSearch}
+                    onChange={(e) => { setTaskOrderId(null); setOrderSearch(e.target.value); setShowOrderDropdown(true); }}
+                    onFocus={() => setShowOrderDropdown(true)}
+                    placeholder="Search order..."
+                    className="h-10 rounded-lg pl-8"
+                  />
+                </div>
+                {showOrderDropdown && orderResults.length > 0 && (
+                  <div className="absolute z-10 top-full left-0 right-0 mt-1 max-h-44 overflow-y-auto bg-popover border border-border rounded-lg shadow-lg">
+                    {orderResults.map((o) => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => { setTaskOrderId(o.id); setOrderSearch(""); setShowOrderDropdown(false); }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-muted truncate"
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <Label className="text-xs">Required Info / Notes</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                <Info className="h-3.5 w-3.5" />
+                Required Info
+              </Label>
               <Textarea
                 value={taskRequiredInfo}
                 onChange={(e) => setTaskRequiredInfo(e.target.value)}
-                placeholder="Details about the task..."
-                className="mt-1 min-h-[80px]"
+                placeholder="Enter details..."
+                className="min-h-[90px] rounded-lg resize-none"
               />
             </div>
-            <Button
-              onClick={sendTask}
-              disabled={!taskName.trim()}
-              className="w-full"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send Task
-            </Button>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTaskOpen(false)}
+                className="flex-1 h-11 rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={sendTask}
+                disabled={!taskName.trim()}
+                className="flex-1 h-11 rounded-lg bg-primary hover:bg-primary/90"
+              >
+                Create Task
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
