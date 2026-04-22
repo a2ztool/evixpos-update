@@ -11,6 +11,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PlansConfigProvider } from "@/contexts/PlansConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OfflineBanner from "@/components/OfflineBanner";
+import MaintenanceBanner from "@/components/MaintenanceBanner";
 import ScrollProgress from "@/components/ScrollProgress";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
@@ -94,6 +95,9 @@ const AdminInbox = lazyPage(() => import("./pages/admin/AdminInbox"));
 const AdminSupportTickets = lazyPage(() => import("./pages/admin/AdminSupportTickets"));
 const AdminReferrals = lazyPage(() => import("./pages/admin/AdminReferrals"));
 const AdminPlansPricing = lazyPage(() => import("./pages/admin/AdminPlansPricing"));
+const AdminAuditLogs = lazyPage(() => import("./pages/admin/AdminAuditLogs"));
+const AdminBroadcasts = lazyPage(() => import("./pages/admin/AdminBroadcasts"));
+const AdminMaintenance = lazyPage(() => import("./pages/admin/AdminMaintenance"));
 
 // ─── QueryClient with aggressive caching for instant navigation ───
 const queryClient = new QueryClient({
@@ -157,6 +161,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <OfflineBanner />
+        <MaintenanceBanner />
         <ScrollProgress />
         <BrowserRouter>
           <Routes>
@@ -235,6 +240,9 @@ const App = () => {
               <Route path="/admin/support" element={<AdminSupportTickets />} />
               <Route path="/admin/referrals" element={<AdminReferrals />} />
               <Route path="/admin/plans-pricing" element={<AdminPlansPricing />} />
+              <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+              <Route path="/admin/broadcasts" element={<AdminBroadcasts />} />
+              <Route path="/admin/maintenance" element={<AdminMaintenance />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
