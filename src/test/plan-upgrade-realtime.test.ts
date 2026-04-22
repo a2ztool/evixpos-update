@@ -97,11 +97,11 @@ async function resolveDashboardPlan(session: {
 }
 
 /** Subscribes a dashboard (owner or staff) to realtime plan changes. */
-function subscribeDashboard(
+async function subscribeDashboard(
   session: { isStaff: boolean; userId: string; ownerId?: string },
   onChange: (plan: string) => void
 ) {
-  const { supabase } = require("@/integrations/supabase/client");
+  const { supabase } = await import("@/integrations/supabase/client");
   const planUserId = session.isStaff ? session.ownerId! : session.userId;
   supabase
     .channel(`user-plan-${planUserId}`)
