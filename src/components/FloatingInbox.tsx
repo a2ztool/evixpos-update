@@ -448,7 +448,7 @@ const FloatingInbox = () => {
         <div
           className={cn(
             "fixed z-50 bg-background overflow-hidden",
-            "bottom-0 left-0 right-0 w-full h-[75dvh] max-h-[600px] rounded-t-[20px]",
+            "inset-0 w-full h-[100dvh] rounded-none",
             "shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.2)]",
             "md:bottom-8 md:right-8 md:left-auto md:top-auto",
             "md:w-[360px] md:h-[520px] md:max-h-[calc(100dvh-6rem)]",
