@@ -64,6 +64,18 @@ Deno.serve(async (req) => {
     const action = body.action;
     const params = body.params || {};
 
+    // Tier-based authorization
+    if (SUPER_ONLY.has(action) && !isSuperAdmin) {
+      return errorResponse("Only super admins can perform this action", 403);
+    }
+    if (FINANCE_ACTIONS.has(action) && !can("admin","super_admin","finance_admin")) {
+      return errorResponse("Finance admin role required", 403);
+    }
+    if (SUPPORT_ACTIONS.has(action) && !can("admin","super_admin","support_admin")) {
+      return errorResponse("Support admin role required", 403);
+    }
+
+
     // ─── GET STATS ───
     if (action === "get_stats") {
       const [users, stores, orders, subs] = await Promise.all([
