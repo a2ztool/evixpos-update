@@ -1909,19 +1909,28 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_suspended: boolean
           name: string
+          suspended_at: string | null
+          suspended_reason: string | null
         }
         Insert: {
           created_at?: string
           email?: string
           id: string
+          is_suspended?: boolean
           name?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          is_suspended?: boolean
           name?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
         }
         Relationships: []
       }
@@ -2936,11 +2945,13 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      is_current_account_suspended: { Args: never; Returns: boolean }
       is_store_member: { Args: { _store_id: string }; Returns: boolean }
       is_store_owner: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
       store_has_min_plan: {
         Args: { _min_plan: string; _store_id: string }
         Returns: boolean

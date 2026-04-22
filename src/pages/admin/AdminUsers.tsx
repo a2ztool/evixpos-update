@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ChevronDown, ChevronLeft, ChevronRight, Store, Eye, Search, Download, Clock, AlertTriangle, CheckCircle, Ban, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreInfo { id: string; name: string; plan: string; }
@@ -18,6 +19,7 @@ interface UserRow {
   plan: string; storeCount: number; stores: StoreInfo[];
   start_date: string | null; end_date: string | null;
   remaining_days: number | null; plan_status: string;
+  is_suspended?: boolean; suspended_at?: string | null; suspended_reason?: string | null;
 }
 
 const ITEMS_PER_PAGE = 15;
@@ -44,20 +46,25 @@ const AdminUsers = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const loadUsers = () => adminCall("get_users").then(setUsers);
+  const loadUsers = () => adminCall("get_users").then((data) => data && setUsers(data));
   useEffect(() => { loadUsers(); }, [adminCall]);
 
   const filtered = useMemo(() => {
     let list = users;
     if (search) { const q = search.toLowerCase(); list = list.filter((u) => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)); }
     if (planFilter !== "all") list = list.filter((u) => u.plan === planFilter);
+    if (statusFilter === "active") list = list.filter((u) => !u.is_suspended);
+    if (statusFilter === "suspended") list = list.filter((u) => u.is_suspended);
     return list;
-  }, [users, search, planFilter]);
+  }, [users, search, planFilter, statusFilter]);
 
-  useEffect(() => { setCurrentPage(1); }, [search, planFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, planFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -65,6 +72,30 @@ const AdminUsers = () => {
   const changePlan = async (storeId: string, newPlan: string) => {
     await adminCall("change_plan", { store_id: storeId, new_plan: newPlan });
     toast.success("Plan updated"); loadUsers();
+  };
+
+  const handleSuspend = async (u: UserRow) => {
+    setBusyId(u.id);
+    const res = await adminCall("suspend_user", { user_id: u.id });
+    setBusyId(null);
+    if (res?.success) { toast.success(`Suspended ${u.email}`); loadUsers(); }
+  };
+
+  const handleUnsuspend = async (u: UserRow) => {
+    setBusyId(u.id);
+    const res = await adminCall("unsuspend_user", { user_id: u.id });
+    setBusyId(null);
+    if (res?.success) { toast.success(`Reactivated ${u.email}`); loadUsers(); }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    const u = confirmDelete;
+    setBusyId(u.id);
+    const res = await adminCall("delete_user", { user_id: u.id, confirm: "DELETE" });
+    setBusyId(null);
+    setConfirmDelete(null);
+    if (res?.success) { toast.success(`Deleted ${u.email} and all related data`); loadUsers(); }
   };
 
   const planColor = (plan: string) => {
@@ -99,6 +130,16 @@ const AdminUsers = () => {
             <SelectItem value="business" className="text-white">Business</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-36 h-10 bg-slate-800 border-slate-700 text-white rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-700 border-slate-600">
+            <SelectItem value="all" className="text-white">All Status</SelectItem>
+            <SelectItem value="active" className="text-white">Active</SelectItem>
+            <SelectItem value="suspended" className="text-white">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <p className="text-xs text-slate-400">{filtered.length} user{filtered.length !== 1 ? "s" : ""}</p>
@@ -117,6 +158,9 @@ const AdminUsers = () => {
                     <p className="text-xs text-slate-400 truncate mt-0.5">{u.email}</p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {u.is_suspended && (
+                      <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                    )}
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
                     <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
                   </div>
@@ -134,6 +178,18 @@ const AdminUsers = () => {
                     )}
                     <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 px-2">
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    {u.is_suspended ? (
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 px-2">
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 px-2">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -210,9 +266,18 @@ const AdminUsers = () => {
                             </TooltipProvider>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="outline" className={planColor(u.plan)}>{u.plan}</Badge>
-                              <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8"><Eye className="h-4 w-4" /></Button>
+                              {u.is_suspended && (
+                                <Badge variant="outline" className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                              )}
+                              <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="View"><Eye className="h-4 w-4" /></Button>
+                              {u.is_suspended ? (
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleUnsuspend(u)} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8 w-8" title="Reactivate"><RotateCcw className="h-4 w-4" /></Button>
+                              ) : (
+                                <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 w-8" title="Suspend"><Ban className="h-4 w-4" /></Button>
+                              )}
+                              <Button variant="ghost" size="icon" disabled={busyId === u.id} onClick={() => setConfirmDelete(u)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8" title="Delete"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -268,6 +333,25 @@ const AdminUsers = () => {
           )}
         </>
       )}
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-400" /> Delete user permanently?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300">
+              This will permanently delete <span className="font-semibold text-white">{confirmDelete?.email}</span> and ALL related data: stores, staff, products, orders, customers, subscriptions and reports. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white">
+              Yes, delete everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
