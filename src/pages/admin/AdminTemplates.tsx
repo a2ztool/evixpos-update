@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Mail, MessageSquare, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { templateSchema } from "@/lib/validations";
 
 interface Tpl {
   id: string;
@@ -26,6 +28,7 @@ const AdminTemplates = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  const v = useFormValidation(templateSchema);
 
   const load = async () => {
     setLoading(true);
@@ -37,10 +40,15 @@ const AdminTemplates = () => {
 
   useEffect(() => { load(); }, []);
 
-  const update = (id: string, patch: Partial<Tpl>) =>
+  const update = (id: string, patch: Partial<Tpl>) => {
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+    if (patch.subject !== undefined) v.clearField("subject");
+    if (patch.body !== undefined) v.clearField("body");
+    if (patch.label !== undefined) v.clearField("label");
+  };
 
   const save = async (t: Tpl) => {
+    if (!v.validateAll({ subject: t.subject || "", body: t.body, label: t.label })) return;
     setSaving(t.id);
     const res = await adminCall("update_system_template", {
       id: t.id, subject: t.subject, body: t.body, is_active: t.is_active, label: t.label,
@@ -98,7 +106,13 @@ const AdminTemplates = () => {
                 {current.channel === "email" && (
                   <div>
                     <label className="text-xs text-slate-400 mb-1 block">Subject</label>
-                    <Input value={current.subject} onChange={(e) => update(current.id, { subject: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                    <Input
+                      value={current.subject}
+                      onChange={(e) => update(current.id, { subject: e.target.value })}
+                      error={!!v.getError("subject")}
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                    {v.getError("subject") && <p className="text-xs text-destructive mt-1">{v.getError("subject")}</p>}
                   </div>
                 )}
                 <div>
@@ -106,9 +120,11 @@ const AdminTemplates = () => {
                   <Textarea
                     value={current.body}
                     onChange={(e) => update(current.id, { body: e.target.value })}
+                    aria-invalid={!!v.getError("body")}
                     rows={12}
-                    className="bg-slate-900 border-slate-700 text-white font-mono text-sm"
+                    className={`bg-slate-900 border-slate-700 text-white font-mono text-sm ${v.getError("body") ? "border-destructive" : ""}`}
                   />
+                  {v.getError("body") && <p className="text-xs text-destructive mt-1">{v.getError("body")}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-slate-400">Variables:</span>

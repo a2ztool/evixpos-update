@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, QrCode, CreditCard, Upload, Loader2, Zap, Hand, Settings2, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { gatewaySchema } from "@/lib/validations";
 
 interface RequiredField {
   key: string;
@@ -137,8 +139,10 @@ const AdminPaymentGateways = () => {
     return data.publicUrl;
   };
 
+  const v = useFormValidation(gatewaySchema);
+
   const handleSave = async () => {
-    if (!form.gateway_name.trim()) { toast.error("Gateway name required"); return; }
+    if (!v.validateAll({ gateway_name: form.gateway_name, currency: form.currency, qr_code_url: form.qr_code_url, icon_url: form.icon_url })) return;
     const qrUrl = await handleUploadQR();
     const cleanFields = form.required_fields.filter(f => f.key.trim() && f.label.trim());
     const payload = { ...form, qr_code_url: qrUrl, required_fields: cleanFields };
@@ -151,6 +155,7 @@ const AdminPaymentGateways = () => {
       toast.success("Gateway created");
     }
     setDialogOpen(false);
+    v.clearErrors();
     fetchGateways();
   };
 
