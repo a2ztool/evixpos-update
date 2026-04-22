@@ -1,62 +1,50 @@
 /**
  * End-to-end test: Owner upgrades from Free → Pro and BOTH the owner's
- * dashboard and a staff member's dashboard (in any of the owner's stores)
- * immediately reflect the Pro plan via the Supabase Realtime subscription.
+ * dashboard and ALL staff dashboards (any store) immediately reflect Pro
+ * via the Supabase Realtime subscription.
  *
  * Mirrors the contract in src/hooks/useStorePlan.ts:
- *   - planUserId = isStaff ? staffInfo.owner_id : user.id
- *   - On postgres_changes, fetchPlan() re-reads the latest active row.
+ *   planUserId = isStaff ? staffInfo.owner_id : user.id
+ *   On postgres_changes(subscriptions where user_id=planUserId), refetch.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-type Sub = { plan: "free" | "pro" | "business"; status: string; end_date: string | null };
+type Plan = "free" | "pro" | "business";
+interface Sub { plan: Plan; status: string; end_date: string | null; }
 
-// Shared in-memory subscription store keyed by owner user_id
+// In-memory "DB" keyed by owner user_id
 const subsByOwner = new Map<string, Sub>();
+// Realtime listeners keyed by the user_id filter passed to .on()
+const listeners = new Map<string, Array<() => Promise<void> | void>>();
 
-// Realtime channel registry: owner_id -> list of callbacks
-const realtimeListeners = new Map<string, Array<() => void>>();
-
-const fromMock = vi.fn((table: string) => {
-  if (table !== "subscriptions") throw new Error(`Unexpected table ${table}`);
-  let userIdFilter: string | null = null;
-  const builder: any = {
-    select: () => builder,
-    eq: (col: string, val: string) => {
-      if (col === "user_id") userIdFilter = val;
-      return builder;
-    },
-    is: () => builder,
-    in: () => builder,
-    order: () => builder,
-    limit: () => builder,
-    maybeSingle: async () => {
-      const sub = userIdFilter ? subsByOwner.get(userIdFilter) ?? null : null;
-      // eslint-disable-next-line no-console
-      console.log("[query] user_id=", userIdFilter, "->", sub);
-      return { data: sub, error: null };
-    },
+const fromMock = vi.fn(() => {
+  const filter: { userId?: string } = {};
+  const b: any = {
+    select: () => b,
+    eq: (col: string, val: string) => { if (col === "user_id") filter.userId = val; return b; },
+    is: () => b, in: () => b, order: () => b, limit: () => b,
+    maybeSingle: async () => ({
+      data: filter.userId ? subsByOwner.get(filter.userId) ?? null : null,
+      error: null,
+    }),
   };
-  return builder;
+  return b;
 });
 
-const channelMock = vi.fn((_name: string) => {
-  let ownerId: string | null = null;
-  let cb: (() => void) | null = null;
+const channelMock = vi.fn(() => {
+  const state: { filterUserId?: string; cb?: () => Promise<void> | void } = {};
   const ch: any = {
-    on: (_event: string, opts: { filter: string }, callback: () => void) => {
+    on: (_evt: string, opts: { filter: string }, cb: () => Promise<void> | void) => {
       const m = /user_id=eq\.(.+)$/.exec(opts.filter);
-      if (m) ownerId = m[1];
-      cb = callback;
+      if (m) state.filterUserId = m[1];
+      state.cb = cb;
       return ch;
     },
     subscribe: () => {
-      if (ownerId && cb) {
-        const list = realtimeListeners.get(ownerId) ?? [];
-        list.push(cb);
-        realtimeListeners.set(ownerId, list);
-        // eslint-disable-next-line no-console
-        console.log("[sub]", ownerId, "now has", list.length, "listeners");
+      if (state.filterUserId && state.cb) {
+        const arr = listeners.get(state.filterUserId) ?? [];
+        arr.push(state.cb);
+        listeners.set(state.filterUserId, arr);
       }
       return ch;
     },
@@ -66,123 +54,99 @@ const channelMock = vi.fn((_name: string) => {
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    from: (t: string) => fromMock(t),
-    channel: (n: string) => channelMock(n),
+    from: () => fromMock(),
+    channel: () => channelMock(),
     removeChannel: vi.fn(),
   },
 }));
 
-/** Simulates an admin/owner upgrading the plan in the DB and broadcasting realtime. */
-async function upgradeOwnerPlan(ownerId: string, newPlan: Sub["plan"]) {
+/** Simulate admin-side plan upgrade: write DB + broadcast realtime. */
+async function adminUpgradePlan(ownerId: string, newPlan: Plan) {
   subsByOwner.set(ownerId, { plan: newPlan, status: "active", end_date: null });
-  const list = realtimeListeners.get(ownerId) ?? [];
-  // Fire each callback and AWAIT its async body to complete
-  await Promise.all(
-    list.map(async (cb) => {
-      try { await (cb as () => unknown | Promise<unknown>)(); }
-      catch (e) { /* eslint-disable-next-line no-console */ console.log("[cb-error]", e); }
-    })
-  );
+  const arr = listeners.get(ownerId) ?? [];
+  await Promise.all(arr.map((cb) => Promise.resolve().then(() => cb())));
 }
 
-/** Replicates the resolution logic of useStorePlan: staff inherits owner's plan. */
-async function resolveDashboardPlan(session: {
-  isStaff: boolean;
-  userId: string;
-  ownerId?: string;
-}): Promise<string> {
+/** Replicates useStorePlan.fetchPlan resolution. */
+async function fetchPlan(session: { isStaff: boolean; userId: string; ownerId?: string }): Promise<Plan> {
   const { supabase } = await import("@/integrations/supabase/client");
   const planUserId = session.isStaff ? session.ownerId! : session.userId;
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("plan,status,end_date")
-    .eq("user_id", planUserId)
-    .eq("status", "active")
-    .is("customer_id", null)
-    .in("plan", ["free", "pro", "business"])
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const isExpired = (data as Sub | null)?.end_date && new Date((data as Sub).end_date!) < new Date();
-  return isExpired ? "free" : ((data as Sub | null)?.plan ?? "free");
+  const { data } = await supabase.from("subscriptions").select().eq("user_id", planUserId)
+    .eq("status", "active").is("customer_id", null).in("plan", ["free", "pro", "business"])
+    .order("start_date", { ascending: false }).limit(1).maybeSingle();
+  const sub = data as Sub | null;
+  const expired = sub?.end_date && new Date(sub.end_date) < new Date();
+  return (expired ? "free" : (sub?.plan ?? "free")) as Plan;
 }
 
-/** Subscribes a dashboard (owner or staff) to realtime plan changes. */
-async function subscribeDashboard(
-  session: { isStaff: boolean; userId: string; ownerId?: string },
-  onChange: (plan: string) => void
-) {
+/** A dashboard subscribes to realtime and updates its local state on every event. */
+async function mountDashboard(session: { isStaff: boolean; userId: string; ownerId?: string }) {
   const { supabase } = await import("@/integrations/supabase/client");
+  const state = { plan: await fetchPlan(session) as Plan };
   const planUserId = session.isStaff ? session.ownerId! : session.userId;
-  supabase
-    .channel(`user-plan-${planUserId}`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${planUserId}` },
-      async () => {
-        const next = await resolveDashboardPlan(session);
-        // eslint-disable-next-line no-console
-        console.log("[cb]", session.isStaff ? "staff" : "owner", session.userId, "->", next);
-        onChange(next);
-      }
-    )
-    .subscribe();
+  supabase.channel(`user-plan-${planUserId}`).on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${planUserId}` },
+    async () => { state.plan = await fetchPlan(session); }
+  ).subscribe();
+  return state;
 }
 
-describe("Plan upgrade Free → Pro propagates to owner + staff dashboards in realtime", () => {
+describe("Plan upgrade Free → Pro propagates instantly to owner + all staff dashboards", () => {
   beforeEach(() => {
     subsByOwner.clear();
-    realtimeListeners.clear();
+    listeners.clear();
     fromMock.mockClear();
     channelMock.mockClear();
   });
 
-  it("owner sees Pro and staff (across stores) sees Pro immediately after upgrade", async () => {
-    const ownerId = "owner-1";
-    const staffStoreA = { isStaff: true, userId: "staff-A-auth", ownerId };
-    const staffStoreB = { isStaff: true, userId: "staff-B-auth", ownerId };
-    const owner = { isStaff: false, userId: ownerId };
-
-    // Initial state: Free plan for the owner
+  it("owner & staff (across multiple stores) all flip to Pro after the owner upgrades", async () => {
+    const ownerId = "owner-123";
     subsByOwner.set(ownerId, { plan: "free", status: "active", end_date: null });
 
-    // All three dashboards initially load
-    expect(await resolveDashboardPlan(owner)).toBe("free");
-    expect(await resolveDashboardPlan(staffStoreA)).toBe("free");
-    expect(await resolveDashboardPlan(staffStoreB)).toBe("free");
+    // Mount three dashboards: the owner + two staff (one per store)
+    const ownerDash = await mountDashboard({ isStaff: false, userId: ownerId });
+    const staffStoreA = await mountDashboard({ isStaff: true, userId: "staff-A", ownerId });
+    const staffStoreB = await mountDashboard({ isStaff: true, userId: "staff-B", ownerId });
 
-    // Each dashboard subscribes to realtime plan changes
-    const ownerPlan: string[] = [];
-    const staffAPlan: string[] = [];
-    const staffBPlan: string[] = [];
-    await subscribeDashboard(owner, (p) => ownerPlan.push(p));
-    await subscribeDashboard(staffStoreA, (p) => staffAPlan.push(p));
-    await subscribeDashboard(staffStoreB, (p) => staffBPlan.push(p));
+    // Initial state: everyone sees Free
+    expect(ownerDash.plan).toBe("free");
+    expect(staffStoreA.plan).toBe("free");
+    expect(staffStoreB.plan).toBe("free");
 
-    // 🔼 Owner upgrades Free → Pro (await all subscribers to settle)
-    await upgradeOwnerPlan(ownerId, "pro");
+    // 🔼 Owner upgrades to Pro (e.g. via /my-plan checkout)
+    await adminUpgradePlan(ownerId, "pro");
 
-    // Assert: every dashboard reflects Pro instantly
-    expect(ownerPlan.at(-1)).toBe("pro");
-    expect(staffAPlan.at(-1)).toBe("pro");
-    expect(staffBPlan.at(-1)).toBe("pro");
+    // ✅ All three dashboards reflect Pro instantly via realtime
+    expect(ownerDash.plan).toBe("pro");
+    expect(staffStoreA.plan).toBe("pro");
+    expect(staffStoreB.plan).toBe("pro");
 
-    // Re-read also returns Pro (no stale state)
-    expect(await resolveDashboardPlan(owner)).toBe("pro");
-    expect(await resolveDashboardPlan(staffStoreA)).toBe("pro");
-    expect(await resolveDashboardPlan(staffStoreB)).toBe("pro");
-
-    // All three dashboards subscribed under the SAME owner channel filter
-    // (proves staff inherit via owner_id, not their own auth id)
-    const channelArgs = channelMock.mock.calls.map((c) => c[0] as string);
-    expect(channelArgs.every((n) => n.includes(`user-plan-${ownerId}`))).toBe(true);
+    // All three subscriptions used the SAME owner channel filter
+    // (proves staff inherit owner's plan, never their own auth id)
+    expect(listeners.get(ownerId)?.length).toBe(3);
+    expect(listeners.get("staff-A")).toBeUndefined();
+    expect(listeners.get("staff-B")).toBeUndefined();
   });
 
-  it("staff dashboard never queries with the staff auth id — always uses owner_id", async () => {
-    const ownerId = "owner-2";
+  it("staff dashboard always reads from owner_id, never the staff's own auth id", async () => {
+    const ownerId = "owner-456";
     subsByOwner.set(ownerId, { plan: "pro", status: "active", end_date: null });
-    // Note: no row for the staff's own auth id — proves we don't fall back to it
-    const plan = await resolveDashboardPlan({ isStaff: true, userId: "staff-X", ownerId });
+    // No row exists for the staff's own auth id — proves no fallback to it
+    const plan = await fetchPlan({ isStaff: true, userId: "staff-only", ownerId });
     expect(plan).toBe("pro");
+  });
+
+  it("downgrade Pro → Free also propagates instantly to all staff", async () => {
+    const ownerId = "owner-789";
+    subsByOwner.set(ownerId, { plan: "pro", status: "active", end_date: null });
+    const owner = await mountDashboard({ isStaff: false, userId: ownerId });
+    const staff = await mountDashboard({ isStaff: true, userId: "staff-Z", ownerId });
+    expect(owner.plan).toBe("pro");
+    expect(staff.plan).toBe("pro");
+
+    await adminUpgradePlan(ownerId, "free");
+    expect(owner.plan).toBe("free");
+    expect(staff.plan).toBe("free");
   });
 });
