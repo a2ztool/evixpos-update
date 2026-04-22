@@ -33,6 +33,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const db = supabase as any;
 
@@ -106,8 +110,13 @@ const StaffInbox = () => {
   // Task fields matching reference design
   const [taskName, setTaskName] = useState("");
   const [taskTerm, setTaskTerm] = useState("");
-  const [taskLinkOrder, setTaskLinkOrder] = useState("");
+  const [taskLinkOrder, setTaskLinkOrder] = useState(""); // order id
+  const [taskLinkOrderLabel, setTaskLinkOrderLabel] = useState(""); // friendly label
   const [taskRequiredInfo, setTaskRequiredInfo] = useState("");
+  const [orderOptions, setOrderOptions] = useState<Array<{ id: string; label: string; sub: string }>>([]);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderPickerOpen, setOrderPickerOpen] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupIcon, setNewGroupIcon] = useState("💬");
@@ -466,12 +475,49 @@ const StaffInbox = () => {
     await db.from("chat_group_messages").insert(insertData);
   };
 
+  // ─── Fetch orders for the link-order picker ───
+  const fetchOrderOptions = useCallback(async () => {
+    if (!storeId) return;
+    setLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, total_amount, created_at, status, payment_status, customers(name)")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const opts = (data || []).map((o: any) => {
+        const shortId = String(o.id).slice(0, 8).toUpperCase();
+        const customer = o.customers?.name || "Walk-in";
+        const date = o.created_at ? format(new Date(o.created_at), "MMM d") : "";
+        return {
+          id: o.id,
+          label: `#${shortId} • ${customer}`,
+          sub: `${date} • ${o.status || "pending"} • ${Number(o.total_amount || 0).toFixed(2)}`,
+        };
+      });
+      setOrderOptions(opts);
+    } catch {
+      setOrderOptions([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    if (taskDialogOpen) fetchOrderOptions();
+  }, [taskDialogOpen, fetchOrderOptions]);
+
   // ─── Send task (new fields: name, term, link order, required info) ───
   const sendTask = async () => {
     if (!taskName.trim() || !activeChat || !storeId || !myId) return;
     let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
     if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
-    if (taskLinkOrder) fullMessage += `\n**Linked Order:** ${taskLinkOrder}`;
+    if (taskLinkOrder) {
+      const label = taskLinkOrderLabel || taskLinkOrder;
+      fullMessage += `\n**Linked Order:** ${label}`;
+    }
     if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
 
     if (activeChatType === "direct") {
@@ -491,7 +537,8 @@ const StaffInbox = () => {
       });
     }
     toast.success("Task created!");
-    setTaskName(""); setTaskTerm(""); setTaskLinkOrder(""); setTaskRequiredInfo("");
+    setTaskName(""); setTaskTerm(""); setTaskLinkOrder(""); setTaskLinkOrderLabel(""); setTaskRequiredInfo("");
+    setOrderSearch("");
     setTaskDialogOpen(false);
   };
 
@@ -851,7 +898,78 @@ const StaffInbox = () => {
                               <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
                                 <LinkIcon className="w-3 h-3" /> Link Order
                               </label>
-                              <Input placeholder="Search order..." value={taskLinkOrder} onChange={(e) => setTaskLinkOrder(e.target.value)} className="h-10" />
+                              <Popover open={orderPickerOpen} onOpenChange={setOrderPickerOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 w-full justify-start font-normal text-left truncate"
+                                  >
+                                    <span className={cn("truncate", !taskLinkOrderLabel && "text-muted-foreground")}>
+                                      {taskLinkOrderLabel || "Search order..."}
+                                    </span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[320px] p-0" align="start">
+                                  <div className="p-2 border-b">
+                                    <Input
+                                      placeholder="Search by ID, customer..."
+                                      value={orderSearch}
+                                      onChange={(e) => setOrderSearch(e.target.value)}
+                                      className="h-8"
+                                      autoFocus
+                                    />
+                                  </div>
+                                  <div className="max-h-64 overflow-y-auto">
+                                    {loadingOrders ? (
+                                      <div className="p-4 text-xs text-center text-muted-foreground">Loading orders...</div>
+                                    ) : (() => {
+                                      const q = orderSearch.trim().toLowerCase();
+                                      const filtered = q
+                                        ? orderOptions.filter(o =>
+                                            o.label.toLowerCase().includes(q) ||
+                                            o.sub.toLowerCase().includes(q) ||
+                                            o.id.toLowerCase().includes(q)
+                                          )
+                                        : orderOptions;
+                                      if (filtered.length === 0) {
+                                        return <div className="p-4 text-xs text-center text-muted-foreground">No orders found</div>;
+                                      }
+                                      return (
+                                        <>
+                                          {taskLinkOrder && (
+                                            <button
+                                              type="button"
+                                              onClick={() => { setTaskLinkOrder(""); setTaskLinkOrderLabel(""); setOrderPickerOpen(false); }}
+                                              className="w-full text-left px-3 py-2 text-xs text-destructive hover:bg-accent border-b"
+                                            >
+                                              Clear selection
+                                            </button>
+                                          )}
+                                          {filtered.map(o => (
+                                            <button
+                                              key={o.id}
+                                              type="button"
+                                              onClick={() => {
+                                                setTaskLinkOrder(o.id);
+                                                setTaskLinkOrderLabel(o.label);
+                                                setOrderPickerOpen(false);
+                                              }}
+                                              className={cn(
+                                                "w-full text-left px-3 py-2 hover:bg-accent transition border-b last:border-b-0",
+                                                taskLinkOrder === o.id && "bg-primary/10"
+                                              )}
+                                            >
+                                              <div className="text-xs font-medium truncate">{o.label}</div>
+                                              <div className="text-[10px] text-muted-foreground truncate">{o.sub}</div>
+                                            </button>
+                                          ))}
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                           </div>
                           <div>
