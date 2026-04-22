@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageSquare, Send, Volume2, VolumeX, Paperclip, X, ChevronDown, ArrowLeft, Users, ListTodo,
+  ClipboardList, Package, Calendar, Link2, Info, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
