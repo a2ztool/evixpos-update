@@ -28,14 +28,26 @@ export function useFormValidation<T extends z.ZodType>(schema: T) {
   const clearErrors = useCallback(() => setErrors({}), []);
   const clearField = useCallback((field: string) => {
     setErrors(prev => {
+      if (!prev[field]) return prev;
       const next = { ...prev };
       delete next[field];
       return next;
     });
   }, []);
 
+  const setFieldError = useCallback((field: string, message: string) => {
+    setErrors(prev => ({ ...prev, [field]: message }));
+  }, []);
+
   const getError = useCallback((field: string) => errors[field] || "", [errors]);
+
+  /** Bind helpers to an input. Spreads aria-invalid + onChange clearing. */
+  const register = useCallback((field: string) => ({
+    "aria-invalid": !!errors[field],
+    error: !!errors[field],
+  }), [errors]);
+
   const hasErrors = Object.keys(errors).length > 0;
 
-  return { errors, validateAll, clearErrors, clearField, getError, hasErrors };
+  return { errors, validateAll, clearErrors, clearField, setFieldError, getError, register, hasErrors };
 }
