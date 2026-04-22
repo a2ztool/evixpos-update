@@ -112,6 +112,8 @@ async function subscribeDashboard(
       { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${planUserId}` },
       async () => {
         const next = await resolveDashboardPlan(session);
+        // eslint-disable-next-line no-console
+        console.log("[cb]", session.isStaff ? "staff" : "owner", session.userId, "->", next);
         onChange(next);
       }
     )
