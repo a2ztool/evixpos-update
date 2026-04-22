@@ -82,6 +82,31 @@ const AdminUserDetails = () => {
 
   return (
     <div className="space-y-6">
+      {/* Suspension banner */}
+      {profile.is_suspended && (
+        <Card className="bg-red-500/10 border-red-500/40">
+          <CardContent className="p-4 flex items-start gap-3">
+            <Ban className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-red-300">Account suspended</p>
+                <Button variant="ghost" size="sm" onClick={() => setShowSuspension(true)} className="text-red-300 hover:text-red-200 hover:bg-red-500/20 h-7 px-2 text-xs gap-1">
+                  <Info className="h-3.5 w-3.5" /> View details
+                </Button>
+              </div>
+              {profile.suspended_reason && (
+                <p className="text-xs text-red-200/90 mt-1 line-clamp-2">
+                  <span className="font-semibold">Reason:</span> {profile.suspended_reason}
+                </p>
+              )}
+              {profile.suspended_at && (
+                <p className="text-[11px] text-red-300/70 mt-0.5">Since {new Date(profile.suspended_at).toLocaleString()}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Plan Info Card */}
       {plan_info && (
         <Card className="bg-slate-800 border-slate-700">
