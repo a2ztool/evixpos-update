@@ -184,8 +184,10 @@ const Auth = () => {
     });
 
     if (error) {
-      if (error.message?.includes("already registered")) toast.error("Email already registered. Please sign in.");
-      else if (error.status === 429) toast.error("Too many attempts. Please wait.");
+      if (error.message?.includes("already registered")) {
+        signupForm.setFieldError("email", "Email already registered. Please sign in.");
+        toast.error("Email already registered. Please sign in.");
+      } else if (error.status === 429) toast.error("Too many attempts. Please wait.");
       else toast.error(error.message || "Signup failed.");
       setLoading(false);
       return;
@@ -221,6 +223,7 @@ const Auth = () => {
 
   const handleForgotPassword = async () => {
     if (!email) {
+      loginForm.setFieldError("email", "Please enter your email first");
       toast.error("Please enter your email first.");
       return;
     }
