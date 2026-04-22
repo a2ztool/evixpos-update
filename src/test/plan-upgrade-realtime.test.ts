@@ -17,7 +17,7 @@ const subsByOwner = new Map<string, Sub>();
 // Realtime listeners keyed by the user_id filter passed to .on()
 const listeners = new Map<string, Array<() => Promise<void> | void>>();
 
-const fromMock = vi.fn(() => {
+function makeFromBuilder() {
   const filter: { userId?: string } = {};
   const b: any = {
     select: () => b,
@@ -29,7 +29,7 @@ const fromMock = vi.fn(() => {
     }),
   };
   return b;
-});
+}
 
 const channelMock = vi.fn(() => {
   const state: { filterUserId?: string; cb?: () => Promise<void> | void } = {};
