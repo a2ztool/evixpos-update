@@ -308,15 +308,20 @@ const StaffInbox = () => {
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, fetchUnreadCounts]);
 
-  // ─── Realtime group messages (global: all groups I'm a member of) ───
+  // ─── Realtime group messages (subscribe always; filter via known groups) ───
   useEffect(() => {
-    if (!storeId || !myId || groups.length === 0) return;
-    const groupIds = groups.map(g => g.id);
+    if (!storeId || !myId) return;
     const channel = supabase.channel(`group-chats-${myId}-${storeId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_group_messages" },
         (payload) => {
           const m = payload.new as any;
-          if (!groupIds.includes(m.group_id)) return;
+          // RLS already gates delivery: only members/sender/owner receive it.
+          // If we don't yet know about this group locally, refresh group list.
+          const knownGroupIds = groups.map(g => g.id);
+          if (!knownGroupIds.includes(m.group_id)) {
+            fetchGroups();
+            return;
+          }
           const ac = activeChatRef.current;
           const act = activeChatTypeRef.current;
           if (act === "group" && ac === m.group_id) {
@@ -339,15 +344,17 @@ const StaffInbox = () => {
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, myId, groups]);
+  }, [storeId, myId, groups, fetchGroups]);
 
   // ─── Realtime: refresh groups when membership or groups change ───
   useEffect(() => {
     if (!storeId || !myId) return;
     const channel = supabase.channel(`group-membership-${myId}-${storeId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_group_members" }, () => {
+      // Listen specifically for THIS user being added/removed as a member
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_group_members", filter: `user_id=eq.${myId}` }, () => {
         fetchGroups();
       })
+      // Listen for group create/update/delete in this store
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_groups", filter: `store_id=eq.${storeId}` }, () => {
         fetchGroups();
       })
