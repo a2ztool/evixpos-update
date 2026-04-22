@@ -142,9 +142,9 @@ describe("Plan upgrade Free → Pro propagates to owner + staff dashboards in re
     const ownerPlan: string[] = [];
     const staffAPlan: string[] = [];
     const staffBPlan: string[] = [];
-    subscribeDashboard(owner, (p) => ownerPlan.push(p));
-    subscribeDashboard(staffStoreA, (p) => staffAPlan.push(p));
-    subscribeDashboard(staffStoreB, (p) => staffBPlan.push(p));
+    await subscribeDashboard(owner, (p) => ownerPlan.push(p));
+    await subscribeDashboard(staffStoreA, (p) => staffAPlan.push(p));
+    await subscribeDashboard(staffStoreB, (p) => staffBPlan.push(p));
 
     // 🔼 Owner upgrades Free → Pro
     upgradeOwnerPlan(ownerId, "pro");
