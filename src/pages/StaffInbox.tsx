@@ -100,7 +100,7 @@ const StaffInbox = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [filterTab, setFilterTab] = useState<"all" | "direct" | "groups">("all");
+  const [filterTab, setFilterTab] = useState<"chats" | "groups">("chats");
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -659,13 +659,13 @@ const StaffInbox = () => {
 
   const conversations = useMemo((): ConversationItem[] => {
     const items: ConversationItem[] = [];
-    if (filterTab === "all" || filterTab === "direct") {
+    if (filterTab === "chats") {
       allContacts.forEach(c => {
         if (!c.auth_user_id) return;
         items.push({ id: c.auth_user_id, type: "direct", name: c.name, role: c.role, email: c.email, unread: unreadCounts[c.auth_user_id] || 0 });
       });
     }
-    if (filterTab === "all" || filterTab === "groups") {
+    if (filterTab === "groups") {
       groups.forEach(g => {
         items.push({ id: g.id, type: "group", name: g.name, icon: g.icon, unread: 0 });
       });
@@ -768,11 +768,11 @@ const StaffInbox = () => {
                 <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 text-sm rounded-xl h-9" />
               </div>
               <div className="flex gap-1">
-                {(["all", "direct", "groups"] as const).map(tab => (
+                {(["chats", "groups"] as const).map(tab => (
                   <button key={tab} onClick={() => setFilterTab(tab)}
-                    className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors capitalize",
+                    className={cn("flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize",
                       filterTab === tab ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent")}>
-                    {tab}
+                    {tab === "chats" ? "Chats" : "Groups"}
                   </button>
                 ))}
               </div>
