@@ -54,6 +54,11 @@ const FloatingInbox = () => {
   const [unreadByGroup, setUnreadByGroup] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Assign Task (group only)
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [taskTerm, setTaskTerm] = useState("");
+  const [taskRequiredInfo, setTaskRequiredInfo] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef(open);
