@@ -79,6 +79,7 @@ const AdminBlocked = lazyPage(() => import("./pages/admin/AdminBlocked"));
 const AdminLayout = lazyPage(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazyPage(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazyPage(() => import("./pages/admin/AdminUsers"));
+const AdminHierarchy = lazyPage(() => import("./pages/admin/AdminHierarchy"));
 const AdminStores = lazyPage(() => import("./pages/admin/AdminStores"));
 const AdminReports = lazyPage(() => import("./pages/admin/AdminReports"));
 const AdminSettings = lazyPage(() => import("./pages/admin/AdminSettings"));
@@ -219,6 +220,7 @@ const App = () => {
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/hierarchy" element={<AdminHierarchy />} />
               <Route path="/admin/stores" element={<AdminStores />} />
               <Route path="/admin/stores/:storeId" element={<AdminStoreDetails />} />
               <Route path="/admin/users/:userId" element={<AdminUserDetails />} />
