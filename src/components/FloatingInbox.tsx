@@ -4,9 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  MessageSquare, Send, Volume2, VolumeX, Paperclip, X, ChevronDown, ArrowLeft, Users
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  MessageSquare, Send, Volume2, VolumeX, Paperclip, X, ChevronDown, ArrowLeft, Users, ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
@@ -49,6 +54,11 @@ const FloatingInbox = () => {
   const [unreadByGroup, setUnreadByGroup] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Assign Task (group only)
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [taskTerm, setTaskTerm] = useState("");
+  const [taskRequiredInfo, setTaskRequiredInfo] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef(open);
@@ -251,6 +261,20 @@ const FloatingInbox = () => {
       el.classList.add("ring-2", "ring-primary/50", "rounded-xl");
       setTimeout(() => el.classList.remove("ring-2", "ring-primary/50", "rounded-xl"), 2000);
     }
+  };
+
+  const sendTask = async () => {
+    if (!taskName.trim() || !activeConv || activeConv.type !== "group" || !storeId || !myId) return;
+    let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
+    if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
+    if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
+    const { error } = await db.from("chat_group_messages").insert({
+      group_id: activeConv.id, sender_id: myId, message: fullMessage, type: "task",
+    });
+    if (error) { toast.error("Failed to send task"); return; }
+    toast.success("Task assigned!");
+    setTaskName(""); setTaskTerm(""); setTaskRequiredInfo("");
+    setTaskOpen(false);
   };
 
   const sendMessage = async () => {
@@ -456,6 +480,16 @@ const FloatingInbox = () => {
                 </div>
               </>
             )}
+            {view === "chat" && activeConv?.type === "group" && (
+              <Button
+                variant="ghost" size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setTaskOpen(true)}
+                title="Assign Task"
+              >
+                <ListTodo className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost" size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
@@ -631,6 +665,55 @@ const FloatingInbox = () => {
           )}
         </div>
       )}
+
+      {/* Assign Task Dialog (group only) */}
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListTodo className="h-4 w-4 text-primary" />
+              Assign Task
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Task Name</Label>
+              <Input
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder="e.g. Update product listing"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Term / Deadline</Label>
+              <Input
+                value={taskTerm}
+                onChange={(e) => setTaskTerm(e.target.value)}
+                placeholder="e.g. By tomorrow 5 PM"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Required Info / Notes</Label>
+              <Textarea
+                value={taskRequiredInfo}
+                onChange={(e) => setTaskRequiredInfo(e.target.value)}
+                placeholder="Details about the task..."
+                className="mt-1 min-h-[80px]"
+              />
+            </div>
+            <Button
+              onClick={sendTask}
+              disabled={!taskName.trim()}
+              className="w-full"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send Task
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
