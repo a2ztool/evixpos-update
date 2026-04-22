@@ -475,12 +475,49 @@ const StaffInbox = () => {
     await db.from("chat_group_messages").insert(insertData);
   };
 
+  // ─── Fetch orders for the link-order picker ───
+  const fetchOrderOptions = useCallback(async () => {
+    if (!storeId) return;
+    setLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, total_amount, created_at, status, payment_status, customers(name)")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const opts = (data || []).map((o: any) => {
+        const shortId = String(o.id).slice(0, 8).toUpperCase();
+        const customer = o.customers?.name || "Walk-in";
+        const date = o.created_at ? format(new Date(o.created_at), "MMM d") : "";
+        return {
+          id: o.id,
+          label: `#${shortId} • ${customer}`,
+          sub: `${date} • ${o.status || "pending"} • ${Number(o.total_amount || 0).toFixed(2)}`,
+        };
+      });
+      setOrderOptions(opts);
+    } catch {
+      setOrderOptions([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    if (taskDialogOpen) fetchOrderOptions();
+  }, [taskDialogOpen, fetchOrderOptions]);
+
   // ─── Send task (new fields: name, term, link order, required info) ───
   const sendTask = async () => {
     if (!taskName.trim() || !activeChat || !storeId || !myId) return;
     let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
     if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
-    if (taskLinkOrder) fullMessage += `\n**Linked Order:** ${taskLinkOrder}`;
+    if (taskLinkOrder) {
+      const label = taskLinkOrderLabel || taskLinkOrder;
+      fullMessage += `\n**Linked Order:** ${label}`;
+    }
     if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
 
     if (activeChatType === "direct") {
@@ -500,7 +537,8 @@ const StaffInbox = () => {
       });
     }
     toast.success("Task created!");
-    setTaskName(""); setTaskTerm(""); setTaskLinkOrder(""); setTaskRequiredInfo("");
+    setTaskName(""); setTaskTerm(""); setTaskLinkOrder(""); setTaskLinkOrderLabel(""); setTaskRequiredInfo("");
+    setOrderSearch("");
     setTaskDialogOpen(false);
   };
 
