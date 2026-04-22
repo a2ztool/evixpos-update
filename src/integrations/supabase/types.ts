@@ -2922,6 +2922,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_staff_limit: { Args: { _plan: string }; Returns: number }
       get_staff_owner_id: { Args: never; Returns: string }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_role: {
