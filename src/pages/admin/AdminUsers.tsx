@@ -130,6 +130,16 @@ const AdminUsers = () => {
             <SelectItem value="business" className="text-white">Business</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-36 h-10 bg-slate-800 border-slate-700 text-white rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-700 border-slate-600">
+            <SelectItem value="all" className="text-white">All Status</SelectItem>
+            <SelectItem value="active" className="text-white">Active</SelectItem>
+            <SelectItem value="suspended" className="text-white">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <p className="text-xs text-slate-400">{filtered.length} user{filtered.length !== 1 ? "s" : ""}</p>
