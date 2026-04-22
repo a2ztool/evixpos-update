@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { validateWithToast, whatsappSchema, woocommerceSchema, sendWhatsAppSchema } from "@/lib/validations";
+import { whatsappSchema, woocommerceSchema, sendWhatsAppSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { Plug, ShoppingBag, MessageCircle, Copy, Send, Power, PowerOff } from "lucide-react";
 
 interface Integration {
@@ -35,6 +36,9 @@ const Integrations = () => {
   const [sendOpen, setSendOpen] = useState(false);
   const [sendForm, setSendForm] = useState({ phone: "", message: "" });
   const [sending, setSending] = useState(false);
+  const wcValidation = useFormValidation(woocommerceSchema);
+  const waValidation = useFormValidation(whatsappSchema);
+  const sendValidation = useFormValidation(sendWhatsAppSchema);
 
   const fetchIntegrations = async () => {
     if (!user || !activeStore) return;
@@ -54,8 +58,7 @@ const Integrations = () => {
     : "";
 
   const saveWooCommerce = async () => {
-    const parsed = validateWithToast(woocommerceSchema, wcForm, toast.error);
-    if (!parsed) return;
+    if (!wcValidation.validateAll(wcForm)) return;
     if (wc) {
       const { error } = await supabase.from("integrations").update({ api_key: wcForm.api_key, status: "active" }).eq("id", wc.id);
       if (error) toast.error(error.message);
@@ -71,8 +74,7 @@ const Integrations = () => {
   };
 
   const saveWhatsApp = async () => {
-    const parsed = validateWithToast(whatsappSchema, waForm, toast.error);
-    if (!parsed) return;
+    if (!waValidation.validateAll(waForm)) return;
     if (wa) {
       const { error } = await supabase.from("integrations").update({ api_key: waForm.api_key, phone_number: waForm.phone_number, status: "active" }).eq("id", wa.id);
       if (error) toast.error(error.message);
@@ -95,8 +97,7 @@ const Integrations = () => {
   };
 
   const sendWhatsApp = async () => {
-    const parsed = validateWithToast(sendWhatsAppSchema, sendForm, toast.error);
-    if (!parsed) return;
+    if (!sendValidation.validateAll(sendForm)) return;
     setSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -151,7 +152,8 @@ const Integrations = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Consumer Secret / API Key</Label>
-                  <Input type="password" value={wcForm.api_key} onChange={(e) => setWcForm({ api_key: e.target.value })} placeholder="ck_..." />
+                  <Input type="password" value={wcForm.api_key} onChange={(e) => { setWcForm({ api_key: e.target.value }); wcValidation.clearField("api_key"); }} placeholder="ck_..." error={!!wcValidation.getError("api_key")} />
+                  {wcValidation.getError("api_key") && <p className="text-xs text-destructive animate-fade-in">{wcValidation.getError("api_key")}</p>}
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={saveWooCommerce} className="flex-1">{wc ? "Update" : "Connect"}</Button>
@@ -214,11 +216,13 @@ const Integrations = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Access Token</Label>
-                  <Input type="password" value={waForm.api_key} onChange={(e) => setWaForm({ ...waForm, api_key: e.target.value })} placeholder="EAAx..." />
+                  <Input type="password" value={waForm.api_key} onChange={(e) => { setWaForm({ ...waForm, api_key: e.target.value }); waValidation.clearField("api_key"); }} placeholder="EAAx..." error={!!waValidation.getError("api_key")} />
+                  {waValidation.getError("api_key") && <p className="text-xs text-destructive animate-fade-in">{waValidation.getError("api_key")}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Phone Number ID</Label>
-                  <Input value={waForm.phone_number} onChange={(e) => setWaForm({ ...waForm, phone_number: e.target.value })} placeholder="1234567890" />
+                  <Input value={waForm.phone_number} onChange={(e) => { setWaForm({ ...waForm, phone_number: e.target.value }); waValidation.clearField("phone_number"); }} placeholder="1234567890" error={!!waValidation.getError("phone_number")} />
+                  {waValidation.getError("phone_number") && <p className="text-xs text-destructive animate-fade-in">{waValidation.getError("phone_number")}</p>}
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={saveWhatsApp} className="flex-1">{wa ? "Update" : "Connect"}</Button>
@@ -265,11 +269,13 @@ const Integrations = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Recipient Phone (with country code)</Label>
-              <Input value={sendForm.phone} onChange={(e) => setSendForm({ ...sendForm, phone: e.target.value })} placeholder="+1234567890" />
+              <Input value={sendForm.phone} onChange={(e) => { setSendForm({ ...sendForm, phone: e.target.value }); sendValidation.clearField("phone"); }} placeholder="+1234567890" error={!!sendValidation.getError("phone")} />
+              {sendValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{sendValidation.getError("phone")}</p>}
             </div>
             <div className="space-y-2">
               <Label>Message</Label>
-              <Textarea value={sendForm.message} onChange={(e) => setSendForm({ ...sendForm, message: e.target.value })} placeholder="Hello from POS!" rows={4} />
+              <Textarea value={sendForm.message} onChange={(e) => { setSendForm({ ...sendForm, message: e.target.value }); sendValidation.clearField("message"); }} placeholder="Hello from POS!" rows={4} className={sendValidation.getError("message") ? "border-destructive" : ""} />
+              {sendValidation.getError("message") && <p className="text-xs text-destructive animate-fade-in">{sendValidation.getError("message")}</p>}
             </div>
             <Button className="w-full" onClick={sendWhatsApp} disabled={sending || !sendForm.phone || !sendForm.message}>
               {sending ? "Sending..." : "Send Message"}

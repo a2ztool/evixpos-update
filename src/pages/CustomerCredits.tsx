@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
+import { creditPaymentSchema, creditLimitSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate, differenceInDays } from "date-fns";
 
 type RiskFilter = "all" | "overdue" | "over_limit" | "paid";
@@ -41,6 +43,8 @@ const CustomerCredits = () => {
   const [txDialog, setTxDialog] = useState<any>(null);
   const [txData, setTxData] = useState<any[]>([]);
   const [guideOpen, setGuideOpen] = useState(false);
+  const payValidation = useFormValidation(creditPaymentSchema);
+  const limitValidation = useFormValidation(creditLimitSchema);
 
   const { data: credits = [], isLoading } = useQuery({
     queryKey: ["customer-credits", storeId],
@@ -690,7 +694,8 @@ const CustomerCredits = () => {
               </div>
               <div>
                 <Label>Amount</Label>
-                <Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" className="text-lg font-semibold" />
+                <Input type="number" value={payAmount} onChange={e => { setPayAmount(e.target.value); payValidation.clearField("amount"); }} placeholder="0.00" className="text-lg font-semibold" error={!!payValidation.getError("amount")} />
+                {payValidation.getError("amount") && <p className="text-xs text-destructive mt-1 animate-fade-in">{payValidation.getError("amount")}</p>}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" size="sm" onClick={() => setPayAmount(String(Math.round(Number(payDialog?.total_due || 0) / 4)))}>25%</Button>
@@ -710,7 +715,7 @@ const CustomerCredits = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => payMutation.mutate()} disabled={!payAmount || Number(payAmount) <= 0 || payMutation.isPending} className="w-full bg-gradient-to-r from-primary to-primary/80">
+              <Button onClick={() => { if (!payValidation.validateAll({ amount: payAmount, payment_method: payMethod })) return; payMutation.mutate(); }} disabled={!payAmount || Number(payAmount) <= 0 || payMutation.isPending} className="w-full bg-gradient-to-r from-primary to-primary/80">
                 {payMutation.isPending ? "Recording..." : <><CheckCircle2 className="h-4 w-4 mr-1" /> Record Payment</>}
               </Button>
             </div>
@@ -725,9 +730,10 @@ const CustomerCredits = () => {
               <p className="text-sm text-muted-foreground">For <span className="font-semibold text-foreground">{editLimitDialog?.customers?.name}</span>. Set 0 for unlimited.</p>
               <div>
                 <Label>Credit Limit</Label>
-                <Input type="number" value={newLimit} onChange={e => setNewLimit(e.target.value)} placeholder="0 = unlimited" className="text-lg font-semibold" />
+                <Input type="number" value={newLimit} onChange={e => { setNewLimit(e.target.value); limitValidation.clearField("credit_limit"); }} placeholder="0 = unlimited" className="text-lg font-semibold" error={!!limitValidation.getError("credit_limit")} />
+                {limitValidation.getError("credit_limit") && <p className="text-xs text-destructive mt-1 animate-fade-in">{limitValidation.getError("credit_limit")}</p>}
               </div>
-              <Button onClick={updateCreditLimit} className="w-full">Save Limit</Button>
+              <Button onClick={() => { if (!limitValidation.validateAll({ credit_limit: newLimit })) return; updateCreditLimit(); }} className="w-full">Save Limit</Button>
             </div>
           </DialogContent>
         </Dialog>

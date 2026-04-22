@@ -24,6 +24,8 @@ import {
   Power, PowerOff, ShoppingBag, Sparkles, TrendingUp, Eye,
 } from "lucide-react";
 import { buildOrderFormUrl } from "@/lib/publicUrl";
+import { orderFormSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 interface OrderForm {
   id: string;
@@ -80,6 +82,7 @@ const OrderForms = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  const formValidation = useFormValidation(orderFormSchema);
 
   const fetchForms = async () => {
     if (!user || !activeStore) return;
@@ -136,8 +139,8 @@ const OrderForms = () => {
 
   const handleSave = async () => {
     if (!user || !activeStore) return;
-    if (!formName.trim()) {
-      toast.error("Form name is required");
+    if (!formValidation.validateAll({ name: formName, slug: formSlug, description: formDesc })) {
+      toast.error("Please fix the errors below");
       return;
     }
 
@@ -179,6 +182,7 @@ const OrderForms = () => {
     setSelectedProducts([]);
     setCustomFields([]);
     setEditId(null);
+    formValidation.clearErrors();
   };
 
   const openEdit = (f: OrderForm) => {
@@ -580,18 +584,23 @@ const OrderForms = () => {
                   value={formName}
                   onChange={(e) => {
                     setFormName(e.target.value);
+                    formValidation.clearField("name");
                     if (!editId) setFormSlug(generateSlug(e.target.value));
                   }}
                   placeholder="e.g. Summer Sale"
+                  error={!!formValidation.getError("name")}
                 />
+                {formValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("name")}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Link / Slug</Label>
                 <Input
                   value={formSlug}
-                  onChange={(e) => setFormSlug(generateSlug(e.target.value))}
+                  onChange={(e) => { setFormSlug(generateSlug(e.target.value)); formValidation.clearField("slug"); }}
                   placeholder="auto-generated"
+                  error={!!formValidation.getError("slug")}
                 />
+                {formValidation.getError("slug") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("slug")}</p>}
                 <p className="text-[11px] text-muted-foreground truncate">{buildOrderFormUrl(formSlug || "your-slug")}</p>
               </div>
             </div>
@@ -601,10 +610,12 @@ const OrderForms = () => {
               <Label>Form Information</Label>
               <Textarea
                 value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
+                onChange={(e) => { setFormDesc(e.target.value); formValidation.clearField("description"); }}
                 placeholder="Write a short description shown to customers..."
                 rows={3}
+                className={formValidation.getError("description") ? "border-destructive" : ""}
               />
+              {formValidation.getError("description") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("description")}</p>}
             </div>
 
             {/* Services toggles */}

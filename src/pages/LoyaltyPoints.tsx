@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
+import { loyaltyAdjustSchema, loyaltyRedeemSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate } from "date-fns";
 
 type TierFilter = "all" | "bronze" | "silver" | "gold" | "platinum";
@@ -49,6 +51,8 @@ const LoyaltyPoints = () => {
   const [adjustType, setAdjustType] = useState<"earned" | "redeemed">("earned");
   const [adjustNote, setAdjustNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const redeemValidation = useFormValidation(loyaltyRedeemSchema);
+  const adjustValidation = useFormValidation(loyaltyAdjustSchema);
 
   const { data: loyaltyRecords = [], isLoading } = useQuery({
     queryKey: ["loyalty-points", storeId],
@@ -677,7 +681,8 @@ const LoyaltyPoints = () => {
               </div>
               <div>
                 <Label>Points to Redeem</Label>
-                <Input type="number" value={redeemPoints} onChange={e => setRedeemPoints(e.target.value)} placeholder="0" className="text-lg font-semibold" />
+                <Input type="number" value={redeemPoints} onChange={e => { setRedeemPoints(e.target.value); redeemValidation.clearField("points"); }} placeholder="0" className="text-lg font-semibold" error={!!redeemValidation.getError("points")} />
+                {redeemValidation.getError("points") && <p className="text-xs text-destructive mt-1 animate-fade-in">{redeemValidation.getError("points")}</p>}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" size="sm" onClick={() => setRedeemPoints(String(Math.floor((Number(redeemDialog?.total_points || 0) - Number(redeemDialog?.redeemed_points || 0)) / 4)))}>25%</Button>
@@ -699,7 +704,7 @@ const LoyaltyPoints = () => {
               <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs">
                 💡 <strong>{redeemPoints || 0} pts</strong> ≈ {formatCurrency(Number(redeemPoints) || 0)} value
               </div>
-              <Button onClick={() => redeemMutation.mutate()} disabled={!redeemPoints || redeemMutation.isPending} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+              <Button onClick={() => { if (!redeemValidation.validateAll({ points: redeemPoints })) return; redeemMutation.mutate(); }} disabled={!redeemPoints || redeemMutation.isPending} className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white">
                 {redeemMutation.isPending ? "Redeeming..." : `Redeem ${redeemPoints || 0} Points`}
               </Button>
             </div>
@@ -727,13 +732,15 @@ const LoyaltyPoints = () => {
               </Tabs>
               <div>
                 <Label>Points</Label>
-                <Input type="number" value={adjustPoints} onChange={e => setAdjustPoints(e.target.value)} placeholder="0" className="text-lg font-semibold" />
+                <Input type="number" value={adjustPoints} onChange={e => { setAdjustPoints(e.target.value); adjustValidation.clearField("points"); }} placeholder="0" className="text-lg font-semibold" error={!!adjustValidation.getError("points")} />
+                {adjustValidation.getError("points") && <p className="text-xs text-destructive mt-1 animate-fade-in">{adjustValidation.getError("points")}</p>}
               </div>
               <div>
                 <Label>Reason / Note</Label>
-                <Input value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Refer-a-friend bonus" />
+                <Input value={adjustNote} onChange={e => { setAdjustNote(e.target.value); adjustValidation.clearField("notes"); }} placeholder="e.g. Refer-a-friend bonus" error={!!adjustValidation.getError("notes")} />
+                {adjustValidation.getError("notes") && <p className="text-xs text-destructive mt-1 animate-fade-in">{adjustValidation.getError("notes")}</p>}
               </div>
-              <Button onClick={() => adjustMutation.mutate()} disabled={!adjustPoints || adjustMutation.isPending} className="w-full">
+              <Button onClick={() => { if (!adjustValidation.validateAll({ points: adjustPoints, notes: adjustNote })) return; adjustMutation.mutate(); }} disabled={!adjustPoints || adjustMutation.isPending} className="w-full">
                 {adjustMutation.isPending ? "Saving..." : adjustType === "earned" ? "Credit Points" : "Deduct Points"}
               </Button>
             </div>

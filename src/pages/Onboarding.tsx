@@ -13,7 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Store, ArrowRight, Shield, Zap, Sparkles, Link2, User, Languages, Coins, Globe, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { validateWithToast, onboardingSchema } from "@/lib/validations";
+import { onboardingSchema } from "@/lib/validations";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 const LANGUAGES = [
   { code: "en", label: "🇺🇸 English" },
@@ -48,6 +49,7 @@ const Onboarding = () => {
   });
   const [creating, setCreating] = useState(false);
   const [storeMode, setStoreMode] = useState<StoreMode>("online");
+  const formValidation = useFormValidation(onboardingSchema);
 
   // Redirect returning users (who already have stores) to dashboard
   useEffect(() => {
@@ -72,8 +74,10 @@ const Onboarding = () => {
   };
 
   const handleCreate = async () => {
-    const parsed = validateWithToast(onboardingSchema, { storeName, fullName }, toast.error);
-    if (!parsed) return;
+    if (!formValidation.validateAll({ storeName, fullName })) {
+      toast.error("Please fix the errors below");
+      return;
+    }
     setCreating(true);
 
     // Update profile name if provided
@@ -165,10 +169,14 @@ const Onboarding = () => {
               <Input
                 placeholder="Enter your full name"
                 value={fullName}
-                onChange={e => { setFullName(e.target.value); if (step < 2) setStep(1); }}
+                onChange={e => { setFullName(e.target.value); formValidation.clearField("fullName"); if (step < 2) setStep(1); }}
                 onFocus={() => setStep(1)}
+                error={!!formValidation.getError("fullName")}
                 className="h-11 bg-muted/50 border-border/50"
               />
+              {formValidation.getError("fullName") && (
+                <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("fullName")}</p>
+              )}
             </div>
 
             {/* Store Type */}
@@ -216,10 +224,14 @@ const Onboarding = () => {
               <Input
                 placeholder="My Store"
                 value={storeName}
-                onChange={e => { handleStoreNameChange(e.target.value); if (step < 3) setStep(3); }}
+                onChange={e => { handleStoreNameChange(e.target.value); formValidation.clearField("storeName"); if (step < 3) setStep(3); }}
                 onFocus={() => { if (step < 3) setStep(3); }}
+                error={!!formValidation.getError("storeName")}
                 className="h-11 bg-muted/50 border-border/50"
               />
+              {formValidation.getError("storeName") && (
+                <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("storeName")}</p>
+              )}
             </div>
 
             {/* Store URL (Slug) */}
