@@ -13,6 +13,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { adminCouponSchema } from "@/lib/validations";
 
 interface Coupon {
   id: string;
@@ -38,6 +40,7 @@ const AdminCoupons = () => {
     max_uses: "",
     is_active: true,
   });
+  const v = useFormValidation(adminCouponSchema);
 
   const fetchCoupons = async () => {
     const data = await adminCall("get_coupons");
@@ -47,10 +50,7 @@ const AdminCoupons = () => {
   useEffect(() => { fetchCoupons(); }, [adminCall]);
 
   const handleCreate = async () => {
-    if (!form.code.trim() || !form.discount_value) {
-      toast.error("Code and discount value are required");
-      return;
-    }
+    if (!v.validateAll(form)) return;
     await adminCall("create_coupon", {
       code: form.code.toUpperCase().trim(),
       discount_type: form.discount_type,
@@ -62,6 +62,7 @@ const AdminCoupons = () => {
     toast.success("Coupon created");
     setDialogOpen(false);
     setForm({ code: "", discount_type: "percentage", discount_value: "", expires_at: "", max_uses: "", is_active: true });
+    v.clearErrors();
     fetchCoupons();
   };
 
@@ -94,15 +95,17 @@ const AdminCoupons = () => {
                 <label className="text-sm text-slate-400">Coupon Code</label>
                 <Input
                   value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, code: e.target.value }); v.clearField("code"); }}
+                  error={!!v.getError("code")}
                   placeholder="e.g. SAVE20"
                   className="uppercase font-mono bg-slate-700 border-slate-600"
                 />
+                {v.getError("code") && <p className="text-xs text-destructive mt-1">{v.getError("code")}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm text-slate-400">Discount Type</label>
-                  <Select value={form.discount_type} onValueChange={(v) => setForm({ ...form, discount_type: v })}>
+                  <Select value={form.discount_type} onValueChange={(val) => { setForm({ ...form, discount_type: val }); v.clearField("discount_value"); }}>
                     <SelectTrigger className="bg-slate-700 border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
@@ -117,10 +120,12 @@ const AdminCoupons = () => {
                   <Input
                     type="number"
                     value={form.discount_value}
-                    onChange={(e) => setForm({ ...form, discount_value: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, discount_value: e.target.value }); v.clearField("discount_value"); }}
+                    error={!!v.getError("discount_value")}
                     placeholder={form.discount_type === "percentage" ? "e.g. 20" : "e.g. 100"}
                     className="bg-slate-700 border-slate-600"
                   />
+                  {v.getError("discount_value") && <p className="text-xs text-destructive mt-1">{v.getError("discount_value")}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -138,14 +143,16 @@ const AdminCoupons = () => {
                   <Input
                     type="number"
                     value={form.max_uses}
-                    onChange={(e) => setForm({ ...form, max_uses: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, max_uses: e.target.value }); v.clearField("max_uses"); }}
+                    error={!!v.getError("max_uses")}
                     placeholder="0"
                     className="bg-slate-700 border-slate-600"
                   />
+                  {v.getError("max_uses") && <p className="text-xs text-destructive mt-1">{v.getError("max_uses")}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+                <Switch checked={form.is_active} onCheckedChange={(val) => setForm({ ...form, is_active: val })} />
                 <span className="text-sm">Active</span>
               </div>
               <Button onClick={handleCreate} className="w-full">Create Coupon</Button>

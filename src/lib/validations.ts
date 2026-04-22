@@ -272,6 +272,62 @@ export const adminPasswordSchema = z.object({
   password: passwordField,
 });
 
+// ─── Admin CRUD Schemas ───
+
+export const broadcastSchema = z.object({
+  title: requiredTextField("Title", 200),
+  message: requiredTextField("Message", 5000),
+  target_type: z.string().min(1, "Target is required"),
+  target_value: z.string().optional(),
+}).refine(d => !(d.target_type === "plan") || !!d.target_value, {
+  message: "Select a plan",
+  path: ["target_value"],
+}).refine(d => !(d.target_type === "user") || !!d.target_value?.trim(), {
+  message: "User ID is required",
+  path: ["target_value"],
+});
+
+export const adminCouponSchema = z.object({
+  code: z.string().trim().min(1, "Code is required").max(20, "Code too long")
+    .regex(/^[A-Z0-9]+$/i, "Only letters and numbers allowed"),
+  discount_type: z.enum(["percentage", "fixed"]),
+  discount_value: requiredPositiveNumber("Discount value"),
+  max_uses: positiveNumber("Max uses"),
+}).refine(d => d.discount_type !== "percentage" || Number(d.discount_value) <= 100, {
+  message: "Percentage cannot exceed 100",
+  path: ["discount_value"],
+});
+
+export const maintenanceSchema = z.object({
+  message: textField("Maintenance message", 500),
+});
+
+export const templateSchema = z.object({
+  subject: textField("Subject", 200),
+  body: requiredTextField("Body", 10000),
+  label: requiredTextField("Label", 100),
+});
+
+export const gatewaySchema = z.object({
+  gateway_name: requiredTextField("Gateway name", 100),
+  currency: z.string().min(1, "Currency is required"),
+  qr_code_url: urlField(false),
+  icon_url: urlField(false),
+});
+
+export const taskAssignSchema = z.object({
+  taskName: requiredTextField("Task name", 200),
+  taskTerm: textField("Term", 100),
+});
+
+export const groupNameSchema = z.object({
+  name: requiredTextField("Group name", 100),
+});
+
+export const messageSchema = z.object({
+  message: requiredTextField("Message", 5000),
+});
+
 // ─── Utility: Validate and return errors map ───
 
 export type ValidationErrors = Record<string, string>;

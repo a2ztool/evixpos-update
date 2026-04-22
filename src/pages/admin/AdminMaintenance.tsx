@@ -7,12 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Wrench, AlertTriangle, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { maintenanceSchema } from "@/lib/validations";
 
 const AdminMaintenance = () => {
   const { adminCall, loading } = useAdmin();
   const [enabled, setEnabled] = useState(false);
   const [message, setMessage] = useState("");
   const [allowAdmin, setAllowAdmin] = useState(true);
+  const v = useFormValidation(maintenanceSchema);
 
   const fetchSetting = async () => {
     const data = await adminCall("get_system_setting", { key: "maintenance_mode" });
@@ -26,6 +29,7 @@ const AdminMaintenance = () => {
   useEffect(() => { fetchSetting(); /* eslint-disable-next-line */ }, []);
 
   const handleSave = async () => {
+    if (!v.validateAll({ message })) return;
     const result = await adminCall("update_system_setting", {
       key: "maintenance_mode",
       value: { enabled, message, allow_admin: allowAdmin },
@@ -73,10 +77,12 @@ const AdminMaintenance = () => {
           <Textarea
             rows={3}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => { setMessage(e.target.value); v.clearField("message"); }}
+            aria-invalid={!!v.getError("message")}
             placeholder="We are performing scheduled maintenance. Please check back soon."
-            className="bg-slate-900 border-slate-700 text-white"
+            className={`bg-slate-900 border-slate-700 text-white ${v.getError("message") ? "border-destructive" : ""}`}
           />
+          {v.getError("message") && <p className="text-xs text-destructive mt-1">{v.getError("message")}</p>}
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-700 pt-5">

@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
@@ -125,6 +127,9 @@ const StaffInbox = () => {
   // Group management
   const [editGroupOpen, setEditGroupOpen] = useState(false);
   const [editGroupName, setEditGroupName] = useState("");
+  const taskV = useFormValidation(taskAssignSchema);
+  const groupV = useFormValidation(groupNameSchema);
+  const editGroupV = useFormValidation(groupNameSchema);
   const [editGroupIcon, setEditGroupIcon] = useState("💬");
   const [manageMembers, setManageMembers] = useState(false);
   const [deleteGroupConfirm, setDeleteGroupConfirm] = useState(false);
@@ -520,7 +525,8 @@ const StaffInbox = () => {
 
   // ─── Send task (new fields: name, term, link order, required info) ───
   const sendTask = async () => {
-    if (!taskName.trim() || !activeChat || !storeId || !myId) return;
+    if (!activeChat || !storeId || !myId) return;
+    if (!taskV.validateAll({ taskName, taskTerm })) return;
     let fullMessage = `📋 **Task Card**\n\n**Subscription:** ${taskName.trim()}`;
     if (taskTerm) fullMessage += `\n**Term:** ${taskTerm}`;
     if (taskLinkOrder) {
@@ -548,6 +554,7 @@ const StaffInbox = () => {
     toast.success("Task created!");
     setTaskName(""); setTaskTerm(""); setTaskLinkOrder(""); setTaskLinkOrderLabel(""); setTaskRequiredInfo("");
     setOrderSearch("");
+    taskV.clearErrors();
     setTaskDialogOpen(false);
   };
 
@@ -586,7 +593,8 @@ const StaffInbox = () => {
 
   // ─── Create group ───
   const handleCreateGroup = async () => {
-    if (!newGroupName.trim() || !storeId || !myId) return;
+    if (!storeId || !myId) return;
+    if (!groupV.validateAll({ name: newGroupName })) return;
     const { data: group, error } = await db.from("chat_groups").insert({
       store_id: storeId, created_by: myId, name: newGroupName.trim(), icon: newGroupIcon
     }).select().single();
@@ -597,13 +605,15 @@ const StaffInbox = () => {
     }
     await db.from("chat_group_messages").insert({ group_id: group.id, sender_id: myId, message: `Group "${newGroupName}" created`, type: "system" });
     setShowCreateGroup(false); setNewGroupName(""); setSelectedMembers([]); setNewGroupIcon("💬");
+    groupV.clearErrors();
     fetchGroups();
     toast.success("Group created!");
   };
 
   // ─── Edit group ───
   const handleEditGroup = async () => {
-    if (!editGroupName.trim() || !activeChat) return;
+    if (!activeChat) return;
+    if (!editGroupV.validateAll({ name: editGroupName })) return;
     const { error } = await db.from("chat_groups").update({ name: editGroupName.trim(), icon: editGroupIcon }).eq("id", activeChat);
     if (error) { toast.error("Failed to update group"); return; }
     await db.from("chat_group_messages").insert({ group_id: activeChat, sender_id: myId, message: `Group renamed to "${editGroupName.trim()}"`, type: "system" });
@@ -718,7 +728,16 @@ const StaffInbox = () => {
                 <DialogContent>
                   <DialogHeader><DialogTitle>Create Group</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div><Label>Group Name</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Sales Team" /></div>
+                    <div>
+                      <Label>Group Name</Label>
+                      <Input
+                        value={newGroupName}
+                        onChange={e => { setNewGroupName(e.target.value); groupV.clearField("name"); }}
+                        error={!!groupV.getError("name")}
+                        placeholder="e.g. Sales Team"
+                      />
+                      {groupV.getError("name") && <p className="text-xs text-destructive mt-1">{groupV.getError("name")}</p>}
+                    </div>
                     <div>
                       <Label>Icon</Label>
                       <div className="flex gap-2 flex-wrap mt-1">
@@ -894,14 +913,28 @@ const StaffInbox = () => {
                             <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
                               <Package className="w-3 h-3" /> Subscription Name <span className="text-destructive">*</span>
                             </label>
-                            <Input placeholder="e.g., Premium Plan" value={taskName} onChange={(e) => setTaskName(e.target.value)} className="h-10" />
+                            <Input
+                              placeholder="e.g., Premium Plan"
+                              value={taskName}
+                              onChange={(e) => { setTaskName(e.target.value); taskV.clearField("taskName"); }}
+                              error={!!taskV.getError("taskName")}
+                              className="h-10"
+                            />
+                            {taskV.getError("taskName") && <p className="text-xs text-destructive mt-1">{taskV.getError("taskName")}</p>}
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
                                 <Calendar className="w-3 h-3" /> Term
                               </label>
-                              <Input placeholder="e.g., 1 Month" value={taskTerm} onChange={(e) => setTaskTerm(e.target.value)} className="h-10" />
+                              <Input
+                                placeholder="e.g., 1 Month"
+                                value={taskTerm}
+                                onChange={(e) => { setTaskTerm(e.target.value); taskV.clearField("taskTerm"); }}
+                                error={!!taskV.getError("taskTerm")}
+                                className="h-10"
+                              />
+                              {taskV.getError("taskTerm") && <p className="text-xs text-destructive mt-1">{taskV.getError("taskTerm")}</p>}
                             </div>
                             <div>
                               <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
@@ -1034,7 +1067,15 @@ const StaffInbox = () => {
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="w-4 h-4 text-primary" /> Edit Group</DialogTitle></DialogHeader>
                           <div className="space-y-4 mt-2">
-                            <div><Label>Group Name</Label><Input value={editGroupName} onChange={e => setEditGroupName(e.target.value)} /></div>
+                            <div>
+                              <Label>Group Name</Label>
+                              <Input
+                                value={editGroupName}
+                                onChange={e => { setEditGroupName(e.target.value); editGroupV.clearField("name"); }}
+                                error={!!editGroupV.getError("name")}
+                              />
+                              {editGroupV.getError("name") && <p className="text-xs text-destructive mt-1">{editGroupV.getError("name")}</p>}
+                            </div>
                             <div>
                               <Label>Icon</Label>
                               <div className="flex gap-2 flex-wrap mt-1">

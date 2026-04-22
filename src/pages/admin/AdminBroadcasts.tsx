@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Megaphone, Send, Trash2, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { broadcastSchema } from "@/lib/validations";
 
 const AdminBroadcasts = () => {
   const { adminCall, loading } = useAdmin();
@@ -17,6 +19,7 @@ const AdminBroadcasts = () => {
   const [targetType, setTargetType] = useState("all");
   const [targetValue, setTargetValue] = useState("");
   const [channel, setChannel] = useState("in_app");
+  const v = useFormValidation(broadcastSchema);
 
   const fetchBroadcasts = async () => {
     const data = await adminCall("get_broadcasts");
@@ -26,20 +29,14 @@ const AdminBroadcasts = () => {
   useEffect(() => { fetchBroadcasts(); /* eslint-disable-next-line */ }, []);
 
   const handleSend = async () => {
-    if (!title.trim() || !message.trim()) {
-      toast.error("Title and message are required");
-      return;
-    }
-    if (targetType === "plan" && !targetValue) {
-      toast.error("Select a plan");
-      return;
-    }
+    if (!v.validateAll({ title, message, target_type: targetType, target_value: targetValue })) return;
     if (!confirm(`Send this broadcast to ${targetType === "all" ? "ALL users" : targetType + (targetValue ? ": " + targetValue : "")}?`)) return;
 
     const result = await adminCall("send_broadcast", { title, message, target_type: targetType, target_value: targetValue, channel });
     if (result?.success) {
       toast.success(`Broadcast sent to ${result.recipients} user(s)`);
       setTitle(""); setMessage(""); setTargetValue("");
+      v.clearErrors();
       fetchBroadcasts();
     }
   };
@@ -67,21 +64,29 @@ const AdminBroadcasts = () => {
 
       <Card className="bg-slate-800 border-slate-700 p-5 space-y-4">
         <h3 className="text-white font-semibold">New Broadcast</h3>
-        <Input
-          placeholder="Title (e.g. Scheduled Maintenance)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="bg-slate-900 border-slate-700 text-white"
-        />
-        <Textarea
-          placeholder="Message..."
-          rows={4}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="bg-slate-900 border-slate-700 text-white"
-        />
+        <div>
+          <Input
+            placeholder="Title (e.g. Scheduled Maintenance)"
+            value={title}
+            onChange={(e) => { setTitle(e.target.value); v.clearField("title"); }}
+            error={!!v.getError("title")}
+            className="bg-slate-900 border-slate-700 text-white"
+          />
+          {v.getError("title") && <p className="text-xs text-destructive mt-1">{v.getError("title")}</p>}
+        </div>
+        <div>
+          <Textarea
+            placeholder="Message..."
+            rows={4}
+            value={message}
+            onChange={(e) => { setMessage(e.target.value); v.clearField("message"); }}
+            aria-invalid={!!v.getError("message")}
+            className={`bg-slate-900 border-slate-700 text-white ${v.getError("message") ? "border-destructive" : ""}`}
+          />
+          {v.getError("message") && <p className="text-xs text-destructive mt-1">{v.getError("message")}</p>}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Select value={targetType} onValueChange={setTargetType}>
+          <Select value={targetType} onValueChange={(val) => { setTargetType(val); setTargetValue(""); v.clearField("target_value"); }}>
             <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
               <SelectValue placeholder="Target" />
             </SelectTrigger>
@@ -95,24 +100,31 @@ const AdminBroadcasts = () => {
           </Select>
 
           {targetType === "plan" && (
-            <Select value={targetValue} onValueChange={setTargetValue}>
-              <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
-                <SelectValue placeholder="Choose plan" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="free" className="text-white">Free</SelectItem>
-                <SelectItem value="pro" className="text-white">Pro</SelectItem>
-                <SelectItem value="business" className="text-white">Business</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Select value={targetValue} onValueChange={(val) => { setTargetValue(val); v.clearField("target_value"); }}>
+                <SelectTrigger className={`bg-slate-900 border-slate-700 text-white ${v.getError("target_value") ? "border-destructive" : ""}`}>
+                  <SelectValue placeholder="Choose plan" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="free" className="text-white">Free</SelectItem>
+                  <SelectItem value="pro" className="text-white">Pro</SelectItem>
+                  <SelectItem value="business" className="text-white">Business</SelectItem>
+                </SelectContent>
+              </Select>
+              {v.getError("target_value") && <p className="text-xs text-destructive mt-1">{v.getError("target_value")}</p>}
+            </div>
           )}
           {targetType === "user" && (
-            <Input
-              placeholder="User ID (UUID)"
-              value={targetValue}
-              onChange={(e) => setTargetValue(e.target.value)}
-              className="bg-slate-900 border-slate-700 text-white"
-            />
+            <div>
+              <Input
+                placeholder="User ID (UUID)"
+                value={targetValue}
+                onChange={(e) => { setTargetValue(e.target.value); v.clearField("target_value"); }}
+                error={!!v.getError("target_value")}
+                className="bg-slate-900 border-slate-700 text-white"
+              />
+              {v.getError("target_value") && <p className="text-xs text-destructive mt-1">{v.getError("target_value")}</p>}
+            </div>
           )}
 
           <Select value={channel} onValueChange={setChannel}>
