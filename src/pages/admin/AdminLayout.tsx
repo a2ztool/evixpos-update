@@ -12,6 +12,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useNotifications } from "@/hooks/useNotifications";
 import AdminBottomNav from "@/components/AdminBottomNav";
 import BackButton from "@/components/BackButton";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
@@ -175,6 +176,7 @@ const AdminLayout = () => {
       {/* Main — page-level scroll on mobile, container scroll on desktop */}
       <main className="flex-1 overflow-visible md:overflow-auto">
         <div className="px-3 py-3 md:p-6 pt-16 md:pt-6 pb-24 md:pb-6">
+          <AdminHeader navItems={NAV_ITEMS} pendingPayments={pendingPayments} unreadChats={unreadChats} />
           <Outlet />
         </div>
       </main>
