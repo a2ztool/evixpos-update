@@ -169,12 +169,26 @@ const AdminUsers = () => {
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {u.is_suspended && (
-                      <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30">Suspended</Badge>
+                      <button onClick={() => setDetailsTarget(u)} className="inline-flex">
+                        <Badge variant="outline" className="text-[10px] shrink-0 bg-red-500/20 text-red-400 border-red-500/30 cursor-pointer hover:bg-red-500/30 gap-0.5">
+                          <Ban className="h-2.5 w-2.5" />Suspended
+                        </Badge>
+                      </button>
                     )}
                     <Badge variant="outline" className={`text-[10px] shrink-0 ${planColor(u.plan)}`}>{u.plan}</Badge>
                     <PlanStatusBadge status={u.plan_status} remainingDays={u.remaining_days} />
                   </div>
                 </div>
+                {u.is_suspended && u.suspended_reason && (
+                  <div className="mt-2 px-2.5 py-1.5 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-[11px] text-red-300 line-clamp-2">
+                      <span className="font-semibold">Reason:</span> {u.suspended_reason}
+                    </p>
+                    {u.suspended_at && (
+                      <p className="text-[10px] text-red-400/70 mt-0.5">Since {new Date(u.suspended_at).toLocaleString()}</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
                   <div className="flex items-center gap-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Store className="h-3 w-3" />{u.storeCount}</span>
@@ -194,7 +208,7 @@ const AdminUsers = () => {
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => handleSuspend(u)} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
+                      <Button variant="ghost" size="sm" disabled={busyId === u.id} onClick={() => { setSuspendTarget(u); setSuspendReason(""); }} className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 h-8 px-2">
                         <Ban className="h-4 w-4" />
                       </Button>
                     )}
