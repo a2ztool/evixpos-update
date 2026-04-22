@@ -957,9 +957,15 @@ const AdCosts = () => {
                 <SelectContent>{PLATFORMS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Campaign Name *</Label>
-              <Input value={form.campaign_name} onChange={(e) => setForm({ ...form, campaign_name: e.target.value })} placeholder="e.g., Summer Sale Campaign" required />
+              <Input
+                value={form.campaign_name}
+                onChange={(e) => { setForm({ ...form, campaign_name: e.target.value }); if (campaignError) setCampaignError(""); }}
+                error={!!campaignError}
+                placeholder="e.g., Summer Sale Campaign"
+              />
+              {campaignError && <p className="text-xs text-destructive animate-fade-in">{campaignError}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
