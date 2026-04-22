@@ -70,6 +70,48 @@ export type Database = {
           },
         ]
       }
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_email: string | null
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_id: string | null
+          target_label: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_email?: string | null
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string | null
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       ads_accounts: {
         Row: {
           access_token: string | null
@@ -251,6 +293,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      broadcasts: {
+        Row: {
+          admin_id: string
+          channel: string
+          created_at: string
+          id: string
+          message: string
+          recipients_count: number
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          target_type: string
+          target_value: string | null
+          title: string
+        }
+        Insert: {
+          admin_id: string
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string
+          recipients_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string | null
+          title?: string
+        }
+        Update: {
+          admin_id?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string
+          recipients_count?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       business_settings: {
         Row: {
@@ -1086,6 +1173,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      impersonation_sessions: {
+        Row: {
+          admin_id: string
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          reason: string | null
+          started_at: string
+          target_email: string | null
+          target_user_id: string
+        }
+        Insert: {
+          admin_id: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          started_at?: string
+          target_email?: string | null
+          target_user_id: string
+        }
+        Update: {
+          admin_id?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          started_at?: string
+          target_email?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
       }
       integrations: {
         Row: {
@@ -2813,6 +2933,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
