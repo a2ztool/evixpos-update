@@ -562,6 +562,155 @@ Deno.serve(async (req) => {
       return json(Object.values(buckets));
     }
 
+    // ─── SUSPEND USER ───
+    if (action === "suspend_user") {
+      const { user_id: targetUserId, reason } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+
+      // Update profile flag
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({
+          is_suspended: true,
+          suspended_at: new Date().toISOString(),
+          suspended_reason: reason || null,
+        })
+        .eq("id", targetUserId);
+      if (profileErr) throw profileErr;
+
+      // Deactivate all owner stores → blocks staff via existing store_id checks
+      await supabase.from("stores").update({ is_active: false }).eq("user_id", targetUserId);
+
+      // Deactivate all staff under this owner
+      await supabase.from("staff_members").update({ is_active: false }).eq("user_id", targetUserId);
+
+      // Force sign-out of owner via Auth Admin API (revoke refresh tokens)
+      try { await supabase.auth.admin.signOut(targetUserId, "global"); } catch (_e) { /* ignore */ }
+
+      // Force sign-out of all staff auth users for that owner
+      const { data: staffRows } = await supabase
+        .from("staff_members")
+        .select("auth_user_id")
+        .eq("user_id", targetUserId)
+        .not("auth_user_id", "is", null);
+      for (const s of staffRows || []) {
+        try { await supabase.auth.admin.signOut(s.auth_user_id as string, "global"); } catch (_e) { /* ignore */ }
+      }
+
+      await supabase.from("notifications").insert({
+        user_id: targetUserId,
+        type: "error",
+        message: `🚫 Your account has been suspended by admin.${reason ? " Reason: " + reason : ""}`,
+      });
+
+      return json({ success: true });
+    }
+
+    // ─── UNSUSPEND USER ───
+    if (action === "unsuspend_user") {
+      const { user_id: targetUserId } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({ is_suspended: false, suspended_at: null, suspended_reason: null })
+        .eq("id", targetUserId);
+      if (profileErr) throw profileErr;
+
+      await supabase.from("stores").update({ is_active: true }).eq("user_id", targetUserId);
+      await supabase.from("staff_members").update({ is_active: true }).eq("user_id", targetUserId);
+
+      await supabase.from("notifications").insert({
+        user_id: targetUserId,
+        type: "success",
+        message: "✅ Your account has been reactivated by admin.",
+      });
+
+      return json({ success: true });
+    }
+
+    // ─── DELETE USER (full cascade) ───
+    if (action === "delete_user") {
+      const { user_id: targetUserId, confirm } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+      if (confirm !== "DELETE") return errorResponse("Confirmation token missing");
+      if (targetUserId === user.id) return errorResponse("You cannot delete your own account");
+
+      // Collect store ids
+      const { data: storeRows } = await supabase.from("stores").select("id").eq("user_id", targetUserId);
+      const storeIds = (storeRows || []).map((s: any) => s.id);
+
+      // Collect staff auth users to remove from auth as well
+      const { data: staffRows } = await supabase
+        .from("staff_members")
+        .select("auth_user_id")
+        .eq("user_id", targetUserId)
+        .not("auth_user_id", "is", null);
+      const staffAuthIds = (staffRows || []).map((s: any) => s.auth_user_id as string);
+
+      // Helper to delete by user_id
+      const tablesByUser = [
+        "ad_costs", "ads_accounts", "ads_metrics", "auto_payment_logs", "bot_automations",
+        "business_settings", "cash_register_shifts", "coupons", "credit_payments",
+        "customer_credits", "customers", "email_branding", "email_campaign_tracking",
+        "email_config", "email_store_config", "email_templates", "google_sheets_config",
+        "integrations", "loyalty_points", "loyalty_transactions", "meta_ad_accounts",
+        "notification_logs", "notifications", "order_forms", "plan_history", "plan_payments",
+        "purchases", "referral_settings", "referral_withdrawals", "refunds",
+        "renewal_automation_config", "renewal_email_templates", "renewal_reminders",
+        "staff_members", "subscriptions", "suppliers",
+      ];
+
+      // Delete order_items first (depends on orders)
+      const { data: orderRows } = await supabase.from("orders").select("id").eq("user_id", targetUserId);
+      const orderIds = (orderRows || []).map((o: any) => o.id);
+      if (orderIds.length > 0) {
+        await supabase.from("order_items").delete().in("order_id", orderIds);
+      }
+
+      // Delete purchase_items
+      const { data: purchaseRows } = await supabase.from("purchases").select("id").eq("user_id", targetUserId);
+      const purchaseIds = (purchaseRows || []).map((p: any) => p.id);
+      if (purchaseIds.length > 0) {
+        await supabase.from("purchase_items").delete().in("purchase_id", purchaseIds);
+      }
+
+      // Delete product_variations
+      const { data: prodRows } = await supabase.from("products").select("id").eq("user_id", targetUserId);
+      const prodIds = (prodRows || []).map((p: any) => p.id);
+      if (prodIds.length > 0) {
+        await supabase.from("product_variations").delete().in("product_id", prodIds);
+      }
+
+      // Now wipe orders, products
+      await supabase.from("orders").delete().eq("user_id", targetUserId);
+      await supabase.from("products").delete().eq("user_id", targetUserId);
+
+      // Wipe everything else by user_id
+      for (const t of tablesByUser) {
+        try { await supabase.from(t).delete().eq("user_id", targetUserId); } catch (_e) { /* ignore */ }
+      }
+
+      // Delete stores last
+      if (storeIds.length > 0) {
+        await supabase.from("stores").delete().in("id", storeIds);
+      }
+
+      // Delete user_roles & profile
+      await supabase.from("user_roles").delete().eq("user_id", targetUserId);
+      await supabase.from("profiles").delete().eq("id", targetUserId);
+
+      // Delete staff auth users
+      for (const aid of staffAuthIds) {
+        try { await supabase.auth.admin.deleteUser(aid); } catch (_e) { /* ignore */ }
+      }
+
+      // Finally, delete the auth user
+      try { await supabase.auth.admin.deleteUser(targetUserId); } catch (_e) { /* ignore */ }
+
+      return json({ success: true });
+    }
+
     // ─── UNKNOWN ACTION ───
     return errorResponse(`Unknown action: ${action}`);
   } catch (err: any) {
