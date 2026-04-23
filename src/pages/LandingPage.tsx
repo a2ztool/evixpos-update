@@ -1192,7 +1192,7 @@ const LandingPage = () => {
                       {plan.key === "free" ? (
                         <div className="mb-5">
                           <span className="text-3xl font-black text-foreground">{get("plan_free_name", "Free")}</span>
-                          <span className="text-sm text-muted-foreground ml-1">/forever</span>
+                          <span className="text-sm text-muted-foreground ml-1">{get("plan_free_period", "/forever")}</span>
                         </div>
                       ) : plan.key === "custom" ? (
                         <div className="mb-5">
