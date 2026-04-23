@@ -51,8 +51,7 @@ describe("PWA update flow", () => {
 
     originalLocation = window.location;
     reloadSpy = vi.fn();
-    // @ts-expect-error replace location for the test
-    delete window.location;
+    delete (window as any).location;
     (window as any).location = {
       hostname: "app.example.com",
       reload: reloadSpy,
