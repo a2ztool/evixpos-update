@@ -778,13 +778,10 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        {/* Mobile: full-screen chat (subtract bottom-nav). Desktop: bordered card. */}
+        {/* Mobile: full-height card. Desktop: bordered card. */}
         <div className={cn(
-          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
-          // Mobile when chat open: take the full screen (under top bar, above bottom-nav)
-          showChat
-            ? "fixed inset-x-0 top-14 bottom-16 z-30 bg-background md:static md:inset-auto md:h-[calc(100dvh-12rem)]"
-            : "h-[calc(100dvh-12rem)] md:h-[calc(100dvh-12rem)]"
+          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm bg-background",
+          "h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
         )}>
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
