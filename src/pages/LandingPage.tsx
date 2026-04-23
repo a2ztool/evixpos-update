@@ -1183,9 +1183,9 @@ const LandingPage = () => {
                       <p className="text-xs text-muted-foreground mb-3">{plan.tagline}</p>
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4 flex-wrap">
-                        <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {plan.stores} stores</span>
+                        <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {plan.stores} {get("plan_unit_stores", "stores")}</span>
                         <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {plan.customers}</span>
-                        <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {plan.products} products</span>
+                        <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {plan.products} {get("plan_unit_products", "products")}</span>
                       </div>
 
                       {/* Pricing */}
