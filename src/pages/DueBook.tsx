@@ -804,7 +804,8 @@ const DueBook = () => {
                   <TableBody>
                     {filtered.map((d) => {
                       const info = getDaysInfo(d);
-                      const phone = extractPhone(d.note);
+                      const contact = getDueContact(d);
+                      const phone = contact.phone;
                       const cleanNote = stripPhone(d.note);
                       return (
                         <TableRow key={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
@@ -818,11 +819,13 @@ const DueBook = () => {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{d.category || "—"}</p>
-                              {phone && (
+                              <p className="font-medium">{contact.name || "—"}</p>
+                              {phone ? (
                                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                   <Phone className="h-3 w-3" /> {phone}
                                 </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground/60 italic mt-0.5">No phone</p>
                               )}
                             </div>
                           </TableCell>
