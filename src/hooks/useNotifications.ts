@@ -130,6 +130,13 @@ export const useNotifications = () => {
     setUnreadCount(0);
   };
 
+  const deleteOne = async (id: string) => {
+    const target = notifications.find((n) => n.id === id);
+    await supabase.from("notifications").delete().eq("id", id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (target && !target.is_read) setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
   const clearAll = async () => {
     if (!user) return;
     await supabase.from("notifications").delete().eq("user_id", user.id);
@@ -137,5 +144,5 @@ export const useNotifications = () => {
     setUnreadCount(0);
   };
 
-  return { notifications, unreadCount, markAsRead, markAllRead, clearAll, refetch: fetchNotifications };
+  return { notifications, unreadCount, markAsRead, markAllRead, deleteOne, clearAll, refetch: fetchNotifications };
 };

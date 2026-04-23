@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, Volume2, VolumeX, MessageSquare, BellRing, BellOff } from "lucide-react";
+import { Bell, CheckCheck, Volume2, VolumeX, MessageSquare, BellRing, BellOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllRead, deleteOne } = useNotifications();
   const { unreadCount: msgUnread } = useMessageUnread();
   const { status: pushStatus, subscribe: enablePush, unsubscribe: disablePush } = useWebPush();
   const navigate = useNavigate();
@@ -157,20 +157,20 @@ const NotificationBell = () => {
         )}
 
         {/* Notification List */}
-        <ScrollArea className="max-h-[350px]">
+        <ScrollArea className="h-[350px]">
           {notifications.length === 0 ? (
             <div className="text-center py-10">
               <Bell className="h-8 w-8 mx-auto text-muted-foreground/20 mb-2" />
               <p className="text-muted-foreground text-sm">No notifications yet</p>
             </div>
           ) : (
-            notifications.slice(0, 10).map((n) => {
+            notifications.slice(0, 20).map((n) => {
               const emoji = TYPE_EMOJI[n.type] || "🔔";
               const label = TYPE_LABEL[n.type] || n.type;
               return (
                 <div
                   key={n.id}
-                  className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${!n.is_read ? "bg-primary/[0.04]" : ""}`}
+                  className={`group p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${!n.is_read ? "bg-primary/[0.04]" : ""}`}
                   onClick={() => !n.is_read && markAsRead(n.id)}
                 >
                   <div className="flex items-start gap-2.5">
@@ -187,6 +187,15 @@ const NotificationBell = () => {
                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100 hover:text-destructive md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); deleteOne(n.id); }}
+                      title="Delete notification"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               );
