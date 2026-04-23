@@ -406,8 +406,7 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
       { key: `testimonial_${i}_role`, type: "text" as const, defaultValue: ["Hybrid Store Owner", "Retail + E-commerce", "Multi-Store Manager"][i-1] || "Business Owner" },
       { key: `testimonial_${i}_image`, type: "image" as const, defaultValue: "" },
     ])),
-  ],
-  faq: [
+    { key: "testimonial_fallback_text", type: "text" as const, defaultValue: "Great platform!" },
     { key: "section_faq_visible", type: "text", defaultValue: "true" },
     { key: "faq_title", type: "text", defaultValue: "Got Questions? We've Got Answers." },
     { key: "faq_subtitle", type: "text", defaultValue: "Everything you need to know about managing online and offline business with EvixPOS." },
