@@ -136,6 +136,23 @@ const DueBook = () => {
       .not("due_date", "is", null)
       .order("due_date", { ascending: true });
     if (!error && data) setDues(data as Due[]);
+    // fetch payments
+    const txnIds = (data || []).map((d: any) => d.id);
+    if (txnIds.length > 0) {
+      const { data: pays } = await (supabase as any)
+        .from("due_payments")
+        .select("*")
+        .in("transaction_id", txnIds)
+        .order("payment_date", { ascending: false });
+      const map: Record<string, DuePayment[]> = {};
+      (pays || []).forEach((p: any) => {
+        if (!map[p.transaction_id]) map[p.transaction_id] = [];
+        map[p.transaction_id].push(p);
+      });
+      setPaymentsByTxn(map);
+    } else {
+      setPaymentsByTxn({});
+    }
     setLoading(false);
   }, [activeStore, user]);
 
