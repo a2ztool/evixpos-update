@@ -524,6 +524,7 @@ const fetchProducts = async () => {
         await supabase.from("subscriptions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
+          order_id: data.id,
           customer_id: formCustomerId,
           product_name: formProductName || "Order Subscription",
           variation: formSubVariation,
@@ -534,7 +535,7 @@ const fetchProducts = async () => {
           notes: `Created from order ${data.id}`,
           status: "active",
           plan: "customer" as any,
-        });
+        } as any);
       }
 
       toast.success("Order created successfully!");

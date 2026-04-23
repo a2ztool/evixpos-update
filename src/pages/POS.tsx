@@ -449,6 +449,7 @@ const POS = () => {
             supabase.from("transactions").insert({
               user_id: effectiveUserId!,
               store_id: activeStore?.id,
+              order_id: order.id,
               type: "income" as const,
               amount: e.amount,
               category: "sale",
@@ -462,6 +463,7 @@ const POS = () => {
           await supabase.from("transactions").insert({
             user_id: effectiveUserId!,
             store_id: activeStore?.id,
+            order_id: order.id,
             type: "income" as const,
             amount: total,
             category: "sale",
@@ -478,6 +480,7 @@ const POS = () => {
             supabase.from("transactions").insert({
               user_id: effectiveUserId!,
               store_id: activeStore?.id,
+              order_id: order.id,
               type: "income" as const,
               amount: e.amount,
               category: "sale",
@@ -491,6 +494,7 @@ const POS = () => {
           await supabase.from("transactions").insert({
             user_id: effectiveUserId!,
             store_id: activeStore?.id,
+            order_id: order.id,
             type: "income" as const,
             amount: effectivePaid,
             category: "sale",
@@ -503,6 +507,7 @@ const POS = () => {
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
+          order_id: order.id,
           type: "income" as const,
           amount: effectiveDue,
           category: "sale",
@@ -517,6 +522,7 @@ const POS = () => {
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
+          order_id: order.id,
           type: "income" as const,
           amount: total,
           category: "sale",
@@ -608,6 +614,7 @@ const POS = () => {
           const quantityRows = Array.from({ length: item.quantity }, (_, index) => ({
             user_id: effectiveUserId!,
             store_id: activeStore?.id,
+            order_id: order.id,
             customer_id: customerId || null,
             product_name: item.product.name,
             variation: cleanVarName(item.variation!.name),
