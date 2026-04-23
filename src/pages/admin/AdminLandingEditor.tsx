@@ -384,6 +384,7 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "plan_custom_price_note", type: "text", defaultValue: "Contact for pricing" },
     { key: "plan_custom_cta", type: "text", defaultValue: "Contact Sales" },
     { key: "plan_custom_features", type: "text", defaultValue: "Everything in Business|Custom Integrations|Dedicated Account Manager|SLA Guarantee" },
+    { key: "plan_unlimited_label", type: "text", defaultValue: "Unlimited" },
     ...["free", "pro", "business"].flatMap(plan => [
       { key: `plan_${plan}_price_bdt`, type: "text" as const, defaultValue: plan === "free" ? "0" : plan === "pro" ? "499" : "999" },
       { key: `plan_${plan}_price_inr`, type: "text" as const, defaultValue: plan === "free" ? "0" : plan === "pro" ? "499" : "999" },
@@ -480,6 +481,10 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "privacy_policy", type: "text", defaultValue: "" },
     { key: "terms_of_service", type: "text", defaultValue: "" },
     { key: "refund_policy", type: "text", defaultValue: "" },
+    { key: "policy_privacy_title", type: "text", defaultValue: "Privacy Policy" },
+    { key: "policy_terms_title", type: "text", defaultValue: "Terms of Service" },
+    { key: "policy_refund_title", type: "text", defaultValue: "Refund Policy" },
+    { key: "policy_empty_text", type: "text", defaultValue: "Content coming soon." },
   ],
   general: [
     { key: "brand_logo", type: "image", defaultValue: "" },
