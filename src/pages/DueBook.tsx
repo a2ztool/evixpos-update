@@ -95,6 +95,8 @@ const DueBook = () => {
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
+  // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders
+  const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
 
   const fetchDues = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -108,6 +110,48 @@ const DueBook = () => {
     if (!error && data) setDues(data as Due[]);
     setLoading(false);
   }, [activeStore, user]);
+
+  // Resolve customer name + phone for POS-linked dues by joining via orders → customers
+  useEffect(() => {
+    if (!activeStore || dues.length === 0) return;
+    const orderPrefixes = Array.from(new Set(
+      dues
+        .map((d) => d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1])
+        .filter((p): p is string => !!p)
+    ));
+    if (orderPrefixes.length === 0) { setOrderCustomerMap({}); return; }
+    (async () => {
+      const orFilter = orderPrefixes.map((p) => `id.ilike.${p}%`).join(",");
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, customer_id, customers(name, phone)")
+        .eq("store_id", activeStore.id)
+        .or(orFilter);
+      if (!orders) return;
+      const map: Record<string, { name: string; phone: string }> = {};
+      orders.forEach((o: any) => {
+        const prefix = (o.id as string).slice(0, 8);
+        map[prefix] = {
+          name: o.customers?.name || "",
+          phone: o.customers?.phone || "",
+        };
+      });
+      setOrderCustomerMap(map);
+    })();
+  }, [activeStore, dues]);
+
+  // Resolve display name + phone for any due (POS-linked customers take precedence)
+  const getDueContact = useCallback((d: Due): { name: string; phone: string } => {
+    const orderPrefix = d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1];
+    if (orderPrefix && orderCustomerMap[orderPrefix]) {
+      const c = orderCustomerMap[orderPrefix];
+      return {
+        name: c.name || d.category || "Customer",
+        phone: c.phone || extractPhone(d.note),
+      };
+    }
+    return { name: d.category || "—", phone: extractPhone(d.note) };
+  }, [orderCustomerMap]);
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
