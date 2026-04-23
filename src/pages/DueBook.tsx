@@ -38,6 +38,7 @@ interface Due {
   id: string;
   type: "income" | "expense";
   amount: number;
+  paid_amount: number;
   category: string;
   note: string;
   due_date: string | null;
@@ -45,6 +46,16 @@ interface Due {
   created_at: string;
   customer_name: string | null;
   phone_number: string | null;
+}
+
+interface DuePayment {
+  id: string;
+  transaction_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  note: string | null;
+  created_at: string;
 }
 
 const DATE_PRESETS = [
