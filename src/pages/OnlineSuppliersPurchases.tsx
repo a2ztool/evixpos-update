@@ -63,6 +63,13 @@ const OnlineSuppliersPurchases = () => {
   // Detail dialog
   const [detail, setDetail] = useState<any>(null);
 
+  // Edit purchase
+  const [purEditId, setPurEditId] = useState<string | null>(null);
+
+  // Delete confirmations
+  const [delSupplier, setDelSupplier] = useState<any>(null);
+  const [delPurchase, setDelPurchase] = useState<any>(null);
+
   // ── Queries ──
   const { data: suppliers = [] } = useQuery({
     queryKey: ["online-suppliers", storeId],
