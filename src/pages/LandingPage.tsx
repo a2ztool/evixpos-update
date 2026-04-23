@@ -1099,7 +1099,7 @@ const LandingPage = () => {
                 className="my-3"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground/60">
-                {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l) => (
+                {get("pricing_volume_ticks", "500|1K|5K|10K|20K|50K|100K").split("|").map((l) => (
                   <span key={l}>{l}</span>
                 ))}
               </div>
