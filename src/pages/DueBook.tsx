@@ -905,14 +905,14 @@ const DueBook = () => {
                             </Button>
                           )}
                           {!d.is_paid && (
-                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 rounded-xl text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => markPaid(d.id)}>
-                              <CheckCircle className="h-3.5 w-3.5" /> Paid
+                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 rounded-xl text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => openPayment(d)}>
+                              <CheckCircle className="h-3.5 w-3.5" /> Mark Payment
                             </Button>
                           )}
                           <Button variant="outline" size="icon" className="rounded-xl h-9 w-9" onClick={() => openEdit(d)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(d.id)}>
+                          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(d)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
