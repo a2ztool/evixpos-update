@@ -53,8 +53,7 @@ describe("PWA update flow", () => {
     reloadSpy = vi.fn();
     // @ts-expect-error replace location for the test
     delete window.location;
-    // @ts-expect-error minimal Location stub
-    window.location = {
+    (window as any).location = {
       hostname: "app.example.com",
       reload: reloadSpy,
       href: "https://app.example.com/",
@@ -68,8 +67,7 @@ describe("PWA update flow", () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error restore
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
     vi.restoreAllMocks();
   });
 
