@@ -327,6 +327,8 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "comparison_badge", type: "text", defaultValue: "Comparison" },
     { key: "comparison_title", type: "text", defaultValue: "Why EvixPOS Beats Separate Tools" },
     { key: "comparison_features", type: "text", defaultValue: "Online + Offline in One Panel|Built-in POS System|Walk-in Sales Management|Multi-Store (Online & Offline)|Subscription & Renewal Tracking|WhatsApp Integration|Multi-Currency Support|Free Plan Available" },
+    { key: "comparison_col_feature", type: "text", defaultValue: "Feature" },
+    { key: "comparison_col_others", type: "text", defaultValue: "Others" },
   ],
   mobile: [
     { key: "section_mobile_visible", type: "text", defaultValue: "true" },
