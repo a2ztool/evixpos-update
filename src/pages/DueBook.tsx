@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -116,7 +117,11 @@ const DueBook = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(fnsFormat(new Date(), "yyyy-MM-dd"));
   const [paymentNote, setPaymentNote] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([
+    { id: "cash", name: "Cash", enabled: true, config: {} },
+  ]);
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Due | null>(null);
   // Person details drawer
@@ -212,6 +217,28 @@ const DueBook = () => {
   }, [orderCustomerMap]);
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
+
+  // Load store-configured payment methods (from Settings → Payment Methods)
+  useEffect(() => {
+    if (!activeStore || !effectiveUserId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("user_id", effectiveUserId)
+        .eq("store_id", activeStore.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const methods = data?.payment_methods
+        ? normalizePaymentMethods(data.payment_methods).filter((m) => m.enabled)
+        : [];
+      setStorePaymentMethods(
+        methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]
+      );
+    })();
+    return () => { cancelled = true; };
+  }, [activeStore, effectiveUserId]);
 
   useEffect(() => {
     if (!activeStore) return;
@@ -427,6 +454,7 @@ const DueBook = () => {
     setPaymentAmount(remaining.toFixed(2));
     setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
     setPaymentNote("");
+    setPaymentMethod(storePaymentMethods[0]?.id || "cash");
   };
 
   const onPaymentModeChange = (mode: "full" | "partial" | "custom") => {
@@ -454,7 +482,7 @@ const DueBook = () => {
         user_id: effectiveUserId!,
         amount: amt,
         payment_date: new Date(paymentDate).toISOString(),
-        payment_method: "cash",
+        payment_method: paymentMethod || "cash",
         note: paymentNote.trim() || null,
       });
       if (payErr) throw payErr;
@@ -1327,7 +1355,16 @@ const DueBook = () => {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Method</Label>
-                      <Input value="Cash" readOnly className="rounded-xl" />
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {storePaymentMethods.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
