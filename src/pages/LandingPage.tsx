@@ -1165,7 +1165,7 @@ const LandingPage = () => {
                     {isBiz && <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-red-400" />}
                     <div className={`absolute inset-0 bg-gradient-to-b ${plan.gradient} pointer-events-none`} />
 
-                    <CardContent className="p-6 relative flex flex-col h-full">
+                    <CardContent className="pt-8 px-6 pb-6 relative flex flex-col h-full">
                       {/* Badges */}
                       {isPro && (
                         <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3 border border-primary/20 w-fit px-[12px] py-[4px] text-center">
