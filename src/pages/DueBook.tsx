@@ -218,6 +218,28 @@ const DueBook = () => {
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
+  // Load store-configured payment methods (from Settings → Payment Methods)
+  useEffect(() => {
+    if (!activeStore || !effectiveUserId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("user_id", effectiveUserId)
+        .eq("store_id", activeStore.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const methods = data?.payment_methods
+        ? normalizePaymentMethods(data.payment_methods).filter((m) => m.enabled)
+        : [];
+      setStorePaymentMethods(
+        methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]
+      );
+    })();
+    return () => { cancelled = true; };
+  }, [activeStore, effectiveUserId]);
+
   useEffect(() => {
     if (!activeStore) return;
     const channel = supabase
