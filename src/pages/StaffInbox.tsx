@@ -716,7 +716,7 @@ const StaffInbox = () => {
       {showChat && (
         <style>{`@media (max-width: 767px){body{overflow:hidden}}`}</style>
       )}
-      <div className="max-w-6xl mx-auto px-2 md:px-4 py-3 flex flex-col h-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-2 md:px-4 py-3 flex flex-col overflow-hidden h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-9rem)]">
         {/* Header — hidden on mobile when a chat is open (native app feel) */}
         <div className={cn("flex items-center gap-3 mb-3", showChat && "hidden md:flex")}>
           <MessageSquare className="h-5 w-5 text-primary" />
