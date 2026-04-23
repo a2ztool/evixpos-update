@@ -416,13 +416,16 @@ const DueBook = () => {
   };
 
   const sendBulkReminders = () => {
-    const targets = filtered.filter((d) => !d.is_paid && d.type === "income" && extractPhone(d.note));
+    const targets = filtered
+      .filter((d) => !d.is_paid && d.type === "income")
+      .map((d) => ({ d, contact: getDueContact(d) }))
+      .filter(({ contact }) => !!contact.phone);
     if (targets.length === 0) {
       toast.error("No customers with phone numbers in current view");
       return;
     }
-    targets.slice(0, 5).forEach((d, i) => {
-      setTimeout(() => sendWhatsApp(extractPhone(d.note), buildReminderMessage(d)), i * 400);
+    targets.slice(0, 5).forEach(({ d, contact }, i) => {
+      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name)), i * 400);
     });
     toast.success(`Opening ${Math.min(targets.length, 5)} WhatsApp chats...`);
   };
