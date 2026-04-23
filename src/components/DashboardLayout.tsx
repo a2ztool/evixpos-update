@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Moon, Sun, Globe, LogOut, Settings, User, Crown, Command, Keyboard, Smartphone, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import InstallAppButton from "./InstallAppButton";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { toast } from "sonner";
