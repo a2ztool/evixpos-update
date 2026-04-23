@@ -384,20 +384,24 @@ const DueBook = () => {
     return { daysLeft, isOverdue: false, label: `${daysLeft}d left`, variant: "outline" as const };
   };
 
-  const buildReminderMessage = (d: Due) => {
+  const buildReminderMessage = (d: Due, name?: string) => {
     const storeName = activeStore?.name || "our store";
     const amount = formatCurrency(d.amount, 0);
     const dueStr = d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "soon";
     const daysLeft = d.due_date ? differenceInDays(new Date(d.due_date), new Date()) : null;
     const status = daysLeft !== null && daysLeft < 0 ? `${Math.abs(daysLeft)} days OVERDUE` : `due on ${dueStr}`;
-    return `Hi ${d.category || "Customer"}, this is a friendly reminder from *${storeName}*.\n\nYou have a pending payment of *${amount}* (${status}).\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
+    const who = name || d.category || "Customer";
+    return `Hi ${who}, this is a friendly reminder from *${storeName}*.\n\nYou have a pending payment of *${amount}* (${status}).\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
   };
 
   const openReminder = (d: Due) => {
-    const phone = extractPhone(d.note);
-    setReminderPhone(phone);
-    setReminderText(buildReminderMessage(d));
+    const contact = getDueContact(d);
+    setReminderPhone(contact.phone);
+    setReminderText(buildReminderMessage(d, contact.name));
     setReminderModal(d);
+    if (!contact.phone) {
+      toast.warning("No phone number on file for this customer. Please enter manually.");
+    }
   };
 
   const sendWhatsApp = (phone: string, message: string) => {
