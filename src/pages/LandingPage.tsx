@@ -1335,7 +1335,7 @@ const LandingPage = () => {
           </div>
           <AnimSection className="text-center mt-8">
             <p className="text-sm text-muted-foreground">
-              Still need help? <a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="text-primary font-medium hover:underline">Contact Support →</a>
+              {get("faq_help_text", "Still need help?")} <a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="text-primary font-medium hover:underline">{get("faq_help_cta", "Contact Support →")}</a>
             </p>
           </AnimSection>
         </div>
