@@ -633,9 +633,9 @@ const OnlineSuppliersPurchases = () => {
       </Dialog>
 
       {/* Purchase Dialog */}
-      <Dialog open={purDialog} onOpenChange={setPurDialog}>
+      <Dialog open={purDialog} onOpenChange={(v) => { setPurDialog(v); if (!v) setPurEditId(null); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Purchase</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{purEditId ? "Edit Purchase" : "New Purchase"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Supplier</Label>
