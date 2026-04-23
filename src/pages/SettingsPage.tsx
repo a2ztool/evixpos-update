@@ -217,12 +217,17 @@ const LANGUAGES_LIST = [
   { code: "hi" as Lang, label: "Hindi", native: "हिन्दी" },
 ];
 
-const PERMISSION_MODULES = [
+const PERMISSION_MODULES: { module: string; perms: string[] }[] = [
   { module: "POS", perms: ["pos.access"] },
   { module: "Orders", perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"] },
-  { module: "Products", perms: ["products.view", "products.create", "products.edit"] },
-  { module: "Customers", perms: ["customers.view", "customers.create", "customers.edit"] },
-  { module: "Reports", perms: ["reports.view"] },
+  { module: "Products", perms: ["products.view", "products.create", "products.edit", "products.delete"] },
+  { module: "Customers", perms: ["customers.view", "customers.create", "customers.edit", "customers.delete"] },
+  { module: "Subscriptions", perms: ["subscriptions.view", "subscriptions.create", "subscriptions.edit", "subscriptions.delete"] },
+  { module: "Due Book", perms: ["due.view", "due.create", "due.edit", "due.delete"] },
+  { module: "Reports & Analytics", perms: ["reports.view"] },
+  { module: "Finances", perms: ["finances.view", "finances.edit"] },
+  { module: "Integrations", perms: ["integrations.view", "integrations.edit"] },
+  { module: "Suppliers & Purchases", perms: ["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.delete", "purchases.view", "purchases.create", "purchases.edit", "purchases.delete"] },
   { module: "Settings", perms: ["settings.view", "settings.edit"] },
 ];
 
@@ -230,9 +235,18 @@ const ALL_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
 
 const ROLE_PRESETS: Record<string, string[]> = {
   admin: ALL_PERMISSIONS,
-  manager: ["pos.access", "orders.view", "orders.create", "orders.edit", "products.view", "products.create", "products.edit", "customers.view", "customers.create", "customers.edit", "reports.view"],
-  staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view"],
-  viewer: ["orders.view", "products.view", "customers.view", "reports.view"],
+  manager: [
+    "pos.access",
+    "orders.view", "orders.create", "orders.edit",
+    "products.view", "products.create", "products.edit",
+    "customers.view", "customers.create", "customers.edit",
+    "subscriptions.view", "subscriptions.create", "subscriptions.edit",
+    "due.view", "due.create", "due.edit",
+    "reports.view",
+    "suppliers.view", "suppliers.create", "suppliers.edit",
+    "purchases.view", "purchases.create", "purchases.edit",
+  ],
+  staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view", "due.view"],
   custom: [],
 };
 
