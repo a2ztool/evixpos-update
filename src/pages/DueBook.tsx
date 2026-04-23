@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -116,7 +117,11 @@ const DueBook = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(fnsFormat(new Date(), "yyyy-MM-dd"));
   const [paymentNote, setPaymentNote] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([
+    { id: "cash", name: "Cash", enabled: true, config: {} },
+  ]);
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<Due | null>(null);
   // Person details drawer
