@@ -670,7 +670,7 @@ const OnlineSuppliersPurchases = () => {
               <span>Due: <span className="font-bold text-destructive">{format(Math.max(0, (Number(purForm.quantity) || 0) * (Number(purForm.unit_price) || 0) - (Number(purForm.paid_amount) || 0)))}</span></span>
             </div>
             <Button onClick={() => savePurchase.mutate()} disabled={savePurchase.isPending} className="w-full">
-              {savePurchase.isPending ? "Saving..." : "Record Purchase"}
+              {savePurchase.isPending ? "Saving..." : purEditId ? "Update Purchase" : "Record Purchase"}
             </Button>
           </div>
         </DialogContent>
