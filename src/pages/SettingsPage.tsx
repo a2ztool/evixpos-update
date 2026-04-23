@@ -24,7 +24,7 @@ import {
   Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
   Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
   QrCode, MessageSquare, Key, User as UserIcon, Sparkles, BookOpen, HelpCircle, X, Lightbulb,
-  CheckCircle2, Zap, Lock
+  CheckCircle2, Zap, Lock, KeyRound
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
@@ -217,12 +217,17 @@ const LANGUAGES_LIST = [
   { code: "hi" as Lang, label: "Hindi", native: "हिन्दी" },
 ];
 
-const PERMISSION_MODULES = [
+const PERMISSION_MODULES: { module: string; perms: string[] }[] = [
   { module: "POS", perms: ["pos.access"] },
   { module: "Orders", perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"] },
-  { module: "Products", perms: ["products.view", "products.create", "products.edit"] },
-  { module: "Customers", perms: ["customers.view", "customers.create", "customers.edit"] },
-  { module: "Reports", perms: ["reports.view"] },
+  { module: "Products", perms: ["products.view", "products.create", "products.edit", "products.delete"] },
+  { module: "Customers", perms: ["customers.view", "customers.create", "customers.edit", "customers.delete"] },
+  { module: "Subscriptions", perms: ["subscriptions.view", "subscriptions.create", "subscriptions.edit", "subscriptions.delete"] },
+  { module: "Due Book", perms: ["due.view", "due.create", "due.edit", "due.delete"] },
+  { module: "Reports & Analytics", perms: ["reports.view"] },
+  { module: "Finances", perms: ["finances.view", "finances.edit"] },
+  { module: "Integrations", perms: ["integrations.view", "integrations.edit"] },
+  { module: "Suppliers & Purchases", perms: ["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.delete", "purchases.view", "purchases.create", "purchases.edit", "purchases.delete"] },
   { module: "Settings", perms: ["settings.view", "settings.edit"] },
 ];
 
@@ -230,9 +235,18 @@ const ALL_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
 
 const ROLE_PRESETS: Record<string, string[]> = {
   admin: ALL_PERMISSIONS,
-  manager: ["pos.access", "orders.view", "orders.create", "orders.edit", "products.view", "products.create", "products.edit", "customers.view", "customers.create", "customers.edit", "reports.view"],
-  staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view"],
-  viewer: ["orders.view", "products.view", "customers.view", "reports.view"],
+  manager: [
+    "pos.access",
+    "orders.view", "orders.create", "orders.edit",
+    "products.view", "products.create", "products.edit",
+    "customers.view", "customers.create", "customers.edit",
+    "subscriptions.view", "subscriptions.create", "subscriptions.edit",
+    "due.view", "due.create", "due.edit",
+    "reports.view",
+    "suppliers.view", "suppliers.create", "suppliers.edit",
+    "purchases.view", "purchases.create", "purchases.edit",
+  ],
+  staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view", "due.view"],
   custom: [],
 };
 
@@ -492,13 +506,37 @@ const SettingsPage = () => {
 
   const updateStaffMember = async () => {
     if (!editingStaff) return;
-    await supabase.from("staff_members").update({
-      name: editingStaff.name, email: editingStaff.email, phone: editingStaff.phone,
-      role: editingStaff.role, permissions: editingStaff.permissions as any,
-    }).eq("id", editingStaff.id);
-    setStaff(prev => prev.map(s => s.id === editingStaff.id ? editingStaff : s));
-    setEditingStaff(null);
-    toast.success("Staff updated!");
+    const newPwd = (editingStaff as any).password as string | undefined;
+    if (newPwd && newPwd.length > 0 && newPwd.length < 6) {
+      toast.error(lang === "bn" ? "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে" : "Password must be at least 6 characters");
+      return;
+    }
+    setStaffCreating(true);
+    try {
+      const { error: updErr } = await supabase.from("staff_members").update({
+        name: editingStaff.name, email: editingStaff.email, phone: editingStaff.phone,
+        role: editingStaff.role, permissions: editingStaff.permissions as any,
+      }).eq("id", editingStaff.id);
+      if (updErr) throw new Error(updErr.message);
+
+      if (newPwd && newPwd.length >= 6) {
+        const { data, error } = await supabase.functions.invoke("reset-staff-password", {
+          body: { staff_id: editingStaff.id, new_password: newPwd },
+        });
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+      }
+
+      const { password: _pw, ...clean } = editingStaff as any;
+      setStaff(prev => prev.map(s => s.id === editingStaff.id ? clean : s));
+      setEditingStaff(null);
+      toast.success(newPwd
+        ? (lang === "bn" ? "স্টাফ এবং পাসওয়ার্ড আপডেট হয়েছে!" : "Staff and password updated!")
+        : (lang === "bn" ? "স্টাফ আপডেট হয়েছে!" : "Staff updated!"));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update staff");
+    }
+    setStaffCreating(false);
   };
 
   const removeStaff = async (id: string) => {
@@ -971,35 +1009,60 @@ const SettingsPage = () => {
     </div>
   );
 
-  const renderPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => (
-    <div className="space-y-3">
-      {PERMISSION_MODULES.map(mod => {
-        const allChecked = mod.perms.every(p => perms.includes(p));
-        const someChecked = mod.perms.some(p => perms.includes(p));
-        return (
-          <div key={mod.module} className="p-3 rounded-lg border border-border">
-            <label className="flex items-center gap-2 cursor-pointer mb-2">
-              <input type="checkbox" checked={allChecked} ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }}
-                onChange={() => {
-                  if (allChecked) onChange(perms.filter(p => !mod.perms.includes(p)));
-                  else onChange([...perms, ...mod.perms.filter(p => !perms.includes(p))]);
-                }} className="rounded" />
-              <span className="text-sm font-semibold">{mod.module}</span>
-            </label>
-            <div className="grid grid-cols-2 gap-1 pl-6">
-              {mod.perms.map(perm => (
-                <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
-                  <input type="checkbox" checked={perms.includes(perm)}
-                    onChange={() => onChange(perms.includes(perm) ? perms.filter(pp => pp !== perm) : [...perms, perm])} className="rounded" />
-                  {perm.split(".")[1]}
-                </label>
-              ))}
-            </div>
+  const renderPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => {
+    const allChecked = ALL_PERMISSIONS.every(p => perms.includes(p));
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2 px-1">
+          <p className="text-xs text-muted-foreground">
+            {lang === "bn" ? "প্রতিটি মডিউলের জন্য অ্যাক্সেস নিয়ন্ত্রণ করুন" : "Toggle module-level access and granular permissions"}
+          </p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="h-7 text-xs"
+              onClick={() => onChange(allChecked ? [] : [...ALL_PERMISSIONS])}>
+              {allChecked
+                ? (lang === "bn" ? "রিসেট" : "Reset")
+                : (lang === "bn" ? "সব সিলেক্ট" : "Select All")}
+            </Button>
           </div>
-        );
-      })}
-    </div>
-  );
+        </div>
+        {PERMISSION_MODULES.map(mod => {
+          const moduleAllChecked = mod.perms.every(p => perms.includes(p));
+          const moduleSomeChecked = mod.perms.some(p => perms.includes(p));
+          return (
+            <div key={mod.module} className="rounded-lg border border-border bg-card overflow-hidden">
+              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-muted/40 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={moduleAllChecked}
+                    ref={el => { if (el) el.indeterminate = moduleSomeChecked && !moduleAllChecked; }}
+                    onChange={() => {
+                      if (moduleAllChecked) onChange(perms.filter(p => !mod.perms.includes(p)));
+                      else onChange([...perms, ...mod.perms.filter(p => !perms.includes(p))]);
+                    }} className="rounded accent-primary" />
+                  <span className="text-sm font-semibold">{mod.module}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {mod.perms.filter(p => perms.includes(p)).length}/{mod.perms.length}
+                </span>
+              </label>
+              {mod.perms.length > 1 && (
+                <div className="grid grid-cols-2 gap-1 p-3">
+                  {mod.perms.map(perm => (
+                    <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer py-1 px-2 rounded hover:bg-muted/40">
+                      <input type="checkbox" checked={perms.includes(perm)}
+                        onChange={() => onChange(perms.includes(perm) ? perms.filter(pp => pp !== perm) : [...perms, perm])}
+                        className="rounded accent-primary" />
+                      <span className="capitalize">{perm.split(".")[1]}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[] }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => (
     <div className="space-y-4 mt-2">
@@ -1017,7 +1080,7 @@ const SettingsPage = () => {
           {isNew && staffValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("phone")}</p>}
         </div>
       </div>
-      {isNew && (
+      {isNew ? (
         <div className="space-y-1.5">
           <Label>{lang === "bn" ? "পাসওয়ার্ড" : "Password"}</Label>
           <div className="relative">
@@ -1029,15 +1092,37 @@ const SettingsPage = () => {
           {staffValidation.getError("password") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("password")}</p>}
           <p className="text-xs text-muted-foreground">{lang === "bn" ? "স্টাফ এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করবে" : "Staff will use this email & password to login"}</p>
         </div>
+      ) : (
+        <div className="space-y-1.5 p-3 rounded-lg border border-border bg-muted/30">
+          <Label className="flex items-center gap-2">
+            <KeyRound className="h-3.5 w-3.5 text-primary" />
+            {lang === "bn" ? "পাসওয়ার্ড রিসেট (ঐচ্ছিক)" : "Reset Password (Optional)"}
+          </Label>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={data.password || ""}
+              onChange={e => setter((p: any) => ({ ...p, password: e.target.value }))}
+              placeholder={lang === "bn" ? "নতুন পাসওয়ার্ড সেট করুন (কমপক্ষে ৬ অক্ষর)" : "Set new password (min 6 characters)"}
+            />
+            <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {lang === "bn"
+              ? "নিরাপত্তার কারণে বর্তমান পাসওয়ার্ড দেখানো হয় না। নতুন পাসওয়ার্ড দিলে সেভ করার সাথে সাথেই আপডেট হবে।"
+              : "For security, the current password is hidden. Enter a new one to override it on save."}
+          </p>
+        </div>
       )}
       <div className="space-y-1.5"><Label>Role</Label>
         <Select value={data.role} onValueChange={v => applyRolePreset(v, setter)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="admin">Admin — Full access</SelectItem>
-            <SelectItem value="manager">Manager — Orders, Products, Customers</SelectItem>
+            <SelectItem value="manager">Manager — Operations & reports</SelectItem>
             <SelectItem value="staff">Staff — POS & basic access</SelectItem>
-            <SelectItem value="viewer">Viewer — Read only</SelectItem>
             <SelectItem value="custom">Custom — Select manually</SelectItem>
           </SelectContent>
         </Select>
@@ -1051,12 +1136,12 @@ const SettingsPage = () => {
       )}
       <div className="space-y-1.5">
         <Label>{lang === "bn" ? "পারমিশন" : "Permissions"}</Label>
-        <div className="max-h-60 overflow-y-auto">
+        <div className="max-h-72 overflow-y-auto pr-1">
           {renderPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
         </div>
       </div>
       <Button onClick={onSubmit} className="w-full" disabled={staffCreating}>
-        {staffCreating ? (lang === "bn" ? "তৈরি হচ্ছে..." : "Creating...") : submitLabel}
+        {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
       </Button>
     </div>
   );
