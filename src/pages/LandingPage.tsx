@@ -184,7 +184,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
                     <div className="w-3 h-3 rounded-full bg-primary/40" />
                     <div className="flex-1 mx-4">
                       <div className="bg-background/60 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono max-w-[200px] mx-auto">
-                        app.evixpos.com
+                        {get("hero_browser_url", "app.evixpos.com")}
                       </div>
                     </div>
                   </div>
@@ -526,7 +526,7 @@ const LandingPage = () => {
                   {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="!h-5 sm:!h-6 px-1.5 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0 leading-none min-h-0">
-                  Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
+                  {get("hero_social_proof_cta", "Join")} <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
                 </Button>
               </div>
             </div>
@@ -604,20 +604,20 @@ const LandingPage = () => {
                 <div className="w-3 h-3 rounded-full bg-destructive/60" />
                 <div className="w-3 h-3 rounded-full bg-warning/60" />
                 <div className="w-3 h-3 rounded-full bg-primary/60" />
-                <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-8 py-0.5 text-[10px] text-muted-foreground">app.evixpos.com</div></div>
+              <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-8 py-0.5 text-[10px] text-muted-foreground">{get("hero_browser_url", "app.evixpos.com")}</div></div>
               </div>
-              <img src={get("hero_image") || dashboardPreview} alt="EvixPOS Dashboard" className="w-full" width={1280} height={800} />
+              <img src={get("hero_image") || dashboardPreview} alt={get("hero_image_alt", "EvixPOS Dashboard")} className="w-full" width={1280} height={800} />
             </div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="absolute -bottom-5 -left-4 sm:-bottom-6 sm:-left-8 bg-card rounded-xl border border-border/50 p-4 shadow-xl backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-primary" /></div>
-                <div><div className="text-xs text-muted-foreground">Revenue Today</div><div className="text-lg font-bold">৳42,580</div></div>
+                <div><div className="text-xs text-muted-foreground">{get("hero_card_revenue_label", "Revenue Today")}</div><div className="text-lg font-bold">{get("hero_card_revenue_value", "৳42,580")}</div></div>
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="absolute -top-3 -right-3 sm:-top-5 sm:-right-6 bg-card rounded-xl border border-border/50 p-3 shadow-xl backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Package className="h-4 w-4 text-primary" /></div>
-                <div><div className="text-[10px] text-muted-foreground">New Orders</div><div className="text-sm font-bold text-primary">+24</div></div>
+                <div><div className="text-[10px] text-muted-foreground">{get("hero_card_orders_label", "New Orders")}</div><div className="text-sm font-bold text-primary">{get("hero_card_orders_value", "+24")}</div></div>
               </div>
             </motion.div>
           </motion.div>
@@ -986,9 +986,9 @@ const LandingPage = () => {
           <AnimSection delay={0.15}>
             <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-xl">
               <div className="grid grid-cols-3 bg-muted/50 border-b border-border/50">
-                <div className="p-4 sm:p-5 text-sm font-semibold text-muted-foreground">Feature</div>
+                <div className="p-4 sm:p-5 text-sm font-semibold text-muted-foreground">{get("comparison_col_feature", "Feature")}</div>
                 <div className="p-4 sm:p-5 text-center"><div className="text-sm font-bold text-primary">{get("brand_name", "EvixPOS")}</div></div>
-                <div className="p-4 sm:p-5 text-center text-sm font-semibold text-muted-foreground">Others</div>
+                <div className="p-4 sm:p-5 text-center text-sm font-semibold text-muted-foreground">{get("comparison_col_others", "Others")}</div>
               </div>
               {(get("comparison_features", "Online + Offline in One Panel|Built-in POS System|Walk-in Sales Management|Multi-Store (Online & Offline)|Subscription & Renewal Tracking|WhatsApp Integration|Multi-Currency Support|Free Plan Available")).split("|").map((feature, i, arr) => (
                 <div key={feature} className={`grid grid-cols-3 ${i < arr.length - 1 ? "border-b border-border/30" : ""} hover:bg-muted/30 transition-colors`}>
@@ -1026,21 +1026,21 @@ const LandingPage = () => {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                {get("app_download_android") ? <a href={get("app_download_android")} target="_blank" rel="noopener noreferrer"><Button size="lg" className="gap-2 h-12 px-6"><Download className="h-5 w-5" /> Google Play</Button></a> : null}
-                {get("app_download_ios") ? <a href={get("app_download_ios")} target="_blank" rel="noopener noreferrer"><Button size="lg" variant="outline" className="gap-2 h-12 px-6"><Apple className="h-5 w-5" /> App Store</Button></a> : null}
+                {get("app_download_android") ? <a href={get("app_download_android")} target="_blank" rel="noopener noreferrer"><Button size="lg" className="gap-2 h-12 px-6"><Download className="h-5 w-5" /> {get("mobile_btn_android", "Google Play")}</Button></a> : null}
+                {get("app_download_ios") ? <a href={get("app_download_ios")} target="_blank" rel="noopener noreferrer"><Button size="lg" variant="outline" className="gap-2 h-12 px-6"><Apple className="h-5 w-5" /> {get("mobile_btn_ios", "App Store")}</Button></a> : null}
                 {!get("app_download_android") && !get("app_download_ios") && (
                   <>
                     <Button size="lg" className="gap-2 h-12 px-6" onClick={() => { if (canInstall) { promptInstall(); } else { navigate("/auth"); } }}>
-                      <Smartphone className="h-5 w-5" /> {canInstall ? "Install App" : "Use Web App"}
+                      <Smartphone className="h-5 w-5" /> {canInstall ? get("mobile_btn_install", "Install App") : get("mobile_btn_web", "Use Web App")}
                     </Button>
                     {!canInstall && !isInstalled && (
                       <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-muted-foreground" onClick={() => navigate("/auth")}>
-                        <Download className="h-5 w-5" /> Open in Browser
+                        <Download className="h-5 w-5" /> {get("mobile_btn_browser", "Open in Browser")}
                       </Button>
                     )}
                     {isInstalled && (
                       <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-primary border-primary/30" disabled>
-                        <Check className="h-5 w-5" /> App Installed
+                        <Check className="h-5 w-5" /> {get("mobile_btn_installed", "App Installed")}
                       </Button>
                     )}
                   </>
@@ -1099,7 +1099,7 @@ const LandingPage = () => {
                 className="my-3"
               />
               <div className="flex justify-between text-[10px] text-muted-foreground/60">
-                {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l) => (
+                {get("pricing_volume_ticks", "500|1K|5K|10K|20K|50K|100K").split("|").map((l) => (
                   <span key={l}>{l}</span>
                 ))}
               </div>
@@ -1183,16 +1183,16 @@ const LandingPage = () => {
                       <p className="text-xs text-muted-foreground mb-3">{plan.tagline}</p>
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4 flex-wrap">
-                        <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {plan.stores} stores</span>
+                        <span className="flex items-center gap-1"><Store className="h-3 w-3" /> {plan.stores} {get("plan_unit_stores", "stores")}</span>
                         <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {plan.customers}</span>
-                        <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {plan.products} products</span>
+                        <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {plan.products} {get("plan_unit_products", "products")}</span>
                       </div>
 
                       {/* Pricing */}
                       {plan.key === "free" ? (
                         <div className="mb-5">
                           <span className="text-3xl font-black text-foreground">{get("plan_free_name", "Free")}</span>
-                          <span className="text-sm text-muted-foreground ml-1">/forever</span>
+                          <span className="text-sm text-muted-foreground ml-1">{get("plan_free_period", "/forever")}</span>
                         </div>
                       ) : plan.key === "custom" ? (
                         <div className="mb-5">
@@ -1214,7 +1214,7 @@ const LandingPage = () => {
                           >
                             {CUR_SYMBOLS[currency]}{price}
                           </motion.span>
-                          <span className="text-sm text-muted-foreground">/{yearly ? "yr" : "mo"}</span>
+                          <span className="text-sm text-muted-foreground">{yearly ? get("plan_period_yearly", "/yr") : get("plan_period_monthly", "/mo")}</span>
                           {yearly && (
                             <div className="mt-1">
                               <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 text-[10px]">{get("pricing_yearly_off_badge", "20% OFF")}</Badge>
@@ -1280,7 +1280,7 @@ const LandingPage = () => {
                     <CardContent className="p-6">
                       <Quote className="h-7 w-7 text-primary/20 mb-3" />
                       <div className="flex gap-1 mb-3">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-primary text-primary" />)}</div>
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{get(`testimonial_${i}_text`, "Great platform!")}"</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{get(`testimonial_${i}_text`, get("testimonial_fallback_text", "Great platform!"))}"</p>
                       <div className="flex items-center gap-3">
                         {imgUrl ? <img src={imgUrl} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" /> : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20">
@@ -1335,7 +1335,7 @@ const LandingPage = () => {
           </div>
           <AnimSection className="text-center mt-8">
             <p className="text-sm text-muted-foreground">
-              Still need help? <a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="text-primary font-medium hover:underline">Contact Support →</a>
+              {get("faq_help_text", "Still need help?")} <a href={`mailto:${get("brand_email", "support@evixpos.com")}`} className="text-primary font-medium hover:underline">{get("faq_help_cta", "Contact Support →")}</a>
             </p>
           </AnimSection>
         </div>
@@ -1474,13 +1474,13 @@ const LandingPage = () => {
               </ul>
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
                 <p className="text-sm font-medium mb-3">{get("footer_cta_title", "Unify Your Business Today")}</p>
-                <Button size="sm" onClick={() => navigate("/auth")} className="gap-1.5 shadow-md shadow-primary/15 w-full">Get Started <ArrowRight className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" onClick={() => navigate("/auth")} className="gap-1.5 shadow-md shadow-primary/15 w-full">{get("footer_cta_button", "Get Started")} <ArrowRight className="h-3.5 w-3.5" /></Button>
               </div>
             </div>
           </div>
           <div className="border-t border-border/40 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              {get("footer_copyright", `© 2026 EvixPOS. All rights reserved.`)} Powered by{" "}
+              {get("footer_copyright", `© 2026 EvixPOS. All rights reserved.`)} {get("footer_powered_prefix", "Powered by")}{" "}
               <a href={get("footer_powered_url", "https://www.lifeaimit.in")} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{get("footer_powered_by", "LifeAim IT")}</a>
             </p>
             <div className="flex items-center gap-6 text-xs text-muted-foreground">
