@@ -433,6 +433,7 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "faq_help_text", type: "text" as const, defaultValue: "Still need help?" },
     { key: "faq_help_cta", type: "text" as const, defaultValue: "Contact Support →" },
   ],
+  cta: [
     { key: "section_cta_visible", type: "text", defaultValue: "true" },
     { key: "cta_title", type: "text", defaultValue: "Ready to Unify Your Online & Offline Business?" },
     { key: "cta_subtitle", type: "text", defaultValue: "Join thousands of entrepreneurs who manage their entire business — online store, physical POS, inventory, customers — from one powerful platform." },
