@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -782,13 +783,15 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        {/* Mobile: WhatsApp-style full-screen when chat open. Desktop: bordered card. */}
-        <div className={cn(
-          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
-          showChat
-            ? "fixed inset-0 z-[60] bg-background h-[100dvh] md:static md:inset-auto md:z-auto md:h-[calc(100dvh-12rem)]"
-            : "bg-background h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
-        )}>
+        {/* Mobile: WhatsApp-style full-screen via portal when chat open. Desktop: bordered card. */}
+        {(() => {
+          const containerEl = (
+            <div className={cn(
+              "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
+              showChat
+                ? "fixed inset-0 z-[100] bg-background h-[100dvh] w-screen md:static md:inset-auto md:z-auto md:h-[calc(100dvh-12rem)] md:w-auto"
+                : "bg-background h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
+            )}>
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
@@ -1282,6 +1285,16 @@ const StaffInbox = () => {
             )}
           </div>
         </div>
+          );
+          // On mobile when chat is open, portal to body so it escapes any
+          // ancestor with backdrop-filter / transform / overflow that creates
+          // a containing block or clips the fixed overlay.
+          const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+          if (showChat && isMobile && typeof document !== "undefined") {
+            return createPortal(containerEl, document.body);
+          }
+          return containerEl;
+        })()}
       </div>
     </DashboardLayout>
   );
