@@ -1280,7 +1280,7 @@ const LandingPage = () => {
                     <CardContent className="p-6">
                       <Quote className="h-7 w-7 text-primary/20 mb-3" />
                       <div className="flex gap-1 mb-3">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-primary text-primary" />)}</div>
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{get(`testimonial_${i}_text`, "Great platform!")}"</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{get(`testimonial_${i}_text`, get("testimonial_fallback_text", "Great platform!"))}"</p>
                       <div className="flex items-center gap-3">
                         {imgUrl ? <img src={imgUrl} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" /> : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20">
