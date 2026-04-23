@@ -528,7 +528,7 @@ const NotificationPreferencesTab = () => {
 // Tab 2: Real-time Notification Center
 // ═══════════════════════════════════════════
 const NotificationCenterTab = () => {
-  const { notifications, unreadCount, markAsRead, markAllRead, clearAll } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllRead, clearAll, deleteOne } = useNotifications();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -653,7 +653,7 @@ const NotificationCenterTab = () => {
       {/* List */}
       <Card>
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[55vh]">
+          <ScrollArea className="h-[60vh]">
             {filtered.length === 0 ? (
               <div className="text-center py-16">
                 <Bell className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
@@ -668,7 +668,7 @@ const NotificationCenterTab = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.015 }}
-                    className={`flex items-start gap-3 p-4 border-b last:border-b-0 hover:bg-muted/40 transition-colors ${!n.is_read ? "bg-primary/[0.03]" : ""}`}
+                    className={`group flex items-start gap-3 p-4 border-b last:border-b-0 hover:bg-muted/40 transition-colors ${!n.is_read ? "bg-primary/[0.03]" : ""}`}
                   >
                     <Checkbox checked={selected.has(n.id)} onCheckedChange={() => toggleSelect(n.id)} className="mt-1" />
                     <div className="shrink-0 mt-0.5">{c.icon}</div>
@@ -682,9 +682,20 @@ const NotificationCenterTab = () => {
                         {format(new Date(n.created_at), "MMM dd, HH:mm")} · {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
                     </div>
-                    {!n.is_read && (
-                      <Button variant="ghost" size="sm" className="text-xs shrink-0" onClick={() => markAsRead(n.id)}>Read</Button>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {!n.is_read && (
+                        <Button variant="ghost" size="sm" className="text-xs" onClick={() => markAsRead(n.id)}>Read</Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                        onClick={async () => { await deleteOne(n.id); toast.success("Deleted"); }}
+                        title="Delete notification"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </motion.div>
                 );
               })
