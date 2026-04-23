@@ -2843,6 +2843,7 @@ export type Database = {
           end_date: string | null
           id: string
           notes: string | null
+          order_id: string | null
           plan: Database["public"]["Enums"]["subscription_plan"]
           price: number
           product_name: string
@@ -2861,6 +2862,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           notes?: string | null
+          order_id?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           price?: number
           product_name?: string
@@ -2879,6 +2881,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           notes?: string | null
+          order_id?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           price?: number
           product_name?: string
@@ -2896,6 +2899,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -3174,6 +3184,7 @@ export type Database = {
           id: string
           is_paid: boolean
           note: string | null
+          order_id: string | null
           paid_amount: number
           phone_number: string | null
           store_id: string | null
@@ -3189,6 +3200,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           note?: string | null
+          order_id?: string | null
           paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
@@ -3204,6 +3216,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           note?: string | null
+          order_id?: string | null
           paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
@@ -3211,6 +3224,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_store_id_fkey"
             columns: ["store_id"]
