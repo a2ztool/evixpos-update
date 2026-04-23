@@ -526,7 +526,7 @@ const LandingPage = () => {
                   {get("hero_social_proof", "Trusted by 3,000+ businesses worldwide")}
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="!h-5 sm:!h-6 px-1.5 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-primary hover:text-primary shrink-0 leading-none min-h-0">
-                  Join <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
+                  {get("hero_social_proof_cta", "Join")} <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5 sm:ml-1" />
                 </Button>
               </div>
             </div>
