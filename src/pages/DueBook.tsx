@@ -41,6 +41,8 @@ interface Due {
   due_date: string | null;
   is_paid: boolean;
   created_at: string;
+  customer_name: string | null;
+  phone_number: string | null;
 }
 
 const DATE_PRESETS = [
@@ -95,7 +97,7 @@ const DueBook = () => {
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
-  // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders
+  // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders (legacy fallback for old dues)
   const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
 
   const fetchDues = useCallback(async () => {
@@ -111,11 +113,12 @@ const DueBook = () => {
     setLoading(false);
   }, [activeStore, user]);
 
-  // Resolve customer name + phone for POS-linked dues by joining via orders → customers
+  // Legacy fallback: resolve customer for old dues that don't have customer_name/phone_number stored
   useEffect(() => {
     if (!activeStore || dues.length === 0) return;
+    const legacyDues = dues.filter((d) => !d.customer_name || !d.phone_number);
     const orderPrefixes = Array.from(new Set(
-      dues
+      legacyDues
         .map((d) => d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1])
         .filter((p): p is string => !!p)
     ));
@@ -140,17 +143,29 @@ const DueBook = () => {
     })();
   }, [activeStore, dues]);
 
-  // Resolve display name + phone for any due (POS-linked customers take precedence)
+  // Resolve display name + phone for any due — prefer stored columns, fallback to legacy lookups
   const getDueContact = useCallback((d: Due): { name: string; phone: string } => {
+    // 1. Prefer new stored columns
+    if (d.customer_name || d.phone_number) {
+      return {
+        name: d.customer_name || d.category || "Unknown",
+        phone: d.phone_number || extractPhone(d.note) || "",
+      };
+    }
+    // 2. Legacy POS-linked lookup
     const orderPrefix = d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1];
     if (orderPrefix && orderCustomerMap[orderPrefix]) {
       const c = orderCustomerMap[orderPrefix];
       return {
-        name: c.name || d.category || "Customer",
-        phone: c.phone || extractPhone(d.note),
+        name: c.name || d.category || "Unknown",
+        phone: c.phone || extractPhone(d.note) || "",
       };
     }
-    return { name: d.category || "—", phone: extractPhone(d.note) };
+    // 3. Manual due (phone embedded in note)
+    return {
+      name: d.category || "Unknown",
+      phone: extractPhone(d.note) || "",
+    };
   }, [orderCustomerMap]);
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
@@ -294,13 +309,15 @@ const DueBook = () => {
       type: form.type, amount: form.amount, category: form.category, note: finalNote,
     });
     if (!ok) { toast.error("Please fix the errors below"); return; }
-    const payload = {
+    const payload: any = {
       type: form.type as "income" | "expense",
       amount: Number(form.amount),
       category: form.category,
       note: finalNote,
       due_date: form.due_date || null,
       is_paid: false,
+      customer_name: form.category || null,
+      phone_number: form.phone?.trim() || null,
     };
     if (editId) {
       const { error } = await supabase.from("transactions").update(payload).eq("id", editId);

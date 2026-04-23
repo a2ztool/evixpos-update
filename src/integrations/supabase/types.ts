@@ -3118,10 +3118,12 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          customer_name: string | null
           due_date: string | null
           id: string
           is_paid: boolean
           note: string | null
+          phone_number: string | null
           store_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
@@ -3130,10 +3132,12 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          customer_name?: string | null
           due_date?: string | null
           id?: string
           is_paid?: boolean
           note?: string | null
+          phone_number?: string | null
           store_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id: string
@@ -3142,10 +3146,12 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          customer_name?: string | null
           due_date?: string | null
           id?: string
           is_paid?: boolean
           note?: string | null
+          phone_number?: string | null
           store_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string

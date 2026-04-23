@@ -438,6 +438,10 @@ const POS = () => {
         .map((i) => supabase.from("products").update({ stock: i.product.stock - i.quantity }).eq("id", i.product.id));
       await Promise.all(stockUpdates);
 
+      const txnCustomer = customers.find(c => c.id === customerId);
+      const txnCustomerName = txnCustomer?.name || "Walk-in";
+      const txnPhone = txnCustomer?.phone || null;
+
       if (!hasDue) {
         // Fully paid — split or single
         if (splitMode && splitEntries.length > 1) {
@@ -450,7 +454,9 @@ const POS = () => {
               category: "sale",
               note: `POS Order #${order.id.slice(0, 8)} (${e.methodName})`,
               is_paid: true,
-            })
+              customer_name: txnCustomerName,
+              phone_number: txnPhone,
+            } as any)
           ));
         } else {
           await supabase.from("transactions").insert({
@@ -461,7 +467,9 @@ const POS = () => {
             category: "sale",
             note: `POS Order #${order.id.slice(0, 8)}`,
             is_paid: true,
-          });
+            customer_name: txnCustomerName,
+            phone_number: txnPhone,
+          } as any);
         }
       } else if (effectivePaid > 0) {
         // Partial paid
@@ -475,7 +483,9 @@ const POS = () => {
               category: "sale",
               note: `POS Partial Order #${order.id.slice(0, 8)} (${e.methodName})`,
               is_paid: true,
-            })
+              customer_name: txnCustomerName,
+              phone_number: txnPhone,
+            } as any)
           ));
         } else {
           await supabase.from("transactions").insert({
@@ -486,7 +496,9 @@ const POS = () => {
             category: "sale",
             note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
             is_paid: true,
-          });
+            customer_name: txnCustomerName,
+            phone_number: txnPhone,
+          } as any);
         }
         await supabase.from("transactions").insert({
           user_id: effectiveUserId!,
@@ -497,7 +509,9 @@ const POS = () => {
           note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
           is_paid: false,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        });
+          customer_name: txnCustomerName,
+          phone_number: txnPhone,
+        } as any);
       } else {
         // Full due
         await supabase.from("transactions").insert({
@@ -509,7 +523,9 @@ const POS = () => {
           note: `POS Due Order #${order.id.slice(0, 8)}`,
           is_paid: false,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        });
+          customer_name: txnCustomerName,
+          phone_number: txnPhone,
+        } as any);
       }
 
       // ─── Sync Customer Credits (due orders) ───
