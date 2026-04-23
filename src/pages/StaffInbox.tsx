@@ -295,11 +295,12 @@ const StaffInbox = () => {
             supabase.from("staff_messages").update({ is_read: true }).eq("id", msg.id).then();
           }
         }
+        // Sound + desktop notification handled globally by useNotifications via the
+        // staff_messages → notifications DB trigger. Only play an in-page sound here
+        // when the user is NOT currently viewing this conversation, to avoid duplicates.
         if (msg.receiver_id === myId && msg.sender_id !== myId) {
-          if (soundEnabledRef.current) playNotificationSound();
-          const senderStaff = staffListRef.current.find(s => s.auth_user_id === msg.sender_id);
-          const senderName = senderStaff?.name || "Someone";
-          sendDesktopNotification(`💬 ${senderName}`, msg.message?.slice(0, 100) || "New message");
+          const isViewingThisChat = activeChatTypeRef.current === "direct" && activeChatRef.current === msg.sender_id;
+          if (!isViewingThisChat && soundEnabledRef.current) playNotificationSound();
         }
         fetchUnreadCounts();
       })
@@ -341,11 +342,11 @@ const StaffInbox = () => {
             setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
             scrollToBottom();
           }
+          // Group sound/desktop now handled by useNotifications via DB trigger fanout.
+          // Play in-page chime only when not actively viewing this group (to avoid double sound).
           if (m.sender_id !== myId) {
-            if (soundEnabledRef.current) playNotificationSound();
-            const senderName = getSenderNameById(m.sender_id);
-            const grp = groups.find(g => g.id === m.group_id);
-            sendDesktopNotification(`👥 ${grp?.name || "Group"}`, `${senderName}: ${(m.message || "").slice(0, 80)}`);
+            const isViewingThisGroup = activeChatTypeRef.current === "group" && activeChatRef.current === m.group_id;
+            if (!isViewingThisGroup && soundEnabledRef.current) playNotificationSound();
           }
         })
       .subscribe();
