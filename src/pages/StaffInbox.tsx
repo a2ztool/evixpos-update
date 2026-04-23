@@ -711,7 +711,11 @@ const StaffInbox = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-2 md:px-4 py-3">
+      {/* Mobile WhatsApp-style full-screen chat overlay */}
+      {showChat && (
+        <style>{`@media (max-width: 767px){body{overflow:hidden}}`}</style>
+      )}
+      <div className={cn("max-w-6xl mx-auto px-2 md:px-4 py-3", showChat && "md:block")}>
         {/* Header — hidden on mobile when a chat is open (native app feel) */}
         <div className={cn("flex items-center gap-3 mb-3", showChat && "hidden md:flex")}>
           <MessageSquare className="h-5 w-5 text-primary" />
@@ -778,10 +782,12 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        {/* Mobile: full-height card. Desktop: bordered card. */}
+        {/* Mobile: WhatsApp-style full-screen when chat open. Desktop: bordered card. */}
         <div className={cn(
-          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm bg-background",
-          "h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
+          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
+          showChat
+            ? "fixed inset-0 z-[60] bg-background h-[100dvh] md:static md:inset-auto md:z-auto md:h-[calc(100dvh-12rem)]"
+            : "bg-background h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
         )}>
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
