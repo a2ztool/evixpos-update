@@ -1214,7 +1214,7 @@ const LandingPage = () => {
                           >
                             {CUR_SYMBOLS[currency]}{price}
                           </motion.span>
-                          <span className="text-sm text-muted-foreground">/{yearly ? "yr" : "mo"}</span>
+                          <span className="text-sm text-muted-foreground">{yearly ? get("plan_period_yearly", "/yr") : get("plan_period_monthly", "/mo")}</span>
                           {yearly && (
                             <div className="mt-1">
                               <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 text-[10px]">{get("pricing_yearly_off_badge", "20% OFF")}</Badge>
