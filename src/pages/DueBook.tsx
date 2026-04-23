@@ -110,6 +110,19 @@ const DueBook = () => {
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
+  // Payment modal state
+  const [paymentModal, setPaymentModal] = useState<Due | null>(null);
+  const [paymentMode, setPaymentMode] = useState<"full" | "partial" | "custom">("full");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(fnsFormat(new Date(), "yyyy-MM-dd"));
+  const [paymentNote, setPaymentNote] = useState("");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Due | null>(null);
+  // Person details drawer
+  const [personDetail, setPersonDetail] = useState<string | null>(null);
+  // Payments cache: transaction_id -> payments list
+  const [paymentsByTxn, setPaymentsByTxn] = useState<Record<string, DuePayment[]>>({});
   // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders (legacy fallback for old dues)
   const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
 
