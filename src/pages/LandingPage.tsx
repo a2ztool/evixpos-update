@@ -986,9 +986,9 @@ const LandingPage = () => {
           <AnimSection delay={0.15}>
             <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-xl">
               <div className="grid grid-cols-3 bg-muted/50 border-b border-border/50">
-                <div className="p-4 sm:p-5 text-sm font-semibold text-muted-foreground">Feature</div>
+                <div className="p-4 sm:p-5 text-sm font-semibold text-muted-foreground">{get("comparison_col_feature", "Feature")}</div>
                 <div className="p-4 sm:p-5 text-center"><div className="text-sm font-bold text-primary">{get("brand_name", "EvixPOS")}</div></div>
-                <div className="p-4 sm:p-5 text-center text-sm font-semibold text-muted-foreground">Others</div>
+                <div className="p-4 sm:p-5 text-center text-sm font-semibold text-muted-foreground">{get("comparison_col_others", "Others")}</div>
               </div>
               {(get("comparison_features", "Online + Offline in One Panel|Built-in POS System|Walk-in Sales Management|Multi-Store (Online & Offline)|Subscription & Renewal Tracking|WhatsApp Integration|Multi-Currency Support|Free Plan Available")).split("|").map((feature, i, arr) => (
                 <div key={feature} className={`grid grid-cols-3 ${i < arr.length - 1 ? "border-b border-border/30" : ""} hover:bg-muted/30 transition-colors`}>
