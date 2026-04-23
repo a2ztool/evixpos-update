@@ -1079,7 +1079,7 @@ const LandingPage = () => {
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 shadow-sm">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5" /> Customer Volume
+                  <Users className="h-3.5 w-3.5" /> {get("pricing_volume_label", "Customer Volume")}
                 </span>
                 <motion.span
                   key={selectedVolume}
@@ -1109,45 +1109,45 @@ const LandingPage = () => {
           {/* Monthly / Yearly Toggle */}
           <AnimSection delay={0.2} className="flex justify-center items-center gap-3 mb-10">
             <div className="inline-flex bg-card rounded-xl border border-border/50 p-1 shadow-sm">
-              <button onClick={() => setYearly(false)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${!yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>Monthly</button>
-              <button onClick={() => setYearly(true)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>Yearly</button>
+              <button onClick={() => setYearly(false)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${!yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>{get("pricing_monthly_label", "Monthly")}</button>
+              <button onClick={() => setYearly(true)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${yearly ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>{get("pricing_yearly_label", "Yearly")}</button>
             </div>
             {yearly && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-bold">
-                  <Sparkles className="h-3 w-3 mr-1" /> Save 20%
+                  <Sparkles className="h-3 w-3 mr-1" /> {get("pricing_yearly_save_badge", "Save 20%")}
                 </Badge>
               </motion.div>
             )}
           </AnimSection>
 
           {/* Plan Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+          <div className={`grid md:grid-cols-2 gap-5 max-w-6xl mx-auto ${get("plan_custom_visible", "true") === "true" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
             {[
               {
-                name: "Free", key: "free", icon: Zap, tagline: "Forever free",
+                name: get("plan_free_name", "Free"), key: "free", icon: Zap, tagline: get("plan_free_tagline", "Forever free"),
                 gradient: "from-muted/50 to-muted/20",
                 stores: "1", products: "25", customers: "50",
                 features: PLAN_FEATURES_LIST.free,
               },
               {
-                name: "Pro", key: "pro", icon: Crown, tagline: "Best for growing businesses",
+                name: get("plan_pro_name", "Pro"), key: "pro", icon: Crown, tagline: get("plan_pro_tagline", "Best for growing businesses"),
                 popular: true, gradient: "from-primary/10 to-primary/5",
                 stores: "3", products: "100", customers: formatVolume(selectedVolume),
                 features: PLAN_FEATURES_LIST.pro,
               },
               {
-                name: "Business", key: "business", icon: Shield, tagline: "For scaling teams",
+                name: get("plan_business_name", "Business"), key: "business", icon: Shield, tagline: get("plan_business_tagline", "For scaling teams"),
                 bestValue: true, gradient: "from-orange-500/10 to-orange-500/5",
                 stores: "10", products: "500", customers: formatVolume(Math.max(selectedVolume, 1000)),
                 features: PLAN_FEATURES_LIST.business,
               },
-              {
-                name: "Custom", key: "custom", icon: Star, tagline: "For large businesses",
+              ...(get("plan_custom_visible", "true") === "true" ? [{
+                name: get("plan_custom_name", "Custom"), key: "custom", icon: Star, tagline: get("plan_custom_tagline", "For large businesses"),
                 gradient: "from-violet-500/10 to-violet-500/5",
                 stores: "Unlimited", products: "Unlimited", customers: "Unlimited",
-                features: ["Everything in Business", "Custom Integrations", "Dedicated Account Manager", "SLA Guarantee"],
-              },
+                features: get("plan_custom_features", "Everything in Business|Custom Integrations|Dedicated Account Manager|SLA Guarantee").split("|").filter(Boolean),
+              }] : []),
             ].map((plan, idx) => {
               const price = getLandingPrice(plan.key);
               const origPrice = getOriginalPrice(plan.key);
@@ -1169,12 +1169,12 @@ const LandingPage = () => {
                       {/* Badges */}
                       {isPro && (
                         <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3 border border-primary/20 w-fit px-[12px] py-[4px] text-center">
-                          <Star className="h-3 w-3 fill-current" /> POPULAR
+                          <Star className="h-3 w-3 fill-current" /> {get("pricing_popular_badge", "POPULAR")}
                         </div>
                       )}
                       {isBiz && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 text-xs font-bold mb-3 border border-orange-500/20 w-fit">
-                          <Award className="h-3 w-3" /> BEST VALUE
+                          <Award className="h-3 w-3" /> {get("pricing_best_value_badge", "BEST VALUE")}
                         </div>
                       )}
 
@@ -1191,13 +1191,13 @@ const LandingPage = () => {
                       {/* Pricing */}
                       {plan.key === "free" ? (
                         <div className="mb-5">
-                          <span className="text-3xl font-black text-foreground">Free</span>
+                          <span className="text-3xl font-black text-foreground">{get("plan_free_name", "Free")}</span>
                           <span className="text-sm text-muted-foreground ml-1">/forever</span>
                         </div>
                       ) : plan.key === "custom" ? (
                         <div className="mb-5">
-                          <span className="text-3xl font-black text-violet-600">Custom</span>
-                          <p className="text-xs text-muted-foreground mt-1">Contact for pricing</p>
+                          <span className="text-3xl font-black text-violet-600">{get("plan_custom_price_label", "Custom")}</span>
+                          <p className="text-xs text-muted-foreground mt-1">{get("plan_custom_price_note", "Contact for pricing")}</p>
                         </div>
                       ) : (
                         <div className="mb-5">
@@ -1217,10 +1217,10 @@ const LandingPage = () => {
                           <span className="text-sm text-muted-foreground">/{yearly ? "yr" : "mo"}</span>
                           {yearly && (
                             <div className="mt-1">
-                              <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 text-[10px]">20% OFF</Badge>
+                              <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 text-[10px]">{get("pricing_yearly_off_badge", "20% OFF")}</Badge>
                             </div>
                           )}
-                          <p className="text-[11px] text-muted-foreground mt-1">Valid: {yearly ? "365" : "30"} days</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">{yearly ? get("pricing_validity_yearly", "Valid: 365 days") : get("pricing_validity_monthly", "Valid: 30 days")}</p>
                         </div>
                       )}
 
@@ -1241,7 +1241,13 @@ const LandingPage = () => {
                         size="lg"
                         onClick={() => handlePricingCTA(plan.key)}
                       >
-                        {plan.key === "free" ? "Start Free" : plan.key === "custom" ? "Contact Sales" : loggedInUser ? "Upgrade Now" : "Get Started"}
+                        {plan.key === "free"
+                          ? get("plan_free_cta", "Start Free")
+                          : plan.key === "custom"
+                            ? get("plan_custom_cta", "Contact Sales")
+                            : plan.key === "pro"
+                              ? (loggedInUser ? get("plan_pro_cta_logged_in", "Upgrade Now") : get("plan_pro_cta", "Get Started"))
+                              : (loggedInUser ? get("plan_business_cta_logged_in", "Upgrade Now") : get("plan_business_cta", "Get Started"))}
                         <ArrowRight className="h-4 w-4 ml-1" />
                       </Button>
                     </CardContent>
