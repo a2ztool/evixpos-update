@@ -284,6 +284,22 @@ Deno.serve(async (req) => {
       await supabase.from("order_items").insert(orderItems);
     }
 
+    // Create due-book transaction for unpaid WooCommerce orders so they appear in Due Book
+    if (newOrder && paymentStatus === "unpaid" && totalAmount > 0) {
+      await supabase.from("transactions").insert({
+        user_id: userId,
+        store_id: storeId,
+        type: "income",
+        amount: totalAmount,
+        category: "sale",
+        note: `WooCommerce Order #${wcOrder.number || wcOrder.id}`,
+        is_paid: false,
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        customer_name: customerName,
+        phone_number: customerPhone || null,
+      });
+    }
+
     const itemNames = (wcOrder.line_items || []).map((i: any) => i.name).slice(0, 3).join(", ");
     const notifMessage = `🛒 New website order #${wcOrder.number || wcOrder.id} from ${customerName} — ${currency} ${totalAmount.toFixed(2)}${itemNames ? ` (${itemNames})` : ""}`;
     await supabase.from("notifications").insert({ user_id: userId, message: notifMessage, type: "order" });
