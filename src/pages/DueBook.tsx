@@ -41,6 +41,8 @@ interface Due {
   due_date: string | null;
   is_paid: boolean;
   created_at: string;
+  customer_name: string | null;
+  phone_number: string | null;
 }
 
 const DATE_PRESETS = [
