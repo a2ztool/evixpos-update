@@ -12,7 +12,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Plus, Search, Truck, ShoppingBag, Edit2, Eye,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Plus, Search, Truck, ShoppingBag, Edit2, Eye, Trash2,
   AlertTriangle, Phone, Mail, CheckCircle2, History, Package, BookOpen, ShieldCheck, Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,6 +62,13 @@ const OnlineSuppliersPurchases = () => {
 
   // Detail dialog
   const [detail, setDetail] = useState<any>(null);
+
+  // Edit purchase
+  const [purEditId, setPurEditId] = useState<string | null>(null);
+
+  // Delete confirmations
+  const [delSupplier, setDelSupplier] = useState<any>(null);
+  const [delPurchase, setDelPurchase] = useState<any>(null);
 
   // ── Queries ──
   const { data: suppliers = [] } = useQuery({
@@ -146,6 +157,17 @@ const OnlineSuppliersPurchases = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  /** Adjust supplier balance_due by a delta (can be negative). */
+  const adjustSupplierDue = async (supplierId: string | null, delta: number) => {
+    if (!supplierId || delta === 0) return;
+    const { data: sup } = await supabase.from("suppliers")
+      .select("balance_due").eq("id", supplierId).maybeSingle();
+    if (sup) {
+      const next = Math.max(0, Number(sup.balance_due) + delta);
+      await supabase.from("suppliers").update({ balance_due: next }).eq("id", supplierId);
+    }
+  };
+
   const savePurchase = useMutation({
     mutationFn: async () => {
       const qty = Number(purForm.quantity) || 0;
@@ -163,45 +185,103 @@ const OnlineSuppliersPurchases = () => {
         purForm.notes?.trim() || "",
       ].filter(Boolean).join(" — ");
 
-      const { data: p, error: pe } = await supabase.from("purchases").insert({
-        store_id: storeId!, user_id: userId!,
-        supplier_id: purForm.supplier_id || null,
-        total_amount: total, paid_amount: paid,
-        payment_status: status,
-        payment_method: purForm.payment_method,
-        purchase_date: purForm.purchase_date,
-        notes: composedNotes,
-      }).select("id").single();
-      if (pe) throw pe;
+      if (purEditId) {
+        // Reverse old supplier due first
+        const { data: old } = await supabase.from("purchases")
+          .select("supplier_id, total_amount, paid_amount").eq("id", purEditId).maybeSingle();
+        if (old) {
+          const oldDue = Math.max(0, Number(old.total_amount) - Number(old.paid_amount));
+          await adjustSupplierDue(old.supplier_id, -oldDue);
+        }
 
-      if (p?.id) {
+        const { error: ue } = await supabase.from("purchases").update({
+          supplier_id: purForm.supplier_id || null,
+          total_amount: total, paid_amount: paid,
+          payment_status: status,
+          payment_method: purForm.payment_method,
+          purchase_date: purForm.purchase_date,
+          notes: composedNotes,
+        }).eq("id", purEditId);
+        if (ue) throw ue;
+
+        // Replace purchase_items
+        await supabase.from("purchase_items").delete().eq("purchase_id", purEditId);
         await supabase.from("purchase_items").insert({
-          purchase_id: p.id, product_id: null,
+          purchase_id: purEditId, product_id: null,
           quantity: qty, unit_cost: unit, total_cost: total,
         });
-      }
 
-      if (purForm.supplier_id && total > paid) {
-        const due = total - paid;
-        const { data: sup } = await supabase.from("suppliers")
-          .select("balance_due").eq("id", purForm.supplier_id).maybeSingle();
-        if (sup) {
-          await supabase.from("suppliers")
-            .update({ balance_due: Number(sup.balance_due) + due })
-            .eq("id", purForm.supplier_id);
+        // Apply new supplier due
+        const newDue = total - paid;
+        await adjustSupplierDue(purForm.supplier_id || null, newDue);
+      } else {
+        const { data: p, error: pe } = await supabase.from("purchases").insert({
+          store_id: storeId!, user_id: userId!,
+          supplier_id: purForm.supplier_id || null,
+          total_amount: total, paid_amount: paid,
+          payment_status: status,
+          payment_method: purForm.payment_method,
+          purchase_date: purForm.purchase_date,
+          notes: composedNotes,
+        }).select("id").single();
+        if (pe) throw pe;
+
+        if (p?.id) {
+          await supabase.from("purchase_items").insert({
+            purchase_id: p.id, product_id: null,
+            quantity: qty, unit_cost: unit, total_cost: total,
+          });
         }
+
+        await adjustSupplierDue(purForm.supplier_id || null, total - paid);
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["online-purchases", storeId] });
       qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
       setPurDialog(false);
+      setPurEditId(null);
       setPurForm({
         supplier_id: "", product_name: "", quantity: "1", unit_price: "", paid_amount: "",
         payment_method: paymentMethodOptions[0]?.id || "cash",
         purchase_date: formatDate(new Date(), "yyyy-MM-dd"), notes: "",
       });
-      toast.success("Purchase recorded");
+      toast.success(purEditId ? "Purchase updated" : "Purchase recorded");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteSupplierMut = useMutation({
+    mutationFn: async (id: string) => {
+      // Soft delete to preserve purchase history references
+      const { error } = await supabase.from("suppliers")
+        .update({ is_active: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
+      setDelSupplier(null);
+      toast.success("Supplier deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deletePurchaseMut = useMutation({
+    mutationFn: async (purchase: any) => {
+      // Reverse supplier due
+      const due = Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount));
+      await adjustSupplierDue(purchase.supplier_id, -due);
+      // Cascade items then purchase
+      await supabase.from("purchase_items").delete().eq("purchase_id", purchase.id);
+      const { error } = await supabase.from("purchases").delete().eq("id", purchase.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["online-purchases", storeId] });
+      qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
+      setDelPurchase(null);
+      setDetail(null);
+      toast.success("Purchase deleted");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -230,6 +310,40 @@ const OnlineSuppliersPurchases = () => {
     setSupForm({ name: s.name, phone: s.phone || "", email: s.email || "", address: s.address || "", notes: s.notes || "" });
     setSupEditId(s.id);
     setSupDialog(true);
+  };
+
+  const openPurchaseEdit = async (p: any) => {
+    // Try to load purchase_items for accurate qty/unit; fallback to parsing notes
+    const { data: items } = await supabase.from("purchase_items")
+      .select("quantity, unit_cost").eq("purchase_id", p.id).limit(1);
+    const item = items?.[0];
+    let qty = item?.quantity ? String(item.quantity) : "1";
+    let unit = item?.unit_cost ? String(item.unit_cost) : "";
+    let productName = "";
+    let extraNotes = "";
+    if (p.notes) {
+      const parts = String(p.notes).split(" — ");
+      const head = parts[0] || "";
+      const m = head.match(/^(.+?)\s×\s/);
+      productName = m ? m[1] : head;
+      extraNotes = parts.slice(1).join(" — ");
+    }
+    if (!unit && Number(qty) > 0) {
+      unit = String(Number(p.total_amount) / Number(qty));
+    }
+    setPurForm({
+      supplier_id: p.supplier_id || "",
+      product_name: productName,
+      quantity: qty,
+      unit_price: unit,
+      paid_amount: String(p.paid_amount ?? ""),
+      payment_method: p.payment_method || paymentMethodOptions[0]?.id || "cash",
+      purchase_date: p.purchase_date,
+      notes: extraNotes,
+    });
+    setPurEditId(p.id);
+    setPurDialog(true);
+    setDetail(null);
   };
 
   const openHistory = async (s: any) => {
@@ -390,6 +504,7 @@ const OnlineSuppliersPurchases = () => {
                       <div className="flex gap-1.5 mt-2">
                         <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={() => openHistory(s)}><History className="h-3 w-3" /> History</Button>
                         <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => openSupplierEdit(s)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => setDelSupplier(s)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </CardContent></Card>
                   ))}
@@ -415,6 +530,7 @@ const OnlineSuppliersPurchases = () => {
                             <div className="flex gap-1.5 justify-end">
                               <Button size="sm" variant="outline" className="gap-1" onClick={() => openHistory(s)}><History className="h-3 w-3" /> History</Button>
                               <Button size="sm" variant="ghost" onClick={() => openSupplierEdit(s)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDelSupplier(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -450,9 +566,13 @@ const OnlineSuppliersPurchases = () => {
                           {statusBadge(p.payment_status)}
                         </div>
                       </div>
-                      <Button size="sm" variant="outline" className="w-full mt-2 h-8 text-xs gap-1" onClick={() => setDetail(p)}>
-                        <Eye className="h-3 w-3" /> View
-                      </Button>
+                      <div className="flex gap-1.5 mt-2">
+                        <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={() => setDetail(p)}>
+                          <Eye className="h-3 w-3" /> View
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => openPurchaseEdit(p)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => setDelPurchase(p)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
                     </CardContent></Card>
                   ))}
                 </div>
@@ -475,7 +595,13 @@ const OnlineSuppliersPurchases = () => {
                           <TableCell className="text-right font-medium">{format(Number(p.total_amount))}</TableCell>
                           <TableCell className="text-right text-emerald-600">{format(Number(p.paid_amount))}</TableCell>
                           <TableCell>{statusBadge(p.payment_status)}</TableCell>
-                          <TableCell><Button size="sm" variant="ghost" onClick={() => setDetail(p)}><Eye className="h-3.5 w-3.5" /></Button></TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="ghost" onClick={() => setDetail(p)}><Eye className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => openPurchaseEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDelPurchase(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -507,9 +633,9 @@ const OnlineSuppliersPurchases = () => {
       </Dialog>
 
       {/* Purchase Dialog */}
-      <Dialog open={purDialog} onOpenChange={setPurDialog}>
+      <Dialog open={purDialog} onOpenChange={(v) => { setPurDialog(v); if (!v) setPurEditId(null); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Purchase</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{purEditId ? "Edit Purchase" : "New Purchase"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Supplier</Label>
@@ -544,7 +670,7 @@ const OnlineSuppliersPurchases = () => {
               <span>Due: <span className="font-bold text-destructive">{format(Math.max(0, (Number(purForm.quantity) || 0) * (Number(purForm.unit_price) || 0) - (Number(purForm.paid_amount) || 0)))}</span></span>
             </div>
             <Button onClick={() => savePurchase.mutate()} disabled={savePurchase.isPending} className="w-full">
-              {savePurchase.isPending ? "Saving..." : "Record Purchase"}
+              {savePurchase.isPending ? "Saving..." : purEditId ? "Update Purchase" : "Record Purchase"}
             </Button>
           </div>
         </DialogContent>
@@ -589,10 +715,62 @@ const OnlineSuppliersPurchases = () => {
               <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span className="text-destructive font-medium">{format(Math.max(0, Number(detail.total_amount) - Number(detail.paid_amount)))}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Status</span>{statusBadge(detail.payment_status)}</div>
               {detail.notes && <div className="pt-2 border-t"><p className="text-muted-foreground text-xs mb-1">Notes</p><p>{detail.notes}</p></div>}
+              <div className="flex gap-2 pt-3 border-t">
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => openPurchaseEdit(detail)}>
+                  <Edit2 className="h-3.5 w-3.5" /> Edit
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-destructive hover:text-destructive" onClick={() => { setDelPurchase(detail); }}>
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Supplier Confirmation */}
+      <AlertDialog open={!!delSupplier} onOpenChange={(v) => !v && setDelSupplier(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete supplier?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{delSupplier?.name}" will be removed from your suppliers list. Existing purchase history will be preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => delSupplier && deleteSupplierMut.mutate(delSupplier.id)}
+              disabled={deleteSupplierMut.isPending}
+            >
+              {deleteSupplierMut.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Purchase Confirmation */}
+      <AlertDialog open={!!delPurchase} onOpenChange={(v) => !v && setDelPurchase(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete purchase?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This purchase record will be permanently removed and any unpaid balance will be reversed from the supplier's due.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => delPurchase && deletePurchaseMut.mutate(delPurchase)}
+              disabled={deletePurchaseMut.isPending}
+            >
+              {deletePurchaseMut.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
