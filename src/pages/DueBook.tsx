@@ -320,20 +320,29 @@ const DueBook = () => {
   ].filter(d => d.value > 0), [stats]);
 
   const topPersons = useMemo(() => {
-    const map = new Map<string, { name: string; phone: string; receivable: number; payable: number; count: number }>();
-    dues.filter((d) => !d.is_paid && d.category).forEach((d) => {
-      const name = d.category;
-      const entry = map.get(name) || { name, phone: "", receivable: 0, payable: 0, count: 0 };
-      if (d.type === "income") entry.receivable += Number(d.amount);
-      else entry.payable += Number(d.amount);
-      if (!entry.phone) entry.phone = extractPhone(d.note);
-      entry.count++;
+    const map = new Map<string, { name: string; phone: string; receivable: number; payable: number; collected: number; paidOut: number; count: number; dues: Due[] }>();
+    dues.forEach((d) => {
+      const contact = getDueContact(d);
+      const name = contact.name || d.category || "Unknown";
+      if (!name || name === "Unknown" && !d.category) return;
+      const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+      const entry = map.get(name) || { name, phone: contact.phone, receivable: 0, payable: 0, collected: 0, paidOut: 0, count: 0, dues: [] };
+      if (!entry.phone && contact.phone) entry.phone = contact.phone;
+      if (d.type === "income") {
+        if (!d.is_paid) entry.receivable += remaining;
+        entry.collected += d.is_paid ? Number(d.amount) : Number(d.paid_amount || 0);
+      } else {
+        if (!d.is_paid) entry.payable += remaining;
+        entry.paidOut += d.is_paid ? Number(d.amount) : Number(d.paid_amount || 0);
+      }
+      if (!d.is_paid) entry.count++;
+      entry.dues.push(d);
       map.set(name, entry);
     });
     return Array.from(map.values())
       .sort((a, b) => (b.receivable + b.payable) - (a.receivable + a.payable))
-      .slice(0, 12);
-  }, [dues]);
+      .slice(0, 24);
+  }, [dues, getDueContact]);
 
   const openAdd = () => {
     setEditId(null);
