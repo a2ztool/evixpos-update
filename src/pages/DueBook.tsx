@@ -309,13 +309,15 @@ const DueBook = () => {
       type: form.type, amount: form.amount, category: form.category, note: finalNote,
     });
     if (!ok) { toast.error("Please fix the errors below"); return; }
-    const payload = {
+    const payload: any = {
       type: form.type as "income" | "expense",
       amount: Number(form.amount),
       category: form.category,
       note: finalNote,
       due_date: form.due_date || null,
       is_paid: false,
+      customer_name: form.category || null,
+      phone_number: form.phone?.trim() || null,
     };
     if (editId) {
       const { error } = await supabase.from("transactions").update(payload).eq("id", editId);
