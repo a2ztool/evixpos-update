@@ -581,7 +581,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
                 <Button
                   className="w-full"
                   onClick={handleSubmit}
-                  disabled={submitting || duplicateWarning}
+                  disabled={submitting || duplicateWarning || !txnIdValid}
                 >
                   {submitting ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
