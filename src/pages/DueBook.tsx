@@ -1045,7 +1045,7 @@ const DueBook = () => {
                   const total = p.receivable + p.payable;
                   const net = p.receivable - p.payable;
                   return (
-                    <Card key={p.name} className="rounded-2xl hover:shadow-md transition-all">
+                    <Card key={p.name} onClick={() => setPersonDetail(p.name)} className="rounded-2xl hover:shadow-md hover:border-primary/40 transition-all cursor-pointer">
                       <CardContent className="!p-5 space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
