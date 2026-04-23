@@ -184,7 +184,7 @@ const FeatureShowcase = ({ featureCards, get }: { featureCards: number[]; get: (
                     <div className="w-3 h-3 rounded-full bg-primary/40" />
                     <div className="flex-1 mx-4">
                       <div className="bg-background/60 rounded-md px-3 py-1 text-[11px] text-muted-foreground text-center font-mono max-w-[200px] mx-auto">
-                        app.evixpos.com
+                        {get("hero_browser_url", "app.evixpos.com")}
                       </div>
                     </div>
                   </div>
