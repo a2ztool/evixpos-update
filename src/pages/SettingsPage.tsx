@@ -506,13 +506,37 @@ const SettingsPage = () => {
 
   const updateStaffMember = async () => {
     if (!editingStaff) return;
-    await supabase.from("staff_members").update({
-      name: editingStaff.name, email: editingStaff.email, phone: editingStaff.phone,
-      role: editingStaff.role, permissions: editingStaff.permissions as any,
-    }).eq("id", editingStaff.id);
-    setStaff(prev => prev.map(s => s.id === editingStaff.id ? editingStaff : s));
-    setEditingStaff(null);
-    toast.success("Staff updated!");
+    const newPwd = (editingStaff as any).password as string | undefined;
+    if (newPwd && newPwd.length > 0 && newPwd.length < 6) {
+      toast.error(lang === "bn" ? "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে" : "Password must be at least 6 characters");
+      return;
+    }
+    setStaffCreating(true);
+    try {
+      const { error: updErr } = await supabase.from("staff_members").update({
+        name: editingStaff.name, email: editingStaff.email, phone: editingStaff.phone,
+        role: editingStaff.role, permissions: editingStaff.permissions as any,
+      }).eq("id", editingStaff.id);
+      if (updErr) throw new Error(updErr.message);
+
+      if (newPwd && newPwd.length >= 6) {
+        const { data, error } = await supabase.functions.invoke("reset-staff-password", {
+          body: { staff_id: editingStaff.id, new_password: newPwd },
+        });
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+      }
+
+      const { password: _pw, ...clean } = editingStaff as any;
+      setStaff(prev => prev.map(s => s.id === editingStaff.id ? clean : s));
+      setEditingStaff(null);
+      toast.success(newPwd
+        ? (lang === "bn" ? "স্টাফ এবং পাসওয়ার্ড আপডেট হয়েছে!" : "Staff and password updated!")
+        : (lang === "bn" ? "স্টাফ আপডেট হয়েছে!" : "Staff updated!"));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update staff");
+    }
+    setStaffCreating(false);
   };
 
   const removeStaff = async (id: string) => {
