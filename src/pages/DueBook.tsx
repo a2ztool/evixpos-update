@@ -1253,6 +1253,251 @@ const DueBook = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* Mark Payment Modal */}
+        <Dialog open={!!paymentModal} onOpenChange={(o) => !o && setPaymentModal(null)}>
+          <DialogContent className="rounded-2xl max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-emerald-600" />
+                </div>
+                Mark Payment
+              </DialogTitle>
+              <DialogDescription>Record full or partial payment for this due.</DialogDescription>
+            </DialogHeader>
+            {paymentModal && (() => {
+              const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+              const amt = Number(paymentAmount) || 0;
+              const invalid = !amt || amt <= 0 || amt > remaining + 0.01;
+              return (
+                <div className="space-y-4">
+                  <Card className="rounded-xl bg-muted/40 border-dashed">
+                    <CardContent className="!p-4 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Total Due</span>
+                        <span className="font-semibold tabular-nums">{formatCurrency(paymentModal.amount, 2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Already Paid</span>
+                        <span className="font-semibold tabular-nums text-emerald-600">{formatCurrency(paymentModal.paid_amount || 0, 2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm pt-1.5 border-t">
+                        <span className="font-semibold">Remaining</span>
+                        <span className="font-bold tabular-nums text-destructive">{formatCurrency(remaining, 2)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <RadioGroup value={paymentMode} onValueChange={(v) => onPaymentModeChange(v as any)} className="grid grid-cols-3 gap-2">
+                    {([
+                      { v: "full", label: "Full" },
+                      { v: "partial", label: "Partial" },
+                      { v: "custom", label: "Custom" },
+                    ] as const).map((o) => (
+                      <Label
+                        key={o.v}
+                        htmlFor={`pm-${o.v}`}
+                        className={`flex items-center justify-center gap-1.5 rounded-xl border-2 p-2.5 cursor-pointer text-xs font-semibold transition-all ${
+                          paymentMode === o.v ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <RadioGroupItem id={`pm-${o.v}`} value={o.v} className="sr-only" />
+                        {o.label}
+                      </Label>
+                    ))}
+                  </RadioGroup>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Amount ({symbol}) *</Label>
+                    <Input
+                      type="number" step="0.01" min="0" max={remaining}
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      readOnly={paymentMode === "full"}
+                      className="rounded-xl text-base font-bold"
+                    />
+                    {amt > remaining + 0.01 && <p className="text-xs text-destructive">Exceeds remaining balance</p>}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Payment Date</Label>
+                      <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="rounded-xl" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Method</Label>
+                      <Input value="Cash" readOnly className="rounded-xl" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Note (optional)</Label>
+                    <Textarea value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="e.g. received via cash, ref #..." rows={2} className="rounded-xl text-sm" />
+                  </div>
+
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" onClick={() => setPaymentModal(null)} className="rounded-xl">Cancel</Button>
+                    <Button onClick={submitPayment} disabled={invalid || paymentSubmitting} className="rounded-xl gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <CheckCircle className="h-4 w-4" />
+                      {paymentSubmitting ? "Recording..." : `Record ${formatCurrency(amt || 0, 0)}`}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </div>
+                Delete this due?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the due entry
+                {deleteTarget && <> for <strong>{getDueContact(deleteTarget).name}</strong> of <strong>{formatCurrency(deleteTarget.amount, 0)}</strong></>}.
+                Any recorded payments will also be removed. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                Delete Due
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Person Details Sheet */}
+        <Sheet open={!!personDetail} onOpenChange={(o) => !o && setPersonDetail(null)}>
+          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+            {personDetail && (() => {
+              const person = topPersons.find((p) => p.name === personDetail);
+              if (!person) return null;
+              const allPayments: (DuePayment & { dueAmount: number; dueNote: string })[] = [];
+              person.dues.forEach((d) => {
+                (paymentsByTxn[d.id] || []).forEach((pay) => {
+                  allPayments.push({ ...pay, dueAmount: d.amount, dueNote: stripPhone(d.note) });
+                });
+              });
+              allPayments.sort((a, b) => b.payment_date.localeCompare(a.payment_date));
+              const totalDue = person.receivable + person.payable;
+              const totalPaid = person.collected + person.paidOut;
+              return (
+                <>
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold shadow-md">
+                        {person.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold">{person.name}</p>
+                        {person.phone && (
+                          <p className="text-xs text-muted-foreground font-normal flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {person.phone}
+                          </p>
+                        )}
+                      </div>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-5 mt-6">
+                    <div className="grid grid-cols-3 gap-2">
+                      <Card className="rounded-xl">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-muted-foreground">Total Due</p>
+                          <p className="text-base font-bold tabular-nums">{formatCurrency(totalDue, 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-900/30">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-emerald-700 dark:text-emerald-400">Paid</p>
+                          <p className="text-base font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{formatCurrency(totalPaid, 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-xl bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-red-700 dark:text-red-400">Remaining</p>
+                          <p className="text-base font-bold tabular-nums text-red-700 dark:text-red-400">{formatCurrency(person.receivable, 0)}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5" /> Related Dues ({person.dues.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {person.dues.map((d) => {
+                          const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+                          return (
+                            <Card key={d.id} className="rounded-xl">
+                              <CardContent className="!p-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={d.is_paid ? "default" : remaining < d.amount ? "secondary" : "outline"} className="text-[10px]">
+                                      {d.is_paid ? "Settled" : remaining < d.amount ? "Partial" : "Pending"}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "—"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate mt-1">{stripPhone(d.note) || "—"}</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-sm font-bold tabular-nums">{formatCurrency(d.amount, 0)}</p>
+                                  {!d.is_paid && Number(d.paid_amount || 0) > 0 && (
+                                    <p className="text-[10px] text-emerald-600">Paid {formatCurrency(d.paid_amount, 0)}</p>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" /> Payment Timeline ({allPayments.length})
+                      </h3>
+                      {allPayments.length === 0 ? (
+                        <Card className="rounded-xl">
+                          <CardContent className="!p-4 text-center text-xs text-muted-foreground">
+                            No payments recorded yet
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="space-y-2">
+                          {allPayments.map((pay) => (
+                            <Card key={pay.id} className="rounded-xl border-l-4 border-l-emerald-500">
+                              <CardContent className="!p-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold tabular-nums text-emerald-600">+{formatCurrency(pay.amount, 0)}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {fnsFormat(new Date(pay.payment_date), "dd MMM yyyy")} · {pay.payment_method}
+                                  </p>
+                                  {pay.note && <p className="text-[10px] text-muted-foreground truncate italic">{pay.note}</p>}
+                                </div>
+                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </SheetContent>
+        </Sheet>
+
       </div>
     </DashboardLayout>
   );
