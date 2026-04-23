@@ -921,6 +921,57 @@ export type Database = {
           },
         ]
       }
+      due_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          payment_date: string
+          payment_method: string
+          store_id: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_date?: string
+          payment_method?: string
+          store_id: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_date?: string
+          payment_method?: string
+          store_id?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_payments_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "due_payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_branding: {
         Row: {
           brand_color: string
@@ -3123,6 +3174,7 @@ export type Database = {
           id: string
           is_paid: boolean
           note: string | null
+          paid_amount: number
           phone_number: string | null
           store_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
@@ -3137,6 +3189,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           note?: string | null
+          paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -3151,6 +3204,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           note?: string | null
+          paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]

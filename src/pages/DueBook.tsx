@@ -18,7 +18,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -36,6 +38,7 @@ interface Due {
   id: string;
   type: "income" | "expense";
   amount: number;
+  paid_amount: number;
   category: string;
   note: string;
   due_date: string | null;
@@ -43,6 +46,16 @@ interface Due {
   created_at: string;
   customer_name: string | null;
   phone_number: string | null;
+}
+
+interface DuePayment {
+  id: string;
+  transaction_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  note: string | null;
+  created_at: string;
 }
 
 const DATE_PRESETS = [
@@ -97,6 +110,19 @@ const DueBook = () => {
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
+  // Payment modal state
+  const [paymentModal, setPaymentModal] = useState<Due | null>(null);
+  const [paymentMode, setPaymentMode] = useState<"full" | "partial" | "custom">("full");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(fnsFormat(new Date(), "yyyy-MM-dd"));
+  const [paymentNote, setPaymentNote] = useState("");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Due | null>(null);
+  // Person details drawer
+  const [personDetail, setPersonDetail] = useState<string | null>(null);
+  // Payments cache: transaction_id -> payments list
+  const [paymentsByTxn, setPaymentsByTxn] = useState<Record<string, DuePayment[]>>({});
   // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders (legacy fallback for old dues)
   const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
 
@@ -110,6 +136,23 @@ const DueBook = () => {
       .not("due_date", "is", null)
       .order("due_date", { ascending: true });
     if (!error && data) setDues(data as Due[]);
+    // fetch payments
+    const txnIds = (data || []).map((d: any) => d.id);
+    if (txnIds.length > 0) {
+      const { data: pays } = await (supabase as any)
+        .from("due_payments")
+        .select("*")
+        .in("transaction_id", txnIds)
+        .order("payment_date", { ascending: false });
+      const map: Record<string, DuePayment[]> = {};
+      (pays || []).forEach((p: any) => {
+        if (!map[p.transaction_id]) map[p.transaction_id] = [];
+        map[p.transaction_id].push(p);
+      });
+      setPaymentsByTxn(map);
+    } else {
+      setPaymentsByTxn({});
+    }
     setLoading(false);
   }, [activeStore, user]);
 
@@ -178,6 +221,10 @@ const DueBook = () => {
         { event: "*", schema: "public", table: "transactions", filter: `store_id=eq.${activeStore.id}` },
         () => fetchDues()
       )
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "due_payments", filter: `store_id=eq.${activeStore.id}` },
+        () => fetchDues()
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeStore, fetchDues]);
@@ -211,12 +258,17 @@ const DueBook = () => {
   const stats = useMemo(() => {
     const unpaid = dues.filter((d) => !d.is_paid);
     const paid = dues.filter((d) => d.is_paid);
-    const receivable = unpaid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0);
-    const payable = unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0);
-    const totalCollected = paid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0);
-    const totalPaidOut = paid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0);
+    // Remaining balance only
+    const remaining = (d: Due) => Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+    const receivable = unpaid.filter((d) => d.type === "income").reduce((s, d) => s + remaining(d), 0);
+    const payable = unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + remaining(d), 0);
+    // Total collected = fully-paid receivables + partial payments on unpaid receivables
+    const totalCollected = paid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0)
+      + unpaid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.paid_amount || 0), 0);
+    const totalPaidOut = paid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0)
+      + unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.paid_amount || 0), 0);
     const overdue = unpaid.filter((d) => d.due_date && differenceInDays(new Date(d.due_date), new Date()) < 0);
-    const overdueAmount = overdue.reduce((s, d) => s + Number(d.amount), 0);
+    const overdueAmount = overdue.reduce((s, d) => s + remaining(d), 0);
     const dueSoon = unpaid.filter((d) => {
       if (!d.due_date) return false;
       const days = differenceInDays(new Date(d.due_date), new Date());
@@ -224,7 +276,7 @@ const DueBook = () => {
     });
     const collectionRate = (totalCollected + totalPaidOut) > 0 ?
       ((totalCollected + totalPaidOut) / (totalCollected + totalPaidOut + receivable + payable)) * 100 : 0;
-    const reachable = unpaid.filter((d) => d.type === "income" && extractPhone(d.note)).length;
+    const reachable = unpaid.filter((d) => d.type === "income" && (d.phone_number || extractPhone(d.note))).length;
     return {
       receivable, payable, totalCollected, totalPaidOut,
       overdueCount: overdue.length, overdueAmount,
@@ -268,20 +320,29 @@ const DueBook = () => {
   ].filter(d => d.value > 0), [stats]);
 
   const topPersons = useMemo(() => {
-    const map = new Map<string, { name: string; phone: string; receivable: number; payable: number; count: number }>();
-    dues.filter((d) => !d.is_paid && d.category).forEach((d) => {
-      const name = d.category;
-      const entry = map.get(name) || { name, phone: "", receivable: 0, payable: 0, count: 0 };
-      if (d.type === "income") entry.receivable += Number(d.amount);
-      else entry.payable += Number(d.amount);
-      if (!entry.phone) entry.phone = extractPhone(d.note);
-      entry.count++;
+    const map = new Map<string, { name: string; phone: string; receivable: number; payable: number; collected: number; paidOut: number; count: number; dues: Due[] }>();
+    dues.forEach((d) => {
+      const contact = getDueContact(d);
+      const name = contact.name || d.category || "Unknown";
+      if (!name || name === "Unknown" && !d.category) return;
+      const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+      const entry = map.get(name) || { name, phone: contact.phone, receivable: 0, payable: 0, collected: 0, paidOut: 0, count: 0, dues: [] };
+      if (!entry.phone && contact.phone) entry.phone = contact.phone;
+      if (d.type === "income") {
+        if (!d.is_paid) entry.receivable += remaining;
+        entry.collected += d.is_paid ? Number(d.amount) : Number(d.paid_amount || 0);
+      } else {
+        if (!d.is_paid) entry.payable += remaining;
+        entry.paidOut += d.is_paid ? Number(d.amount) : Number(d.paid_amount || 0);
+      }
+      if (!d.is_paid) entry.count++;
+      entry.dues.push(d);
       map.set(name, entry);
     });
     return Array.from(map.values())
       .sort((a, b) => (b.receivable + b.payable) - (a.receivable + a.payable))
-      .slice(0, 12);
-  }, [dues]);
+      .slice(0, 24);
+  }, [dues, getDueContact]);
 
   const openAdd = () => {
     setEditId(null);
@@ -331,41 +392,107 @@ const DueBook = () => {
     setSheetOpen(false);
   };
 
-  const markPaid = async (id: string) => {
-    const { data: txn, error } = await supabase.from("transactions").update({ is_paid: true }).eq("id", id).select("note").single();
-    if (error) { toast.error(error.message); return; }
-    const orderMatch = txn?.note?.match(/POS.*Order #([a-f0-9]+)/i);
-    if (orderMatch) {
-      const orderIdPrefix = orderMatch[1];
-      const { data: orders } = await supabase.from("orders")
-        .select("id, total_amount, meta, payment_status")
-        .ilike("id", `${orderIdPrefix}%`)
-        .eq("store_id", activeStore?.id || "")
-        .limit(1);
-      if (orders?.[0]) {
-        const order = orders[0];
-        const { data: relatedTxns } = await supabase.from("transactions")
-          .select("is_paid, amount")
-          .ilike("note", `%${orderIdPrefix}%`)
-          .eq("store_id", activeStore?.id || "");
-        const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
-        const totalPaid = relatedTxns?.filter(t => t.is_paid).reduce((s, t) => s + Number(t.amount), 0) || 0;
-        const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
-        if (order.payment_status !== newStatus) {
-          await supabase.from("orders").update({
-            payment_status: newStatus,
-            meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
-          }).eq("id", order.id);
-        }
-      }
+  // Sync linked POS order payment_status based on related transactions
+  const syncLinkedOrderStatus = async (note: string | null | undefined) => {
+    const orderMatch = note?.match(/POS.*Order #([a-f0-9]+)/i);
+    if (!orderMatch) return;
+    const orderIdPrefix = orderMatch[1];
+    const { data: orders } = await supabase.from("orders")
+      .select("id, total_amount, meta, payment_status")
+      .ilike("id", `${orderIdPrefix}%`)
+      .eq("store_id", activeStore?.id || "")
+      .limit(1);
+    if (!orders?.[0]) return;
+    const order = orders[0];
+    const { data: relatedTxns } = await supabase.from("transactions")
+      .select("is_paid, amount, paid_amount")
+      .ilike("note", `%${orderIdPrefix}%`)
+      .eq("store_id", activeStore?.id || "");
+    const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
+    const totalPaid = relatedTxns?.reduce((s, t) => s + (t.is_paid ? Number(t.amount) : Number(t.paid_amount || 0)), 0) || 0;
+    const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
+    if (order.payment_status !== newStatus) {
+      await supabase.from("orders").update({
+        payment_status: newStatus,
+        meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
+      }).eq("id", order.id);
     }
-    toast.success("Marked as paid ✓");
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) toast.error(error.message); else toast.success("Deleted");
+  // Open Mark Payment modal
+  const openPayment = (d: Due) => {
+    const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+    setPaymentModal(d);
+    setPaymentMode("full");
+    setPaymentAmount(remaining.toFixed(2));
+    setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
+    setPaymentNote("");
   };
+
+  const onPaymentModeChange = (mode: "full" | "partial" | "custom") => {
+    setPaymentMode(mode);
+    if (!paymentModal) return;
+    const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+    if (mode === "full") setPaymentAmount(remaining.toFixed(2));
+    else if (mode === "partial") setPaymentAmount((remaining / 2).toFixed(2));
+    else setPaymentAmount("");
+  };
+
+  const submitPayment = async () => {
+    if (!paymentModal || !activeStore) return;
+    const amt = Number(paymentAmount);
+    const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amt > remaining + 0.01) { toast.error(`Amount exceeds remaining balance (${formatCurrency(remaining, 2)})`); return; }
+
+    setPaymentSubmitting(true);
+    try {
+      // 1. Insert payment record
+      const { error: payErr } = await (supabase as any).from("due_payments").insert({
+        transaction_id: paymentModal.id,
+        store_id: activeStore.id,
+        user_id: effectiveUserId!,
+        amount: amt,
+        payment_date: new Date(paymentDate).toISOString(),
+        payment_method: "cash",
+        note: paymentNote.trim() || null,
+      });
+      if (payErr) throw payErr;
+
+      // 2. Update transaction paid_amount + is_paid
+      const newPaid = Number(paymentModal.paid_amount || 0) + amt;
+      const isFull = newPaid >= Number(paymentModal.amount) - 0.01;
+      const { error: txnErr } = await supabase.from("transactions")
+        .update({ paid_amount: newPaid, is_paid: isFull })
+        .eq("id", paymentModal.id);
+      if (txnErr) throw txnErr;
+
+      // 3. Sync linked POS order
+      await syncLinkedOrderStatus(paymentModal.note);
+
+      toast.success(isFull ? "Settled in full ✓" : `Partial payment recorded (${formatCurrency(amt, 0)})`);
+      setPaymentModal(null);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to record payment");
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("transactions").delete().eq("id", deleteTarget.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Due deleted");
+      // Optimistic UI removal
+      setDues((prev) => prev.filter((d) => d.id !== deleteTarget.id));
+      await syncLinkedOrderStatus(deleteTarget.note);
+    }
+    setDeleteTarget(null);
+  };
+
 
   const exportCSV = () => {
     const headers = ["Type", "Person", "Phone", "Amount", "Due Date", "Status", "Note", "Created"];
@@ -792,14 +919,14 @@ const DueBook = () => {
                             </Button>
                           )}
                           {!d.is_paid && (
-                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 rounded-xl text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => markPaid(d.id)}>
-                              <CheckCircle className="h-3.5 w-3.5" /> Paid
+                            <Button variant="outline" size="sm" className="flex-1 gap-1.5 rounded-xl text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => openPayment(d)}>
+                              <CheckCircle className="h-3.5 w-3.5" /> Mark Payment
                             </Button>
                           )}
                           <Button variant="outline" size="icon" className="rounded-xl h-9 w-9" onClick={() => openEdit(d)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(d.id)}>
+                          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(d)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -854,7 +981,12 @@ const DueBook = () => {
                             </div>
                           </TableCell>
                           <TableCell className={`text-right font-bold tabular-nums ${d.type === "income" ? "text-green-600" : "text-destructive"}`}>
-                            {formatCurrency(d.amount)}
+                            <div>{formatCurrency(d.amount)}</div>
+                            {Number(d.paid_amount || 0) > 0 && !d.is_paid && (
+                              <div className="text-[10px] font-normal text-muted-foreground mt-0.5">
+                                Paid {formatCurrency(d.paid_amount, 0)} · Due {formatCurrency(Number(d.amount) - Number(d.paid_amount), 0)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm">{d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "—"}</TableCell>
                           <TableCell><Badge variant={info.variant}>{info.label}</Badge></TableCell>
@@ -867,14 +999,14 @@ const DueBook = () => {
                                 </Button>
                               )}
                               {!d.is_paid && (
-                                <Button variant="ghost" size="icon" onClick={() => markPaid(d.id)} title="Mark Paid" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                <Button variant="ghost" size="icon" onClick={() => openPayment(d)} title="Mark Payment" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
                                   <CheckCircle className="h-4 w-4" />
                                 </Button>
                               )}
                               <Button variant="ghost" size="icon" onClick={() => openEdit(d)} className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(d.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(d)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -913,7 +1045,7 @@ const DueBook = () => {
                   const total = p.receivable + p.payable;
                   const net = p.receivable - p.payable;
                   return (
-                    <Card key={p.name} className="rounded-2xl hover:shadow-md transition-all">
+                    <Card key={p.name} onClick={() => setPersonDetail(p.name)} className="rounded-2xl hover:shadow-md hover:border-primary/40 transition-all cursor-pointer">
                       <CardContent className="!p-5 space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
@@ -957,7 +1089,8 @@ const DueBook = () => {
                           <Button
                             variant="outline" size="sm"
                             className="w-full gap-1.5 rounded-xl border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const message = `Hi ${p.name}, this is a friendly reminder from *${activeStore?.name || "our store"}*.\n\nYou have a total pending balance of *${formatCurrency(p.receivable, 0)}* across ${p.count} entries.\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
                               sendWhatsApp(p.phone, message);
                             }}
@@ -1120,6 +1253,251 @@ const DueBook = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* Mark Payment Modal */}
+        <Dialog open={!!paymentModal} onOpenChange={(o) => !o && setPaymentModal(null)}>
+          <DialogContent className="rounded-2xl max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-emerald-600" />
+                </div>
+                Mark Payment
+              </DialogTitle>
+              <DialogDescription>Record full or partial payment for this due.</DialogDescription>
+            </DialogHeader>
+            {paymentModal && (() => {
+              const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+              const amt = Number(paymentAmount) || 0;
+              const invalid = !amt || amt <= 0 || amt > remaining + 0.01;
+              return (
+                <div className="space-y-4">
+                  <Card className="rounded-xl bg-muted/40 border-dashed">
+                    <CardContent className="!p-4 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Total Due</span>
+                        <span className="font-semibold tabular-nums">{formatCurrency(paymentModal.amount, 2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Already Paid</span>
+                        <span className="font-semibold tabular-nums text-emerald-600">{formatCurrency(paymentModal.paid_amount || 0, 2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm pt-1.5 border-t">
+                        <span className="font-semibold">Remaining</span>
+                        <span className="font-bold tabular-nums text-destructive">{formatCurrency(remaining, 2)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <RadioGroup value={paymentMode} onValueChange={(v) => onPaymentModeChange(v as any)} className="grid grid-cols-3 gap-2">
+                    {([
+                      { v: "full", label: "Full" },
+                      { v: "partial", label: "Partial" },
+                      { v: "custom", label: "Custom" },
+                    ] as const).map((o) => (
+                      <Label
+                        key={o.v}
+                        htmlFor={`pm-${o.v}`}
+                        className={`flex items-center justify-center gap-1.5 rounded-xl border-2 p-2.5 cursor-pointer text-xs font-semibold transition-all ${
+                          paymentMode === o.v ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <RadioGroupItem id={`pm-${o.v}`} value={o.v} className="sr-only" />
+                        {o.label}
+                      </Label>
+                    ))}
+                  </RadioGroup>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Amount ({symbol}) *</Label>
+                    <Input
+                      type="number" step="0.01" min="0" max={remaining}
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      readOnly={paymentMode === "full"}
+                      className="rounded-xl text-base font-bold"
+                    />
+                    {amt > remaining + 0.01 && <p className="text-xs text-destructive">Exceeds remaining balance</p>}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Payment Date</Label>
+                      <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="rounded-xl" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Method</Label>
+                      <Input value="Cash" readOnly className="rounded-xl" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Note (optional)</Label>
+                    <Textarea value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="e.g. received via cash, ref #..." rows={2} className="rounded-xl text-sm" />
+                  </div>
+
+                  <DialogFooter className="gap-2 sm:gap-2">
+                    <Button variant="outline" onClick={() => setPaymentModal(null)} className="rounded-xl">Cancel</Button>
+                    <Button onClick={submitPayment} disabled={invalid || paymentSubmitting} className="rounded-xl gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <CheckCircle className="h-4 w-4" />
+                      {paymentSubmitting ? "Recording..." : `Record ${formatCurrency(amt || 0, 0)}`}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent className="rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <div className="h-9 w-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </div>
+                Delete this due?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the due entry
+                {deleteTarget && <> for <strong>{getDueContact(deleteTarget).name}</strong> of <strong>{formatCurrency(deleteTarget.amount, 0)}</strong></>}.
+                Any recorded payments will also be removed. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                Delete Due
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Person Details Sheet */}
+        <Sheet open={!!personDetail} onOpenChange={(o) => !o && setPersonDetail(null)}>
+          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+            {personDetail && (() => {
+              const person = topPersons.find((p) => p.name === personDetail);
+              if (!person) return null;
+              const allPayments: (DuePayment & { dueAmount: number; dueNote: string })[] = [];
+              person.dues.forEach((d) => {
+                (paymentsByTxn[d.id] || []).forEach((pay) => {
+                  allPayments.push({ ...pay, dueAmount: d.amount, dueNote: stripPhone(d.note) });
+                });
+              });
+              allPayments.sort((a, b) => b.payment_date.localeCompare(a.payment_date));
+              const totalDue = person.receivable + person.payable;
+              const totalPaid = person.collected + person.paidOut;
+              return (
+                <>
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold shadow-md">
+                        {person.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold">{person.name}</p>
+                        {person.phone && (
+                          <p className="text-xs text-muted-foreground font-normal flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {person.phone}
+                          </p>
+                        )}
+                      </div>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="space-y-5 mt-6">
+                    <div className="grid grid-cols-3 gap-2">
+                      <Card className="rounded-xl">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-muted-foreground">Total Due</p>
+                          <p className="text-base font-bold tabular-nums">{formatCurrency(totalDue, 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-900/30">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-emerald-700 dark:text-emerald-400">Paid</p>
+                          <p className="text-base font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{formatCurrency(totalPaid, 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-xl bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
+                        <CardContent className="!p-3">
+                          <p className="text-[10px] uppercase font-semibold text-red-700 dark:text-red-400">Remaining</p>
+                          <p className="text-base font-bold tabular-nums text-red-700 dark:text-red-400">{formatCurrency(person.receivable, 0)}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5" /> Related Dues ({person.dues.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {person.dues.map((d) => {
+                          const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+                          return (
+                            <Card key={d.id} className="rounded-xl">
+                              <CardContent className="!p-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={d.is_paid ? "default" : remaining < d.amount ? "secondary" : "outline"} className="text-[10px]">
+                                      {d.is_paid ? "Settled" : remaining < d.amount ? "Partial" : "Pending"}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "—"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate mt-1">{stripPhone(d.note) || "—"}</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-sm font-bold tabular-nums">{formatCurrency(d.amount, 0)}</p>
+                                  {!d.is_paid && Number(d.paid_amount || 0) > 0 && (
+                                    <p className="text-[10px] text-emerald-600">Paid {formatCurrency(d.paid_amount, 0)}</p>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" /> Payment Timeline ({allPayments.length})
+                      </h3>
+                      {allPayments.length === 0 ? (
+                        <Card className="rounded-xl">
+                          <CardContent className="!p-4 text-center text-xs text-muted-foreground">
+                            No payments recorded yet
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="space-y-2">
+                          {allPayments.map((pay) => (
+                            <Card key={pay.id} className="rounded-xl border-l-4 border-l-emerald-500">
+                              <CardContent className="!p-3 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold tabular-nums text-emerald-600">+{formatCurrency(pay.amount, 0)}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {fnsFormat(new Date(pay.payment_date), "dd MMM yyyy")} · {pay.payment_method}
+                                  </p>
+                                  {pay.note && <p className="text-[10px] text-muted-foreground truncate italic">{pay.note}</p>}
+                                </div>
+                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </SheetContent>
+        </Sheet>
+
       </div>
     </DashboardLayout>
   );
