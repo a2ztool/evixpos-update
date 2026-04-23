@@ -456,9 +456,6 @@ const DueBook = () => {
     setPaymentNote("");
     setPaymentMethod(storePaymentMethods[0]?.id || "cash");
   };
-    setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
-    setPaymentNote("");
-  };
 
   const onPaymentModeChange = (mode: "full" | "partial" | "custom") => {
     setPaymentMode(mode);
@@ -485,7 +482,7 @@ const DueBook = () => {
         user_id: effectiveUserId!,
         amount: amt,
         payment_date: new Date(paymentDate).toISOString(),
-        payment_method: "cash",
+        payment_method: paymentMethod || "cash",
         note: paymentNote.trim() || null,
       });
       if (payErr) throw payErr;
