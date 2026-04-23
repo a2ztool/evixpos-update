@@ -522,14 +522,23 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
 
                 {/* Transaction ID with duplicate warning */}
                 <div className="space-y-2">
-                  <Label htmlFor="txn-id" className="text-sm">Transaction ID (optional)</Label>
+                  <Label htmlFor="txn-id" className="text-sm">
+                    Transaction ID <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="txn-id"
                     placeholder="Enter your transaction/reference ID"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    className={duplicateWarning ? "border-destructive" : ""}
+                    className={duplicateWarning || (transactionId && !txnIdValid) ? "border-destructive" : ""}
                   />
+                  <p className="text-xs text-muted-foreground">Enter valid payment transaction ID (minimum 6 characters)</p>
+                  {transactionId && !txnIdValid && (
+                    <div className="flex items-center gap-1.5 text-xs text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>Transaction ID must be at least 6 characters</span>
+                    </div>
+                  )}
                   {duplicateWarning && (
                     <div className="flex items-center gap-1.5 text-xs text-destructive">
                       <AlertTriangle className="h-3.5 w-3.5" />
