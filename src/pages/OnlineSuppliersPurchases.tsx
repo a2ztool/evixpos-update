@@ -715,10 +715,62 @@ const OnlineSuppliersPurchases = () => {
               <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span className="text-destructive font-medium">{format(Math.max(0, Number(detail.total_amount) - Number(detail.paid_amount)))}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Status</span>{statusBadge(detail.payment_status)}</div>
               {detail.notes && <div className="pt-2 border-t"><p className="text-muted-foreground text-xs mb-1">Notes</p><p>{detail.notes}</p></div>}
+              <div className="flex gap-2 pt-3 border-t">
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => openPurchaseEdit(detail)}>
+                  <Edit2 className="h-3.5 w-3.5" /> Edit
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-destructive hover:text-destructive" onClick={() => { setDelPurchase(detail); }}>
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Supplier Confirmation */}
+      <AlertDialog open={!!delSupplier} onOpenChange={(v) => !v && setDelSupplier(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete supplier?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{delSupplier?.name}" will be removed from your suppliers list. Existing purchase history will be preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => delSupplier && deleteSupplierMut.mutate(delSupplier.id)}
+              disabled={deleteSupplierMut.isPending}
+            >
+              {deleteSupplierMut.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Purchase Confirmation */}
+      <AlertDialog open={!!delPurchase} onOpenChange={(v) => !v && setDelPurchase(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete purchase?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This purchase record will be permanently removed and any unpaid balance will be reversed from the supplier's due.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => delPurchase && deletePurchaseMut.mutate(delPurchase)}
+              disabled={deletePurchaseMut.isPending}
+            >
+              {deletePurchaseMut.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
