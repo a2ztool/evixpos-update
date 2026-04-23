@@ -530,6 +530,7 @@ const OnlineSuppliersPurchases = () => {
                             <div className="flex gap-1.5 justify-end">
                               <Button size="sm" variant="outline" className="gap-1" onClick={() => openHistory(s)}><History className="h-3 w-3" /> History</Button>
                               <Button size="sm" variant="ghost" onClick={() => openSupplierEdit(s)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDelSupplier(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
