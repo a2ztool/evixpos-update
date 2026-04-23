@@ -157,6 +157,17 @@ const OnlineSuppliersPurchases = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  /** Adjust supplier balance_due by a delta (can be negative). */
+  const adjustSupplierDue = async (supplierId: string | null, delta: number) => {
+    if (!supplierId || delta === 0) return;
+    const { data: sup } = await supabase.from("suppliers")
+      .select("balance_due").eq("id", supplierId).maybeSingle();
+    if (sup) {
+      const next = Math.max(0, Number(sup.balance_due) + delta);
+      await supabase.from("suppliers").update({ balance_due: next }).eq("id", supplierId);
+    }
+  };
+
   const savePurchase = useMutation({
     mutationFn: async () => {
       const qty = Number(purForm.quantity) || 0;
@@ -174,45 +185,103 @@ const OnlineSuppliersPurchases = () => {
         purForm.notes?.trim() || "",
       ].filter(Boolean).join(" — ");
 
-      const { data: p, error: pe } = await supabase.from("purchases").insert({
-        store_id: storeId!, user_id: userId!,
-        supplier_id: purForm.supplier_id || null,
-        total_amount: total, paid_amount: paid,
-        payment_status: status,
-        payment_method: purForm.payment_method,
-        purchase_date: purForm.purchase_date,
-        notes: composedNotes,
-      }).select("id").single();
-      if (pe) throw pe;
+      if (purEditId) {
+        // Reverse old supplier due first
+        const { data: old } = await supabase.from("purchases")
+          .select("supplier_id, total_amount, paid_amount").eq("id", purEditId).maybeSingle();
+        if (old) {
+          const oldDue = Math.max(0, Number(old.total_amount) - Number(old.paid_amount));
+          await adjustSupplierDue(old.supplier_id, -oldDue);
+        }
 
-      if (p?.id) {
+        const { error: ue } = await supabase.from("purchases").update({
+          supplier_id: purForm.supplier_id || null,
+          total_amount: total, paid_amount: paid,
+          payment_status: status,
+          payment_method: purForm.payment_method,
+          purchase_date: purForm.purchase_date,
+          notes: composedNotes,
+        }).eq("id", purEditId);
+        if (ue) throw ue;
+
+        // Replace purchase_items
+        await supabase.from("purchase_items").delete().eq("purchase_id", purEditId);
         await supabase.from("purchase_items").insert({
-          purchase_id: p.id, product_id: null,
+          purchase_id: purEditId, product_id: null,
           quantity: qty, unit_cost: unit, total_cost: total,
         });
-      }
 
-      if (purForm.supplier_id && total > paid) {
-        const due = total - paid;
-        const { data: sup } = await supabase.from("suppliers")
-          .select("balance_due").eq("id", purForm.supplier_id).maybeSingle();
-        if (sup) {
-          await supabase.from("suppliers")
-            .update({ balance_due: Number(sup.balance_due) + due })
-            .eq("id", purForm.supplier_id);
+        // Apply new supplier due
+        const newDue = total - paid;
+        await adjustSupplierDue(purForm.supplier_id || null, newDue);
+      } else {
+        const { data: p, error: pe } = await supabase.from("purchases").insert({
+          store_id: storeId!, user_id: userId!,
+          supplier_id: purForm.supplier_id || null,
+          total_amount: total, paid_amount: paid,
+          payment_status: status,
+          payment_method: purForm.payment_method,
+          purchase_date: purForm.purchase_date,
+          notes: composedNotes,
+        }).select("id").single();
+        if (pe) throw pe;
+
+        if (p?.id) {
+          await supabase.from("purchase_items").insert({
+            purchase_id: p.id, product_id: null,
+            quantity: qty, unit_cost: unit, total_cost: total,
+          });
         }
+
+        await adjustSupplierDue(purForm.supplier_id || null, total - paid);
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["online-purchases", storeId] });
       qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
       setPurDialog(false);
+      setPurEditId(null);
       setPurForm({
         supplier_id: "", product_name: "", quantity: "1", unit_price: "", paid_amount: "",
         payment_method: paymentMethodOptions[0]?.id || "cash",
         purchase_date: formatDate(new Date(), "yyyy-MM-dd"), notes: "",
       });
-      toast.success("Purchase recorded");
+      toast.success(purEditId ? "Purchase updated" : "Purchase recorded");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteSupplierMut = useMutation({
+    mutationFn: async (id: string) => {
+      // Soft delete to preserve purchase history references
+      const { error } = await supabase.from("suppliers")
+        .update({ is_active: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
+      setDelSupplier(null);
+      toast.success("Supplier deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deletePurchaseMut = useMutation({
+    mutationFn: async (purchase: any) => {
+      // Reverse supplier due
+      const due = Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount));
+      await adjustSupplierDue(purchase.supplier_id, -due);
+      // Cascade items then purchase
+      await supabase.from("purchase_items").delete().eq("purchase_id", purchase.id);
+      const { error } = await supabase.from("purchases").delete().eq("id", purchase.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["online-purchases", storeId] });
+      qc.invalidateQueries({ queryKey: ["online-suppliers", storeId] });
+      setDelPurchase(null);
+      setDetail(null);
+      toast.success("Purchase deleted");
     },
     onError: (e: any) => toast.error(e.message),
   });
