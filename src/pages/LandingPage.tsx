@@ -263,7 +263,7 @@ const LandingPage = () => {
   const { getPriceINR: dynamicGetPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
 
   const renderPolicyContent = (text: string) => {
-    if (!text) return <p>Content coming soon.</p>;
+    if (!text) return <p>{get("policy_empty_text", "Content coming soon.")}</p>;
     return text.split("\n").map((line, i) => {
       const trimmed = line.trim();
       if (!trimmed) return <br key={i} />;
@@ -293,7 +293,7 @@ const LandingPage = () => {
   /** Get formatted price from planConfig for any plan + current currency */
   const getLandingPrice = (planKey: string): string => {
     if (planKey === "free") return "0";
-    if (planKey === "custom") return "Custom";
+    if (planKey === "custom") return get("plan_custom_price_label", "Custom");
     const inr = dynamicGetPriceINR(planKey, selectedVolume);
     let price = inr * RATES_FROM_INR[currency];
     if (yearly) price = price * 12 * 0.8;
@@ -1145,7 +1145,7 @@ const LandingPage = () => {
               ...(get("plan_custom_visible", "true") === "true" ? [{
                 name: get("plan_custom_name", "Custom"), key: "custom", icon: Star, tagline: get("plan_custom_tagline", "For large businesses"),
                 gradient: "from-violet-500/10 to-violet-500/5",
-                stores: "Unlimited", products: "Unlimited", customers: "Unlimited",
+                stores: get("plan_unlimited_label", "Unlimited"), products: get("plan_unlimited_label", "Unlimited"), customers: get("plan_unlimited_label", "Unlimited"),
                 features: get("plan_custom_features", "Everything in Business|Custom Integrations|Dedicated Account Manager|SLA Guarantee").split("|").filter(Boolean),
               }] : []),
             ].map((plan, idx) => {
@@ -1377,9 +1377,9 @@ const LandingPage = () => {
         <DialogContent className="max-w-2xl max-h-[80vh] p-0">
           <DialogHeader className="px-6 pt-6 pb-0">
             <DialogTitle className="text-xl font-bold">
-              {policyModal === "privacy" && "Privacy Policy"}
-              {policyModal === "terms" && "Terms of Service"}
-              {policyModal === "refund" && "Refund Policy"}
+              {policyModal === "privacy" && get("policy_privacy_title", "Privacy Policy")}
+              {policyModal === "terms" && get("policy_terms_title", "Terms of Service")}
+              {policyModal === "refund" && get("policy_refund_title", "Refund Policy")}
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="px-6 pb-6 max-h-[65vh]">
