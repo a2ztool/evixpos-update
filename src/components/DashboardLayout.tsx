@@ -96,7 +96,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { symbol: currencySymbol, activeCurrency } = useCurrency();
+  const isPOS = location.pathname.startsWith("/pos");
 
   const displayName = isStaff && staffInfo ? staffInfo.name : (user?.email ?? "");
   const initials =
@@ -165,6 +167,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => setShortcutsOpen(true)}
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hidden md:inline-flex"
                     >
                       <Keyboard className="h-4 w-4" />
