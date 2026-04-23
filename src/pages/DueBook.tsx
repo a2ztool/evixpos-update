@@ -1355,7 +1355,16 @@ const DueBook = () => {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Method</Label>
-                      <Input value="Cash" readOnly className="rounded-xl" />
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {storePaymentMethods.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
