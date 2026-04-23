@@ -295,11 +295,12 @@ const StaffInbox = () => {
             supabase.from("staff_messages").update({ is_read: true }).eq("id", msg.id).then();
           }
         }
+        // Sound + desktop notification handled globally by useNotifications via the
+        // staff_messages → notifications DB trigger. Only play an in-page sound here
+        // when the user is NOT currently viewing this conversation, to avoid duplicates.
         if (msg.receiver_id === myId && msg.sender_id !== myId) {
-          if (soundEnabledRef.current) playNotificationSound();
-          const senderStaff = staffListRef.current.find(s => s.auth_user_id === msg.sender_id);
-          const senderName = senderStaff?.name || "Someone";
-          sendDesktopNotification(`💬 ${senderName}`, msg.message?.slice(0, 100) || "New message");
+          const isViewingThisChat = activeChatTypeRef.current === "direct" && activeChatRef.current === msg.sender_id;
+          if (!isViewingThisChat && soundEnabledRef.current) playNotificationSound();
         }
         fetchUnreadCounts();
       })
