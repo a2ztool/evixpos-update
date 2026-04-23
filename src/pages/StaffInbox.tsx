@@ -783,13 +783,15 @@ const StaffInbox = () => {
           </div>
         </div>
 
-        {/* Mobile: WhatsApp-style full-screen when chat open. Desktop: bordered card. */}
-        <div className={cn(
-          "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
-          showChat
-            ? "fixed inset-0 z-[60] bg-background h-[100dvh] md:static md:inset-auto md:z-auto md:h-[calc(100dvh-12rem)]"
-            : "bg-background h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
-        )}>
+        {/* Mobile: WhatsApp-style full-screen via portal when chat open. Desktop: bordered card. */}
+        {(() => {
+          const containerEl = (
+            <div className={cn(
+              "flex flex-col md:flex-row md:rounded-xl md:border md:border-border overflow-hidden md:bg-card md:shadow-sm",
+              showChat
+                ? "fixed inset-0 z-[100] bg-background h-[100dvh] w-screen md:static md:inset-auto md:z-auto md:h-[calc(100dvh-12rem)] md:w-auto"
+                : "bg-background h-[calc(100dvh-9rem)] md:h-[calc(100dvh-12rem)]"
+            )}>
           {/* ─── LEFT: Conversation List ─── */}
           <div className={cn("w-full md:w-80 lg:w-96 border-r border-border flex flex-col min-h-0", showChat ? "hidden md:flex" : "flex")}>
             <div className="p-3 border-b border-border space-y-2">
