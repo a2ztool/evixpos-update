@@ -566,9 +566,13 @@ const OnlineSuppliersPurchases = () => {
                           {statusBadge(p.payment_status)}
                         </div>
                       </div>
-                      <Button size="sm" variant="outline" className="w-full mt-2 h-8 text-xs gap-1" onClick={() => setDetail(p)}>
-                        <Eye className="h-3 w-3" /> View
-                      </Button>
+                      <div className="flex gap-1.5 mt-2">
+                        <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={() => setDetail(p)}>
+                          <Eye className="h-3 w-3" /> View
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => openPurchaseEdit(p)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => setDelPurchase(p)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
                     </CardContent></Card>
                   ))}
                 </div>
