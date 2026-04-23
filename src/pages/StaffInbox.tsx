@@ -1285,6 +1285,16 @@ const StaffInbox = () => {
             )}
           </div>
         </div>
+          );
+          // On mobile when chat is open, portal to body so it escapes any
+          // ancestor with backdrop-filter / transform / overflow that creates
+          // a containing block or clips the fixed overlay.
+          const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+          if (showChat && isMobile && typeof document !== "undefined") {
+            return createPortal(containerEl, document.body);
+          }
+          return containerEl;
+        })()}
       </div>
     </DashboardLayout>
   );
