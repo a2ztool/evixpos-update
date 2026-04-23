@@ -24,7 +24,7 @@ import {
   Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
   Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
   QrCode, MessageSquare, Key, User as UserIcon, Sparkles, BookOpen, HelpCircle, X, Lightbulb,
-  CheckCircle2, Zap, Lock
+  CheckCircle2, Zap, Lock, KeyRound
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
