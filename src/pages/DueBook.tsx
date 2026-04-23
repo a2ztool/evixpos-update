@@ -1089,7 +1089,8 @@ const DueBook = () => {
                           <Button
                             variant="outline" size="sm"
                             className="w-full gap-1.5 rounded-xl border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const message = `Hi ${p.name}, this is a friendly reminder from *${activeStore?.name || "our store"}*.\n\nYou have a total pending balance of *${formatCurrency(p.receivable, 0)}* across ${p.count} entries.\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
                               sendWhatsApp(p.phone, message);
                             }}
