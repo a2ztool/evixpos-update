@@ -378,41 +378,107 @@ const DueBook = () => {
     setSheetOpen(false);
   };
 
-  const markPaid = async (id: string) => {
-    const { data: txn, error } = await supabase.from("transactions").update({ is_paid: true }).eq("id", id).select("note").single();
-    if (error) { toast.error(error.message); return; }
-    const orderMatch = txn?.note?.match(/POS.*Order #([a-f0-9]+)/i);
-    if (orderMatch) {
-      const orderIdPrefix = orderMatch[1];
-      const { data: orders } = await supabase.from("orders")
-        .select("id, total_amount, meta, payment_status")
-        .ilike("id", `${orderIdPrefix}%`)
-        .eq("store_id", activeStore?.id || "")
-        .limit(1);
-      if (orders?.[0]) {
-        const order = orders[0];
-        const { data: relatedTxns } = await supabase.from("transactions")
-          .select("is_paid, amount")
-          .ilike("note", `%${orderIdPrefix}%`)
-          .eq("store_id", activeStore?.id || "");
-        const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
-        const totalPaid = relatedTxns?.filter(t => t.is_paid).reduce((s, t) => s + Number(t.amount), 0) || 0;
-        const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
-        if (order.payment_status !== newStatus) {
-          await supabase.from("orders").update({
-            payment_status: newStatus,
-            meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
-          }).eq("id", order.id);
-        }
-      }
+  // Sync linked POS order payment_status based on related transactions
+  const syncLinkedOrderStatus = async (note: string | null | undefined) => {
+    const orderMatch = note?.match(/POS.*Order #([a-f0-9]+)/i);
+    if (!orderMatch) return;
+    const orderIdPrefix = orderMatch[1];
+    const { data: orders } = await supabase.from("orders")
+      .select("id, total_amount, meta, payment_status")
+      .ilike("id", `${orderIdPrefix}%`)
+      .eq("store_id", activeStore?.id || "")
+      .limit(1);
+    if (!orders?.[0]) return;
+    const order = orders[0];
+    const { data: relatedTxns } = await supabase.from("transactions")
+      .select("is_paid, amount, paid_amount")
+      .ilike("note", `%${orderIdPrefix}%`)
+      .eq("store_id", activeStore?.id || "");
+    const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
+    const totalPaid = relatedTxns?.reduce((s, t) => s + (t.is_paid ? Number(t.amount) : Number(t.paid_amount || 0)), 0) || 0;
+    const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
+    if (order.payment_status !== newStatus) {
+      await supabase.from("orders").update({
+        payment_status: newStatus,
+        meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
+      }).eq("id", order.id);
     }
-    toast.success("Marked as paid ✓");
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) toast.error(error.message); else toast.success("Deleted");
+  // Open Mark Payment modal
+  const openPayment = (d: Due) => {
+    const remaining = Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+    setPaymentModal(d);
+    setPaymentMode("full");
+    setPaymentAmount(remaining.toFixed(2));
+    setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
+    setPaymentNote("");
   };
+
+  const onPaymentModeChange = (mode: "full" | "partial" | "custom") => {
+    setPaymentMode(mode);
+    if (!paymentModal) return;
+    const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+    if (mode === "full") setPaymentAmount(remaining.toFixed(2));
+    else if (mode === "partial") setPaymentAmount((remaining / 2).toFixed(2));
+    else setPaymentAmount("");
+  };
+
+  const submitPayment = async () => {
+    if (!paymentModal || !activeStore) return;
+    const amt = Number(paymentAmount);
+    const remaining = Math.max(0, Number(paymentModal.amount) - Number(paymentModal.paid_amount || 0));
+    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amt > remaining + 0.01) { toast.error(`Amount exceeds remaining balance (${formatCurrency(remaining, 2)})`); return; }
+
+    setPaymentSubmitting(true);
+    try {
+      // 1. Insert payment record
+      const { error: payErr } = await (supabase as any).from("due_payments").insert({
+        transaction_id: paymentModal.id,
+        store_id: activeStore.id,
+        user_id: effectiveUserId!,
+        amount: amt,
+        payment_date: new Date(paymentDate).toISOString(),
+        payment_method: "cash",
+        note: paymentNote.trim() || null,
+      });
+      if (payErr) throw payErr;
+
+      // 2. Update transaction paid_amount + is_paid
+      const newPaid = Number(paymentModal.paid_amount || 0) + amt;
+      const isFull = newPaid >= Number(paymentModal.amount) - 0.01;
+      const { error: txnErr } = await supabase.from("transactions")
+        .update({ paid_amount: newPaid, is_paid: isFull })
+        .eq("id", paymentModal.id);
+      if (txnErr) throw txnErr;
+
+      // 3. Sync linked POS order
+      await syncLinkedOrderStatus(paymentModal.note);
+
+      toast.success(isFull ? "Settled in full ✓" : `Partial payment recorded (${formatCurrency(amt, 0)})`);
+      setPaymentModal(null);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to record payment");
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("transactions").delete().eq("id", deleteTarget.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Due deleted");
+      // Optimistic UI removal
+      setDues((prev) => prev.filter((d) => d.id !== deleteTarget.id));
+      await syncLinkedOrderStatus(deleteTarget.note);
+    }
+    setDeleteTarget(null);
+  };
+
 
   const exportCSV = () => {
     const headers = ["Type", "Person", "Phone", "Amount", "Due Date", "Status", "Note", "Created"];
