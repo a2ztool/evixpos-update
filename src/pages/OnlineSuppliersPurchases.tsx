@@ -504,6 +504,7 @@ const OnlineSuppliersPurchases = () => {
                       <div className="flex gap-1.5 mt-2">
                         <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={() => openHistory(s)}><History className="h-3 w-3" /> History</Button>
                         <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => openSupplierEdit(s)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => setDelSupplier(s)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </CardContent></Card>
                   ))}
