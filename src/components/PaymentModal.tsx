@@ -206,8 +206,15 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     return () => clearTimeout(timeout);
   }, [transactionId, checkDuplicate]);
 
+  const trimmedTxnId = transactionId.trim();
+  const txnIdValid = trimmedTxnId.length >= 6;
+
   const handleSubmit = async () => {
     if (!user || !selectedGateway) return;
+    if (!txnIdValid) {
+      toast.error("Transaction ID is required (minimum 6 characters)");
+      return;
+    }
     if (duplicateWarning) {
       toast.error("এই Transaction ID আগে ব্যবহার করা হয়েছে!");
       return;
