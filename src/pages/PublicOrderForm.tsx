@@ -266,6 +266,7 @@ const PublicOrderForm = () => {
               await supabase.from("subscriptions").insert({
                 user_id: form.user_id,
                 store_id: form.store_id,
+                order_id: order.id,
                 customer_id: customerId,
                 product_name: p?.name || "",
                 variation: v.name,
@@ -274,7 +275,7 @@ const PublicOrderForm = () => {
                 status: "active",
                 start_date: new Date().toISOString(),
                 end_date: endDate.toISOString(),
-              });
+              } as any);
             }
           }
         }

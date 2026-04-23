@@ -184,15 +184,16 @@ const Orders = () => {
     if (!orderToDelete) return;
     setDeleting(true);
     try {
-      // Delete order_items first (FK constraint)
+      // Delete order_items first (FK constraint, no cascade)
       await supabase.from("order_items").delete().eq("order_id", orderToDelete.id);
       // Delete refunds linked to this order
       await supabase.from("refunds").delete().eq("order_id", orderToDelete.id);
-      // Delete the order
+      // Delete the order — DB CASCADE will auto-remove linked dues (transactions)
+      // and subscriptions via order_id FK with ON DELETE CASCADE.
       const { error } = await supabase.from("orders").delete().eq("id", orderToDelete.id);
       if (error) throw error;
       setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
-      toast.success("Order deleted successfully");
+      toast.success("Order deleted — related dues & subscriptions also removed");
     } catch (err: any) {
       toast.error("Failed to delete order: " + (err.message || "Unknown error"));
     } finally {
@@ -524,6 +525,7 @@ const fetchProducts = async () => {
         await supabase.from("subscriptions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
+          order_id: data.id,
           customer_id: formCustomerId,
           product_name: formProductName || "Order Subscription",
           variation: formSubVariation,
@@ -534,7 +536,7 @@ const fetchProducts = async () => {
           notes: `Created from order ${data.id}`,
           status: "active",
           plan: "customer" as any,
-        });
+        } as any);
       }
 
       toast.success("Order created successfully!");
