@@ -604,20 +604,20 @@ const LandingPage = () => {
                 <div className="w-3 h-3 rounded-full bg-destructive/60" />
                 <div className="w-3 h-3 rounded-full bg-warning/60" />
                 <div className="w-3 h-3 rounded-full bg-primary/60" />
-                <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-8 py-0.5 text-[10px] text-muted-foreground">app.evixpos.com</div></div>
+              <div className="flex-1 flex justify-center"><div className="bg-background/60 rounded-md px-8 py-0.5 text-[10px] text-muted-foreground">{get("hero_browser_url", "app.evixpos.com")}</div></div>
               </div>
-              <img src={get("hero_image") || dashboardPreview} alt="EvixPOS Dashboard" className="w-full" width={1280} height={800} />
+              <img src={get("hero_image") || dashboardPreview} alt={get("hero_image_alt", "EvixPOS Dashboard")} className="w-full" width={1280} height={800} />
             </div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="absolute -bottom-5 -left-4 sm:-bottom-6 sm:-left-8 bg-card rounded-xl border border-border/50 p-4 shadow-xl backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-primary" /></div>
-                <div><div className="text-xs text-muted-foreground">Revenue Today</div><div className="text-lg font-bold">৳42,580</div></div>
+                <div><div className="text-xs text-muted-foreground">{get("hero_card_revenue_label", "Revenue Today")}</div><div className="text-lg font-bold">{get("hero_card_revenue_value", "৳42,580")}</div></div>
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="absolute -top-3 -right-3 sm:-top-5 sm:-right-6 bg-card rounded-xl border border-border/50 p-3 shadow-xl backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Package className="h-4 w-4 text-primary" /></div>
-                <div><div className="text-[10px] text-muted-foreground">New Orders</div><div className="text-sm font-bold text-primary">+24</div></div>
+                <div><div className="text-[10px] text-muted-foreground">{get("hero_card_orders_label", "New Orders")}</div><div className="text-sm font-bold text-primary">{get("hero_card_orders_value", "+24")}</div></div>
               </div>
             </motion.div>
           </motion.div>
