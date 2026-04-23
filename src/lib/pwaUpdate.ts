@@ -27,32 +27,27 @@ const isPreviewHost =
   (window.location.hostname.includes("id-preview--") ||
    window.location.hostname.includes("lovableproject.com"));
 
-function showUpdateToast(reg: ServiceWorkerRegistration) {
+function activateUpdate(reg: ServiceWorkerRegistration) {
   if (updateToastShown) return;
   updateToastShown = true;
 
-  toast("🚀 New update available", {
-    description: "Refresh to get the latest version of EvixPOS.",
-    duration: Infinity,
-    action: {
-      label: "Refresh",
-      onClick: () => {
-        const waiting = reg.waiting;
-        if (waiting) {
-          waiting.postMessage({ type: "SKIP_WAITING" });
-        } else {
-          window.location.reload();
-        }
-      },
-    },
-  });
+  const waiting = reg.waiting;
+  // Brief toast so user sees what's happening, then auto-reload via controllerchange
+  toast("🚀 Updating to the latest version…", { duration: 2500 });
+
+  if (waiting) {
+    waiting.postMessage({ type: "SKIP_WAITING" });
+    // controllerchange listener below will reload the page
+  } else {
+    setTimeout(() => window.location.reload(), 600);
+  }
 }
 
 function trackInstalling(installing: ServiceWorker, reg: ServiceWorkerRegistration) {
   installing.addEventListener("statechange", () => {
     if (installing.state === "installed" && navigator.serviceWorker.controller) {
-      // A new SW is waiting → prompt user
-      showUpdateToast(reg);
+      // A new SW is waiting → activate it immediately
+      activateUpdate(reg);
     }
   });
 }
@@ -94,7 +89,7 @@ export function initPwaUpdate() {
 
       // If there's already a waiting worker on first load
       if (reg.waiting && navigator.serviceWorker.controller) {
-        showUpdateToast(reg);
+        activateUpdate(reg);
       }
 
       // Watch new installs
