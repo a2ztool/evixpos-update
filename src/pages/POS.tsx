@@ -151,7 +151,7 @@ const POS = () => {
   // Hold / Resume / Recent panels
   const [heldOrdersOpen, setHeldOrdersOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  
 
   const heldCount = activeStore ? getHeldOrders(activeStore.id).length : 0;
 
@@ -1075,36 +1075,6 @@ const POS = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
         <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-[120px] lg:pb-6">
-          {/* Action bar: Hold, Resume, Recent, Shortcuts */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <TooltipProvider>
-              {isOffline && (
-                <Tooltip><TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={handleHoldOrder} disabled={cart.length === 0}>
-                    <Pause className="h-3.5 w-3.5" /> Hold <kbd className="text-[9px] bg-muted px-1 rounded ml-1">F2</kbd>
-                  </Button>
-                </TooltipTrigger><TooltipContent>Hold current order (F2)</TooltipContent></Tooltip>
-              )}
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 h-8 relative" onClick={() => setHeldOrdersOpen(true)}>
-                  <Play className="h-3.5 w-3.5" /> Resume
-                  {heldCount > 0 && <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 p-0 flex items-center justify-center text-[9px]">{heldCount}</Badge>}
-                  <kbd className="text-[9px] bg-muted px-1 rounded ml-1">F3</kbd>
-                </Button>
-              </TooltipTrigger><TooltipContent>Resume held orders (F3)</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => setRecentOpen(true)}>
-                  <Receipt className="h-3.5 w-3.5" /> Recent <kbd className="text-[9px] bg-muted px-1 rounded ml-1">F4</kbd>
-                </Button>
-              </TooltipTrigger><TooltipContent>Recent transactions (F4)</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setShortcutsOpen(true)}>
-                  <Keyboard className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger><TooltipContent>Keyboard shortcuts</TooltipContent></Tooltip>
-            </TooltipProvider>
-          </div>
-
           {/* Category tabs */}
           <ScrollArea className="w-full">
             <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-1">
@@ -1371,28 +1341,6 @@ const POS = () => {
 
       {/* Recent Transactions */}
       <POSRecentTransactions open={recentOpen} onOpenChange={setRecentOpen} storeId={activeStore?.id ?? ""} format={format} />
-
-      {/* Keyboard Shortcuts Help */}
-      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Keyboard className="h-5 w-5 text-primary" /> Keyboard Shortcuts</DialogTitle></DialogHeader>
-          <div className="space-y-2 text-sm">
-            {[
-              ["F1 or /", "Focus search"],
-              ["F2", "Hold current order"],
-              ["F3", "Resume held orders"],
-              ["F4", "Recent transactions"],
-              ["F8", "Clear cart"],
-              ["Enter", "Open checkout"],
-            ].map(([key, desc]) => (
-              <div key={key} className="flex items-center justify-between">
-                <span className="text-muted-foreground">{desc}</span>
-                <kbd className="text-xs bg-muted px-2 py-0.5 rounded border font-mono">{key}</kbd>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Invoice Modal */}
       <InvoiceModal open={invoiceOpen} onOpenChange={setInvoiceOpen} order={invoiceOrder} orderItems={invoiceItems} />
