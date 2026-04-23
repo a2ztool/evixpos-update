@@ -258,12 +258,17 @@ const DueBook = () => {
   const stats = useMemo(() => {
     const unpaid = dues.filter((d) => !d.is_paid);
     const paid = dues.filter((d) => d.is_paid);
-    const receivable = unpaid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0);
-    const payable = unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0);
-    const totalCollected = paid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0);
-    const totalPaidOut = paid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0);
+    // Remaining balance only
+    const remaining = (d: Due) => Math.max(0, Number(d.amount) - Number(d.paid_amount || 0));
+    const receivable = unpaid.filter((d) => d.type === "income").reduce((s, d) => s + remaining(d), 0);
+    const payable = unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + remaining(d), 0);
+    // Total collected = fully-paid receivables + partial payments on unpaid receivables
+    const totalCollected = paid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.amount), 0)
+      + unpaid.filter((d) => d.type === "income").reduce((s, d) => s + Number(d.paid_amount || 0), 0);
+    const totalPaidOut = paid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.amount), 0)
+      + unpaid.filter((d) => d.type === "expense").reduce((s, d) => s + Number(d.paid_amount || 0), 0);
     const overdue = unpaid.filter((d) => d.due_date && differenceInDays(new Date(d.due_date), new Date()) < 0);
-    const overdueAmount = overdue.reduce((s, d) => s + Number(d.amount), 0);
+    const overdueAmount = overdue.reduce((s, d) => s + remaining(d), 0);
     const dueSoon = unpaid.filter((d) => {
       if (!d.due_date) return false;
       const days = differenceInDays(new Date(d.due_date), new Date());
@@ -271,7 +276,7 @@ const DueBook = () => {
     });
     const collectionRate = (totalCollected + totalPaidOut) > 0 ?
       ((totalCollected + totalPaidOut) / (totalCollected + totalPaidOut + receivable + payable)) * 100 : 0;
-    const reachable = unpaid.filter((d) => d.type === "income" && extractPhone(d.note)).length;
+    const reachable = unpaid.filter((d) => d.type === "income" && (d.phone_number || extractPhone(d.note))).length;
     return {
       receivable, payable, totalCollected, totalPaidOut,
       overdueCount: overdue.length, overdueAmount,
