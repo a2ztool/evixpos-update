@@ -454,6 +454,10 @@ const DueBook = () => {
     setPaymentAmount(remaining.toFixed(2));
     setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
     setPaymentNote("");
+    setPaymentMethod(storePaymentMethods[0]?.id || "cash");
+  };
+    setPaymentDate(fnsFormat(new Date(), "yyyy-MM-dd"));
+    setPaymentNote("");
   };
 
   const onPaymentModeChange = (mode: "full" | "partial" | "custom") => {
