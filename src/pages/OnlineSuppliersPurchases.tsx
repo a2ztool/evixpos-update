@@ -312,6 +312,40 @@ const OnlineSuppliersPurchases = () => {
     setSupDialog(true);
   };
 
+  const openPurchaseEdit = async (p: any) => {
+    // Try to load purchase_items for accurate qty/unit; fallback to parsing notes
+    const { data: items } = await supabase.from("purchase_items")
+      .select("quantity, unit_cost").eq("purchase_id", p.id).limit(1);
+    const item = items?.[0];
+    let qty = item?.quantity ? String(item.quantity) : "1";
+    let unit = item?.unit_cost ? String(item.unit_cost) : "";
+    let productName = "";
+    let extraNotes = "";
+    if (p.notes) {
+      const parts = String(p.notes).split(" — ");
+      const head = parts[0] || "";
+      const m = head.match(/^(.+?)\s×\s/);
+      productName = m ? m[1] : head;
+      extraNotes = parts.slice(1).join(" — ");
+    }
+    if (!unit && Number(qty) > 0) {
+      unit = String(Number(p.total_amount) / Number(qty));
+    }
+    setPurForm({
+      supplier_id: p.supplier_id || "",
+      product_name: productName,
+      quantity: qty,
+      unit_price: unit,
+      paid_amount: String(p.paid_amount ?? ""),
+      payment_method: p.payment_method || paymentMethodOptions[0]?.id || "cash",
+      purchase_date: p.purchase_date,
+      notes: extraNotes,
+    });
+    setPurEditId(p.id);
+    setPurDialog(true);
+    setDetail(null);
+  };
+
   const openHistory = async (s: any) => {
     setHistorySupplier(s);
     const { data } = await supabase.from("purchases").select("*")
