@@ -318,6 +318,44 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Floating widgets */}
       <FloatingInbox />
       {!isStaff && <SupportPopup />}
+
+      {/* Global Keyboard Shortcuts Dialog */}
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Keyboard className="h-5 w-5 text-primary" /> Keyboard Shortcuts
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {isPOS ? "POS Terminal shortcuts" : "Global app shortcuts"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            {(isPOS
+              ? [
+                  ["F1 or /", "Focus product search"],
+                  ["F2", "Hold current order"],
+                  ["F3", "Resume held orders"],
+                  ["F4", "Recent transactions"],
+                  ["F8", "Clear cart"],
+                  ["Enter", "Open checkout"],
+                ]
+              : [
+                  ["⌘ / Ctrl + K", "Quick search"],
+                  ["G then D", "Go to Dashboard"],
+                  ["G then P", "Go to POS"],
+                  ["G then O", "Go to Orders"],
+                  ["?", "Show this help"],
+                ]
+            ).map(([key, desc]) => (
+              <div key={key} className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">{desc}</span>
+                <kbd className="text-xs bg-muted px-2 py-0.5 rounded border font-mono">{key}</kbd>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 };
