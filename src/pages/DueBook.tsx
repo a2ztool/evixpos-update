@@ -95,6 +95,8 @@ const DueBook = () => {
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
+  // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders
+  const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
 
   const fetchDues = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -108,6 +110,48 @@ const DueBook = () => {
     if (!error && data) setDues(data as Due[]);
     setLoading(false);
   }, [activeStore, user]);
+
+  // Resolve customer name + phone for POS-linked dues by joining via orders → customers
+  useEffect(() => {
+    if (!activeStore || dues.length === 0) return;
+    const orderPrefixes = Array.from(new Set(
+      dues
+        .map((d) => d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1])
+        .filter((p): p is string => !!p)
+    ));
+    if (orderPrefixes.length === 0) { setOrderCustomerMap({}); return; }
+    (async () => {
+      const orFilter = orderPrefixes.map((p) => `id.ilike.${p}%`).join(",");
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, customer_id, customers(name, phone)")
+        .eq("store_id", activeStore.id)
+        .or(orFilter);
+      if (!orders) return;
+      const map: Record<string, { name: string; phone: string }> = {};
+      orders.forEach((o: any) => {
+        const prefix = (o.id as string).slice(0, 8);
+        map[prefix] = {
+          name: o.customers?.name || "",
+          phone: o.customers?.phone || "",
+        };
+      });
+      setOrderCustomerMap(map);
+    })();
+  }, [activeStore, dues]);
+
+  // Resolve display name + phone for any due (POS-linked customers take precedence)
+  const getDueContact = useCallback((d: Due): { name: string; phone: string } => {
+    const orderPrefix = d.note?.match(/POS.*Order #([a-f0-9]+)/i)?.[1];
+    if (orderPrefix && orderCustomerMap[orderPrefix]) {
+      const c = orderCustomerMap[orderPrefix];
+      return {
+        name: c.name || d.category || "Customer",
+        phone: c.phone || extractPhone(d.note),
+      };
+    }
+    return { name: d.category || "—", phone: extractPhone(d.note) };
+  }, [orderCustomerMap]);
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
@@ -340,20 +384,24 @@ const DueBook = () => {
     return { daysLeft, isOverdue: false, label: `${daysLeft}d left`, variant: "outline" as const };
   };
 
-  const buildReminderMessage = (d: Due) => {
+  const buildReminderMessage = (d: Due, name?: string) => {
     const storeName = activeStore?.name || "our store";
     const amount = formatCurrency(d.amount, 0);
     const dueStr = d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "soon";
     const daysLeft = d.due_date ? differenceInDays(new Date(d.due_date), new Date()) : null;
     const status = daysLeft !== null && daysLeft < 0 ? `${Math.abs(daysLeft)} days OVERDUE` : `due on ${dueStr}`;
-    return `Hi ${d.category || "Customer"}, this is a friendly reminder from *${storeName}*.\n\nYou have a pending payment of *${amount}* (${status}).\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
+    const who = name || d.category || "Customer";
+    return `Hi ${who}, this is a friendly reminder from *${storeName}*.\n\nYou have a pending payment of *${amount}* (${status}).\n\nKindly clear it at your earliest convenience. Thank you! 🙏`;
   };
 
   const openReminder = (d: Due) => {
-    const phone = extractPhone(d.note);
-    setReminderPhone(phone);
-    setReminderText(buildReminderMessage(d));
+    const contact = getDueContact(d);
+    setReminderPhone(contact.phone);
+    setReminderText(buildReminderMessage(d, contact.name));
     setReminderModal(d);
+    if (!contact.phone) {
+      toast.warning("No phone number on file for this customer. Please enter manually.");
+    }
   };
 
   const sendWhatsApp = (phone: string, message: string) => {
@@ -368,13 +416,16 @@ const DueBook = () => {
   };
 
   const sendBulkReminders = () => {
-    const targets = filtered.filter((d) => !d.is_paid && d.type === "income" && extractPhone(d.note));
+    const targets = filtered
+      .filter((d) => !d.is_paid && d.type === "income")
+      .map((d) => ({ d, contact: getDueContact(d) }))
+      .filter(({ contact }) => !!contact.phone);
     if (targets.length === 0) {
       toast.error("No customers with phone numbers in current view");
       return;
     }
-    targets.slice(0, 5).forEach((d, i) => {
-      setTimeout(() => sendWhatsApp(extractPhone(d.note), buildReminderMessage(d)), i * 400);
+    targets.slice(0, 5).forEach(({ d, contact }, i) => {
+      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name)), i * 400);
     });
     toast.success(`Opening ${Math.min(targets.length, 5)} WhatsApp chats...`);
   };
@@ -760,7 +811,8 @@ const DueBook = () => {
                   <TableBody>
                     {filtered.map((d) => {
                       const info = getDaysInfo(d);
-                      const phone = extractPhone(d.note);
+                      const contact = getDueContact(d);
+                      const phone = contact.phone;
                       const cleanNote = stripPhone(d.note);
                       return (
                         <TableRow key={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
@@ -774,11 +826,13 @@ const DueBook = () => {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{d.category || "—"}</p>
-                              {phone && (
+                              <p className="font-medium">{contact.name || "—"}</p>
+                              {phone ? (
                                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                   <Phone className="h-3 w-3" /> {phone}
                                 </p>
+                              ) : (
+                                <p className="text-xs text-muted-foreground/60 italic mt-0.5">No phone</p>
                               )}
                             </div>
                           </TableCell>
