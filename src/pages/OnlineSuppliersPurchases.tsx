@@ -595,7 +595,13 @@ const OnlineSuppliersPurchases = () => {
                           <TableCell className="text-right font-medium">{format(Number(p.total_amount))}</TableCell>
                           <TableCell className="text-right text-emerald-600">{format(Number(p.paid_amount))}</TableCell>
                           <TableCell>{statusBadge(p.payment_status)}</TableCell>
-                          <TableCell><Button size="sm" variant="ghost" onClick={() => setDetail(p)}><Eye className="h-3.5 w-3.5" /></Button></TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="ghost" onClick={() => setDetail(p)}><Eye className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => openPurchaseEdit(p)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDelPurchase(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
