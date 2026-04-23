@@ -1026,21 +1026,21 @@ const LandingPage = () => {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-3">
-                {get("app_download_android") ? <a href={get("app_download_android")} target="_blank" rel="noopener noreferrer"><Button size="lg" className="gap-2 h-12 px-6"><Download className="h-5 w-5" /> Google Play</Button></a> : null}
-                {get("app_download_ios") ? <a href={get("app_download_ios")} target="_blank" rel="noopener noreferrer"><Button size="lg" variant="outline" className="gap-2 h-12 px-6"><Apple className="h-5 w-5" /> App Store</Button></a> : null}
+                {get("app_download_android") ? <a href={get("app_download_android")} target="_blank" rel="noopener noreferrer"><Button size="lg" className="gap-2 h-12 px-6"><Download className="h-5 w-5" /> {get("mobile_btn_android", "Google Play")}</Button></a> : null}
+                {get("app_download_ios") ? <a href={get("app_download_ios")} target="_blank" rel="noopener noreferrer"><Button size="lg" variant="outline" className="gap-2 h-12 px-6"><Apple className="h-5 w-5" /> {get("mobile_btn_ios", "App Store")}</Button></a> : null}
                 {!get("app_download_android") && !get("app_download_ios") && (
                   <>
                     <Button size="lg" className="gap-2 h-12 px-6" onClick={() => { if (canInstall) { promptInstall(); } else { navigate("/auth"); } }}>
-                      <Smartphone className="h-5 w-5" /> {canInstall ? "Install App" : "Use Web App"}
+                      <Smartphone className="h-5 w-5" /> {canInstall ? get("mobile_btn_install", "Install App") : get("mobile_btn_web", "Use Web App")}
                     </Button>
                     {!canInstall && !isInstalled && (
                       <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-muted-foreground" onClick={() => navigate("/auth")}>
-                        <Download className="h-5 w-5" /> Open in Browser
+                        <Download className="h-5 w-5" /> {get("mobile_btn_browser", "Open in Browser")}
                       </Button>
                     )}
                     {isInstalled && (
                       <Button size="lg" variant="outline" className="gap-2 h-12 px-6 text-primary border-primary/30" disabled>
-                        <Check className="h-5 w-5" /> App Installed
+                        <Check className="h-5 w-5" /> {get("mobile_btn_installed", "App Installed")}
                       </Button>
                     )}
                   </>
