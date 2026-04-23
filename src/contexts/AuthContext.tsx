@@ -179,6 +179,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session?.user?.id]);
 
   const signOut = async () => {
+    try {
+      const { data: { session: cur } } = await supabase.auth.getSession();
+      if (cur?.user) {
+        const sid = `${cur.user.id}-${cur.access_token.slice(-24)}`;
+        await supabase
+          .from("active_sessions")
+          .update({ is_active: false, invalidated_reason: "user_logout" })
+          .eq("session_id", sid);
+      }
+    } catch {}
     await supabase.auth.signOut();
   };
 
