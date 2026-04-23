@@ -967,7 +967,12 @@ const DueBook = () => {
                             </div>
                           </TableCell>
                           <TableCell className={`text-right font-bold tabular-nums ${d.type === "income" ? "text-green-600" : "text-destructive"}`}>
-                            {formatCurrency(d.amount)}
+                            <div>{formatCurrency(d.amount)}</div>
+                            {Number(d.paid_amount || 0) > 0 && !d.is_paid && (
+                              <div className="text-[10px] font-normal text-muted-foreground mt-0.5">
+                                Paid {formatCurrency(d.paid_amount, 0)} · Due {formatCurrency(Number(d.amount) - Number(d.paid_amount), 0)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm">{d.due_date ? fnsFormat(new Date(d.due_date), "dd MMM yyyy") : "—"}</TableCell>
                           <TableCell><Badge variant={info.variant}>{info.label}</Badge></TableCell>
@@ -980,14 +985,14 @@ const DueBook = () => {
                                 </Button>
                               )}
                               {!d.is_paid && (
-                                <Button variant="ghost" size="icon" onClick={() => markPaid(d.id)} title="Mark Paid" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                <Button variant="ghost" size="icon" onClick={() => openPayment(d)} title="Mark Payment" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
                                   <CheckCircle className="h-4 w-4" />
                                 </Button>
                               )}
                               <Button variant="ghost" size="icon" onClick={() => openEdit(d)} className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(d.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(d)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
