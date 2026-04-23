@@ -39,6 +39,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Single-session enforcement for store owners only.
+  // Staff users (rows in staff_members) are exempt — they may stay logged in on multiple devices.
+  useEffect(() => {
+    if (!session?.user) return;
+    const uid = session.user.id;
+    const sessionId = `${uid}-${session.access_token.slice(-24)}`;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const setup = async () => {
+      // Skip session control for staff
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("id")
+        .eq("auth_user_id", uid)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (cancelled) return;
+      if (staffRow) return; // staff: multi-device allowed
+
+      // Invalidate any prior active sessions for this owner
+      await supabase
+        .from("active_sessions")
+        .update({ is_active: false, invalidated_reason: "replaced_by_new_login" })
+        .eq("user_id", uid)
+        .eq("is_active", true)
+        .neq("session_id", sessionId);
+
+      // Register current session
+      await supabase.from("active_sessions").upsert(
+        {
+          user_id: uid,
+          session_id: sessionId,
+          device_label: typeof navigator !== "undefined" ? navigator.platform : "",
+          user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "",
+          is_active: true,
+          last_active_at: new Date().toISOString(),
+        },
+        { onConflict: "session_id" },
+      );
+
+      // Listen for invalidation of THIS session by a newer login
+      channel = supabase
+        .channel(`active-session-${sessionId}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "active_sessions", filter: `user_id=eq.${uid}` },
+          (payload: { new?: { session_id?: string; is_active?: boolean } }) => {
+            if (
+              payload.new?.session_id === sessionId &&
+              payload.new?.is_active === false
+            ) {
+              toast.error("You have been logged out because you logged in from another device.");
+              supabase.auth.signOut().finally(() => {
+                if (typeof window !== "undefined") window.location.href = "/auth";
+              });
+            }
+          },
+        )
+        .subscribe();
+    };
+
+    setup();
+
+    // Heartbeat — keeps last_active_at fresh
+    const heartbeat = setInterval(() => {
+      supabase
+        .from("active_sessions")
+        .update({ last_active_at: new Date().toISOString() })
+        .eq("session_id", sessionId)
+        .then(() => {});
+    }, 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(heartbeat);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, session?.access_token]);
+
   // Suspension enforcement: check own profile and (if staff) owner profile.
   // Force sign-out if suspended and listen to realtime changes.
   useEffect(() => {
@@ -99,6 +179,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session?.user?.id]);
 
   const signOut = async () => {
+    try {
+      const { data: { session: cur } } = await supabase.auth.getSession();
+      if (cur?.user) {
+        const sid = `${cur.user.id}-${cur.access_token.slice(-24)}`;
+        await supabase
+          .from("active_sessions")
+          .update({ is_active: false, invalidated_reason: "user_logout" })
+          .eq("session_id", sid);
+      }
+    } catch {}
     await supabase.auth.signOut();
   };
 
