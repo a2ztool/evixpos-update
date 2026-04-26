@@ -1014,10 +1014,29 @@ const POS = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold">{t.paymentMethod}</h3>
-              {isOffline && (
-                <Button variant={splitMode ? "default" : "outline"} size="sm" className="gap-1 h-7 text-xs" onClick={() => setSplitMode(!splitMode)}>
-                  <Split className="h-3 w-3" /> Split
+              {canSplitPayment ? (
+                <Button
+                  variant={splitMode ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1 h-7 text-xs"
+                  onClick={() => setSplitMode(!splitMode)}
+                >
+                  <Split className="h-3 w-3" /> {splitMode ? "Single" : "Split Payment"}
                 </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 h-7 text-xs opacity-70"
+                      onClick={() => toast.info("Split Payment is a PRO feature. Upgrade to unlock.")}
+                    >
+                      <Lock className="h-3 w-3" /> Split <Crown className="h-3 w-3 text-amber-500" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Available on PRO plan</TooltipContent>
+                </Tooltip>
               )}
             </div>
             {splitMode ? (
