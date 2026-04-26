@@ -237,6 +237,7 @@ const FloatingInbox = () => {
             is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
+            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
           };
           setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
           scrollToBottom();
@@ -244,6 +245,13 @@ const FloatingInbox = () => {
           setUnreadByGroup(prev => ({ ...prev, [m.group_id]: (prev[m.group_id] || 0) + 1 }));
           if (soundRef.current) playNotificationSound();
         }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
+        const m = payload.new as any;
+        setMessages(prev => prev.map(msg => msg.id === m.id
+          ? { ...msg, message: m.message, reactions: m.reactions || null,
+              is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
+          : msg));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
