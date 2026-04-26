@@ -729,6 +729,10 @@ const StaffInbox = () => {
 
   const showChat = activeChat !== null;
   const visibleMessages = messages.filter(m => isVisible(m));
+  const pinnedMessages = visibleMessages
+    .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
+    .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
+  const handlePinToggle = (m: ChatMessage) => togglePin(m, activeChatType === "group");
   const typingList = Object.values(typingUsers);
 
   return (
