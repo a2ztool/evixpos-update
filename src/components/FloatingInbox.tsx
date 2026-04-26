@@ -615,6 +615,13 @@ const FloatingInbox = () => {
           {/* Body - Chat view */}
           {view === "chat" && activeConv && (
             <>
+              <div className="absolute left-0 right-0 top-[60px] z-10">
+                <PinnedMessagesBar
+                  pinned={pinnedMessages}
+                  onJump={scrollToMessage}
+                  onUnpin={handlePinToggle}
+                />
+              </div>
               <div
                 ref={scrollRef}
                 className="absolute inset-0 top-[60px] bottom-[72px] px-3 py-3 space-y-3 bg-muted/20 overflow-y-auto"
