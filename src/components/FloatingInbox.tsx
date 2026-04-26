@@ -776,8 +776,9 @@ const FloatingInbox = () => {
                           onScrollToMessage={scrollToMessage}
                           onPinToggle={handlePinToggle}
                           onTaskStatusUpdate={async (msgId, status) => {
-                            const { error } = await supabase
-                              .from("staff_messages")
+                            const table = activeConv.type === "group" ? "chat_group_messages" : "staff_messages";
+                            const { error } = await (supabase as any)
+                              .from(table)
                               .update({ task_status: status })
                               .eq("id", msgId);
                             if (error) toast.error("Failed to update task status");
