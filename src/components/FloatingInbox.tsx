@@ -81,6 +81,8 @@ const FloatingInbox = () => {
   const hasStoreContext = !!storeId && !!myId && !!ownerId;
 
   const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
+  const togglePin = usePinMessage(myId);
+  const handlePinToggle = (m: ChatMessage) => togglePin(m, activeConvRef.current?.type === "group");
 
   // ─── Fetch groups (only ones staff is a member of) ───
   const fetchGroups = useCallback(async () => {
