@@ -405,6 +405,9 @@ const FloatingInbox = () => {
   };
 
   const visibleMessages = messages.filter(m => isVisible(m));
+  const pinnedMessages = visibleMessages
+    .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
+    .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
   const totalUnread = unreadDirect + Object.values(unreadByGroup).reduce((a, b) => a + b, 0);
 
   if (!isStaff || !hasStoreContext) return null;
