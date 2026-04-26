@@ -310,23 +310,14 @@ const FloatingInbox = () => {
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
         const m = payload.new as any;
-        const previous = payload.old as any;
-        const taskStatusChanged = previous && previous.task_status !== m.task_status && m.type === "task";
         setMessages(prev => prev.map(msg => msg.id === m.id
           ? { ...msg, message: m.message, reactions: m.reactions || null,
               task_status: m.task_status ?? msg.task_status,
               task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
-        // Task status sound + toast for ALL group members (not just creator), skip the actor who triggered it
-        if (taskStatusChanged && soundRef.current) {
-          const status = String(m.task_status || "").toLowerCase();
-          const soundType = status === "completed" ? "task_completed"
-            : status === "in_progress" ? "task_in_progress"
-            : "task_pending";
-          playNotificationSound(soundType);
-          toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
-        }
+        // Task status sound + toast + desktop are handled globally via the
+        // `task_status_updated` notification inserted by the DB trigger.
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
