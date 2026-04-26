@@ -23,9 +23,9 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { toast } from "sonner";
 import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
-  ChevronDown, RefreshCw, Clock, Percent, TrendingUp, UserPlus, AlertTriangle, X,
+  ChevronDown, RefreshCw, Clock, Percent, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
@@ -86,7 +86,7 @@ interface ReceiptData {
   storeName: string;
 }
 
-type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
+type PaymentOption = "full" | "discount" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
@@ -103,11 +103,10 @@ const POS = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [customerId, setCustomerId] = useState("");
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>("none");
+  const [paymentOptions, setPaymentOptions] = useState<Set<PaymentOption>>(new Set(["full"]));
   const [discountType, setDiscountType] = useState<"fixed" | "percentage">("fixed");
   const [discountValue, setDiscountValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [extraChargeValue, setExtraChargeValue] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
