@@ -70,6 +70,7 @@ const StaffPerformance = lazyPage(() => import("./pages/StaffPerformance"));
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
 const ResetPassword = lazyPage(() => import("./pages/ResetPassword"));
 const PublicOrderForm = lazyPage(() => import("./pages/PublicOrderForm"));
+const PublicInvoice = lazyPage(() => import("./pages/PublicInvoice"));
 const FacebookCallback = lazyPage(() => import("./pages/FacebookCallback"));
 const Integrations = lazyPage(() => import("./pages/Integrations"));
 const AppEntry = lazyPage(() => import("./pages/AppEntry"));
@@ -176,6 +177,7 @@ const App = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/f/:slug" element={<PublicOrderForm />} />
+            <Route path="/i/:id" element={<PublicInvoice />} />
             <Route path="/api/facebook/callback" element={<FacebookCallback />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/dashboard" element={<P><Dashboard /></P>} />
