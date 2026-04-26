@@ -913,17 +913,14 @@ const POS = () => {
         <span className="text-muted-foreground">Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
         <span>{format(subtotal)}</span>
       </div>
-      {paymentMode === "discount" && parseFloat(discountValue) > 0 && (
-        <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>
-      )}
-      {paymentMode === "extra" && parseFloat(extraChargeValue) > 0 && (
-        <div className="flex justify-between text-sm text-blue-600"><span>Extra Charge</span><span>+{format(parseFloat(extraChargeValue) || 0)}</span></div>
+      {hasOpt("discount") && discountAmount > 0 && (
+        <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(discountAmount)}</span></div>
       )}
       <Separator />
       <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
 
       {/* Payment breakdown */}
-      {(paymentMode === "partial" || paymentMode === "due" || (splitMode && splitEntries.length > 0)) && (
+      {(hasOpt("partial") || hasOpt("due") || (splitMode && splitEntries.length > 0)) && (
         <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
           <div className="flex justify-between text-sm">
             <span className="flex items-center gap-1.5 text-green-600">
@@ -933,7 +930,7 @@ const POS = () => {
               {format(splitMode ? splitEntries.reduce((s, e) => s + e.amount, 0) : paidAmountFinal)}
             </span>
           </div>
-          {(paymentMode === "due" || dueAmount > 0) && (
+          {(hasOpt("due") || dueAmount > 0) && (
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-1.5 text-destructive">
                 <AlertTriangle className="h-3.5 w-3.5" /> Due
@@ -955,7 +952,7 @@ const POS = () => {
       </div>
 
       {/* Add Payment Method shortcut */}
-      {!advancedOpen && paymentMode === "none" && (
+      {!advancedOpen && hasOpt("full") && paymentOptions.size === 1 && (
         <Button
           variant="outline"
           size="sm"
@@ -967,7 +964,7 @@ const POS = () => {
       )}
 
       <Button
-        className={`w-full h-12 text-base font-semibold ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600 text-white" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
+        className={`w-full h-12 text-base font-semibold ${hasOpt("due") ? "bg-amber-500 hover:bg-amber-600 text-white" : hasOpt("partial") ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
         disabled={cart.length === 0 || submitting}
         onClick={openCheckout}
       >
