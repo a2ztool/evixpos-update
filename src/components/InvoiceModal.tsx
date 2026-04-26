@@ -16,6 +16,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
 import { buildInvoiceUrl } from "@/lib/invoiceUrl";
+import { calculateInvoicePayment } from "@/lib/invoiceCalculations";
 
 interface OrderItem {
   id: string;
@@ -105,34 +106,14 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   const logoUrl = businessSettings?.logo_url || "";
 
   const subtotal = orderItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-  const discountAmount = order.discount_type === "percentage"
-    ? (subtotal * Number(order.discount)) / 100
-    : Number(order.discount);
   const total = Number(order.total_amount);
   const itemCount = orderItems.length > 0 ? orderItems.reduce((s, i) => s + i.quantity, 0) : 1;
 
-  // Derive paid / due from order.meta when present, fallback to payment_status logic
-  const metaPaid = order.meta && typeof order.meta.paid_amount === "number" ? Number(order.meta.paid_amount) : null;
-  const metaDue = order.meta && typeof order.meta.due_amount === "number" ? Number(order.meta.due_amount) : null;
-  let paidAmount: number;
-  let dueAmount: number;
-  if (metaPaid !== null || metaDue !== null) {
-    paidAmount = metaPaid !== null ? metaPaid : Math.max(total - (metaDue ?? 0), 0);
-    dueAmount = metaDue !== null ? metaDue : Math.max(total - (metaPaid ?? 0), 0);
-  } else if (order.payment_status === "paid") {
-    paidAmount = total; dueAmount = 0;
-  } else if (order.payment_status === "unpaid") {
-    paidAmount = 0; dueAmount = total;
-  } else {
-    paidAmount = 0; dueAmount = total;
-  }
-
-  // Recompute status from numbers (in case DB value is stale)
-  const derivedStatus = paidAmount <= 0.001
-    ? "unpaid"
-    : dueAmount <= 0.01
-      ? "paid"
-      : "partial";
+  const invoiceCalc = calculateInvoicePayment({ subtotal, total, discount: order.discount, discountType: order.discount_type, paymentStatus: order.payment_status, meta: order.meta });
+  const discountAmount = invoiceCalc.discountAmount;
+  const paidAmount = invoiceCalc.paidAmount;
+  const dueAmount = invoiceCalc.dueAmount;
+  const derivedStatus = invoiceCalc.status;
   const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
   // Dynamic invoice QR — points to a tokenized public invoice URL
@@ -162,7 +143,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
     const discountRow = Number(order.discount) > 0
       ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
-          <span style="color:#888">Discount${order.discount_type === "percentage" ? ` (${order.discount}%)` : ""}</span>
+          <span style="color:#888">${invoiceCalc.discountLabel}</span>
           <span style="color:#ef4444;font-weight:500">-${curSymbol}${discountAmount.toFixed(2)}</span>
         </div>`
       : "";
@@ -565,7 +546,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                 {Number(order.discount) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Discount {order.discount_type === "percentage" ? `(${order.discount}%)` : ""}
+                      {invoiceCalc.discountLabel}
                     </span>
                     <span className="text-red-500 font-medium">-{curSymbol}{discountAmount.toFixed(2)}</span>
                   </div>
