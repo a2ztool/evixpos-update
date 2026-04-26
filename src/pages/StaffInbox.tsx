@@ -1196,6 +1196,13 @@ const StaffInbox = () => {
                   )}
                 </div>
 
+                {/* Pinned messages bar */}
+                <PinnedMessagesBar
+                  pinned={pinnedMessages}
+                  onJump={scrollToMessage}
+                  onUnpin={handlePinToggle}
+                />
+
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 min-h-0 px-4 py-4 space-y-3 bg-muted/30 overflow-y-auto">
                   {visibleMessages.length === 0 && (
