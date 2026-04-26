@@ -328,6 +328,7 @@ const FloatingInbox = () => {
     if (taskRequiredInfo) fullMessage += `\n\n**Required Info:**\n${taskRequiredInfo}`;
     const { error } = await db.from("chat_group_messages").insert({
       group_id: activeConv.id, sender_id: myId, message: fullMessage, type: "task",
+      task_title: taskName.trim(), task_status: "pending",
     });
     if (error) { toast.error("Failed to send task"); return; }
     toast.success("Task created!");
