@@ -15,7 +15,8 @@ import {
   ClipboardList, Package, Calendar, Link2, Info, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
+import { useChatFeatures } from "@/hooks/useChatFeatures";
+import { playNotificationSound } from "@/lib/notificationSound";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
@@ -249,8 +250,13 @@ const FloatingInbox = () => {
         const previous = payload.old as Partial<ChatMessage> | undefined;
         setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
         const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
-        if (taskStatusChanged && updated.sender_id === myId && soundRef.current) {
-          playNotificationSound();
+        const involved = updated.sender_id === myId || updated.receiver_id === myId;
+        if (taskStatusChanged && involved && soundRef.current) {
+          const status = String(updated.task_status || "").toLowerCase();
+          const soundType = status === "completed" ? "task_completed"
+            : status === "in_progress" ? "task_in_progress"
+            : "task_pending";
+          playNotificationSound(soundType);
           toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
         }
       })
@@ -270,7 +276,8 @@ const FloatingInbox = () => {
         const known = groups.some(g => g.id === m.group_id);
         if (!known) { fetchGroups(); }
         const ac = activeConvRef.current;
-        if (openRef.current && ac?.type === "group" && ac.id === m.group_id) {
+        const isViewingThisGroup = openRef.current && ac?.type === "group" && ac.id === m.group_id;
+        if (isViewingThisGroup) {
           const isTask = m.type === "task";
           const mapped: ChatMessage = {
             id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
@@ -286,9 +293,16 @@ const FloatingInbox = () => {
           };
           setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
           scrollToBottom();
-        } else if (m.sender_id !== myId) {
-          setUnreadByGroup(prev => ({ ...prev, [m.group_id]: (prev[m.group_id] || 0) + 1 }));
-          if (soundRef.current) playNotificationSound();
+        }
+        // Sound for ANY incoming group message (sender ≠ me) — bidirectional fix.
+        // Plays whether floating inbox is open or closed, viewing this group or another.
+        if (m.sender_id !== myId) {
+          if (!isViewingThisGroup) {
+            setUnreadByGroup(prev => ({ ...prev, [m.group_id]: (prev[m.group_id] || 0) + 1 }));
+          }
+          const mentioned = Array.isArray(m.mentions) && m.mentions.includes(myId);
+          if (soundRef.current) playNotificationSound(mentioned ? "alert" : "message");
+          if (mentioned) toast.info(`🔔 You were mentioned in this group`);
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
@@ -301,8 +315,13 @@ const FloatingInbox = () => {
               task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
-        if (taskStatusChanged && m.sender_id === myId && soundRef.current) {
-          playNotificationSound();
+        // Task status sound + toast for ALL group members (not just creator), skip the actor who triggered it
+        if (taskStatusChanged && soundRef.current) {
+          const status = String(m.task_status || "").toLowerCase();
+          const soundType = status === "completed" ? "task_completed"
+            : status === "in_progress" ? "task_in_progress"
+            : "task_pending";
+          playNotificationSound(soundType);
           toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
         }
       })
