@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import evixposLogo from "@/assets/evixpos-logo.png";
+import { buildInvoiceUrl } from "@/lib/invoiceUrl";
 import { calculateInvoicePayment } from "@/lib/invoiceCalculations";
 
 interface OrderItem {
@@ -113,6 +114,8 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   const dueAmount = invoiceCalc.dueAmount;
   const derivedStatus = invoiceCalc.status;
   const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
+
+  const invoiceUrl = buildInvoiceUrl(order.id);
 
   const generateInvoiceHTML = () => {
     const items = orderItems.length > 0
