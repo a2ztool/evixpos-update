@@ -324,10 +324,15 @@ const StaffInbox = () => {
         const previous = payload.old as Partial<ChatMessage> | undefined;
         // Realtime sync UI
         setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
-        // Task status change → play sound + toast for the task owner (admin who created it)
+        // Task status change → sound + toast for both parties (creator + assignee)
         const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
-        if (taskStatusChanged && updated.sender_id === myId && soundEnabledRef.current) {
-          playNotificationSound();
+        const involved = updated.sender_id === myId || updated.receiver_id === myId;
+        if (taskStatusChanged && involved && soundEnabledRef.current) {
+          const status = String(updated.task_status || "").toLowerCase();
+          const soundType = status === "completed" ? "task_completed"
+            : status === "in_progress" ? "task_in_progress"
+            : "task_pending";
+          playNotificationSound(soundType);
           toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
         }
       })
