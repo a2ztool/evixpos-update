@@ -683,9 +683,8 @@ const POS = () => {
 
       setCart([]);
       setCustomerId("");
-      setPaymentMode("none");
+      setPaymentOptions(new Set(["full"]));
       setDiscountValue("");
-      setExtraChargeValue("");
       setPaidAmount("");
       setOrderNotes("");
       setSelectedPaymentMethod("cash");
