@@ -257,7 +257,7 @@ const FloatingInbox = () => {
         if (taskStatusChanged && involved && soundRef.current) {
           const status = String(updated.task_status || "").toLowerCase();
           const soundType = status === "completed" ? "task_completed"
-            : status === "in_progress" ? "task_in_progress"
+            : (status === "in_progress" || status === "in-progress") ? "task_in_progress"
             : "task_pending";
           playNotificationSound(soundType);
           toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);

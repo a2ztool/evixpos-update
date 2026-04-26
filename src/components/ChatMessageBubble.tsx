@@ -66,6 +66,7 @@ const formatMsgTime = (dateStr: string) => {
 const TASK_STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-500/20 text-amber-700 border-amber-500/30 dark:text-amber-400",
   "in-progress": "bg-sky-500/20 text-sky-700 border-sky-500/30 dark:text-sky-400",
+  in_progress: "bg-sky-500/20 text-sky-700 border-sky-500/30 dark:text-sky-400",
   completed: "bg-emerald-500/20 text-emerald-700 border-emerald-500/30 dark:text-emerald-400",
 };
 
