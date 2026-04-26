@@ -796,8 +796,16 @@ const FloatingInbox = () => {
               )}
 
               <div className="absolute bottom-0 left-0 right-0 px-3 py-3 border-t border-border/60 bg-card z-10">
+                <MentionPicker
+                  open={mentionOpen && activeConv?.type === "group"}
+                  query={mentionQuery}
+                  users={mentionUsers}
+                  onSelect={handleMentionSelect}
+                  onClose={() => setMentionOpen(false)}
+                  className="left-3 right-3"
+                />
                 <form
-                  onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+                  onSubmit={(e) => { e.preventDefault(); setMentionOpen(false); sendMessage(); }}
                   className="flex gap-2 items-center"
                 >
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
@@ -810,9 +818,10 @@ const FloatingInbox = () => {
                     <Paperclip className="w-4 h-4" />
                   </Button>
                   <Input
+                    ref={messageInputRef}
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    onChange={(e) => handleMessageInputChange(e.target.value)}
+                    placeholder={activeConv?.type === "group" ? "Type a message... (use @ to mention)" : "Type a message..."}
                     className="text-sm rounded-full h-9 flex-1 bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary/30"
                   />
                   <Button
