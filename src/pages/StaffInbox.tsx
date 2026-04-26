@@ -361,7 +361,7 @@ const StaffInbox = () => {
           const ac = activeChatRef.current;
           const act = activeChatTypeRef.current;
           if (act === "group" && ac === m.group_id) {
-            const isTask = m.type === "task";
+            const isTask = m.type === "task" || !!m.task_title || /^📋\s*\*\*Task Card\*\*/.test(m.message || "");
             const mapped: ChatMessage = {
               id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
               message: m.message, message_type: isTask ? "task" : m.type === "system" ? "system" : "text",
