@@ -1007,13 +1007,60 @@ const StaffInbox = () => {
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground truncate">
                       {activeChatType === "group" ? activeGroupData?.name : (activePerson?.name || (ownerContact?.auth_user_id === activeChat ? "Store Owner" : "Unknown"))}
                     </h3>
-                    <p className="text-[11px] text-muted-foreground capitalize">
-                      {activeChatType === "group" ? `${groupMembers.length} members` : (activePerson?.role || "owner")}
-                    </p>
+                    {activeChatType === "group" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="text-[11px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 transition-colors"
+                          >
+                            <Users className="h-3 w-3" />
+                            {groupMembers.length} member{groupMembers.length === 1 ? "" : "s"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-64 p-0">
+                          <div className="px-3 py-2 border-b border-border">
+                            <p className="text-xs font-semibold text-foreground">Group Members</p>
+                            <p className="text-[10px] text-muted-foreground">{groupMembers.length} total</p>
+                          </div>
+                          <div className="max-h-64 overflow-y-auto p-1">
+                            {groupMembers.length === 0 && (
+                              <p className="px-3 py-4 text-xs text-muted-foreground text-center">No members yet</p>
+                            )}
+                            {groupMembers.map(m => {
+                              const staff = staffList.find(s => s.auth_user_id === m.user_id);
+                              const isOwner = ownerContact?.auth_user_id === m.user_id;
+                              const isMe = m.user_id === myId;
+                              const name = staff?.name || (isOwner ? "Store Owner" : "Member");
+                              const role = isOwner ? "owner" : (m.role || staff?.role || "staff");
+                              return (
+                                <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent">
+                                  <Avatar className="h-7 w-7">
+                                    <AvatarFallback className="bg-primary/15 text-primary text-[10px] font-medium">
+                                      {getInitials(name).charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-foreground truncate">
+                                      {name} {isMe && <span className="text-muted-foreground font-normal">(you)</span>}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground capitalize">{role}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground capitalize">
+                        {activePerson?.role || "owner"}
+                      </p>
+                    )}
                   </div>
                   {/* Task assign */}
                   {(!isStaff || activeChatType === "group") && (
