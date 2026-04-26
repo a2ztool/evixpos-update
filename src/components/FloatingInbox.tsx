@@ -20,6 +20,7 @@ import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
+import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -69,6 +70,12 @@ const FloatingInbox = () => {
   const [showOrderDropdown, setShowOrderDropdown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  // Group members + mention state
+  const [groupMembers, setGroupMembers] = useState<{ user_id: string; role: string | null }[]>([]);
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
   const openRef = useRef(open);
   const soundRef = useRef(soundEnabled);
   const activeConvRef = useRef<ConvItem | null>(activeConv);
@@ -123,6 +130,38 @@ const FloatingInbox = () => {
       setLoading(false);
     }
   }, [hasStoreContext, fetchUnread, fetchGroups]);
+
+  // ─── Fetch group members + their display names (for @mentions) ───
+  useEffect(() => {
+    if (!activeConv || activeConv.type !== "group" || !storeId) {
+      setGroupMembers([]);
+      setMemberNames({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data: members } = await db
+        .from("chat_group_members")
+        .select("user_id, role")
+        .eq("group_id", activeConv.id);
+      if (cancelled || !members) return;
+      setGroupMembers(members);
+      const ids = members.map((m: any) => m.user_id);
+      if (ids.length === 0) { setMemberNames({}); return; }
+      // Resolve names: try staff_members first, then profiles
+      const [{ data: staff }, { data: profiles }] = await Promise.all([
+        db.from("staff_members").select("auth_user_id, name, role").in("auth_user_id", ids),
+        db.from("profiles").select("id, name").in("id", ids),
+      ]);
+      const nameMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { if (p.name) nameMap[p.id] = p.name; });
+      (staff || []).forEach((s: any) => { if (s.name) nameMap[s.auth_user_id] = s.name; });
+      // Owner fallback label
+      if (ownerId && !nameMap[ownerId]) nameMap[ownerId] = "Store Owner";
+      if (!cancelled) setMemberNames(nameMap);
+    })();
+    return () => { cancelled = true; };
+  }, [activeConv, storeId, ownerId]);
 
   // ─── Load messages when entering a conversation ───
   useEffect(() => {
@@ -379,11 +418,64 @@ const FloatingInbox = () => {
       });
     } else {
       // group
+      const mentions = extractMentionIds(msg);
       const insertData: any = { group_id: activeConv.id, sender_id: myId, message: msg, type: "text" };
       if (replyToId) insertData.reply_to_id = replyToId;
+      if (mentions.length) insertData.mentions = mentions;
       const { error } = await db.from("chat_group_messages").insert(insertData);
       if (error) { toast.error("Failed to send"); setNewMessage(msg); }
     }
+  };
+
+  // Map @Name tokens to user_ids of current group members
+  const extractMentionIds = (text: string): string[] => {
+    if (!text || groupMembers.length === 0) return [];
+    const lookup = new Map<string, string>();
+    groupMembers.forEach(m => {
+      const name = memberNames[m.user_id];
+      if (name) lookup.set(name.replace(/\s+/g, "").toLowerCase(), m.user_id);
+    });
+    const ids = new Set<string>();
+    for (const match of text.matchAll(/@([\w.\-]+)/g)) {
+      const id = lookup.get(match[1].toLowerCase());
+      if (id) ids.add(id);
+    }
+    return Array.from(ids);
+  };
+
+  // Build mention candidates (exclude self)
+  const mentionUsers: MentionUser[] = groupMembers
+    .filter(m => m.user_id !== myId)
+    .map(m => ({
+      id: m.user_id,
+      name: memberNames[m.user_id] || "Member",
+      role: m.role || undefined,
+    }));
+
+  const handleMessageInputChange = (value: string) => {
+    setNewMessage(value);
+    if (activeConv?.type !== "group") return;
+    const cursor = messageInputRef.current?.selectionStart ?? value.length;
+    const before = value.slice(0, cursor);
+    const match = before.match(/(?:^|\s)@([\w.\-]*)$/);
+    if (match) {
+      setMentionQuery(match[1] || "");
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+      setMentionQuery("");
+    }
+  };
+
+  const handleMentionSelect = (u: MentionUser) => {
+    const handle = u.name.replace(/\s+/g, "");
+    const cursor = messageInputRef.current?.selectionStart ?? newMessage.length;
+    const before = newMessage.slice(0, cursor).replace(/@([\w.\-]*)$/, `@${handle} `);
+    const after = newMessage.slice(cursor);
+    setNewMessage(before + after);
+    setMentionOpen(false);
+    setMentionQuery("");
+    setTimeout(() => messageInputRef.current?.focus(), 0);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -704,8 +796,16 @@ const FloatingInbox = () => {
               )}
 
               <div className="absolute bottom-0 left-0 right-0 px-3 py-3 border-t border-border/60 bg-card z-10">
+                <MentionPicker
+                  open={mentionOpen && activeConv?.type === "group"}
+                  query={mentionQuery}
+                  users={mentionUsers}
+                  onSelect={handleMentionSelect}
+                  onClose={() => setMentionOpen(false)}
+                  className="left-3 right-3"
+                />
                 <form
-                  onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+                  onSubmit={(e) => { e.preventDefault(); setMentionOpen(false); sendMessage(); }}
                   className="flex gap-2 items-center"
                 >
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
@@ -718,9 +818,10 @@ const FloatingInbox = () => {
                     <Paperclip className="w-4 h-4" />
                   </Button>
                   <Input
+                    ref={messageInputRef}
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    onChange={(e) => handleMessageInputChange(e.target.value)}
+                    placeholder={activeConv?.type === "group" ? "Type a message... (use @ to mention)" : "Type a message..."}
                     className="text-sm rounded-full h-9 flex-1 bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary/30"
                   />
                   <Button
