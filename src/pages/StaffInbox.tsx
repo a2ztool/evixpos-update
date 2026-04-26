@@ -1241,6 +1241,7 @@ const StaffInbox = () => {
                             onDeleteForMe={deleteForMe}
                             onDeleteForEveryone={deleteForEveryone}
                             onScrollToMessage={scrollToMessage}
+                            onPinToggle={handlePinToggle}
                             myId={myId!}
                             isStaff={isStaff}
                           />
