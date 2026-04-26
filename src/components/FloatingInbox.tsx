@@ -281,7 +281,7 @@ const FloatingInbox = () => {
         const ac = activeConvRef.current;
         const isViewingThisGroup = openRef.current && ac?.type === "group" && ac.id === m.group_id;
         if (isViewingThisGroup) {
-          const isTask = m.type === "task";
+          const isTask = m.type === "task" || !!m.task_title || /^📋\s*\*\*Task Card\*\*/.test(m.message || "");
           const mapped: ChatMessage = {
             id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
             message: m.message,
