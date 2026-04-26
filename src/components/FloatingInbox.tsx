@@ -15,7 +15,8 @@ import {
   ClipboardList, Package, Calendar, Link2, Info, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
+import { useChatFeatures } from "@/hooks/useChatFeatures";
+import { playNotificationSound } from "@/lib/notificationSound";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
