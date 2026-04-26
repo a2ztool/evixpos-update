@@ -1333,6 +1333,11 @@ const StaffInbox = () => {
                             onDeleteForEveryone={deleteForEveryone}
                             onScrollToMessage={scrollToMessage}
                             onPinToggle={handlePinToggle}
+                            onTaskStatusUpdate={async (msgId, status) => {
+                              const { error } = await db.from("chat_group_messages").update({ task_status: status }).eq("id", msgId);
+                              if (error) toast.error("Failed to update task status");
+                              else toast.success(`Task marked as ${status}`);
+                            }}
                             myId={myId!}
                             isStaff={isStaff}
                           />
