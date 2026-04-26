@@ -161,6 +161,7 @@ const FloatingInbox = () => {
             is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
+            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
           }));
           setMessages(mapped);
         }
