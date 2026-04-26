@@ -392,8 +392,8 @@ const POS = () => {
 
     setSubmitting(true);
     try {
-      const isDue = paymentMode === "due";
-      const isPartial = paymentMode === "partial";
+      const isDue = hasOpt("due");
+      const isPartial = hasOpt("partial");
 
       // Calculate effective paid/due considering split mode
       let effectivePaid = paidAmountFinal;
@@ -405,7 +405,7 @@ const POS = () => {
 
       const hasDue = isDue || effectiveDue > 0.01;
       const computedPaymentStatus = effectivePaid === 0 ? "unpaid" : effectiveDue > 0.01 ? "partial" : "paid";
-      const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
+      const discAmount = discountAmount;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
         : selectedPaymentMethod;
