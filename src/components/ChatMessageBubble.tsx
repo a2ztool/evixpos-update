@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { REACTION_EMOJIS } from "@/hooks/useChatFeatures";
+import { renderWithMentions } from "@/lib/chatHelpers";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuSeparator
