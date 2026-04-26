@@ -292,12 +292,12 @@ const ChatMessageBubble = ({
           {/* Message text - for tasks show after task card */}
           {(!isTask || isDeleted) && (
             <p className="whitespace-pre-wrap break-words">
-              {isDeleted ? "🚫 This message was deleted" : msg.message}
+              {isDeleted ? "🚫 This message was deleted" : renderWithMentions(msg.message)}
             </p>
           )}
           {isTask && !isDeleted && msg.message && (
             <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1">
-              {msg.message}
+              {renderWithMentions(msg.message)}
             </p>
           )}
 
