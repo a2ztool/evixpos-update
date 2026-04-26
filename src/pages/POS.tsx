@@ -1280,7 +1280,7 @@ const POS = () => {
             {checkoutStep < 4 ? (
               <Button size="sm" onClick={() => setCheckoutStep(checkoutStep + 1)} disabled={!canProceed()} className="gap-1">Next <ArrowRight className="h-3.5 w-3.5" /></Button>
             ) : (
-              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600" : ""}`}>
+              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${hasOpt("due") ? "bg-amber-500 hover:bg-amber-600" : hasOpt("partial") ? "bg-orange-500 hover:bg-orange-600" : ""}`}>
                 {submitting ? "Processing..." : "Confirm Order"} <Check className="h-3.5 w-3.5" />
               </Button>
             )}
