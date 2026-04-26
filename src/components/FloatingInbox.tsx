@@ -274,6 +274,14 @@ const FloatingInbox = () => {
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, fetchGroups]);
 
+  const scrollToMessage = (msgId: string) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary/60", "rounded-xl");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary/60", "rounded-xl"), 1500);
+    }
+  };
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
   };
