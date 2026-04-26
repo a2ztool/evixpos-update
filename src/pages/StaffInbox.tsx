@@ -20,6 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
+import PinnedMessagesBar from "@/components/PinnedMessagesBar";
+import { usePinMessage } from "@/hooks/usePinMessage";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
