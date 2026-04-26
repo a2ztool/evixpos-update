@@ -253,6 +253,12 @@ export const playNotificationSound = (type: string = "info") => {
     scheduleTone(ctx, 1400, 0.28, 0.22, volume * 0.85);
     return;
   }
+  // Generic task status update — neutral two-tone chirp
+  if (type === "task_status_updated") {
+    scheduleTone(ctx, 660, 0, 0.14, volume);
+    scheduleTone(ctx, 990, 0.1, 0.18, volume * 0.85);
+    return;
+  }
 
   switch (category) {
     case "order":
