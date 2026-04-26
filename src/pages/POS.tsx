@@ -413,6 +413,10 @@ const POS = () => {
       const orderMeta: Record<string, unknown> = {
         paid_amount: effectivePaid,
         due_amount: effectiveDue,
+        subtotal,
+        discount_amount: discAmount,
+        final_total: total,
+        payment_flow: Array.from(paymentOptions),
       };
       if (splitMode && splitEntries.length > 0) {
         orderMeta.split_payments = splitEntries.map(e => ({
@@ -430,7 +434,7 @@ const POS = () => {
           customer_id: customerId || null,
           total_amount: total,
           cost_price: 0,
-          discount: discAmount,
+          discount: hasOpt("discount") ? (parseFloat(discountValue) || 0) : 0,
           discount_type: discountType,
           payment_method: payMethod,
           source: "pos",
@@ -724,7 +728,7 @@ const POS = () => {
                 order_date: new Date().toLocaleDateString(),
                 status: "completed",
                 notes: orderNotes,
-                discount: parseFloat(discountValue) || 0,
+                discount: discAmount,
                 store_name: activeStore.name,
               },
             },
