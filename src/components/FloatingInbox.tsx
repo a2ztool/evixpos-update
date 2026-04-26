@@ -204,7 +204,13 @@ const FloatingInbox = () => {
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const updated = payload.new as ChatMessage;
-        setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
+        const previous = payload.old as Partial<ChatMessage> | undefined;
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+        const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
+        if (taskStatusChanged && updated.sender_id === myId && soundRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
