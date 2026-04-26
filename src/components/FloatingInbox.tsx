@@ -250,8 +250,13 @@ const FloatingInbox = () => {
         const previous = payload.old as Partial<ChatMessage> | undefined;
         setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
         const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
-        if (taskStatusChanged && updated.sender_id === myId && soundRef.current) {
-          playNotificationSound();
+        const involved = updated.sender_id === myId || updated.receiver_id === myId;
+        if (taskStatusChanged && involved && soundRef.current) {
+          const status = String(updated.task_status || "").toLowerCase();
+          const soundType = status === "completed" ? "task_completed"
+            : status === "in_progress" ? "task_in_progress"
+            : "task_pending";
+          playNotificationSound(soundType);
           toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
         }
       })
