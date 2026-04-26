@@ -6,6 +6,7 @@ import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStoreMode } from "@/hooks/useStoreMode";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
   ChevronDown, RefreshCw, Clock, Percent, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet, Crown, Lock,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
