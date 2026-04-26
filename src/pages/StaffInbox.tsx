@@ -1397,15 +1397,28 @@ const StaffInbox = () => {
                 )}
 
                 {/* Input */}
-                <div className="px-4 py-3 border-t border-border bg-card">
-                  <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-end">
+                <div className="px-4 py-3 border-t border-border bg-card relative">
+                  <MentionPicker
+                    open={mentionOpen && activeChatType === "group"}
+                    query={mentionQuery}
+                    users={mentionUsers}
+                    onSelect={handleMentionSelect}
+                    onClose={() => setMentionOpen(false)}
+                    className="left-4 right-4"
+                  />
+                  <form onSubmit={(e) => { e.preventDefault(); setMentionOpen(false); sendMessage(); }} className="flex gap-2 items-end">
                     <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
                     <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-muted-foreground"
                       onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                       <Paperclip className="w-4 h-4" />
                     </Button>
-                    <Input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); broadcastTyping(); }}
-                      placeholder="Type a message..." className="text-sm rounded-xl h-10 flex-1" />
+                    <Input
+                      ref={messageInputRef}
+                      value={newMessage}
+                      onChange={(e) => handleMessageInputChange(e.target.value)}
+                      placeholder={activeChatType === "group" ? "Type a message... (use @ to mention)" : "Type a message..."}
+                      className="text-sm rounded-xl h-10 flex-1"
+                    />
                     <Button type="submit" disabled={!newMessage.trim() || uploading} size="icon" className="h-10 w-10 rounded-xl shrink-0">
                       <Send className="w-4 h-4" />
                     </Button>
