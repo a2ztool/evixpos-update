@@ -347,10 +347,13 @@ const StaffInbox = () => {
           const ac = activeChatRef.current;
           const act = activeChatTypeRef.current;
           if (act === "group" && ac === m.group_id) {
+            const isTask = m.type === "task";
             const mapped: ChatMessage = {
               id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
-              message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
-              file_url: null, file_name: null, task_title: null, task_status: null,
+              message: m.message, message_type: isTask ? "task" : m.type === "system" ? "system" : "text",
+              file_url: null, file_name: null,
+              task_title: isTask ? (m.task_title || parseTaskTitle(m.message)) : null,
+              task_status: isTask ? (m.task_status || "pending") : null,
               is_read: true, created_at: m.created_at, reply_to_id: m.reply_to_id || null,
               reactions: m.reactions || null, deleted_for: null, is_deleted_for_everyone: false,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
@@ -358,19 +361,29 @@ const StaffInbox = () => {
             setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
             scrollToBottom();
           }
-          // Group sound/desktop now handled by useNotifications via DB trigger fanout.
-          // Play in-page chime only when not actively viewing this group (to avoid double sound).
+          // Group sound: only chime when not actively viewing this group, OR when mentioned (always chime)
+          const mentioned = Array.isArray(m.mentions) && myId && m.mentions.includes(myId);
           if (m.sender_id !== myId) {
             const isViewingThisGroup = activeChatTypeRef.current === "group" && activeChatRef.current === m.group_id;
-            if (!isViewingThisGroup && soundEnabledRef.current) playNotificationSound();
+            if ((!isViewingThisGroup || mentioned) && soundEnabledRef.current) playNotificationSound();
+            if (mentioned) toast.info(`🔔 You were mentioned in this group`);
           }
         })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
         const m = payload.new as any;
+        const previous = payload.old as any;
+        const taskStatusChanged = previous && previous.task_status !== m.task_status && m.type === "task";
         setMessages(prev => prev.map(msg => msg.id === m.id
           ? { ...msg, message: m.message, reactions: m.reactions || null,
+              task_status: m.task_status ?? msg.task_status,
+              task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
+        // Sound + toast for task creator on status change
+        if (taskStatusChanged && m.sender_id === myId && soundEnabledRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
