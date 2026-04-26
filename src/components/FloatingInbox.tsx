@@ -232,11 +232,14 @@ const FloatingInbox = () => {
         if (!known) { fetchGroups(); }
         const ac = activeConvRef.current;
         if (openRef.current && ac?.type === "group" && ac.id === m.group_id) {
+          const isTask = m.type === "task";
           const mapped: ChatMessage = {
             id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
             message: m.message,
-            message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
-            file_url: null, file_name: null, task_title: null, task_status: null,
+            message_type: isTask ? "task" : m.type === "system" ? "system" : "text",
+            file_url: null, file_name: null,
+            task_title: isTask ? (m.task_title || parseTaskTitle(m.message)) : null,
+            task_status: isTask ? (m.task_status || "pending") : null,
             is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
@@ -251,10 +254,18 @@ const FloatingInbox = () => {
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
         const m = payload.new as any;
+        const previous = payload.old as any;
+        const taskStatusChanged = previous && previous.task_status !== m.task_status && m.type === "task";
         setMessages(prev => prev.map(msg => msg.id === m.id
           ? { ...msg, message: m.message, reactions: m.reactions || null,
+              task_status: m.task_status ?? msg.task_status,
+              task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
+        if (taskStatusChanged && m.sender_id === myId && soundRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
