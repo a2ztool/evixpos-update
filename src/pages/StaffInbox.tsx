@@ -1263,6 +1263,7 @@ const StaffInbox = () => {
                         onDeleteForMe={deleteForMe}
                         onDeleteForEveryone={deleteForEveryone}
                         onScrollToMessage={scrollToMessage}
+                        onPinToggle={handlePinToggle}
                         onTaskStatusUpdate={async (msgId, status) => {
                           const { error } = await supabase.from("staff_messages").update({ task_status: status }).eq("id", msgId);
                           if (error) toast.error("Failed to update task status");
