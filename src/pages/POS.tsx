@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1212,7 +1212,10 @@ const POS = () => {
           max-sm:!inset-x-0 max-sm:!bottom-0 max-sm:!top-auto max-sm:!left-0 max-sm:!right-0 max-sm:!translate-x-0 max-sm:!translate-y-0 max-sm:!w-full max-sm:!max-w-full max-sm:!rounded-b-none max-sm:!rounded-t-2xl max-sm:!max-h-[70vh] max-sm:data-[state=closed]:!slide-out-to-bottom max-sm:data-[state=open]:!slide-in-from-bottom
           sm:max-w-sm sm:w-[calc(100%-2rem)] sm:max-h-[85vh]">
           <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border/50 flex-shrink-0">
-            <DialogHeader><DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Select Variation</DialogTitle>
+              <DialogDescription className="sr-only">Choose a product variation to add to the cart.</DialogDescription>
+            </DialogHeader>
             {variationProduct && (
               <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-muted/50">
                 {variationProduct.image_url ? <img src={variationProduct.image_url} alt={variationProduct.name} className="h-12 w-12 rounded-md object-cover" /> : <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center"><Package className="h-6 w-6 text-muted-foreground" /></div>}
@@ -1249,7 +1252,10 @@ const POS = () => {
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="!inset-auto !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 !rounded-2xl !w-[calc(100%-24px)] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh]">
           <div className="border-b border-border/50 px-6 pt-6 pb-4 flex-shrink-0">
-            <DialogHeader className="mb-4"><DialogTitle className="text-lg">Checkout</DialogTitle></DialogHeader>
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-lg">Checkout</DialogTitle>
+              <DialogDescription className="sr-only">Step through customer, payment, and confirmation to place an order.</DialogDescription>
+            </DialogHeader>
             <div className="flex items-center gap-1">
               {CHECKOUT_STEPS.map((s, i) => (
                 <div key={i} className="flex items-center flex-1">
@@ -1283,7 +1289,10 @@ const POS = () => {
       {/* Receipt */}
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
         <DialogContent className="max-w-sm p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-2"><DialogTitle className="flex items-center gap-2 text-lg"><Check className="h-5 w-5 text-green-500" /> Order Complete</DialogTitle></DialogHeader>
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-lg"><Check className="h-5 w-5 text-green-500" /> Order Complete</DialogTitle>
+            <DialogDescription className="sr-only">Order receipt and printing options.</DialogDescription>
+          </DialogHeader>
           {receiptData && (
             <>
               <div ref={receiptRef} className="px-6 py-4">
@@ -1346,7 +1355,10 @@ const POS = () => {
       {/* New Customer */}
       <Dialog open={newCustOpen} onOpenChange={setNewCustOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>New Customer</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>New Customer</DialogTitle>
+            <DialogDescription className="sr-only">Add a new customer to your store.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2"><Label>Name *</Label><Input value={newCustName} onChange={(e) => setNewCustName(e.target.value)} placeholder="Customer name" /></div>
             <div className="space-y-2"><Label>Email</Label><Input value={newCustEmail} onChange={(e) => setNewCustEmail(e.target.value)} placeholder="Email (optional)" /></div>
