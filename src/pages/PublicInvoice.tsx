@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ShieldAlert, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { calculateInvoicePayment } from "@/lib/invoiceCalculations";
 
 const SYM: Record<string, string> = { BDT: "৳", INR: "₹", USD: "$" };
 
@@ -72,22 +73,12 @@ const PublicInvoice = () => {
   const subtotal = items.length > 0
     ? items.reduce((s, i) => s + Number(i.price) * i.quantity, 0)
     : Number(order.total_amount);
-  const discountAmount = order.discount_type === "percentage"
-    ? (subtotal * Number(order.discount)) / 100
-    : Number(order.discount);
   const total = Number(order.total_amount);
-  const metaPaid = order.meta && typeof order.meta.paid_amount === "number" ? Number(order.meta.paid_amount) : null;
-  const metaDue = order.meta && typeof order.meta.due_amount === "number" ? Number(order.meta.due_amount) : null;
-  let paid: number, due: number;
-  if (metaPaid !== null || metaDue !== null) {
-    paid = metaPaid !== null ? metaPaid : Math.max(total - (metaDue ?? 0), 0);
-    due = metaDue !== null ? metaDue : Math.max(total - (metaPaid ?? 0), 0);
-  } else if (order.payment_status === "paid") {
-    paid = total; due = 0;
-  } else {
-    paid = 0; due = total;
-  }
-  const status = paid <= 0.001 ? "unpaid" : due <= 0.01 ? "paid" : "partial";
+  const invoiceCalc = calculateInvoicePayment({ subtotal, total, discount: order.discount, discountType: order.discount_type, paymentStatus: order.payment_status, meta: order.meta });
+  const discountAmount = invoiceCalc.discountAmount;
+  const paid = invoiceCalc.paidAmount;
+  const due = invoiceCalc.dueAmount;
+  const status = invoiceCalc.status;
   const invoiceId = `INV-${order.id.slice(0, 8).toUpperCase()}`;
   const date = new Date(order.created_at);
 
@@ -164,7 +155,7 @@ const PublicInvoice = () => {
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{sym}{subtotal.toFixed(2)}</span></div>
             {Number(order.discount) > 0 && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Discount{order.discount_type === "percentage" ? ` (${order.discount}%)` : ""}</span>
+                <span className="text-muted-foreground">{invoiceCalc.discountLabel}</span>
                 <span className="text-red-500">-{sym}{discountAmount.toFixed(2)}</span>
               </div>
             )}
