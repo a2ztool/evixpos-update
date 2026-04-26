@@ -154,6 +154,7 @@ const StaffInbox = () => {
   const myId = user?.id;
 
   const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
+  const togglePin = usePinMessage(myId);
 
   // Request desktop notification permission on mount
   useEffect(() => { requestNotifPermission(); }, []);
