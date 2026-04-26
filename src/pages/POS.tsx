@@ -96,6 +96,8 @@ const POS = () => {
   const { effectiveUserId } = useStaff();
   const { isOffline, isOnline } = useStoreMode();
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
+  const { hasFeature } = useStorePlan();
+  const canSplitPayment = hasFeature("split_payment");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
