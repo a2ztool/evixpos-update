@@ -143,7 +143,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
     const discountRow = Number(order.discount) > 0
       ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
-          <span style="color:#888">Discount${order.discount_type === "percentage" ? ` (${order.discount}%)` : ""}</span>
+          <span style="color:#888">${invoiceCalc.discountLabel}</span>
           <span style="color:#ef4444;font-weight:500">-${curSymbol}${discountAmount.toFixed(2)}</span>
         </div>`
       : "";
@@ -546,7 +546,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                 {Number(order.discount) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Discount {order.discount_type === "percentage" ? `(${order.discount}%)` : ""}
+                      {invoiceCalc.discountLabel}
                     </span>
                     <span className="text-red-500 font-medium">-{curSymbol}{discountAmount.toFixed(2)}</span>
                   </div>
