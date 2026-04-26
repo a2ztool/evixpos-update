@@ -18,7 +18,8 @@ import {
   Link as LinkIcon, Info, Settings, Trash2, UserPlus, UserMinus, Pencil, MoreVertical
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
+import { useChatFeatures } from "@/hooks/useChatFeatures";
+import { playNotificationSound } from "@/lib/notificationSound";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
