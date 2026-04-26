@@ -415,7 +415,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                     <Mail className="h-4 w-4 text-blue-600" /> Email
                   </button>
                   <button onClick={handleCopyLink} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-accent/50 transition-colors">
-                    <Copy className="h-4 w-4 text-muted-foreground" /> Copy Details
+                    <Copy className="h-4 w-4 text-muted-foreground" /> Copy Link
                   </button>
                 </div>
               )}
