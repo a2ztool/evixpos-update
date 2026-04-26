@@ -283,21 +283,42 @@ const POS = () => {
 
   const subtotal = cart.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
 
-  const { total, dueAmount, paidAmountFinal } = useMemo(() => {
+  // Multi-select payment helpers
+  const hasOpt = (o: PaymentOption) => paymentOptions.has(o);
+  const toggleOpt = (o: PaymentOption) => {
+    setPaymentOptions(prev => {
+      const next = new Set(prev);
+      if (o === "full") {
+        // Full Payment is exclusive — selecting it clears others
+        return new Set<PaymentOption>(["full"]);
+      }
+      next.delete("full");
+      // Due and Partial are mutually exclusive (can't be both fully due and partially paid)
+      if (o === "due" && next.has("partial")) next.delete("partial");
+      if (o === "partial" && next.has("due")) next.delete("due");
+      if (next.has(o)) next.delete(o); else next.add(o);
+      if (next.size === 0) next.add("full");
+      return next;
+    });
+  };
+
+  const { total, dueAmount, paidAmountFinal, discountAmount } = useMemo(() => {
     let t = subtotal;
     const disc = parseFloat(discountValue) || 0;
-    const extra = parseFloat(extraChargeValue) || 0;
-    if (paymentMode === "discount") t -= discountType === "percentage" ? (subtotal * disc) / 100 : disc;
-    else if (paymentMode === "extra") t += extra;
-    if (t < 0) t = 0;
-
-    if (paymentMode === "due") return { total: t, dueAmount: t, paidAmountFinal: 0 };
-    if (paymentMode === "partial") {
-      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
-      return { total: t, dueAmount: t - paid, paidAmountFinal: paid };
+    let appliedDisc = 0;
+    if (hasOpt("discount")) {
+      appliedDisc = discountType === "percentage" ? (subtotal * disc) / 100 : disc;
+      t -= appliedDisc;
     }
-    return { total: t, dueAmount: 0, paidAmountFinal: t };
-  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue, paidAmount]);
+    if (t < 0) { appliedDisc = subtotal; t = 0; }
+
+    if (hasOpt("due")) return { total: t, dueAmount: t, paidAmountFinal: 0, discountAmount: appliedDisc };
+    if (hasOpt("partial")) {
+      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
+      return { total: t, dueAmount: t - paid, paidAmountFinal: paid, discountAmount: appliedDisc };
+    }
+    return { total: t, dueAmount: 0, paidAmountFinal: t, discountAmount: appliedDisc };
+  }, [subtotal, paymentOptions, discountValue, discountType, paidAmount]);
 
   // ─── Hold Order ───
   const handleHoldOrder = useCallback(() => {
