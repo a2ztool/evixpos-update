@@ -1,4 +1,6 @@
-/** Parse a "Task Card" message body to extract title and structured fields. */
+import * as React from "react";
+
+/** Parse a "Task Card" message body to extract title. */
 export const parseTaskTitle = (msg: string): string | null => {
   if (!msg) return null;
   try {
@@ -30,5 +32,3 @@ export const renderWithMentions = (text: string): React.ReactNode => {
     return <span key={i}>{p}</span>;
   });
 };
-
-import * as React from "react";
