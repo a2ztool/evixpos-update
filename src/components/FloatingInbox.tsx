@@ -418,11 +418,64 @@ const FloatingInbox = () => {
       });
     } else {
       // group
+      const mentions = extractMentionIds(msg);
       const insertData: any = { group_id: activeConv.id, sender_id: myId, message: msg, type: "text" };
       if (replyToId) insertData.reply_to_id = replyToId;
+      if (mentions.length) insertData.mentions = mentions;
       const { error } = await db.from("chat_group_messages").insert(insertData);
       if (error) { toast.error("Failed to send"); setNewMessage(msg); }
     }
+  };
+
+  // Map @Name tokens to user_ids of current group members
+  const extractMentionIds = (text: string): string[] => {
+    if (!text || groupMembers.length === 0) return [];
+    const lookup = new Map<string, string>();
+    groupMembers.forEach(m => {
+      const name = memberNames[m.user_id];
+      if (name) lookup.set(name.replace(/\s+/g, "").toLowerCase(), m.user_id);
+    });
+    const ids = new Set<string>();
+    for (const match of text.matchAll(/@([\w.\-]+)/g)) {
+      const id = lookup.get(match[1].toLowerCase());
+      if (id) ids.add(id);
+    }
+    return Array.from(ids);
+  };
+
+  // Build mention candidates (exclude self)
+  const mentionUsers: MentionUser[] = groupMembers
+    .filter(m => m.user_id !== myId)
+    .map(m => ({
+      id: m.user_id,
+      name: memberNames[m.user_id] || "Member",
+      role: m.role || undefined,
+    }));
+
+  const handleMessageInputChange = (value: string) => {
+    setNewMessage(value);
+    if (activeConv?.type !== "group") return;
+    const cursor = messageInputRef.current?.selectionStart ?? value.length;
+    const before = value.slice(0, cursor);
+    const match = before.match(/(?:^|\s)@([\w.\-]*)$/);
+    if (match) {
+      setMentionQuery(match[1] || "");
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+      setMentionQuery("");
+    }
+  };
+
+  const handleMentionSelect = (u: MentionUser) => {
+    const handle = u.name.replace(/\s+/g, "");
+    const cursor = messageInputRef.current?.selectionStart ?? newMessage.length;
+    const before = newMessage.slice(0, cursor).replace(/@([\w.\-]*)$/, `@${handle} `);
+    const after = newMessage.slice(cursor);
+    setNewMessage(before + after);
+    setMentionOpen(false);
+    setMentionQuery("");
+    setTimeout(() => messageInputRef.current?.focus(), 0);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
