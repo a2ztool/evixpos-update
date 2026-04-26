@@ -85,7 +85,9 @@ const ChatMessageBubble = ({
 
   const isDeleted = msg.is_deleted_for_everyone;
   const isTask = msg.message_type === "task" && msg.task_title;
-  const canUpdateTask = isStaff && !isMine && isTask && !isDeleted;
+  // Anyone with the update callback can change status (caller decides who's allowed).
+  // Owner/creator (isMine) can also update their own task in groups.
+  const canUpdateTask = !!onTaskStatusUpdate && isTask && !isDeleted;
   const isPinned = !!msg.is_pinned;
 
   // Highlight when task_status changes
