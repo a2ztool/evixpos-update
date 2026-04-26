@@ -264,17 +264,21 @@ const StaffInbox = () => {
       } else {
         const { data } = await db.from("chat_group_messages").select("*").eq("group_id", activeChat).order("created_at", { ascending: true }).limit(200);
         if (data) {
-          const mapped: ChatMessage[] = data.map((m: any) => ({
-            id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: activeChat,
-            message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
-            file_url: null, file_name: null,
-            task_title: m.type === "task" ? (m.task_title || parseTaskTitle(m.message)) : null,
-            task_status: m.type === "task" ? (m.task_status || "pending") : null,
-            is_read: true, created_at: m.created_at,
-            reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
-            deleted_for: null, is_deleted_for_everyone: false,
-            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
-          }));
+          const mapped: ChatMessage[] = data.map((m: any) => {
+            const isTask = m.type === "task" || !!m.task_title || /^📋\s*\*\*Task Card\*\*/.test(m.message || "");
+            return {
+              id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: activeChat,
+              message: m.message,
+              message_type: isTask ? "task" : m.type === "system" ? "system" : "text",
+              file_url: null, file_name: null,
+              task_title: isTask ? (m.task_title || parseTaskTitle(m.message)) : null,
+              task_status: isTask ? (m.task_status || "pending") : null,
+              is_read: true, created_at: m.created_at,
+              reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
+              deleted_for: null, is_deleted_for_everyone: false,
+              is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
+            };
+          });
           setMessages(mapped);
         }
         const { data: membersData } = await db.from("chat_group_members").select("user_id, role").eq("group_id", activeChat);
