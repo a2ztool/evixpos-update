@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Check, CheckCheck, FileText, ListTodo, Reply, Trash2, Smile,
-  MoreVertical, Download, Clock, ArrowRight
+  MoreVertical, Download, Clock, ArrowRight, Pin, PinOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
@@ -34,6 +34,9 @@ export interface ChatMessage {
   reactions: Record<string, string> | null;
   deleted_for: string[] | null;
   is_deleted_for_everyone: boolean | null;
+  is_pinned?: boolean | null;
+  pinned_at?: string | null;
+  pinned_by?: string | null;
 }
 
 interface Props {
@@ -47,6 +50,7 @@ interface Props {
   onDeleteForEveryone: (msgId: string, senderId: string) => void;
   onScrollToMessage?: (msgId: string) => void;
   onTaskStatusUpdate?: (msgId: string, status: string) => void;
+  onPinToggle?: (msg: ChatMessage) => void;
   myId: string;
   isStaff?: boolean;
 }
@@ -67,7 +71,7 @@ const TASK_STATUS_COLORS: Record<string, string> = {
 const ChatMessageBubble = ({
   msg, isMine, senderInitial, replyToMessage,
   onReply, onReaction, onDeleteForMe, onDeleteForEveryone,
-  onScrollToMessage, onTaskStatusUpdate, myId, isStaff
+  onScrollToMessage, onTaskStatusUpdate, onPinToggle, myId, isStaff
 }: Props) => {
   const [showActions, setShowActions] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -82,6 +86,20 @@ const ChatMessageBubble = ({
   const isDeleted = msg.is_deleted_for_everyone;
   const isTask = msg.message_type === "task" && msg.task_title;
   const canUpdateTask = isStaff && !isMine && isTask && !isDeleted;
+  const isPinned = !!msg.is_pinned;
+
+  // Highlight when task_status changes
+  const [highlight, setHighlight] = useState(false);
+  const prevStatusRef = useRef<string | null | undefined>(msg.task_status);
+  useEffect(() => {
+    if (isTask && prevStatusRef.current !== undefined && prevStatusRef.current !== msg.task_status) {
+      setHighlight(true);
+      const t = setTimeout(() => setHighlight(false), 1600);
+      prevStatusRef.current = msg.task_status;
+      return () => clearTimeout(t);
+    }
+    prevStatusRef.current = msg.task_status;
+  }, [msg.task_status, isTask]);
 
   return (
     <div
@@ -101,6 +119,17 @@ const ChatMessageBubble = ({
       )}
 
       <div className="flex flex-col max-w-[80%] md:max-w-[70%]">
+        {/* Pinned indicator */}
+        {isPinned && !isDeleted && (
+          <div className={cn(
+            "flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mb-0.5",
+            isMine ? "justify-end" : "justify-start"
+          )}>
+            <Pin className="w-2.5 h-2.5 fill-current" />
+            <span className="font-medium">Pinned</span>
+          </div>
+        )}
+
         {/* Reply preview */}
         {replyToMessage && !isDeleted && (
           <button
@@ -120,13 +149,15 @@ const ChatMessageBubble = ({
         )}
 
         <div className={cn(
-          "rounded-2xl px-3.5 py-2.5 text-sm relative",
+          "rounded-2xl px-3.5 py-2.5 text-sm relative transition-shadow",
           isTask && !isDeleted
             ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 text-foreground rounded-xl"
             : isMine
               ? "bg-primary text-primary-foreground rounded-tr-md"
               : "bg-card border border-border text-foreground rounded-tl-md shadow-sm",
-          isDeleted && "italic opacity-60"
+          isDeleted && "italic opacity-60",
+          isPinned && !isDeleted && "ring-1 ring-amber-400/60",
+          highlight && "ring-2 ring-primary/70 shadow-lg shadow-primary/20 animate-pulse"
         )}>
           {/* Action buttons */}
           {(showActions || emojiOpen || menuOpen) && !isDeleted && (
@@ -168,6 +199,18 @@ const ChatMessageBubble = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isMine ? "end" : "start"} className="w-48">
+                  {onPinToggle && (
+                    <>
+                      <DropdownMenuItem onClick={() => { onPinToggle(msg); setMenuOpen(false); }}>
+                        {isPinned ? (
+                          <><PinOff className="w-3.5 h-3.5 mr-2" /> Unpin message</>
+                        ) : (
+                          <><Pin className="w-3.5 h-3.5 mr-2" /> Pin message</>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={() => { onDeleteForMe(msg.id); setMenuOpen(false); }}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete for me
                   </DropdownMenuItem>
@@ -193,8 +236,9 @@ const ChatMessageBubble = ({
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">{msg.task_title}</span>
                   <Badge variant="outline" className={cn(
-                    "text-[10px] h-5 capitalize border",
-                    TASK_STATUS_COLORS[msg.task_status || "pending"] || TASK_STATUS_COLORS.pending
+                    "text-[10px] h-5 capitalize border transition-all",
+                    TASK_STATUS_COLORS[msg.task_status || "pending"] || TASK_STATUS_COLORS.pending,
+                    highlight && "scale-110"
                   )}>
                     <Clock className="w-2.5 h-2.5 mr-1" />
                     {msg.task_status || "pending"}
