@@ -15,6 +15,7 @@ export type NotificationType =
   | "referral" | "referral_commission" | "referral_withdraw"
   | "support" | "support_reply"
   | "alert" | "low_stock"
+  | "task_status_updated"
   | "success" | "error" | "warning" | "info";
 
 // Maps notification types to sound categories
@@ -41,6 +42,7 @@ export const SOUND_CATEGORY: Record<string, "order" | "payment" | "alert" | "inf
   support_reply: "info",
   alert: "alert",
   low_stock: "alert",
+  task_status_updated: "info",
   success: "success",
   error: "error",
   warning: "alert",
@@ -71,6 +73,7 @@ export const TYPE_EMOJI: Record<string, string> = {
   support_reply: "💬",
   alert: "🔔",
   low_stock: "📦",
+  task_status_updated: "📋",
   success: "🟢",
   error: "🔴",
   warning: "🟡",
@@ -101,6 +104,7 @@ export const TYPE_LABEL: Record<string, string> = {
   support_reply: "Support Reply",
   alert: "Alert",
   low_stock: "Low Stock",
+  task_status_updated: "Task Update",
   success: "Success",
   error: "Error",
   warning: "Warning",

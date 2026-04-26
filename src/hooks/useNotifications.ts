@@ -88,6 +88,15 @@ export const useNotifications = () => {
           }
 
           if (isEventSoundEnabled(n.type)) debouncedPlaySound(n.type);
+          // Status-specific tone for task updates (parsed from message tail)
+          if (n.type === "task_status_updated") {
+            const lower = (n.message || "").toLowerCase();
+            const statusTone = lower.includes("completed") ? "task_completed"
+              : (lower.includes("in-progress") || lower.includes("in_progress") || lower.includes("in progress")) ? "task_in_progress"
+              : "task_pending";
+            // Force-play (bypass debounce window) so multiple status changes still chime
+            import("@/lib/notificationSound").then(({ playNotificationSound }) => playNotificationSound(statusTone));
+          }
           showDesktopNotification(label, n.message, n.type);
         }
       )

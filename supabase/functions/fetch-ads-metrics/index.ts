@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
           }
         }
       } catch (err) {
-        errors.push(`Account ${account.ad_account_id}: ${err.message}`);
+        errors.push(`Account ${account.ad_account_id}: ${(err as Error)?.message ?? String(err)}`);
       }
     }
 
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: (err as Error)?.message ?? String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -385,23 +385,16 @@ const StaffInbox = () => {
         })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
         const m = payload.new as any;
-        const previous = payload.old as any;
-        const taskStatusChanged = previous && previous.task_status !== m.task_status && m.type === "task";
         setMessages(prev => prev.map(msg => msg.id === m.id
           ? { ...msg, message: m.message, reactions: m.reactions || null,
               task_status: m.task_status ?? msg.task_status,
               task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
-        // Task status sound + toast for ALL group members on every change
-        if (taskStatusChanged && soundEnabledRef.current) {
-          const status = String(m.task_status || "").toLowerCase();
-          const soundType = status === "completed" ? "task_completed"
-            : status === "in_progress" ? "task_in_progress"
-            : "task_pending";
-          playNotificationSound(soundType);
-          toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
-        }
+        // Task status sound + toast + desktop are handled globally by `useNotifications`
+        // via the new `task_status_updated` notification inserted by the DB trigger.
+        // This avoids duplicate sounds and ensures both staff & owner receive it
+        // even when the chat is closed or another page is open.
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
