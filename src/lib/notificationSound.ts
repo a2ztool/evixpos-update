@@ -237,6 +237,23 @@ export const playNotificationSound = (type: string = "info") => {
   const ctx = getCtx();
   if (!ctx) return;
 
+  // Direct task-status sounds (used by group/staff inbox)
+  if (type === "task_pending") {
+    scheduleTone(ctx, 520, 0, 0.18, volume, "triangle");
+    return;
+  }
+  if (type === "task_in_progress") {
+    scheduleTone(ctx, 740, 0, 0.14, volume);
+    scheduleTone(ctx, 980, 0.12, 0.18, volume * 0.85);
+    return;
+  }
+  if (type === "task_completed") {
+    scheduleTone(ctx, 880, 0, 0.18, volume);
+    scheduleTone(ctx, 1175, 0.14, 0.18, volume * 0.9);
+    scheduleTone(ctx, 1400, 0.28, 0.22, volume * 0.85);
+    return;
+  }
+
   switch (category) {
     case "order":
       scheduleTone(ctx, 880, 0, 0.3, volume);
