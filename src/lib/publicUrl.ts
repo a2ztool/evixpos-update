@@ -8,7 +8,7 @@
  *   2. Hard-coded production domain
  *   3. Current window origin (last resort, e.g. local dev)
  */
-const PRODUCTION_ORIGIN = "https://newevix.lovable.app";
+const PRODUCTION_ORIGIN = "https://newposevix.lovable.app";
 
 export const getPublicOrigin = (): string => {
   const env = (import.meta as any).env?.VITE_PUBLIC_APP_URL as string | undefined;
