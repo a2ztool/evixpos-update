@@ -130,7 +130,7 @@ async function processStore(
     const customer = sub.customers as any;
     if (!customer?.email) continue;
 
-    if (mode === "campaign" && customer_ids?.length > 0 && !customer_ids.includes(customer.id)) {
+    if (mode === "campaign" && (customer_ids?.length ?? 0) > 0 && !customer_ids!.includes(customer.id)) {
       continue;
     }
 
