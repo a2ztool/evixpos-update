@@ -20,6 +20,7 @@ import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
+import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import { toast } from "sonner";
 
 const db = supabase as any;
