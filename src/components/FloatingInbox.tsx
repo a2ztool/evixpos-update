@@ -131,6 +131,38 @@ const FloatingInbox = () => {
     }
   }, [hasStoreContext, fetchUnread, fetchGroups]);
 
+  // ─── Fetch group members + their display names (for @mentions) ───
+  useEffect(() => {
+    if (!activeConv || activeConv.type !== "group" || !storeId) {
+      setGroupMembers([]);
+      setMemberNames({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data: members } = await db
+        .from("chat_group_members")
+        .select("user_id, role")
+        .eq("group_id", activeConv.id);
+      if (cancelled || !members) return;
+      setGroupMembers(members);
+      const ids = members.map((m: any) => m.user_id);
+      if (ids.length === 0) { setMemberNames({}); return; }
+      // Resolve names: try staff_members first, then profiles
+      const [{ data: staff }, { data: profiles }] = await Promise.all([
+        db.from("staff_members").select("auth_user_id, name, role").in("auth_user_id", ids),
+        db.from("profiles").select("id, name").in("id", ids),
+      ]);
+      const nameMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { if (p.name) nameMap[p.id] = p.name; });
+      (staff || []).forEach((s: any) => { if (s.name) nameMap[s.auth_user_id] = s.name; });
+      // Owner fallback label
+      if (ownerId && !nameMap[ownerId]) nameMap[ownerId] = "Store Owner";
+      if (!cancelled) setMemberNames(nameMap);
+    })();
+    return () => { cancelled = true; };
+  }, [activeConv, storeId, ownerId]);
+
   // ─── Load messages when entering a conversation ───
   useEffect(() => {
     if (!open || view !== "chat" || !activeConv || !storeId || !myId) { setMessages([]); return; }
