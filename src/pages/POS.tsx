@@ -955,18 +955,6 @@ const POS = () => {
         </Select>
       </div>
 
-      {/* Add Payment Method shortcut */}
-      {!advancedOpen && hasOpt("full") && paymentOptions.size === 1 && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-1.5 text-xs border-dashed"
-          onClick={() => setAdvancedOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5" /> Add Payment Method
-        </Button>
-      )}
-
       <Button
         className={`w-full h-12 text-base font-semibold ${hasOpt("due") ? "bg-amber-500 hover:bg-amber-600 text-white" : hasOpt("partial") ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
         disabled={cart.length === 0 || submitting}
