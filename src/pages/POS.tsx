@@ -1074,9 +1074,9 @@ const POS = () => {
                 <div key={i} className="flex justify-between text-xs text-muted-foreground ml-2"><span>{e.methodName}</span><span>{format(e.amount)}</span></div>
               ))}
               {orderNotes && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Notes</span><span className="font-medium truncate max-w-[200px]">{orderNotes}</span></div>}
-              {paymentMode === "discount" && parseFloat(discountValue) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>}
-              {paymentMode === "due" && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
-              {paymentMode === "partial" && (
+              {hasOpt("discount") && discountAmount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(discountAmount)}</span></div>}
+              {hasOpt("due") && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
+              {hasOpt("partial") && (
                 <>
                   <div className="flex justify-between text-sm text-green-600"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>
                   {dueAmount > 0 && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
