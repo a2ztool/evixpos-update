@@ -70,6 +70,12 @@ const FloatingInbox = () => {
   const [showOrderDropdown, setShowOrderDropdown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  // Group members + mention state
+  const [groupMembers, setGroupMembers] = useState<{ user_id: string; role: string | null }[]>([]);
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
   const openRef = useRef(open);
   const soundRef = useRef(soundEnabled);
   const activeConvRef = useRef<ConvItem | null>(activeConv);
