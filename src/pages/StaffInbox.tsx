@@ -21,7 +21,9 @@ import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
 import PinnedMessagesBar from "@/components/PinnedMessagesBar";
+import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import { usePinMessage } from "@/hooks/usePinMessage";
+import { parseTaskTitle } from "@/lib/chatHelpers";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
@@ -139,6 +141,10 @@ const StaffInbox = () => {
   // Typing indicator
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // @Mention picker state (group chat only)
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const messageInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeChatRef = useRef<string | null>(activeChat);
@@ -261,8 +267,9 @@ const StaffInbox = () => {
             id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: activeChat,
             message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
             file_url: null, file_name: null,
-            task_title: m.type === "task" ? tryParseTaskTitle(m.message) : null,
-            task_status: null, is_read: true, created_at: m.created_at,
+            task_title: m.type === "task" ? (m.task_title || parseTaskTitle(m.message)) : null,
+            task_status: m.type === "task" ? (m.task_status || "pending") : null,
+            is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
             is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
@@ -344,10 +351,13 @@ const StaffInbox = () => {
           const ac = activeChatRef.current;
           const act = activeChatTypeRef.current;
           if (act === "group" && ac === m.group_id) {
+            const isTask = m.type === "task";
             const mapped: ChatMessage = {
               id: m.id, store_id: storeId, sender_id: m.sender_id, receiver_id: m.group_id,
-              message: m.message, message_type: m.type === "task" ? "task" : m.type === "system" ? "system" : "text",
-              file_url: null, file_name: null, task_title: null, task_status: null,
+              message: m.message, message_type: isTask ? "task" : m.type === "system" ? "system" : "text",
+              file_url: null, file_name: null,
+              task_title: isTask ? (m.task_title || parseTaskTitle(m.message)) : null,
+              task_status: isTask ? (m.task_status || "pending") : null,
               is_read: true, created_at: m.created_at, reply_to_id: m.reply_to_id || null,
               reactions: m.reactions || null, deleted_for: null, is_deleted_for_everyone: false,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
@@ -355,19 +365,29 @@ const StaffInbox = () => {
             setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
             scrollToBottom();
           }
-          // Group sound/desktop now handled by useNotifications via DB trigger fanout.
-          // Play in-page chime only when not actively viewing this group (to avoid double sound).
+          // Group sound: only chime when not actively viewing this group, OR when mentioned (always chime)
+          const mentioned = Array.isArray(m.mentions) && myId && m.mentions.includes(myId);
           if (m.sender_id !== myId) {
             const isViewingThisGroup = activeChatTypeRef.current === "group" && activeChatRef.current === m.group_id;
-            if (!isViewingThisGroup && soundEnabledRef.current) playNotificationSound();
+            if ((!isViewingThisGroup || mentioned) && soundEnabledRef.current) playNotificationSound();
+            if (mentioned) toast.info(`🔔 You were mentioned in this group`);
           }
         })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
         const m = payload.new as any;
+        const previous = payload.old as any;
+        const taskStatusChanged = previous && previous.task_status !== m.task_status && m.type === "task";
         setMessages(prev => prev.map(msg => msg.id === m.id
           ? { ...msg, message: m.message, reactions: m.reactions || null,
+              task_status: m.task_status ?? msg.task_status,
+              task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
+        // Sound + toast for task creator on status change
+        if (taskStatusChanged && m.sender_id === myId && soundEnabledRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -506,9 +526,35 @@ const StaffInbox = () => {
       return;
     }
 
+    // Group: extract @mentions by matching against group member names
+    const mentions = activeChatType === "group" ? extractMentionIds(msg) : [];
     const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
     if (replyToId) insertData.reply_to_id = replyToId;
+    if (mentions.length) insertData.mentions = mentions;
     await db.from("chat_group_messages").insert(insertData);
+  };
+
+  // Helper to map @Name tokens in text to user_ids of current group members
+  const extractMentionIds = (text: string): string[] => {
+    if (!text || !groupMembers.length) return [];
+    const ids = new Set<string>();
+    // Build {lower-name-no-space → user_id}
+    const memberLookup = new Map<string, string>();
+    groupMembers.forEach(m => {
+      const staff = staffList.find(s => s.auth_user_id === m.user_id);
+      const name = staff?.name || (m.user_id === myId ? "you" : "");
+      if (name) {
+        const handle = name.replace(/\s+/g, "").toLowerCase();
+        memberLookup.set(handle, m.user_id);
+      }
+    });
+    const matches = text.matchAll(/@([\w.\-]+)/g);
+    for (const match of matches) {
+      const handle = match[1].toLowerCase();
+      const id = memberLookup.get(handle);
+      if (id) ids.add(id);
+    }
+    return Array.from(ids);
   };
 
   // ─── Fetch orders for the link-order picker ───
@@ -570,7 +616,8 @@ const StaffInbox = () => {
       } catch {}
     } else {
       await db.from("chat_group_messages").insert({
-        group_id: activeChat, sender_id: myId, message: fullMessage, type: "task"
+        group_id: activeChat, sender_id: myId, message: fullMessage, type: "task",
+        task_title: taskName.trim(), task_status: "pending",
       });
     }
     toast.success("Task created!");
@@ -734,6 +781,50 @@ const StaffInbox = () => {
     .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
   const handlePinToggle = (m: ChatMessage) => togglePin(m, activeChatType === "group");
   const typingList = Object.values(typingUsers);
+
+  // Build mention candidates from current group members (group chats only)
+  const mentionUsers: MentionUser[] = useMemo(() => {
+    if (activeChatType !== "group") return [];
+    return groupMembers
+      .filter(m => m.user_id !== myId)
+      .map(m => {
+        const staff = staffList.find(s => s.auth_user_id === m.user_id);
+        return {
+          id: m.user_id,
+          name: staff?.name || (m.user_id === ownerContact?.auth_user_id ? "Store Owner" : "Member"),
+          role: m.role || staff?.role,
+        };
+      });
+  }, [groupMembers, staffList, myId, activeChatType, ownerContact]);
+
+  // Detect @-trigger in message input
+  const handleMessageInputChange = (value: string) => {
+    setNewMessage(value);
+    broadcastTyping();
+    if (activeChatType !== "group") return;
+    const cursor = messageInputRef.current?.selectionStart ?? value.length;
+    const before = value.slice(0, cursor);
+    const match = before.match(/(?:^|\s)@([\w.\-]*)$/);
+    if (match) {
+      setMentionQuery(match[1] || "");
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+      setMentionQuery("");
+    }
+  };
+
+  const handleMentionSelect = (u: MentionUser) => {
+    const handle = u.name.replace(/\s+/g, "");
+    const cursor = messageInputRef.current?.selectionStart ?? newMessage.length;
+    const before = newMessage.slice(0, cursor).replace(/@([\w.\-]*)$/, `@${handle} `);
+    const after = newMessage.slice(cursor);
+    const next = before + after;
+    setNewMessage(next);
+    setMentionOpen(false);
+    setMentionQuery("");
+    setTimeout(() => messageInputRef.current?.focus(), 0);
+  };
 
   return (
     <DashboardLayout>
@@ -1242,6 +1333,11 @@ const StaffInbox = () => {
                             onDeleteForEveryone={deleteForEveryone}
                             onScrollToMessage={scrollToMessage}
                             onPinToggle={handlePinToggle}
+                            onTaskStatusUpdate={async (msgId, status) => {
+                              const { error } = await db.from("chat_group_messages").update({ task_status: status }).eq("id", msgId);
+                              if (error) toast.error("Failed to update task status");
+                              else toast.success(`Task marked as ${status}`);
+                            }}
                             myId={myId!}
                             isStaff={isStaff}
                           />
@@ -1301,15 +1397,28 @@ const StaffInbox = () => {
                 )}
 
                 {/* Input */}
-                <div className="px-4 py-3 border-t border-border bg-card">
-                  <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-end">
+                <div className="px-4 py-3 border-t border-border bg-card relative">
+                  <MentionPicker
+                    open={mentionOpen && activeChatType === "group"}
+                    query={mentionQuery}
+                    users={mentionUsers}
+                    onSelect={handleMentionSelect}
+                    onClose={() => setMentionOpen(false)}
+                    className="left-4 right-4"
+                  />
+                  <form onSubmit={(e) => { e.preventDefault(); setMentionOpen(false); sendMessage(); }} className="flex gap-2 items-end">
                     <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
                     <Button type="button" variant="ghost" size="icon" className="h-10 w-10 shrink-0 text-muted-foreground"
                       onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                       <Paperclip className="w-4 h-4" />
                     </Button>
-                    <Input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); broadcastTyping(); }}
-                      placeholder="Type a message..." className="text-sm rounded-xl h-10 flex-1" />
+                    <Input
+                      ref={messageInputRef}
+                      value={newMessage}
+                      onChange={(e) => handleMessageInputChange(e.target.value)}
+                      placeholder={activeChatType === "group" ? "Type a message... (use @ to mention)" : "Type a message..."}
+                      className="text-sm rounded-xl h-10 flex-1"
+                    />
                     <Button type="submit" disabled={!newMessage.trim() || uploading} size="icon" className="h-10 w-10 rounded-xl shrink-0">
                       <Send className="w-4 h-4" />
                     </Button>

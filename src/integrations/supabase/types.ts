@@ -576,10 +576,15 @@ export type Database = {
           group_id: string
           id: string
           is_pinned: boolean
+          mentions: string[] | null
           message: string
           pinned_at: string | null
           pinned_by: string | null
+          reactions: Json | null
+          reply_to_id: string | null
           sender_id: string
+          task_status: string | null
+          task_title: string | null
           type: string | null
         }
         Insert: {
@@ -587,10 +592,15 @@ export type Database = {
           group_id: string
           id?: string
           is_pinned?: boolean
+          mentions?: string[] | null
           message: string
           pinned_at?: string | null
           pinned_by?: string | null
+          reactions?: Json | null
+          reply_to_id?: string | null
           sender_id: string
+          task_status?: string | null
+          task_title?: string | null
           type?: string | null
         }
         Update: {
@@ -598,10 +608,15 @@ export type Database = {
           group_id?: string
           id?: string
           is_pinned?: boolean
+          mentions?: string[] | null
           message?: string
           pinned_at?: string | null
           pinned_by?: string | null
+          reactions?: Json | null
+          reply_to_id?: string | null
           sender_id?: string
+          task_status?: string | null
+          task_title?: string | null
           type?: string | null
         }
         Relationships: [
@@ -610,6 +625,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_group_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_group_messages"
             referencedColumns: ["id"]
           },
         ]

@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { REACTION_EMOJIS } from "@/hooks/useChatFeatures";
+import { renderWithMentions } from "@/lib/chatHelpers";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuSeparator
@@ -85,7 +86,9 @@ const ChatMessageBubble = ({
 
   const isDeleted = msg.is_deleted_for_everyone;
   const isTask = msg.message_type === "task" && msg.task_title;
-  const canUpdateTask = isStaff && !isMine && isTask && !isDeleted;
+  // Anyone with the update callback can change status (caller decides who's allowed).
+  // Owner/creator (isMine) can also update their own task in groups.
+  const canUpdateTask = !!onTaskStatusUpdate && isTask && !isDeleted;
   const isPinned = !!msg.is_pinned;
 
   // Highlight when task_status changes
@@ -289,12 +292,12 @@ const ChatMessageBubble = ({
           {/* Message text - for tasks show after task card */}
           {(!isTask || isDeleted) && (
             <p className="whitespace-pre-wrap break-words">
-              {isDeleted ? "🚫 This message was deleted" : msg.message}
+              {isDeleted ? "🚫 This message was deleted" : renderWithMentions(msg.message)}
             </p>
           )}
           {isTask && !isDeleted && msg.message && (
             <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1">
-              {msg.message}
+              {renderWithMentions(msg.message)}
             </p>
           )}
 
