@@ -586,7 +586,8 @@ const StaffInbox = () => {
       } catch {}
     } else {
       await db.from("chat_group_messages").insert({
-        group_id: activeChat, sender_id: myId, message: fullMessage, type: "task"
+        group_id: activeChat, sender_id: myId, message: fullMessage, type: "task",
+        task_title: taskName.trim(), task_status: "pending",
       });
     }
     toast.success("Task created!");
