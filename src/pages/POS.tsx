@@ -23,9 +23,9 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { toast } from "sonner";
 import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
-  ChevronDown, RefreshCw, Clock, Percent, TrendingUp, UserPlus, AlertTriangle, X,
+  ChevronDown, RefreshCw, Clock, Percent, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
@@ -86,7 +86,7 @@ interface ReceiptData {
   storeName: string;
 }
 
-type PaymentMode = "none" | "discount" | "extra" | "due" | "partial";
+type PaymentOption = "full" | "discount" | "due" | "partial";
 
 const POS = () => {
   const { user } = useAuth();
@@ -103,11 +103,10 @@ const POS = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [customerId, setCustomerId] = useState("");
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>("none");
+  const [paymentOptions, setPaymentOptions] = useState<Set<PaymentOption>>(new Set(["full"]));
   const [discountType, setDiscountType] = useState<"fixed" | "percentage">("fixed");
   const [discountValue, setDiscountValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [extraChargeValue, setExtraChargeValue] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -284,21 +283,42 @@ const POS = () => {
 
   const subtotal = cart.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
 
-  const { total, dueAmount, paidAmountFinal } = useMemo(() => {
+  // Multi-select payment helpers
+  const hasOpt = (o: PaymentOption) => paymentOptions.has(o);
+  const toggleOpt = (o: PaymentOption) => {
+    setPaymentOptions(prev => {
+      const next = new Set(prev);
+      if (o === "full") {
+        // Full Payment is exclusive — selecting it clears others
+        return new Set<PaymentOption>(["full"]);
+      }
+      next.delete("full");
+      // Due and Partial are mutually exclusive (can't be both fully due and partially paid)
+      if (o === "due" && next.has("partial")) next.delete("partial");
+      if (o === "partial" && next.has("due")) next.delete("due");
+      if (next.has(o)) next.delete(o); else next.add(o);
+      if (next.size === 0) next.add("full");
+      return next;
+    });
+  };
+
+  const { total, dueAmount, paidAmountFinal, discountAmount } = useMemo(() => {
     let t = subtotal;
     const disc = parseFloat(discountValue) || 0;
-    const extra = parseFloat(extraChargeValue) || 0;
-    if (paymentMode === "discount") t -= discountType === "percentage" ? (subtotal * disc) / 100 : disc;
-    else if (paymentMode === "extra") t += extra;
-    if (t < 0) t = 0;
-
-    if (paymentMode === "due") return { total: t, dueAmount: t, paidAmountFinal: 0 };
-    if (paymentMode === "partial") {
-      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
-      return { total: t, dueAmount: t - paid, paidAmountFinal: paid };
+    let appliedDisc = 0;
+    if (hasOpt("discount")) {
+      appliedDisc = discountType === "percentage" ? (subtotal * disc) / 100 : disc;
+      t -= appliedDisc;
     }
-    return { total: t, dueAmount: 0, paidAmountFinal: t };
-  }, [subtotal, paymentMode, discountValue, discountType, extraChargeValue, paidAmount]);
+    if (t < 0) { appliedDisc = subtotal; t = 0; }
+
+    if (hasOpt("due")) return { total: t, dueAmount: t, paidAmountFinal: 0, discountAmount: appliedDisc };
+    if (hasOpt("partial")) {
+      const paid = Math.min(Math.max(parseFloat(paidAmount) || 0, 0), t);
+      return { total: t, dueAmount: t - paid, paidAmountFinal: paid, discountAmount: appliedDisc };
+    }
+    return { total: t, dueAmount: 0, paidAmountFinal: t, discountAmount: appliedDisc };
+  }, [subtotal, paymentOptions, discountValue, discountType, paidAmount]);
 
   // ─── Hold Order ───
   const handleHoldOrder = useCallback(() => {
@@ -372,8 +392,8 @@ const POS = () => {
 
     setSubmitting(true);
     try {
-      const isDue = paymentMode === "due";
-      const isPartial = paymentMode === "partial";
+      const isDue = hasOpt("due");
+      const isPartial = hasOpt("partial");
 
       // Calculate effective paid/due considering split mode
       let effectivePaid = paidAmountFinal;
@@ -385,7 +405,7 @@ const POS = () => {
 
       const hasDue = isDue || effectiveDue > 0.01;
       const computedPaymentStatus = effectivePaid === 0 ? "unpaid" : effectiveDue > 0.01 ? "partial" : "paid";
-      const discAmount = paymentMode === "discount" ? (parseFloat(discountValue) || 0) : 0;
+      const discAmount = discountAmount;
       const payMethod = splitMode
         ? splitEntries.map(e => `${e.methodName}: ${format(e.amount)}`).join(" + ")
         : selectedPaymentMethod;
@@ -663,9 +683,8 @@ const POS = () => {
 
       setCart([]);
       setCustomerId("");
-      setPaymentMode("none");
+      setPaymentOptions(new Set(["full"]));
       setDiscountValue("");
-      setExtraChargeValue("");
       setPaidAmount("");
       setOrderNotes("");
       setSelectedPaymentMethod("cash");
@@ -741,7 +760,7 @@ const POS = () => {
   }, [products, search, activeCategory]);
 
   const selectedCustomer = customers.find(c => c.id === customerId);
-  const buttonLabel = paymentMode === "due" ? "Place Order (Add to Due)" : paymentMode === "partial" ? "Place Order (Partial)" : "Place Order";
+  const buttonLabel = hasOpt("due") ? "Place Order (Add to Due)" : hasOpt("partial") ? "Place Order (Partial)" : "Place Order";
   const receiptSymbol = receiptData ? (receiptData.currency === "BDT" ? "৳" : receiptData.currency === "INR" ? "₹" : "$") : symbol;
 
   const CHECKOUT_STEPS = [
@@ -816,24 +835,24 @@ const POS = () => {
             <div className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4 text-amber-600" />
               <span className="font-medium text-amber-800 dark:text-amber-400">Advanced Payment</span>
-              {paymentMode === "due" && <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">DUE</Badge>}
-              {paymentMode === "partial" && <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0">PARTIAL</Badge>}
-              {paymentMode === "discount" && <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0">DISCOUNT</Badge>}
-              {paymentMode === "extra" && <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0">EXTRA</Badge>}
+              {hasOpt("full") && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">FULL</Badge>}
+              {hasOpt("discount") && <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0">DISCOUNT</Badge>}
+              {hasOpt("partial") && <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0">PARTIAL</Badge>}
+              {hasOpt("due") && <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">DUE</Badge>}
             </div>
             <ChevronDown className={`h-4 w-4 text-amber-600 transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="mt-3 space-y-3">
+            <p className="text-[11px] text-muted-foreground">Multi-select: combine options (e.g. Discount + Partial). Full Payment is exclusive.</p>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setPaymentMode("none")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "none" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><Minus className="h-4 w-4" />None</button>
-              <button onClick={() => setPaymentMode("discount")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "discount" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><Percent className="h-4 w-4" />Discount</button>
-              <button onClick={() => setPaymentMode("extra")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "extra" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><TrendingUp className="h-4 w-4" />Extra Charge</button>
-              <button onClick={() => setPaymentMode("due")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "due" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400" : "border-border text-muted-foreground hover:border-amber-400"}`}><Clock className="h-4 w-4" />Due / No Pay</button>
-              <button onClick={() => setPaymentMode("partial")} className={`col-span-2 flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${paymentMode === "partial" ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400" : "border-border text-muted-foreground hover:border-orange-400"}`}><Split className="h-4 w-4" />Partial Payment</button>
+              <button onClick={() => toggleOpt("full")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${hasOpt("full") ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}><Wallet className="h-4 w-4" />Full Payment</button>
+              <button onClick={() => toggleOpt("discount")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${hasOpt("discount") ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400" : "border-border text-muted-foreground hover:border-green-400"}`}><Percent className="h-4 w-4" />Discount</button>
+              <button onClick={() => toggleOpt("due")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${hasOpt("due") ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400" : "border-border text-muted-foreground hover:border-amber-400"}`}><Clock className="h-4 w-4" />Due / No Pay</button>
+              <button onClick={() => toggleOpt("partial")} className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all ${hasOpt("partial") ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400" : "border-border text-muted-foreground hover:border-orange-400"}`}><Split className="h-4 w-4" />Partial Payment</button>
             </div>
-            {paymentMode === "discount" && (
+            {hasOpt("discount") && (
               <div className="flex gap-2">
                 <Input type="number" placeholder="Discount" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} className="flex-1" />
                 <Select value={discountType} onValueChange={(v) => setDiscountType(v as "fixed" | "percentage")}>
@@ -845,14 +864,13 @@ const POS = () => {
                 </Select>
               </div>
             )}
-            {paymentMode === "extra" && <Input type="number" placeholder="Extra charge amount" value={extraChargeValue} onChange={(e) => setExtraChargeValue(e.target.value)} />}
-            {paymentMode === "due" && (
+            {hasOpt("due") && (
               <div className="flex gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3">
                 <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800 dark:text-amber-400">Customer pays <strong>nothing now</strong>. Full total recorded in <strong>Due Book</strong>.</p>
               </div>
             )}
-            {paymentMode === "partial" && (
+            {hasOpt("partial") && (
               <div className="space-y-2">
                 <div className="flex gap-2 items-center">
                   <Input
@@ -895,17 +913,14 @@ const POS = () => {
         <span className="text-muted-foreground">Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
         <span>{format(subtotal)}</span>
       </div>
-      {paymentMode === "discount" && parseFloat(discountValue) > 0 && (
-        <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>
-      )}
-      {paymentMode === "extra" && parseFloat(extraChargeValue) > 0 && (
-        <div className="flex justify-between text-sm text-blue-600"><span>Extra Charge</span><span>+{format(parseFloat(extraChargeValue) || 0)}</span></div>
+      {hasOpt("discount") && discountAmount > 0 && (
+        <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(discountAmount)}</span></div>
       )}
       <Separator />
       <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{format(total)}</span></div>
 
       {/* Payment breakdown */}
-      {(paymentMode === "partial" || paymentMode === "due" || (splitMode && splitEntries.length > 0)) && (
+      {(hasOpt("partial") || hasOpt("due") || (splitMode && splitEntries.length > 0)) && (
         <div className="rounded-lg border p-3 space-y-2 bg-muted/30">
           <div className="flex justify-between text-sm">
             <span className="flex items-center gap-1.5 text-green-600">
@@ -915,7 +930,7 @@ const POS = () => {
               {format(splitMode ? splitEntries.reduce((s, e) => s + e.amount, 0) : paidAmountFinal)}
             </span>
           </div>
-          {(paymentMode === "due" || dueAmount > 0) && (
+          {(hasOpt("due") || dueAmount > 0) && (
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-1.5 text-destructive">
                 <AlertTriangle className="h-3.5 w-3.5" /> Due
@@ -937,7 +952,7 @@ const POS = () => {
       </div>
 
       {/* Add Payment Method shortcut */}
-      {!advancedOpen && paymentMode === "none" && (
+      {!advancedOpen && hasOpt("full") && paymentOptions.size === 1 && (
         <Button
           variant="outline"
           size="sm"
@@ -949,7 +964,7 @@ const POS = () => {
       )}
 
       <Button
-        className={`w-full h-12 text-base font-semibold ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600 text-white" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
+        className={`w-full h-12 text-base font-semibold ${hasOpt("due") ? "bg-amber-500 hover:bg-amber-600 text-white" : hasOpt("partial") ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
         disabled={cart.length === 0 || submitting}
         onClick={openCheckout}
       >
@@ -1059,9 +1074,9 @@ const POS = () => {
                 <div key={i} className="flex justify-between text-xs text-muted-foreground ml-2"><span>{e.methodName}</span><span>{format(e.amount)}</span></div>
               ))}
               {orderNotes && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Notes</span><span className="font-medium truncate max-w-[200px]">{orderNotes}</span></div>}
-              {paymentMode === "discount" && parseFloat(discountValue) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(subtotal - total)}</span></div>}
-              {paymentMode === "due" && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
-              {paymentMode === "partial" && (
+              {hasOpt("discount") && discountAmount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{format(discountAmount)}</span></div>}
+              {hasOpt("due") && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due (Unpaid)</span><span className="font-medium">{format(total)}</span></div>}
+              {hasOpt("partial") && (
                 <>
                   <div className="flex justify-between text-sm text-green-600"><span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Paid</span><span className="font-medium">{format(paidAmountFinal)}</span></div>
                   {dueAmount > 0 && <div className="flex justify-between text-sm text-destructive"><span className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Due</span><span className="font-medium">{format(dueAmount)}</span></div>}
@@ -1265,7 +1280,7 @@ const POS = () => {
             {checkoutStep < 4 ? (
               <Button size="sm" onClick={() => setCheckoutStep(checkoutStep + 1)} disabled={!canProceed()} className="gap-1">Next <ArrowRight className="h-3.5 w-3.5" /></Button>
             ) : (
-              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${paymentMode === "due" ? "bg-amber-500 hover:bg-amber-600" : paymentMode === "partial" ? "bg-orange-500 hover:bg-orange-600" : ""}`}>
+              <Button size="sm" onClick={handleOrder} disabled={submitting} className={`gap-1 ${hasOpt("due") ? "bg-amber-500 hover:bg-amber-600" : hasOpt("partial") ? "bg-orange-500 hover:bg-orange-600" : ""}`}>
                 {submitting ? "Processing..." : "Confirm Order"} <Check className="h-3.5 w-3.5" />
               </Button>
             )}
