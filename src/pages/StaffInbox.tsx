@@ -782,6 +782,50 @@ const StaffInbox = () => {
   const handlePinToggle = (m: ChatMessage) => togglePin(m, activeChatType === "group");
   const typingList = Object.values(typingUsers);
 
+  // Build mention candidates from current group members (group chats only)
+  const mentionUsers: MentionUser[] = useMemo(() => {
+    if (activeChatType !== "group") return [];
+    return groupMembers
+      .filter(m => m.user_id !== myId)
+      .map(m => {
+        const staff = staffList.find(s => s.auth_user_id === m.user_id);
+        return {
+          id: m.user_id,
+          name: staff?.name || (m.user_id === ownerContact?.auth_user_id ? "Store Owner" : "Member"),
+          role: m.role || staff?.role,
+        };
+      });
+  }, [groupMembers, staffList, myId, activeChatType, ownerContact]);
+
+  // Detect @-trigger in message input
+  const handleMessageInputChange = (value: string) => {
+    setNewMessage(value);
+    broadcastTyping();
+    if (activeChatType !== "group") return;
+    const cursor = messageInputRef.current?.selectionStart ?? value.length;
+    const before = value.slice(0, cursor);
+    const match = before.match(/(?:^|\s)@([\w.\-]*)$/);
+    if (match) {
+      setMentionQuery(match[1] || "");
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+      setMentionQuery("");
+    }
+  };
+
+  const handleMentionSelect = (u: MentionUser) => {
+    const handle = u.name.replace(/\s+/g, "");
+    const cursor = messageInputRef.current?.selectionStart ?? newMessage.length;
+    const before = newMessage.slice(0, cursor).replace(/@([\w.\-]*)$/, `@${handle} `);
+    const after = newMessage.slice(cursor);
+    const next = before + after;
+    setNewMessage(next);
+    setMentionOpen(false);
+    setMentionQuery("");
+    setTimeout(() => messageInputRef.current?.focus(), 0);
+  };
+
   return (
     <DashboardLayout>
       {/* Mobile WhatsApp-style full-screen chat overlay */}
