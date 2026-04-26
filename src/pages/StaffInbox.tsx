@@ -366,11 +366,11 @@ const StaffInbox = () => {
             setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
             scrollToBottom();
           }
-          // Group sound: only chime when not actively viewing this group, OR when mentioned (always chime)
+          // Group sound: chime for ANY incoming message (sender ≠ me).
+          // Mention plays an alert tone instead of standard message tone.
           const mentioned = Array.isArray(m.mentions) && myId && m.mentions.includes(myId);
-          if (m.sender_id !== myId) {
-            const isViewingThisGroup = activeChatTypeRef.current === "group" && activeChatRef.current === m.group_id;
-            if ((!isViewingThisGroup || mentioned) && soundEnabledRef.current) playNotificationSound();
+          if (m.sender_id !== myId && soundEnabledRef.current) {
+            playNotificationSound(mentioned ? "alert" : "message");
             if (mentioned) toast.info(`🔔 You were mentioned in this group`);
           }
         })
@@ -384,9 +384,13 @@ const StaffInbox = () => {
               task_title: m.task_title ?? msg.task_title,
               is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
           : msg));
-        // Sound + toast for task creator on status change
-        if (taskStatusChanged && m.sender_id === myId && soundEnabledRef.current) {
-          playNotificationSound();
+        // Task status sound + toast for ALL group members on every change
+        if (taskStatusChanged && soundEnabledRef.current) {
+          const status = String(m.task_status || "").toLowerCase();
+          const soundType = status === "completed" ? "task_completed"
+            : status === "in_progress" ? "task_in_progress"
+            : "task_pending";
+          playNotificationSound(soundType);
           toast.info(`Task "${m.task_title || "Task"}" → ${m.task_status}`);
         }
       })
