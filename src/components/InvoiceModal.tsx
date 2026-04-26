@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
+import { buildInvoiceUrl } from "@/lib/invoiceUrl";
 
 interface OrderItem {
   id: string;
@@ -134,15 +135,9 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
       : "partial";
   const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
-  // QR code data for payment verification
-  const qrData = JSON.stringify({
-    invoice: invoiceId,
-    store: storeName,
-    total: total.toFixed(2),
-    currency: order.payment_currency,
-    status: order.payment_status,
-    date: orderDate.toISOString(),
-  });
+  // Dynamic invoice QR — points to a tokenized public invoice URL
+  const invoiceUrl = buildInvoiceUrl(order.id);
+  const qrData = invoiceUrl;
 
   const generateInvoiceHTML = () => {
     const items = orderItems.length > 0
@@ -362,22 +357,21 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   };
 
   const handleShareWhatsApp = () => {
-    const text = `📄 *Invoice: ${invoiceId}*\n\n🏪 ${storeName}\n👤 ${order.customers?.name || "Customer"}\n💰 Total: ${curSymbol}${total.toFixed(2)}\n📅 ${orderDate.toLocaleDateString()}\n\n💳 Payment: ${order.payment_status.toUpperCase()}\n📝 Method: ${order.payment_method}`;
+    const text = `📄 *Invoice: ${invoiceId}*\n\n🏪 ${storeName}\n👤 ${order.customers?.name || "Customer"}\n💰 Total: ${curSymbol}${total.toFixed(2)}\n💵 Paid: ${curSymbol}${paidAmount.toFixed(2)}\n${dueAmount > 0.01 ? `⚠️ Due: ${curSymbol}${dueAmount.toFixed(2)}\n` : ""}📅 ${orderDate.toLocaleDateString()}\n\n🔗 View invoice:\n${invoiceUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     setShareMenuOpen(false);
   };
 
   const handleShareEmail = () => {
     const subject = `Invoice ${invoiceId} - ${storeName}`;
-    const body = `Invoice: ${invoiceId}\nStore: ${storeName}\nCustomer: ${order.customers?.name || "Customer"}\nTotal: ${curSymbol}${total.toFixed(2)}\nDate: ${orderDate.toLocaleDateString()}\nPayment Status: ${order.payment_status}`;
+    const body = `Invoice: ${invoiceId}\nStore: ${storeName}\nCustomer: ${order.customers?.name || "Customer"}\nTotal: ${curSymbol}${total.toFixed(2)}\nPaid: ${curSymbol}${paidAmount.toFixed(2)}\nDue: ${curSymbol}${dueAmount.toFixed(2)}\nDate: ${orderDate.toLocaleDateString()}\nStatus: ${statusCfg.label}\n\nView invoice: ${invoiceUrl}`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
     setShareMenuOpen(false);
   };
 
   const handleCopyLink = () => {
-    const text = `Invoice ${invoiceId} | ${storeName} | ${curSymbol}${total.toFixed(2)} | ${order.payment_status}`;
-    navigator.clipboard.writeText(text);
-    toast.success("Invoice details copied!");
+    navigator.clipboard.writeText(invoiceUrl);
+    toast.success("Invoice link copied!");
     setShareMenuOpen(false);
   };
 
@@ -421,7 +415,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                     <Mail className="h-4 w-4 text-blue-600" /> Email
                   </button>
                   <button onClick={handleCopyLink} className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 hover:bg-accent/50 transition-colors">
-                    <Copy className="h-4 w-4 text-muted-foreground" /> Copy Details
+                    <Copy className="h-4 w-4 text-muted-foreground" /> Copy Link
                   </button>
                 </div>
               )}
