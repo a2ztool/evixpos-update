@@ -575,7 +575,10 @@ export type Database = {
           created_at: string | null
           group_id: string
           id: string
+          is_pinned: boolean
           message: string
+          pinned_at: string | null
+          pinned_by: string | null
           sender_id: string
           type: string | null
         }
@@ -583,7 +586,10 @@ export type Database = {
           created_at?: string | null
           group_id: string
           id?: string
+          is_pinned?: boolean
           message: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           sender_id: string
           type?: string | null
         }
@@ -591,7 +597,10 @@ export type Database = {
           created_at?: string | null
           group_id?: string
           id?: string
+          is_pinned?: boolean
           message?: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           sender_id?: string
           type?: string | null
         }
@@ -2723,9 +2732,12 @@ export type Database = {
           file_url: string | null
           id: string
           is_deleted_for_everyone: boolean | null
+          is_pinned: boolean
           is_read: boolean
           message: string
           message_type: string
+          pinned_at: string | null
+          pinned_by: string | null
           reactions: Json | null
           receiver_id: string
           reply_to_id: string | null
@@ -2741,9 +2753,12 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_deleted_for_everyone?: boolean | null
+          is_pinned?: boolean
           is_read?: boolean
           message?: string
           message_type?: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           reactions?: Json | null
           receiver_id: string
           reply_to_id?: string | null
@@ -2759,9 +2774,12 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_deleted_for_everyone?: boolean | null
+          is_pinned?: boolean
           is_read?: boolean
           message?: string
           message_type?: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           reactions?: Json | null
           receiver_id?: string
           reply_to_id?: string | null

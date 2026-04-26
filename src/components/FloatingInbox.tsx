@@ -17,6 +17,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
+import PinnedMessagesBar from "@/components/PinnedMessagesBar";
+import { usePinMessage } from "@/hooks/usePinMessage";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -79,6 +81,8 @@ const FloatingInbox = () => {
   const hasStoreContext = !!storeId && !!myId && !!ownerId;
 
   const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
+  const togglePin = usePinMessage(myId);
+  const handlePinToggle = (m: ChatMessage) => togglePin(m, activeConvRef.current?.type === "group");
 
   // ─── Fetch groups (only ones staff is a member of) ───
   const fetchGroups = useCallback(async () => {
@@ -157,6 +161,7 @@ const FloatingInbox = () => {
             is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
+            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
           }));
           setMessages(mapped);
         }
@@ -199,7 +204,13 @@ const FloatingInbox = () => {
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const updated = payload.new as ChatMessage;
-        setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
+        const previous = payload.old as Partial<ChatMessage> | undefined;
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+        const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
+        if (taskStatusChanged && updated.sender_id === myId && soundRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -226,6 +237,7 @@ const FloatingInbox = () => {
             is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
+            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
           };
           setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
           scrollToBottom();
@@ -233,6 +245,13 @@ const FloatingInbox = () => {
           setUnreadByGroup(prev => ({ ...prev, [m.group_id]: (prev[m.group_id] || 0) + 1 }));
           if (soundRef.current) playNotificationSound();
         }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
+        const m = payload.new as any;
+        setMessages(prev => prev.map(msg => msg.id === m.id
+          ? { ...msg, message: m.message, reactions: m.reactions || null,
+              is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
+          : msg));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -386,6 +405,9 @@ const FloatingInbox = () => {
   };
 
   const visibleMessages = messages.filter(m => isVisible(m));
+  const pinnedMessages = visibleMessages
+    .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
+    .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
   const totalUnread = unreadDirect + Object.values(unreadByGroup).reduce((a, b) => a + b, 0);
 
   if (!isStaff || !hasStoreContext) return null;
@@ -593,6 +615,13 @@ const FloatingInbox = () => {
           {/* Body - Chat view */}
           {view === "chat" && activeConv && (
             <>
+              <div className="absolute left-0 right-0 top-[60px] z-10">
+                <PinnedMessagesBar
+                  pinned={pinnedMessages}
+                  onJump={scrollToMessage}
+                  onUnpin={handlePinToggle}
+                />
+              </div>
               <div
                 ref={scrollRef}
                 className="absolute inset-0 top-[60px] bottom-[72px] px-3 py-3 space-y-3 bg-muted/20 overflow-y-auto"
@@ -625,6 +654,7 @@ const FloatingInbox = () => {
                           onDeleteForMe={deleteForMe}
                           onDeleteForEveryone={deleteForEveryone}
                           onScrollToMessage={scrollToMessage}
+                          onPinToggle={handlePinToggle}
                           onTaskStatusUpdate={async (msgId, status) => {
                             const { error } = await supabase
                               .from("staff_messages")

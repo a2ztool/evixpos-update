@@ -20,6 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
+import PinnedMessagesBar from "@/components/PinnedMessagesBar";
+import { usePinMessage } from "@/hooks/usePinMessage";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
@@ -152,6 +154,7 @@ const StaffInbox = () => {
   const myId = user?.id;
 
   const { addReaction, deleteForMe, deleteForEveryone, isVisible } = useChatFeatures(myId);
+  const togglePin = usePinMessage(myId);
 
   // Request desktop notification permission on mount
   useEffect(() => { requestNotifPermission(); }, []);
@@ -262,6 +265,7 @@ const StaffInbox = () => {
             task_status: null, is_read: true, created_at: m.created_at,
             reply_to_id: m.reply_to_id || null, reactions: m.reactions || null,
             deleted_for: null, is_deleted_for_everyone: false,
+            is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
           }));
           setMessages(mapped);
         }
@@ -309,7 +313,15 @@ const StaffInbox = () => {
         filter: `store_id=eq.${storeId}`,
       }, (payload) => {
         const updated = payload.new as ChatMessage;
-        setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
+        const previous = payload.old as Partial<ChatMessage> | undefined;
+        // Realtime sync UI
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+        // Task status change → play sound + toast for the task owner (admin who created it)
+        const taskStatusChanged = previous && previous.task_status !== updated.task_status && updated.message_type === "task";
+        if (taskStatusChanged && updated.sender_id === myId && soundEnabledRef.current) {
+          playNotificationSound();
+          toast.info(`Task "${updated.task_title || "Task"}" → ${updated.task_status}`);
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -338,6 +350,7 @@ const StaffInbox = () => {
               file_url: null, file_name: null, task_title: null, task_status: null,
               is_read: true, created_at: m.created_at, reply_to_id: m.reply_to_id || null,
               reactions: m.reactions || null, deleted_for: null, is_deleted_for_everyone: false,
+              is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null,
             };
             setMessages(prev => prev.some(msg => msg.id === m.id) ? prev : [...prev, mapped]);
             scrollToBottom();
@@ -349,6 +362,13 @@ const StaffInbox = () => {
             if (!isViewingThisGroup && soundEnabledRef.current) playNotificationSound();
           }
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_group_messages" }, (payload) => {
+        const m = payload.new as any;
+        setMessages(prev => prev.map(msg => msg.id === m.id
+          ? { ...msg, message: m.message, reactions: m.reactions || null,
+              is_pinned: !!m.is_pinned, pinned_at: m.pinned_at ?? null, pinned_by: m.pinned_by ?? null }
+          : msg));
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, groups, fetchGroups]);
@@ -709,6 +729,10 @@ const StaffInbox = () => {
 
   const showChat = activeChat !== null;
   const visibleMessages = messages.filter(m => isVisible(m));
+  const pinnedMessages = visibleMessages
+    .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
+    .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
+  const handlePinToggle = (m: ChatMessage) => togglePin(m, activeChatType === "group");
   const typingList = Object.values(typingUsers);
 
   return (
@@ -1172,6 +1196,13 @@ const StaffInbox = () => {
                   )}
                 </div>
 
+                {/* Pinned messages bar */}
+                <PinnedMessagesBar
+                  pinned={pinnedMessages}
+                  onJump={scrollToMessage}
+                  onUnpin={handlePinToggle}
+                />
+
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 min-h-0 px-4 py-4 space-y-3 bg-muted/30 overflow-y-auto">
                   {visibleMessages.length === 0 && (
@@ -1210,6 +1241,7 @@ const StaffInbox = () => {
                             onDeleteForMe={deleteForMe}
                             onDeleteForEveryone={deleteForEveryone}
                             onScrollToMessage={scrollToMessage}
+                            onPinToggle={handlePinToggle}
                             myId={myId!}
                             isStaff={isStaff}
                           />
@@ -1231,6 +1263,7 @@ const StaffInbox = () => {
                         onDeleteForMe={deleteForMe}
                         onDeleteForEveryone={deleteForEveryone}
                         onScrollToMessage={scrollToMessage}
+                        onPinToggle={handlePinToggle}
                         onTaskStatusUpdate={async (msgId, status) => {
                           const { error } = await supabase.from("staff_messages").update({ task_status: status }).eq("id", msgId);
                           if (error) toast.error("Failed to update task status");
