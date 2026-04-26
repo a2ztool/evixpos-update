@@ -113,6 +113,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   const paidAmount = invoiceCalc.paidAmount;
   const dueAmount = invoiceCalc.dueAmount;
   const derivedStatus = invoiceCalc.status;
+  const splitPayments = Array.isArray(order.meta?.split_payments) ? order.meta!.split_payments as Array<{ method_id?: string; method_name?: string; amount?: number }> : [];
   const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
   const invoiceUrl = buildInvoiceUrl(order.id);
