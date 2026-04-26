@@ -654,6 +654,7 @@ const FloatingInbox = () => {
                           onDeleteForMe={deleteForMe}
                           onDeleteForEveryone={deleteForEveryone}
                           onScrollToMessage={scrollToMessage}
+                          onPinToggle={handlePinToggle}
                           onTaskStatusUpdate={async (msgId, status) => {
                             const { error } = await supabase
                               .from("staff_messages")
