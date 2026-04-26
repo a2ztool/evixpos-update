@@ -7,13 +7,12 @@ import { toast } from "sonner";
 import {
   Download, Printer, Share2, MessageSquare, Mail, Copy, FileText,
   Calendar, CreditCard, Hash, User, Store, Receipt, TrendingUp,
-  Shield, Scale,
+  Scale,
 } from "lucide-react";
 import { useStore } from "@/contexts/StoreContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
-import { QRCodeSVG } from "qrcode.react";
 import evixposLogo from "@/assets/evixpos-logo.png";
 import { buildInvoiceUrl } from "@/lib/invoiceUrl";
 import { calculateInvoicePayment } from "@/lib/invoiceCalculations";
@@ -116,9 +115,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   const derivedStatus = invoiceCalc.status;
   const statusCfg = paymentStatusConfig[derivedStatus] || paymentStatusConfig.unpaid;
 
-  // Dynamic invoice QR — points to a tokenized public invoice URL
   const invoiceUrl = buildInvoiceUrl(order.id);
-  const qrData = invoiceUrl;
 
   const generateInvoiceHTML = () => {
     const items = orderItems.length > 0
@@ -271,15 +268,6 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
 
       ${notesSection}
 
-      <!-- QR Section -->
-      <div style="margin-top:20px;display:flex;align-items:center;gap:16px;padding:16px;background:#f8fafb;border-radius:10px;border:1px solid #e8ecef">
-        <div id="qr-placeholder" style="width:80px;height:80px;background:#fff;padding:8px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);flex-shrink:0"></div>
-        <div>
-          <p style="font-size:9px;text-transform:uppercase;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:4px">🛡️ Payment Verification</p>
-          <p style="font-size:11px;color:#666;line-height:1.6">Scan this QR code to verify invoice authenticity and payment details. This code contains encrypted invoice information for your records.</p>
-        </div>
-      </div>
-
       <!-- Terms -->
       <div style="margin-top:16px;padding:14px 16px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
         <p style="font-size:9px;font-weight:700;color:#854d0e;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">⚖️ Terms & Conditions</p>
@@ -312,20 +300,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
     const html = generateInvoiceHTML();
     printWindow.document.write(html);
     printWindow.document.close();
-
-    // Copy QR SVG into the print window
-    const qrSvg = printRef.current?.querySelector(".inv-qr-container svg");
-    if (qrSvg) {
-      printWindow.onload = () => {
-        const placeholder = printWindow.document.getElementById("qr-placeholder");
-        if (placeholder) {
-          placeholder.innerHTML = qrSvg.outerHTML;
-        }
-        afterLoad(printWindow);
-      };
-    } else {
-      printWindow.onload = () => afterLoad(printWindow);
-    }
+    printWindow.onload = () => afterLoad(printWindow);
   };
 
   const handlePrint = () => {
@@ -587,21 +562,6 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                 <p className="text-sm text-muted-foreground leading-relaxed">{order.notes}</p>
               </div>
             )}
-
-            {/* QR Code Section */}
-            <div className="mt-6 flex flex-col sm:flex-row items-center gap-4 rounded-xl bg-muted/30 p-4 border border-border/40">
-              <div className="inv-qr-container shrink-0 bg-white p-2 rounded-lg shadow-sm">
-                <QRCodeSVG value={qrData} size={80} level="M" />
-              </div>
-              <div className="text-center sm:text-left">
-                <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-[1px] flex items-center gap-1 justify-center sm:justify-start mb-1">
-                  <Shield className="h-3 w-3" /> Payment Verification
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Scan this QR code to verify invoice authenticity and payment details. This code contains encrypted invoice information for your records.
-                </p>
-              </div>
-            </div>
 
             {/* Terms & Conditions */}
             <div className="mt-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 p-4 border border-amber-200/50 dark:border-amber-800/30">
