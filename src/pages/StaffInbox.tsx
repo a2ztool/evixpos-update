@@ -522,9 +522,35 @@ const StaffInbox = () => {
       return;
     }
 
+    // Group: extract @mentions by matching against group member names
+    const mentions = activeChatType === "group" ? extractMentionIds(msg) : [];
     const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
     if (replyToId) insertData.reply_to_id = replyToId;
+    if (mentions.length) insertData.mentions = mentions;
     await db.from("chat_group_messages").insert(insertData);
+  };
+
+  // Helper to map @Name tokens in text to user_ids of current group members
+  const extractMentionIds = (text: string): string[] => {
+    if (!text || !groupMembers.length) return [];
+    const ids = new Set<string>();
+    // Build {lower-name-no-space → user_id}
+    const memberLookup = new Map<string, string>();
+    groupMembers.forEach(m => {
+      const staff = staffList.find(s => s.auth_user_id === m.user_id);
+      const name = staff?.name || (m.user_id === myId ? "you" : "");
+      if (name) {
+        const handle = name.replace(/\s+/g, "").toLowerCase();
+        memberLookup.set(handle, m.user_id);
+      }
+    });
+    const matches = text.matchAll(/@([\w.\-]+)/g);
+    for (const match of matches) {
+      const handle = match[1].toLowerCase();
+      const id = memberLookup.get(handle);
+      if (id) ids.add(id);
+    }
+    return Array.from(ids);
   };
 
   // ─── Fetch orders for the link-order picker ───
