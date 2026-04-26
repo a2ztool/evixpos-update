@@ -760,7 +760,7 @@ const POS = () => {
   }, [products, search, activeCategory]);
 
   const selectedCustomer = customers.find(c => c.id === customerId);
-  const buttonLabel = paymentMode === "due" ? "Place Order (Add to Due)" : paymentMode === "partial" ? "Place Order (Partial)" : "Place Order";
+  const buttonLabel = hasOpt("due") ? "Place Order (Add to Due)" : hasOpt("partial") ? "Place Order (Partial)" : "Place Order";
   const receiptSymbol = receiptData ? (receiptData.currency === "BDT" ? "৳" : receiptData.currency === "INR" ? "₹" : "$") : symbol;
 
   const CHECKOUT_STEPS = [
