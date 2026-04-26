@@ -17,6 +17,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatFeatures, playNotificationSound } from "@/hooks/useChatFeatures";
 import ChatMessageBubble, { ChatMessage } from "@/components/ChatMessageBubble";
+import PinnedMessagesBar from "@/components/PinnedMessagesBar";
+import { usePinMessage } from "@/hooks/usePinMessage";
 import { toast } from "sonner";
 
 const db = supabase as any;
