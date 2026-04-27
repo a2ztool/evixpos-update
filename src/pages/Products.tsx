@@ -456,36 +456,36 @@ const Products = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
-        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-1 sm:mb-2">
-            <span className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Total</span>
-            <Boxes className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/60" />
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 mb-3 sm:mb-6">
+        <div className="premium-card p-2 sm:p-5 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-0.5 sm:mb-2 gap-1">
+            <span className="text-[8px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider sm:tracking-widest truncate">Total</span>
+            <Boxes className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground/60 flex-shrink-0" />
           </div>
-          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
+          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
         </div>
-        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-1 sm:mb-2">
-            <span className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Active</span>
-            <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary/70" />
+        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-0.5 sm:mb-2 gap-1">
+            <span className="text-[8px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider sm:tracking-widest truncate">Active</span>
+            <CheckCircle2 className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-primary/70 flex-shrink-0" />
           </div>
-          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
+          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
         </div>
-        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-400" />
-          <div className="flex items-center justify-between mb-1 sm:mb-2 pl-1">
-            <span className="text-[9px] sm:text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Low Stock</span>
-            <AlertTriangle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500" />
+        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-warning" />
+          <div className="flex items-center justify-between mb-0.5 sm:mb-2 pl-1 gap-1">
+            <span className="text-[8px] sm:text-[11px] font-semibold text-warning uppercase tracking-wider sm:tracking-widest truncate">Low</span>
+            <AlertTriangle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-warning flex-shrink-0" />
           </div>
-          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
+          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
         </div>
-        <div className="premium-card p-2.5 sm:p-5 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-rose-500" />
-          <div className="flex items-center justify-between mb-1 sm:mb-2 pl-1">
-            <span className="text-[9px] sm:text-[11px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-widest">Out of Stock</span>
-            <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-rose-500" />
+        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-destructive" />
+          <div className="flex items-center justify-between mb-0.5 sm:mb-2 pl-1 gap-1">
+            <span className="text-[8px] sm:text-[11px] font-semibold text-destructive uppercase tracking-wider sm:tracking-widest truncate">Out</span>
+            <XCircle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-destructive flex-shrink-0" />
           </div>
-          <div className="text-lg sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
+          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
         </div>
       </div>
 
