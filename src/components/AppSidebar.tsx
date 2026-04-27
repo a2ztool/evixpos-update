@@ -133,15 +133,28 @@ const AppSidebar = () => {
           active
             ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold shadow-sm"
             : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-        } ${locked ? "opacity-60" : ""}`}
+        } ${locked ? "bg-muted/20" : ""}`}
       >
         {active && !collapsed && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
         )}
         <item.icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
-        <span className="flex items-center gap-2 flex-1 min-w-0">
+        <span className="flex items-center gap-1.5 justify-between flex-1 min-w-0 overflow-hidden">
           <span className="truncate">{item.title}</span>
-          {locked && <Lock className="h-3 w-3 text-muted-foreground/70 ml-auto shrink-0" />}
+          {locked && !collapsed && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center shrink-0">
+                    <Lock className="h-[18px] w-[18px] text-muted-foreground cursor-help" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={4} className="font-medium">
+                  Upgrade to access this feature
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </span>
       </SidebarMenuButton>
     );
