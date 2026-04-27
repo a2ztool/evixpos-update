@@ -17,7 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings, ShoppingBag, CheckCircle2, Clock, DollarSign, RefreshCw, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -87,17 +88,17 @@ const playOrderNotificationSound = () => {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  pending: "bg-warning/10 text-warning border border-warning/20",
+  completed: "bg-success/10 text-success border border-success/20",
+  cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
 };
 
 const paymentColors: Record<string, string> = {
-  paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  unpaid: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  partial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  refunded: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  partial_refund: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  paid: "bg-success/10 text-success border border-success/20",
+  unpaid: "bg-destructive/10 text-destructive border border-destructive/20",
+  partial: "bg-warning/10 text-warning border border-warning/20",
+  refunded: "bg-muted text-muted-foreground border border-border",
+  partial_refund: "bg-warning/10 text-warning border border-warning/20",
 };
 
 const Orders = () => {
@@ -605,40 +606,107 @@ const fetchProducts = async () => {
     });
   }, [orders, statusFilter, paymentFilter, search, timeFilter]);
 
+  // Quick stats for premium header
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const completed = orders.filter((o) => o.status === "completed").length;
+    const pending = orders.filter((o) => o.status === "pending").length;
+    const revenue = orders
+      .filter((o) => o.status === "completed" && o.payment_status === "paid")
+      .reduce((s, o) => s + Number(o.total_amount || 0), 0);
+    const currency = orders[0]?.payment_currency ?? "";
+    return { total, completed, pending, revenue, currency };
+  }, [orders]);
+
   return (
     <DashboardLayout>
-      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">{t.orders}</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>
-            <History className="h-4 w-4" />
-            Refunds
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4" />
-            Import
-          </Button>
-          <Button size="sm" className="gap-2 h-9" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Order</span>
-            <span className="sm:hidden">New</span>
-          </Button>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 sm:p-6 mb-3 sm:mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-row items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 flex-shrink-0">
+              <ShoppingBag className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">{t.orders}</h1>
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">
+                {stats.total} order{stats.total !== 1 ? "s" : ""} · {stats.currency} {stats.revenue.toFixed(0)} revenue
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>
+              <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Refunds</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 hidden sm:inline-flex" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Import</span>
+            </Button>
+            <Button size="sm" className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Create Order</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 mb-3 sm:mb-6">
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-primary/10 to-primary/5 text-primary border-primary/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Total</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.total}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-success/10 to-success/5 text-success border-success/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Done</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.completed}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-warning/10 to-warning/5 text-warning border-warning/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Pending</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.pending}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-primary/10 to-primary/5 text-primary border-primary/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Revenue</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.currency}{stats.revenue.toFixed(0)}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="rounded-xl sm:rounded-2xl border bg-card p-2 sm:p-4 mb-3 sm:mb-4 flex flex-col lg:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           <Input
             placeholder={t.searchOrders}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-8 sm:pl-9 h-9 sm:h-10 text-xs sm:text-sm bg-background"
           />
         </div>
+        <div className="grid grid-cols-3 lg:flex gap-1.5 sm:gap-2">
         <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="w-full sm:w-[140px]">
+          <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allTime} />
           </SelectTrigger>
           <SelectContent>
@@ -649,7 +717,7 @@ const fetchProducts = async () => {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[140px]">
+          <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allStatus} />
           </SelectTrigger>
           <SelectContent>
@@ -660,7 +728,7 @@ const fetchProducts = async () => {
           </SelectContent>
         </Select>
         <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger className="w-full lg:w-[160px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allPayments} />
           </SelectTrigger>
           <SelectContent>
@@ -670,6 +738,7 @@ const fetchProducts = async () => {
             <SelectItem value="partial">Partial</SelectItem>
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {/* Orders Table or Empty State */}
@@ -702,7 +771,7 @@ const fetchProducts = async () => {
                   <Badge className={`${statusColors[o.status]} text-[10px]`}>{o.status}</Badge>
                   <Badge className={`${paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"} text-[10px]`}>{o.payment_status}</Badge>
                   {o.source === "woocommerce" && (
-                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] gap-0.5">
+                    <Badge className="bg-primary/10 text-primary border border-primary/20 text-[10px] gap-0.5">
                       <Globe className="h-2.5 w-2.5" /> Website
                     </Badge>
                   )}
@@ -714,7 +783,7 @@ const fetchProducts = async () => {
                     <FileText className="h-3.5 w-3.5" /> Invoice
                   </Button>
                   {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
-                    <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
+                    <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
                     </Button>
                    )}
@@ -773,7 +842,7 @@ const fetchProducts = async () => {
                     <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
                     <TableCell className="capitalize text-sm">
                       {o.source === "woocommerce" ? (
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                        <Badge className="bg-primary/10 text-primary border border-primary/20 gap-1">
                           <Globe className="h-3 w-3" /> Website
                         </Badge>
                       ) : o.source === "order_form" ? (
@@ -793,7 +862,7 @@ const fetchProducts = async () => {
                           <FileText className="h-4 w-4" />
                         </Button>
                         {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => openRefund(o)} title="Refund">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openRefund(o)} title="Refund">
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
@@ -913,7 +982,7 @@ const fetchProducts = async () => {
             {/* Profit */}
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted">
               <span className="text-sm font-medium">Profit:</span>
-              <span className={`text-sm font-bold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <span className={`text-sm font-bold ${profit >= 0 ? "text-success" : "text-destructive"}`}>
                 {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{profit.toFixed(2)}
               </span>
             </div>
@@ -1051,7 +1120,7 @@ const fetchProducts = async () => {
             <DialogTitle className="flex items-center gap-2">
               Order Details
               {selectedOrder?.source === "woocommerce" && (
-                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                <Badge className="bg-primary/10 text-primary border border-primary/20 gap-1">
                   <Globe className="h-3 w-3" /> From Website
                 </Badge>
               )}
@@ -1100,7 +1169,7 @@ const fetchProducts = async () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Profit</span>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-lg font-bold text-success">
                     {selectedOrder.payment_currency} {(Number(selectedOrder.total_amount) - Number(selectedOrder.cost_price)).toFixed(2)}
                   </p>
                 </div>
@@ -1112,7 +1181,7 @@ const fetchProducts = async () => {
                   <Separator />
                   <div>
                     <h3 className="font-semibold mb-2 text-sm flex items-center gap-1.5">
-                      <Globe className="h-3.5 w-3.5 text-blue-600" /> Website Order Details
+                      <Globe className="h-3.5 w-3.5 text-primary" /> Website Order Details
                     </h3>
                     <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 rounded-lg p-3">
                       {(selectedOrder.meta as any)?.wc_order_number && (
@@ -1355,9 +1424,9 @@ const fetchProducts = async () => {
             <div className="space-y-3">
               {refunds.map((r) => {
                 const refundStatusColor: Record<string, string> = {
-                  pending: "bg-yellow-100 text-yellow-800",
-                  approved: "bg-green-100 text-green-800",
-                  rejected: "bg-red-100 text-red-800",
+                  pending: "bg-warning/10 text-warning",
+                  approved: "bg-success/10 text-success",
+                  rejected: "bg-destructive/10 text-destructive",
                 };
                 return (
                   <div key={r.id} className="rounded-xl border border-border p-4 space-y-2">
