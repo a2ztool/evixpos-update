@@ -536,6 +536,17 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
                   <span className="text-emerald-700 dark:text-emerald-400">Paid</span>
                   <span className="font-semibold text-emerald-700 dark:text-emerald-400">{curSymbol}{paidAmount.toFixed(2)}</span>
                 </div>
+                {splitPayments.length > 0 && (
+                  <div className="rounded-md bg-muted/30 border border-border/40 p-2 space-y-1">
+                    <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-[1px]">Split Payment Breakdown</p>
+                    {splitPayments.map((sp, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="capitalize text-muted-foreground">{sp.method_name || sp.method_id}</span>
+                        <span className="font-medium">{curSymbol}{Number(sp.amount || 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className={dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>Due</span>
                   <span className={`font-semibold ${dueAmount > 0.01 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>{curSymbol}{dueAmount.toFixed(2)}</span>
