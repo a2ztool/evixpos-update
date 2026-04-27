@@ -220,32 +220,32 @@ const PendingOrders = () => {
   return (
     <DashboardLayout>
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-6 mb-6">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 sm:p-6 mb-3 sm:mb-6">
         <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Hourglass className="h-6 w-6 text-primary-foreground" />
+        <div className="relative flex flex-row items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 flex-shrink-0">
+              <Hourglass className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
                 Pending Orders
                 {stats.urgent > 0 && (
-                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {stats.urgent} urgent
+                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 gap-1 text-[10px] sm:text-xs px-1.5 py-0 h-4 sm:h-auto">
+                    <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    {stats.urgent}
                   </Badge>
                 )}
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {stats.total} order{stats.total !== 1 ? "s" : ""} awaiting your action
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">
+                {stats.total} order{stats.total !== 1 ? "s" : ""} awaiting action
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchPendingOrders} className="gap-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={fetchPendingOrders} className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <PageGuide
               title="Pending Orders Guide"
@@ -263,7 +263,7 @@ const PendingOrders = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
         <StatCard
           icon={<Package className="h-4 w-4" />}
           label="Total Pending"
