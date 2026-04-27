@@ -657,14 +657,14 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, label, value, accent }: StatCardProps) => (
-  <div className={cn("relative rounded-2xl border bg-gradient-to-br p-3 sm:p-4 overflow-hidden", accent)}>
-    <div className="flex items-center gap-2 mb-1.5">
-      <div className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur flex items-center justify-center">
+  <div className={cn("relative rounded-lg sm:rounded-2xl border bg-gradient-to-br p-2 sm:p-4 overflow-hidden", accent)}>
+    <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5">
+      <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 backdrop-blur flex items-center justify-center flex-shrink-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-4 sm:[&>svg]:w-4">
         {icon}
       </div>
-      <span className="text-[10px] sm:text-xs font-medium uppercase tracking-wider opacity-80">{label}</span>
+      <span className="text-[9px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">{label}</span>
     </div>
-    <p className="text-lg sm:text-2xl font-bold tracking-tight truncate">{value}</p>
+    <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{value}</p>
   </div>
 );
 
