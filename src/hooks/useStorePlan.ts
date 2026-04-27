@@ -19,7 +19,8 @@ export type FeatureKey =
   | "subscriptions"
   | "task_mission"
   | "referral"
-  | "due_book";
+  | "due_book"
+  | "split_payment";
 
 const PLAN_FEATURES: Record<string, FeatureKey[]> = {
   free: ["pos", "subscriptions", "due_book", "referral"],
@@ -27,13 +28,13 @@ const PLAN_FEATURES: Record<string, FeatureKey[]> = {
     "pos", "integrations", "analytics", "reports", "coupons",
     "order_forms", "subscriptions", "task_mission", "referral",
     "ad_costs", "bot_automation", "woocommerce", "whatsapp", "google_sheets",
-    "due_book",
+    "due_book", "split_payment",
   ],
   business: [
     "pos", "integrations", "analytics", "reports", "coupons",
     "order_forms", "subscriptions", "task_mission", "referral",
     "ad_costs", "bot_automation", "woocommerce", "whatsapp", "google_sheets",
-    "due_book",
+    "due_book", "split_payment",
   ],
 };
 
@@ -53,6 +54,7 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, string> = {
   woocommerce: "pro",
   google_sheets: "pro",
   whatsapp: "pro",
+  split_payment: "pro",
 };
 
 /**

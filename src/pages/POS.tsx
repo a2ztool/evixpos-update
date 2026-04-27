@@ -6,6 +6,7 @@ import { useStore } from "@/contexts/StoreContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStoreMode } from "@/hooks/useStoreMode";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
   ChevronDown, RefreshCw, Clock, Percent, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet, Crown, Lock,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
@@ -95,6 +96,8 @@ const POS = () => {
   const { effectiveUserId } = useStaff();
   const { isOffline, isOnline } = useStoreMode();
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
+  const { hasFeature } = useStorePlan();
+  const canSplitPayment = hasFeature("split_payment");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -1011,10 +1014,29 @@ const POS = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold">{t.paymentMethod}</h3>
-              {isOffline && (
-                <Button variant={splitMode ? "default" : "outline"} size="sm" className="gap-1 h-7 text-xs" onClick={() => setSplitMode(!splitMode)}>
-                  <Split className="h-3 w-3" /> Split
+              {canSplitPayment ? (
+                <Button
+                  variant={splitMode ? "default" : "outline"}
+                  size="sm"
+                  className="gap-1 h-7 text-xs"
+                  onClick={() => setSplitMode(!splitMode)}
+                >
+                  <Split className="h-3 w-3" /> {splitMode ? "Single" : "Split Payment"}
                 </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 h-7 text-xs opacity-70"
+                      onClick={() => toast.info("Split Payment is a PRO feature. Upgrade to unlock.")}
+                    >
+                      <Lock className="h-3 w-3" /> Split <Crown className="h-3 w-3 text-amber-500" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Available on PRO plan</TooltipContent>
+                </Tooltip>
               )}
             </div>
             {splitMode ? (
