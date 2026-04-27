@@ -250,11 +250,7 @@ const ROLE_PRESETS: Record<string, string[]> = {
   custom: [],
 };
 
-const defaultPaymentMethods: ActiveGateway[] = [
-  { id: "cash", name: "Cash", enabled: true, config: {} },
-  { id: "bkash", name: "bKash", enabled: true, config: {} },
-  { id: "nagad", name: "Nagad", enabled: true, config: {} },
-];
+const defaultPaymentMethods: ActiveGateway[] = [];
 
 const defaultSettings: BusinessSettings = {
   business_name: "", business_email: "", store_slug: "", shop_url: "",
@@ -329,7 +325,7 @@ const SettingsPage = () => {
           logo_url: s.logo_url, show_payment_in_pos: s.show_payment_in_pos,
           default_currency: s.default_currency, timezone: s.timezone,
           tax_rate: Number(s.tax_rate), app_language: s.app_language,
-          payment_methods: (s.payment_methods as any) ?? defaultPaymentMethods,
+          payment_methods: Array.isArray(s.payment_methods) ? (s.payment_methods as any) : [],
           currencies: (s.currencies as any[]) ?? defaultSettings.currencies,
         });
         if (s.app_language && LANGUAGES_LIST.find(l => l.code === s.app_language)) {
@@ -821,7 +817,20 @@ const SettingsPage = () => {
 
       {/* Active gateways */}
       {settings.payment_methods.length === 0 ? (
-        <div className="text-center py-12"><CreditCard className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground text-sm">{lang === "bn" ? "কোনো পেমেন্ট পদ্ধতি নেই" : "No payment methods"}</p></div>
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-xl border border-dashed border-border bg-muted/30">
+          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <CreditCard className="h-7 w-7 text-primary" />
+          </div>
+          <p className="text-base font-semibold text-foreground mb-1">
+            {lang === "bn" ? "এখনো কোনো পেমেন্ট মেথড যোগ করা হয়নি" : "No payment methods added yet"}
+          </p>
+          <p className="text-sm text-muted-foreground mb-5 max-w-sm">
+            {lang === "bn" ? "আপনার প্রথম পেমেন্ট গেটওয়ে যোগ করে গ্রাহকদের থেকে পেমেন্ট গ্রহণ শুরু করুন।" : "Add your first payment gateway to start accepting payments from customers."}
+          </p>
+          <Button size="sm" className="gap-1.5" onClick={() => setAddGatewayDialog(true)}>
+            <Plus className="h-4 w-4" /> {lang === "bn" ? "গেটওয়ে যোগ করুন" : "Add Gateway"}
+          </Button>
+        </div>
       ) : (
         <div className="space-y-2">
       {settings.payment_methods.map(pm => {
