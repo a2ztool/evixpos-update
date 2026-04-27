@@ -982,7 +982,7 @@ const fetchProducts = async () => {
             {/* Profit */}
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted">
               <span className="text-sm font-medium">Profit:</span>
-              <span className={`text-sm font-bold ${profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <span className={`text-sm font-bold ${profit >= 0 ? "text-success" : "text-destructive"}`}>
                 {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{profit.toFixed(2)}
               </span>
             </div>
@@ -1169,7 +1169,7 @@ const fetchProducts = async () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Profit</span>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-lg font-bold text-success">
                     {selectedOrder.payment_currency} {(Number(selectedOrder.total_amount) - Number(selectedOrder.cost_price)).toFixed(2)}
                   </p>
                 </div>
