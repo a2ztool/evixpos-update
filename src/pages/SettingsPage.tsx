@@ -341,7 +341,7 @@ const SettingsPage = () => {
           logo_url: s.logo_url, show_payment_in_pos: s.show_payment_in_pos,
           default_currency: s.default_currency, timezone: s.timezone,
           tax_rate: Number(s.tax_rate), app_language: s.app_language,
-          payment_methods: Array.isArray(s.payment_methods) ? (s.payment_methods as any) : [],
+          payment_methods: cleanUserPaymentMethods(s.payment_methods),
           currencies: (s.currencies as any[]) ?? defaultSettings.currencies,
         });
         if (s.app_language && LANGUAGES_LIST.find(l => l.code === s.app_language)) {
@@ -369,7 +369,7 @@ const SettingsPage = () => {
       store_slug: settings.store_slug, shop_url: settings.shop_url, business_phone: settings.business_phone,
       logo_url: settings.logo_url, show_payment_in_pos: settings.show_payment_in_pos,
       default_currency: settings.default_currency, timezone: settings.timezone, tax_rate: settings.tax_rate,
-      app_language: settings.app_language, payment_methods: settings.payment_methods as any,
+      app_language: settings.app_language, payment_methods: cleanUserPaymentMethods(settings.payment_methods) as any,
       currencies: settings.currencies as any, updated_at: new Date().toISOString(),
     };
     if (settings.id) {
@@ -414,7 +414,7 @@ const SettingsPage = () => {
     }
     setSettings(prev => ({
       ...prev,
-      payment_methods: [...prev.payment_methods, { id: gw.id, name: gw.name, enabled: true, config: {} }],
+      payment_methods: [...cleanUserPaymentMethods(prev.payment_methods), { id: gw.id, name: gw.name, enabled: true, config: {}, user_created: true }],
     }));
     setAddGatewayDialog(false);
     toast.success(`${gw.name} added!`);
