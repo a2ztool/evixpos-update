@@ -220,32 +220,32 @@ const PendingOrders = () => {
   return (
     <DashboardLayout>
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-6 mb-6">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 sm:p-6 mb-3 sm:mb-6">
         <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Hourglass className="h-6 w-6 text-primary-foreground" />
+        <div className="relative flex flex-row items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 flex-shrink-0">
+              <Hourglass className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
                 Pending Orders
                 {stats.urgent > 0 && (
-                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {stats.urgent} urgent
+                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 gap-1 text-[10px] sm:text-xs px-1.5 py-0 h-4 sm:h-auto">
+                    <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    {stats.urgent}
                   </Badge>
                 )}
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {stats.total} order{stats.total !== 1 ? "s" : ""} awaiting your action
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">
+                {stats.total} order{stats.total !== 1 ? "s" : ""} awaiting action
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchPendingOrders} className="gap-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={fetchPendingOrders} className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <PageGuide
               title="Pending Orders Guide"
@@ -263,7 +263,7 @@ const PendingOrders = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-6">
         <StatCard
           icon={<Package className="h-4 w-4" />}
           label="Total Pending"
@@ -291,19 +291,19 @@ const PendingOrders = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="rounded-2xl border bg-card p-3 sm:p-4 mb-4 flex flex-col lg:flex-row gap-3">
+      <div className="rounded-xl sm:rounded-2xl border bg-card p-2 sm:p-4 mb-3 sm:mb-4 flex flex-col lg:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by order ID or customer..."
+            placeholder="Search orders..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-background"
+            className="pl-8 sm:pl-9 h-9 sm:h-10 text-xs sm:text-sm bg-background"
           />
         </div>
-        <div className="grid grid-cols-3 lg:flex gap-2">
+        <div className="grid grid-cols-3 lg:flex gap-1.5 sm:gap-2">
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+            <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
               <SelectValue placeholder="Payment" />
             </SelectTrigger>
             <SelectContent>
@@ -314,7 +314,7 @@ const PendingOrders = () => {
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+            <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
               <SelectValue placeholder="Source" />
             </SelectTrigger>
             <SelectContent>
@@ -326,8 +326,8 @@ const PendingOrders = () => {
             </SelectContent>
           </Select>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-            <SelectTrigger className="w-full lg:w-[160px] bg-background">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+            <SelectTrigger className="w-full lg:w-[160px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
+              <ArrowUpDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 flex-shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -342,22 +342,22 @@ const PendingOrders = () => {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 backdrop-blur-sm p-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Zap className="h-4 w-4 text-primary" />
-            {selectedIds.size} order{selectedIds.size > 1 ? "s" : ""} selected
+        <div className="rounded-xl sm:rounded-2xl border-2 border-primary/30 bg-primary/5 backdrop-blur-sm p-2 sm:p-3 mb-3 sm:mb-4 flex flex-row items-center justify-between gap-2 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium min-w-0">
+            <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span className="truncate">{selectedIds.size} selected</span>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button size="sm" variant="ghost" className="h-7 sm:h-8 text-xs px-2" onClick={() => setSelectedIds(new Set())}>
               Clear
             </Button>
-            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive gap-1.5" onClick={() => setBulkAction("cancelled")}>
-              <XCircle className="h-3.5 w-3.5" />
-              Cancel All
+            <Button size="sm" variant="outline" className="h-7 sm:h-8 text-xs px-2 text-destructive hover:text-destructive gap-1" onClick={() => setBulkAction("cancelled")}>
+              <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              Cancel
             </Button>
-            <Button size="sm" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Complete All
+            <Button size="sm" className="h-7 sm:h-8 text-xs px-2 gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
+              <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              Complete
             </Button>
           </div>
         </div>
@@ -657,14 +657,14 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, label, value, accent }: StatCardProps) => (
-  <div className={cn("relative rounded-2xl border bg-gradient-to-br p-3 sm:p-4 overflow-hidden", accent)}>
-    <div className="flex items-center gap-2 mb-1.5">
-      <div className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur flex items-center justify-center">
+  <div className={cn("relative rounded-lg sm:rounded-2xl border bg-gradient-to-br p-2 sm:p-4 overflow-hidden", accent)}>
+    <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5">
+      <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 backdrop-blur flex items-center justify-center flex-shrink-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-4 sm:[&>svg]:w-4">
         {icon}
       </div>
-      <span className="text-[10px] sm:text-xs font-medium uppercase tracking-wider opacity-80">{label}</span>
+      <span className="text-[9px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">{label}</span>
     </div>
-    <p className="text-lg sm:text-2xl font-bold tracking-tight truncate">{value}</p>
+    <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{value}</p>
   </div>
 );
 
