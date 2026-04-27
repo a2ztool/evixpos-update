@@ -253,8 +253,6 @@ const ROLE_PRESETS: Record<string, string[]> = {
 
 const defaultPaymentMethods: ActiveGateway[] = [];
 
-const LEGACY_DUMMY_GATEWAY_IDS = new Set(["cash", "bkash", "nagad"]);
-
 const cleanUserPaymentMethods = (methods: unknown): ActiveGateway[] => {
   if (!Array.isArray(methods)) return [];
 
@@ -264,7 +262,7 @@ const cleanUserPaymentMethods = (methods: unknown): ActiveGateway[] => {
     const config = gateway.config && typeof gateway.config === "object" ? gateway.config : {};
     const hasConfig = Object.values(config).some(value => typeof value === "string" && value.trim().length > 0);
 
-    return Boolean(gateway.id) && (!LEGACY_DUMMY_GATEWAY_IDS.has(gateway.id) || gateway.user_created || hasConfig);
+    return Boolean(gateway.id) && (gateway.user_created === true || hasConfig);
   });
 };
 
