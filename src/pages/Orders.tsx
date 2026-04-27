@@ -606,40 +606,107 @@ const fetchProducts = async () => {
     });
   }, [orders, statusFilter, paymentFilter, search, timeFilter]);
 
+  // Quick stats for premium header
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const completed = orders.filter((o) => o.status === "completed").length;
+    const pending = orders.filter((o) => o.status === "pending").length;
+    const revenue = orders
+      .filter((o) => o.status === "completed" && o.payment_status === "paid")
+      .reduce((s, o) => s + Number(o.total_amount || 0), 0);
+    const currency = orders[0]?.payment_currency ?? "";
+    return { total, completed, pending, revenue, currency };
+  }, [orders]);
+
   return (
     <DashboardLayout>
-      <div className="hidden sm:block flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">{t.orders}</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>
-            <History className="h-4 w-4" />
-            Refunds
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2 hidden sm:inline-flex" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4" />
-            Import
-          </Button>
-          <Button size="sm" className="gap-2 h-9" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Order</span>
-            <span className="sm:hidden">New</span>
-          </Button>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 sm:p-6 mb-3 sm:mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-row items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 flex-shrink-0">
+              <ShoppingBag className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">{t.orders}</h1>
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">
+                {stats.total} order{stats.total !== 1 ? "s" : ""} · {stats.currency} {stats.revenue.toFixed(0)} revenue
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 hidden sm:inline-flex" onClick={() => setShowRefundHistory(!showRefundHistory)}>
+              <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Refunds</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 hidden sm:inline-flex" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">Import</span>
+            </Button>
+            <Button size="sm" className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Create Order</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 mb-3 sm:mb-6">
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-primary/10 to-primary/5 text-primary border-primary/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Total</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.total}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-success/10 to-success/5 text-success border-success/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Done</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.completed}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-warning/10 to-warning/5 text-warning border-warning/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Pending</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.pending}</p>
+        </div>
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-primary/10 to-primary/5 text-primary border-primary/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Revenue</span>
+          </div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.currency}{stats.revenue.toFixed(0)}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="rounded-xl sm:rounded-2xl border bg-card p-2 sm:p-4 mb-3 sm:mb-4 flex flex-col lg:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           <Input
             placeholder={t.searchOrders}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-8 sm:pl-9 h-9 sm:h-10 text-xs sm:text-sm bg-background"
           />
         </div>
+        <div className="grid grid-cols-3 lg:flex gap-1.5 sm:gap-2">
         <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="w-full sm:w-[140px]">
+          <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allTime} />
           </SelectTrigger>
           <SelectContent>
@@ -650,7 +717,7 @@ const fetchProducts = async () => {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[140px]">
+          <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allStatus} />
           </SelectTrigger>
           <SelectContent>
@@ -661,7 +728,7 @@ const fetchProducts = async () => {
           </SelectContent>
         </Select>
         <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger className="w-full lg:w-[160px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
             <SelectValue placeholder={t.allPayments} />
           </SelectTrigger>
           <SelectContent>
@@ -671,6 +738,7 @@ const fetchProducts = async () => {
             <SelectItem value="partial">Partial</SelectItem>
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {/* Orders Table or Empty State */}
