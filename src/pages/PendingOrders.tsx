@@ -291,19 +291,19 @@ const PendingOrders = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="rounded-2xl border bg-card p-3 sm:p-4 mb-4 flex flex-col lg:flex-row gap-3">
+      <div className="rounded-xl sm:rounded-2xl border bg-card p-2 sm:p-4 mb-3 sm:mb-4 flex flex-col lg:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by order ID or customer..."
+            placeholder="Search orders..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-background"
+            className="pl-8 sm:pl-9 h-9 sm:h-10 text-xs sm:text-sm bg-background"
           />
         </div>
-        <div className="grid grid-cols-3 lg:flex gap-2">
+        <div className="grid grid-cols-3 lg:flex gap-1.5 sm:gap-2">
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+            <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
               <SelectValue placeholder="Payment" />
             </SelectTrigger>
             <SelectContent>
@@ -314,7 +314,7 @@ const PendingOrders = () => {
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+            <SelectTrigger className="w-full lg:w-[140px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
               <SelectValue placeholder="Source" />
             </SelectTrigger>
             <SelectContent>
@@ -326,8 +326,8 @@ const PendingOrders = () => {
             </SelectContent>
           </Select>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-            <SelectTrigger className="w-full lg:w-[160px] bg-background">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+            <SelectTrigger className="w-full lg:w-[160px] h-9 sm:h-10 text-xs sm:text-sm bg-background">
+              <ArrowUpDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 flex-shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -342,22 +342,22 @@ const PendingOrders = () => {
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 backdrop-blur-sm p-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Zap className="h-4 w-4 text-primary" />
-            {selectedIds.size} order{selectedIds.size > 1 ? "s" : ""} selected
+        <div className="rounded-xl sm:rounded-2xl border-2 border-primary/30 bg-primary/5 backdrop-blur-sm p-2 sm:p-3 mb-3 sm:mb-4 flex flex-row items-center justify-between gap-2 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium min-w-0">
+            <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+            <span className="truncate">{selectedIds.size} selected</span>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button size="sm" variant="ghost" className="h-7 sm:h-8 text-xs px-2" onClick={() => setSelectedIds(new Set())}>
               Clear
             </Button>
-            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive gap-1.5" onClick={() => setBulkAction("cancelled")}>
-              <XCircle className="h-3.5 w-3.5" />
-              Cancel All
+            <Button size="sm" variant="outline" className="h-7 sm:h-8 text-xs px-2 text-destructive hover:text-destructive gap-1" onClick={() => setBulkAction("cancelled")}>
+              <XCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              Cancel
             </Button>
-            <Button size="sm" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Complete All
+            <Button size="sm" className="h-7 sm:h-8 text-xs px-2 gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
+              <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              Complete
             </Button>
           </div>
         </div>
