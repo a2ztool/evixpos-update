@@ -445,7 +445,7 @@ const SettingsPage = () => {
 
   const saveConfig = async () => {
     if (!configDialog) return;
-    const updatedMethods = settings.payment_methods.map(p => p.id === configDialog ? { ...p, config: configTemp } : p);
+    const updatedMethods = cleanUserPaymentMethods(settings.payment_methods).map(p => p.id === configDialog ? { ...p, config: configTemp, user_created: true } : p);
     setSettings(prev => ({ ...prev, payment_methods: updatedMethods }));
     setConfigDialog(null);
     
