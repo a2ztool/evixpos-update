@@ -145,8 +145,8 @@ const AppSidebar = () => {
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center justify-center shrink-0">
-                    <Lock className="h-[18px] w-[18px] text-muted-foreground cursor-help" />
+                  <span className="inline-flex items-center justify-center shrink-0 h-5 w-5 rounded-md bg-primary/10 text-primary cursor-help">
+                    <Lock className="h-3 w-3" strokeWidth={2.5} />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={4} className="font-medium">
