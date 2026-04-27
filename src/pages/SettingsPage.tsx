@@ -175,6 +175,7 @@ interface ActiveGateway {
   name: string;
   enabled: boolean;
   config: Record<string, string>;
+  user_created?: boolean;
 }
 
 interface BusinessSettings {
@@ -252,6 +253,19 @@ const ROLE_PRESETS: Record<string, string[]> = {
 
 const defaultPaymentMethods: ActiveGateway[] = [];
 
+const cleanUserPaymentMethods = (methods: unknown): ActiveGateway[] => {
+  if (!Array.isArray(methods)) return [];
+
+  return methods.filter((method): method is ActiveGateway => {
+    if (!method || typeof method !== "object") return false;
+    const gateway = method as ActiveGateway;
+    const config = gateway.config && typeof gateway.config === "object" ? gateway.config : {};
+    const hasConfig = Object.values(config).some(value => typeof value === "string" && value.trim().length > 0);
+
+    return Boolean(gateway.id) && (gateway.user_created === true || hasConfig);
+  });
+};
+
 const defaultSettings: BusinessSettings = {
   business_name: "", business_email: "", store_slug: "", shop_url: "",
   business_phone: "", logo_url: "", show_payment_in_pos: true,
@@ -325,7 +339,7 @@ const SettingsPage = () => {
           logo_url: s.logo_url, show_payment_in_pos: s.show_payment_in_pos,
           default_currency: s.default_currency, timezone: s.timezone,
           tax_rate: Number(s.tax_rate), app_language: s.app_language,
-          payment_methods: Array.isArray(s.payment_methods) ? (s.payment_methods as any) : [],
+          payment_methods: cleanUserPaymentMethods(s.payment_methods),
           currencies: (s.currencies as any[]) ?? defaultSettings.currencies,
         });
         if (s.app_language && LANGUAGES_LIST.find(l => l.code === s.app_language)) {
@@ -353,7 +367,7 @@ const SettingsPage = () => {
       store_slug: settings.store_slug, shop_url: settings.shop_url, business_phone: settings.business_phone,
       logo_url: settings.logo_url, show_payment_in_pos: settings.show_payment_in_pos,
       default_currency: settings.default_currency, timezone: settings.timezone, tax_rate: settings.tax_rate,
-      app_language: settings.app_language, payment_methods: settings.payment_methods as any,
+      app_language: settings.app_language, payment_methods: cleanUserPaymentMethods(settings.payment_methods) as any,
       currencies: settings.currencies as any, updated_at: new Date().toISOString(),
     };
     if (settings.id) {
@@ -398,20 +412,20 @@ const SettingsPage = () => {
     }
     setSettings(prev => ({
       ...prev,
-      payment_methods: [...prev.payment_methods, { id: gw.id, name: gw.name, enabled: true, config: {} }],
+      payment_methods: [...cleanUserPaymentMethods(prev.payment_methods), { id: gw.id, name: gw.name, enabled: true, config: {}, user_created: true }],
     }));
     setAddGatewayDialog(false);
     toast.success(`${gw.name} added!`);
   };
 
   const removeGateway = (id: string) => {
-    setSettings(prev => ({ ...prev, payment_methods: prev.payment_methods.filter(p => p.id !== id) }));
+    setSettings(prev => ({ ...prev, payment_methods: cleanUserPaymentMethods(prev.payment_methods).filter(p => p.id !== id) }));
   };
 
   const toggleGateway = (id: string) => {
     setSettings(prev => ({
       ...prev,
-      payment_methods: prev.payment_methods.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p),
+      payment_methods: cleanUserPaymentMethods(prev.payment_methods).map(p => p.id === id ? { ...p, enabled: !p.enabled } : p),
     }));
   };
 
@@ -429,7 +443,7 @@ const SettingsPage = () => {
 
   const saveConfig = async () => {
     if (!configDialog) return;
-    const updatedMethods = settings.payment_methods.map(p => p.id === configDialog ? { ...p, config: configTemp } : p);
+    const updatedMethods = cleanUserPaymentMethods(settings.payment_methods).map(p => p.id === configDialog ? { ...p, config: configTemp, user_created: true } : p);
     setSettings(prev => ({ ...prev, payment_methods: updatedMethods }));
     setConfigDialog(null);
     
