@@ -139,23 +139,23 @@ const AppSidebar = () => {
           <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
         )}
         <item.icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
-        <span className="flex items-center gap-1.5 justify-between flex-1 min-w-0 overflow-hidden">
-          <span className="truncate">{item.title}</span>
+        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+          <span className="truncate min-w-0">{item.title}</span>
           {locked && !collapsed && (
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center justify-center shrink-0 h-5 w-5 rounded-md bg-primary/10 text-primary cursor-help">
-                    <Lock className="h-3 w-3" strokeWidth={2.5} />
+                  <span className="inline-flex h-5 w-5 min-h-5 min-w-5 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/25 cursor-help shrink-0">
+                    <Lock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={4} className="font-medium">
+                <TooltipContent side="right" sideOffset={8} className="font-medium">
                   Upgrade to access this feature
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
-        </span>
+        </div>
       </SidebarMenuButton>
     );
 
