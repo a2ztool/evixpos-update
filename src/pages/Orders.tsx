@@ -17,7 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings, ShoppingBag, CheckCircle2, Clock, DollarSign, RefreshCw, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -87,17 +88,17 @@ const playOrderNotificationSound = () => {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  pending: "bg-warning/10 text-warning border border-warning/20",
+  completed: "bg-success/10 text-success border border-success/20",
+  cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
 };
 
 const paymentColors: Record<string, string> = {
-  paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  unpaid: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  partial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  refunded: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  partial_refund: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  paid: "bg-success/10 text-success border border-success/20",
+  unpaid: "bg-destructive/10 text-destructive border border-destructive/20",
+  partial: "bg-warning/10 text-warning border border-warning/20",
+  refunded: "bg-muted text-muted-foreground border border-border",
+  partial_refund: "bg-warning/10 text-warning border border-warning/20",
 };
 
 const Orders = () => {
