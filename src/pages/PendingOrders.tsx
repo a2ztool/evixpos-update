@@ -355,7 +355,7 @@ const PendingOrders = () => {
               <XCircle className="h-3.5 w-3.5" />
               Cancel All
             </Button>
-            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setBulkAction("completed")}>
+            <Button size="sm" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
               <CheckCircle2 className="h-3.5 w-3.5" />
               Complete All
             </Button>
@@ -372,9 +372,9 @@ const PendingOrders = () => {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border bg-gradient-to-br from-card to-muted/20 flex flex-col items-center justify-center py-20 px-4">
           <div className="relative mb-4">
-            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
-            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center border border-emerald-500/20">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full" />
+            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-success/20 to-success/10 flex items-center justify-center border border-success/20">
+              <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
           </div>
           <h3 className="text-lg font-semibold mb-1">All caught up! 🎉</h3>
@@ -425,7 +425,7 @@ const PendingOrders = () => {
                     </div>
                   </div>
                   <div className="flex gap-1.5 pt-1">
-                    <Button size="sm" className="h-8 text-xs flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => updateStatus(o.id, "completed")}>
+                    <Button size="sm" className="h-8 text-xs flex-1 bg-success hover:bg-success/90 text-success-foreground gap-1" onClick={() => updateStatus(o.id, "completed")}>
                       <CheckCircle2 className="h-3 w-3" /> Complete
                     </Button>
                     <Button size="sm" variant="outline" className="h-8 text-xs flex-1 text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
@@ -500,7 +500,7 @@ const PendingOrders = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetails(o)} title="View details">
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStatus(o.id, "completed")}>
+                          <Button size="sm" className="h-8 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus(o.id, "completed")}>
                             <CheckCircle2 className="h-3 w-3" /> Complete
                           </Button>
                           <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
@@ -541,7 +541,7 @@ const PendingOrders = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className={bulkAction === "cancelled" ? "bg-destructive hover:bg-destructive/90" : "bg-emerald-600 hover:bg-emerald-700"}
+              className={bulkAction === "cancelled" ? "bg-destructive hover:bg-destructive/90" : "bg-success hover:bg-success/90"}
               onClick={performBulk}
             >
               Confirm
@@ -593,8 +593,8 @@ const PendingOrders = () => {
                 </div>
               </div>
               {selectedOrder.notes && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                  <h3 className="font-semibold mb-1 text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400">Notes</h3>
+                <div className="rounded-xl border border-warning/20 bg-warning/5 p-3">
+                  <h3 className="font-semibold mb-1 text-xs uppercase tracking-wider text-warning">Notes</h3>
                   <p className="text-sm">{selectedOrder.notes}</p>
                 </div>
               )}
@@ -632,7 +632,7 @@ const PendingOrders = () => {
                 )}
               </div>
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
+                <Button className="flex-1 bg-success hover:bg-success/90 text-success-foreground gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
                   <CheckCircle2 className="h-4 w-4" />
                   Mark Completed
                 </Button>
