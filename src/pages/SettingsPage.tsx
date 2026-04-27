@@ -175,6 +175,7 @@ interface ActiveGateway {
   name: string;
   enabled: boolean;
   config: Record<string, string>;
+  user_created?: boolean;
 }
 
 interface BusinessSettings {
@@ -251,6 +252,21 @@ const ROLE_PRESETS: Record<string, string[]> = {
 };
 
 const defaultPaymentMethods: ActiveGateway[] = [];
+
+const LEGACY_DUMMY_GATEWAY_IDS = new Set(["cash", "bkash", "nagad"]);
+
+const cleanUserPaymentMethods = (methods: unknown): ActiveGateway[] => {
+  if (!Array.isArray(methods)) return [];
+
+  return methods.filter((method): method is ActiveGateway => {
+    if (!method || typeof method !== "object") return false;
+    const gateway = method as ActiveGateway;
+    const config = gateway.config && typeof gateway.config === "object" ? gateway.config : {};
+    const hasConfig = Object.values(config).some(value => typeof value === "string" && value.trim().length > 0);
+
+    return Boolean(gateway.id) && (!LEGACY_DUMMY_GATEWAY_IDS.has(gateway.id) || gateway.user_created || hasConfig);
+  });
+};
 
 const defaultSettings: BusinessSettings = {
   business_name: "", business_email: "", store_slug: "", shop_url: "",
