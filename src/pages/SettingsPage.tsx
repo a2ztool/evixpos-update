@@ -785,10 +785,14 @@ const SettingsPage = () => {
             <p className="text-sm text-muted-foreground">{lang === "bn" ? "পেমেন্ট গেটওয়ে যোগ ও ম্যানেজ করুন" : "Add and manage payment gateways"}</p>
           </div>
         </div>
-        <Dialog open={addGatewayDialog} onOpenChange={setAddGatewayDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> {lang === "bn" ? "গেটওয়ে যোগ করুন" : "Add Gateway"}</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={saveSettings} disabled={loading} className="gap-1.5">
+            <Save className="h-4 w-4" /> {lang === "bn" ? "সেভ করুন" : "Save"}
+          </Button>
+          <Dialog open={addGatewayDialog} onOpenChange={setAddGatewayDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> {lang === "bn" ? "গেটওয়ে যোগ করুন" : "Add Gateway"}</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
             <DialogHeader><DialogTitle>{lang === "bn" ? "পেমেন্ট গেটওয়ে যোগ করুন" : "Add Payment Gateway"}</DialogTitle></DialogHeader>
             <div className="flex gap-2 mt-2">
@@ -826,7 +830,8 @@ const SettingsPage = () => {
               {filteredGateways.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">{lang === "bn" ? "কোনো গেটওয়ে পাওয়া যায়নি" : "No gateways found"}</p>}
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Active gateways */}
@@ -973,7 +978,6 @@ const SettingsPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Button onClick={saveSettings} disabled={loading} className="gap-2"><Save className="h-4 w-4" /> {t.save} {t.paymentMethods}</Button>
     </div>
   );
 
