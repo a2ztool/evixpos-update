@@ -771,7 +771,7 @@ const fetchProducts = async () => {
                   <Badge className={`${statusColors[o.status]} text-[10px]`}>{o.status}</Badge>
                   <Badge className={`${paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"} text-[10px]`}>{o.payment_status}</Badge>
                   {o.source === "woocommerce" && (
-                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] gap-0.5">
+                    <Badge className="bg-primary/10 text-primary border border-primary/20 text-[10px] gap-0.5">
                       <Globe className="h-2.5 w-2.5" /> Website
                     </Badge>
                   )}
@@ -783,7 +783,7 @@ const fetchProducts = async () => {
                     <FileText className="h-3.5 w-3.5" /> Invoice
                   </Button>
                   {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
-                    <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
+                    <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
                     </Button>
                    )}
@@ -842,7 +842,7 @@ const fetchProducts = async () => {
                     <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
                     <TableCell className="capitalize text-sm">
                       {o.source === "woocommerce" ? (
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                        <Badge className="bg-primary/10 text-primary border border-primary/20 gap-1">
                           <Globe className="h-3 w-3" /> Website
                         </Badge>
                       ) : o.source === "order_form" ? (
@@ -862,7 +862,7 @@ const fetchProducts = async () => {
                           <FileText className="h-4 w-4" />
                         </Button>
                         {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => openRefund(o)} title="Refund">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openRefund(o)} title="Refund">
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
@@ -1120,7 +1120,7 @@ const fetchProducts = async () => {
             <DialogTitle className="flex items-center gap-2">
               Order Details
               {selectedOrder?.source === "woocommerce" && (
-                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 gap-1">
+                <Badge className="bg-primary/10 text-primary border border-primary/20 gap-1">
                   <Globe className="h-3 w-3" /> From Website
                 </Badge>
               )}
@@ -1181,7 +1181,7 @@ const fetchProducts = async () => {
                   <Separator />
                   <div>
                     <h3 className="font-semibold mb-2 text-sm flex items-center gap-1.5">
-                      <Globe className="h-3.5 w-3.5 text-blue-600" /> Website Order Details
+                      <Globe className="h-3.5 w-3.5 text-primary" /> Website Order Details
                     </h3>
                     <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 rounded-lg p-3">
                       {(selectedOrder.meta as any)?.wc_order_number && (
@@ -1424,9 +1424,9 @@ const fetchProducts = async () => {
             <div className="space-y-3">
               {refunds.map((r) => {
                 const refundStatusColor: Record<string, string> = {
-                  pending: "bg-yellow-100 text-yellow-800",
-                  approved: "bg-green-100 text-green-800",
-                  rejected: "bg-red-100 text-red-800",
+                  pending: "bg-warning/10 text-warning",
+                  approved: "bg-success/10 text-success",
+                  rejected: "bg-destructive/10 text-destructive",
                 };
                 return (
                   <div key={r.id} className="rounded-xl border border-border p-4 space-y-2">
