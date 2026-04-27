@@ -419,73 +419,86 @@ const Products = () => {
     <DashboardLayout>
       <UsageWarningBanner type="products" />
 
-      {/* Premium Header — title only shown on desktop (DashboardLayout shows it on mobile) */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pb-3 sm:pb-5 mb-3 sm:mb-6 border-b border-border/60">
-        <div className="hidden sm:flex flex-col gap-1">
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground tracking-[0.08em] uppercase">
-            <span>Sales & Products</span>
-            <span className="text-border">/</span>
-            <span className="text-primary">Catalog</span>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 sm:p-6 mb-3 sm:mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-row items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 flex-shrink-0">
+              <Package className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">{t.products}</h1>
+              <p className="text-[11px] sm:text-sm text-muted-foreground mt-0.5 truncate">
+                {stats.total} item{stats.total !== 1 ? "s" : ""} · {stats.active} active · {stats.outOfStock} out of stock
+              </p>
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{t.products}</h1>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setImportOpen(true)}
-            className="gap-1.5 h-9 flex-1 sm:flex-initial"
-          >
-            <Upload className="h-4 w-4" />
-            {t.import}
-          </Button>
-          <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-initial" onClick={openAdd}>
-            <Plus className="h-4 w-4" />
-            {t.addProduct}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setGuideOpen(true)}
-            className="h-9 w-9 shrink-0"
-            aria-label="Open guide"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 hidden sm:inline-flex"
+            >
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden md:inline">{t.import}</span>
+            </Button>
+            <Button size="sm" className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3" onClick={openAdd}>
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{t.addProduct}</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setGuideOpen(true)}
+              className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
+              aria-label="Open guide"
+            >
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-1.5 sm:gap-4 mb-3 sm:mb-6">
-        <div className="premium-card p-2 sm:p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-0.5 sm:mb-2 gap-1">
-            <span className="text-[8px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider sm:tracking-widest truncate">Total</span>
-            <Boxes className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground/60 flex-shrink-0" />
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-primary/10 to-primary/5 text-primary border-primary/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <Boxes className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Total</span>
           </div>
-          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.total}</div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.total}</p>
         </div>
-        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-0.5 sm:mb-2 gap-1">
-            <span className="text-[8px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider sm:tracking-widest truncate">Active</span>
-            <CheckCircle2 className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-primary/70 flex-shrink-0" />
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-success/10 to-success/5 text-success border-success/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Active</span>
           </div>
-          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums">{stats.active}</div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.active}</p>
         </div>
-        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-warning" />
-          <div className="flex items-center justify-between mb-0.5 sm:mb-2 pl-1 gap-1">
-            <span className="text-[8px] sm:text-[11px] font-semibold text-warning uppercase tracking-wider sm:tracking-widest truncate">Low</span>
-            <AlertTriangle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-warning flex-shrink-0" />
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-warning/10 to-warning/5 text-warning border-warning/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Low</span>
           </div>
-          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.lowStock}</div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.lowStock}</p>
         </div>
-        <div className="premium-card p-2 sm:p-5 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-destructive" />
-          <div className="flex items-center justify-between mb-0.5 sm:mb-2 pl-1 gap-1">
-            <span className="text-[8px] sm:text-[11px] font-semibold text-destructive uppercase tracking-wider sm:tracking-widest truncate">Out</span>
-            <XCircle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-destructive flex-shrink-0" />
+        <div className="relative rounded-lg sm:rounded-2xl border bg-gradient-to-br from-destructive/10 to-destructive/5 text-destructive border-destructive/20 p-2 sm:p-4 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1.5">
+            <div className="h-5 w-5 sm:h-7 sm:w-7 rounded-md sm:rounded-lg bg-background/80 flex items-center justify-center flex-shrink-0">
+              <XCircle className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+            </div>
+            <span className="text-[8px] sm:text-xs font-medium uppercase tracking-wider opacity-80 truncate">Out</span>
           </div>
-          <div className="text-base sm:text-3xl font-semibold tracking-tight tabular-nums pl-1">{stats.outOfStock}</div>
+          <p className="text-sm sm:text-2xl font-bold tracking-tight truncate">{stats.outOfStock}</p>
         </div>
       </div>
 
