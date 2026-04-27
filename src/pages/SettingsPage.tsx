@@ -421,13 +421,13 @@ const SettingsPage = () => {
   };
 
   const removeGateway = (id: string) => {
-    setSettings(prev => ({ ...prev, payment_methods: prev.payment_methods.filter(p => p.id !== id) }));
+    setSettings(prev => ({ ...prev, payment_methods: cleanUserPaymentMethods(prev.payment_methods).filter(p => p.id !== id) }));
   };
 
   const toggleGateway = (id: string) => {
     setSettings(prev => ({
       ...prev,
-      payment_methods: prev.payment_methods.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p),
+      payment_methods: cleanUserPaymentMethods(prev.payment_methods).map(p => p.id === id ? { ...p, enabled: !p.enabled } : p),
     }));
   };
 
