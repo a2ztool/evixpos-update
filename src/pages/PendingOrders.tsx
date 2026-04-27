@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageGuide from "@/components/PageGuide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Search, Clock, Eye, ClipboardList } from "lucide-react";
+import {
+  Search, Clock, Eye, ClipboardList, CheckCircle2, XCircle, AlertTriangle,
+  Timer, TrendingUp, DollarSign, Package, ArrowUpDown, RefreshCw,
+  ChevronRight, Hourglass, Zap,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface OrderItem {
   id: string;
@@ -36,9 +44,35 @@ interface PendingOrder {
 }
 
 const paymentColors: Record<string, string> = {
-  paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  unpaid: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  partial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  paid: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  unpaid: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  partial: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+};
+
+const sourceIcons: Record<string, string> = {
+  pos: "🏪",
+  online: "🌐",
+  woocommerce: "🛒",
+  manual: "✍️",
+};
+
+type SortKey = "newest" | "oldest" | "amount_high" | "amount_low";
+
+const getElapsed = (created: string) => {
+  const diff = Date.now() - new Date(created).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return { label: "Just now", urgency: "fresh" as const };
+  if (mins < 60) return { label: `${mins}m ago`, urgency: "fresh" as const };
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return { label: `${hrs}h ago`, urgency: hrs >= 6 ? ("warning" as const) : ("fresh" as const) };
+  const days = Math.floor(hrs / 24);
+  return { label: `${days}d ago`, urgency: "urgent" as const };
+};
+
+const urgencyStyles = {
+  fresh: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  urgent: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
 };
 
 const PendingOrders = () => {
@@ -46,14 +80,20 @@ const PendingOrders = () => {
   const { activeStore } = useStore();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<PendingOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("newest");
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PendingOrder | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"completed" | "cancelled" | null>(null);
 
   const fetchPendingOrders = async () => {
     if (!activeStore) return;
+    setLoading(true);
     const { data } = await supabase
       .from("orders")
       .select("*, customers(name)")
@@ -61,19 +101,54 @@ const PendingOrders = () => {
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     if (data) setOrders(data as unknown as PendingOrder[]);
+    setLoading(false);
   };
 
   useEffect(() => {
     if (user && activeStore) fetchPendingOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeStore]);
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!activeStore) return;
+    const channel = supabase
+      .channel(`pending-orders-${activeStore.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${activeStore.id}` }, () => {
+        fetchPendingOrders();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStore?.id]);
 
   const updateStatus = async (id: string, status: "completed" | "cancelled") => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
     else {
       toast.success(`Order marked as ${status}`);
+      setSelectedIds((s) => {
+        const n = new Set(s);
+        n.delete(id);
+        return n;
+      });
       fetchPendingOrders();
     }
+  };
+
+  const performBulk = async () => {
+    if (!bulkAction || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("orders").update({ status: bulkAction }).in("id", ids);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`${ids.length} order${ids.length > 1 ? "s" : ""} marked as ${bulkAction}`);
+      setSelectedIds(new Set());
+      fetchPendingOrders();
+    }
+    setBulkAction(null);
   };
 
   const viewDetails = async (order: PendingOrder) => {
@@ -86,211 +161,483 @@ const PendingOrders = () => {
     setDetailOpen(true);
   };
 
-  const filtered = orders.filter((o) => {
-    if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!o.id.toLowerCase().includes(q) && !(o.customers?.name ?? "").toLowerCase().includes(q)) return false;
+  const filtered = useMemo(() => {
+    let list = orders.filter((o) => {
+      if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
+      if (sourceFilter !== "all" && o.source !== sourceFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (!o.id.toLowerCase().includes(q) && !(o.customers?.name ?? "").toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+    switch (sortKey) {
+      case "oldest":
+        list = [...list].sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+        break;
+      case "amount_high":
+        list = [...list].sort((a, b) => Number(b.total_amount) - Number(a.total_amount));
+        break;
+      case "amount_low":
+        list = [...list].sort((a, b) => Number(a.total_amount) - Number(b.total_amount));
+        break;
+      default:
+        list = [...list].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
     }
-    return true;
-  });
+    return list;
+  }, [orders, paymentFilter, sourceFilter, search, sortKey]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const totalValue = orders.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+    const unpaid = orders.filter((o) => o.payment_status === "unpaid").length;
+    const urgent = orders.filter((o) => Date.now() - new Date(o.created_at).getTime() > 6 * 3600 * 1000).length;
+    const currency = orders[0]?.payment_currency ?? "";
+    return { total, totalValue, unpaid, urgent, currency };
+  }, [orders]);
+
+  const allSelected = filtered.length > 0 && filtered.every((o) => selectedIds.has(o.id));
+  const someSelected = filtered.some((o) => selectedIds.has(o.id)) && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((o) => o.id)));
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  };
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div className="hidden sm:block">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Clock className="h-6 w-6 text-amber-500" />
-            Pending Orders
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {orders.length} pending order{orders.length !== 1 ? "s" : ""} awaiting action
-          </p>
+      {/* Premium Header */}
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-background p-5 sm:p-6 mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <Hourglass className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+                Pending Orders
+                {stats.urgent > 0 && (
+                  <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {stats.urgent} urgent
+                  </Badge>
+                )}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {stats.total} order{stats.total !== 1 ? "s" : ""} awaiting your action
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={fetchPendingOrders} className="gap-1.5">
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              Refresh
+            </Button>
+            <PageGuide
+              title="Pending Orders Guide"
+              steps={[
+                { title: "What is this page?", description: "All orders waiting to be completed or cancelled appear here in real-time." },
+                { title: "Time tracking", description: "Each order shows how long it's been pending. Orders older than 6 hours show as urgent." },
+                { title: "Bulk actions", description: "Select multiple orders using checkboxes to complete or cancel them in one click." },
+                { title: "Quick actions", description: "Use the inline buttons to instantly complete or cancel an order." },
+                { title: "Smart filtering", description: "Filter by payment status, source channel, or sort by amount/age to prioritize." },
+                { title: "Realtime sync", description: "New orders from POS, WooCommerce, or order forms appear automatically — no refresh needed." },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <StatCard
+          icon={<Package className="h-4 w-4" />}
+          label="Total Pending"
+          value={stats.total.toString()}
+          accent="from-blue-500/10 to-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-500/20"
+        />
+        <StatCard
+          icon={<DollarSign className="h-4 w-4" />}
+          label="Pending Value"
+          value={`${stats.currency} ${stats.totalValue.toFixed(2)}`}
+          accent="from-emerald-500/10 to-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        />
+        <StatCard
+          icon={<XCircle className="h-4 w-4" />}
+          label="Unpaid"
+          value={stats.unpaid.toString()}
+          accent="from-rose-500/10 to-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/20"
+        />
+        <StatCard
+          icon={<Timer className="h-4 w-4" />}
+          label="Urgent (>6h)"
+          value={stats.urgent.toString()}
+          accent="from-amber-500/10 to-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-500/20"
+        />
+      </div>
+
+      {/* Filters Bar */}
+      <div className="rounded-2xl border bg-card p-3 sm:p-4 mb-4 flex flex-col lg:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search pending orders..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input
+            placeholder="Search by order ID or customer..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 bg-background"
+          />
         </div>
-        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="All Payments" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Payments</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="unpaid">Unpaid</SelectItem>
-            <SelectItem value="partial">Partial</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-3 lg:flex gap-2">
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+              <SelectValue placeholder="Payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Payments</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
+              <SelectItem value="partial">Partial</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-full lg:w-[140px] bg-background">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="pos">POS</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="woocommerce">WooCommerce</SelectItem>
+              <SelectItem value="manual">Manual</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+            <SelectTrigger className="w-full lg:w-[160px] bg-background">
+              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="amount_high">Amount: High → Low</SelectItem>
+              <SelectItem value="amount_low">Amount: Low → High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="premium-card flex flex-col items-center justify-center py-20">
-          <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <ClipboardList className="h-8 w-8 text-muted-foreground" />
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 backdrop-blur-sm p-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Zap className="h-4 w-4 text-primary" />
+            {selectedIds.size} order{selectedIds.size > 1 ? "s" : ""} selected
           </div>
-          <h3 className="text-lg font-semibold mb-1">No pending orders</h3>
-          <p className="text-sm text-muted-foreground mb-4">All orders have been processed!</p>
-          <Button variant="outline" onClick={() => navigate("/orders")}>View All Orders</Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive gap-1.5" onClick={() => setBulkAction("cancelled")}>
+              <XCircle className="h-3.5 w-3.5" />
+              Cancel All
+            </Button>
+            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setBulkAction("completed")}>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Complete All
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      {loading ? (
+        <div className="rounded-2xl border bg-card p-12 text-center">
+          <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground mt-3">Loading pending orders...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl border bg-gradient-to-br from-card to-muted/20 flex flex-col items-center justify-center py-20 px-4">
+          <div className="relative mb-4">
+            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center border border-emerald-500/20">
+              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold mb-1">All caught up! 🎉</h3>
+          <p className="text-sm text-muted-foreground mb-5 text-center max-w-sm">
+            No pending orders. Everything has been processed. Great job!
+          </p>
+          <Button variant="outline" onClick={() => navigate("/orders")} className="gap-1.5">
+            View All Orders
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
       ) : (
-        <div>
+        <>
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map((o) => (
-              <div key={o.id} className="border rounded-2xl bg-card p-3 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-sm">{o.customers?.name ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{o.id.slice(0, 8)}...</p>
+            {filtered.map((o) => {
+              const elapsed = getElapsed(o.created_at);
+              const checked = selectedIds.has(o.id);
+              return (
+                <div key={o.id} className={cn(
+                  "rounded-2xl border bg-card p-4 space-y-3 transition-all",
+                  checked && "border-primary/50 ring-2 ring-primary/20",
+                )}>
+                  <div className="flex items-start gap-3">
+                    <Checkbox checked={checked} onCheckedChange={() => toggleOne(o.id)} className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate">{o.customers?.name ?? "Walk-in customer"}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono mt-0.5">#{o.id.slice(0, 8)}</p>
+                        </div>
+                        <Badge variant="outline" className={cn("border", paymentColors[o.payment_status] ?? "")}>
+                          {o.payment_status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-lg font-bold">{o.payment_currency} {Number(o.total_amount).toFixed(2)}</span>
+                        <Badge variant="outline" className={cn("border gap-1 text-[10px]", urgencyStyles[elapsed.urgency])}>
+                          <Clock className="h-2.5 w-2.5" />
+                          {elapsed.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
+                        <span>{sourceIcons[o.source] ?? "📦"} {o.source}</span>
+                        <span>•</span>
+                        <span className="capitalize">{o.payment_method}</span>
+                      </div>
+                    </div>
                   </div>
-                  <Badge className={paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"}>{o.payment_status}</Badge>
+                  <div className="flex gap-1.5 pt-1">
+                    <Button size="sm" className="h-8 text-xs flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => updateStatus(o.id, "completed")}>
+                      <CheckCircle2 className="h-3 w-3" /> Complete
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs flex-1 text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
+                      <XCircle className="h-3 w-3" /> Cancel
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-2.5" onClick={() => viewDetails(o)}>
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span>Amount: <strong>{o.payment_currency} {Number(o.total_amount).toFixed(2)}</strong></span>
-                  <span className="capitalize">{o.payment_method}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="capitalize">{o.source}</span>
-                  <span>{new Date(o.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <Button size="sm" variant="default" className="h-7 text-xs flex-1" onClick={() => updateStatus(o.id, "completed")}>Complete</Button>
-                  <Button size="sm" variant="outline" className="h-7 text-xs flex-1 text-destructive" onClick={() => updateStatus(o.id, "cancelled")}>Cancel</Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => viewDetails(o)}><Eye className="h-3.5 w-3.5" /></Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block premium-card overflow-hidden">
+          <div className="hidden md:block rounded-2xl border bg-card overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleAll}
+                      ref={(el) => {
+                        if (el) (el as unknown as HTMLInputElement).indeterminate = someSelected;
+                      }}
+                    />
+                  </TableHead>
+                  <TableHead>Order</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Payment</TableHead>
-                  <TableHead>Method</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Age</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((o) => (
-                  <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}...</TableCell>
-                    <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
-                    <TableCell className="font-semibold">{o.payment_currency} {Number(o.total_amount).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge className={paymentColors[o.payment_status] ?? "bg-muted text-muted-foreground"}>{o.payment_status}</Badge>
-                    </TableCell>
-                    <TableCell className="capitalize text-sm">{o.payment_method}</TableCell>
-                    <TableCell className="capitalize text-sm">{o.source}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => viewDetails(o)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => updateStatus(o.id, "completed")}>
-                          Complete
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => updateStatus(o.id, "cancelled")}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filtered.map((o) => {
+                  const elapsed = getElapsed(o.created_at);
+                  const checked = selectedIds.has(o.id);
+                  return (
+                    <TableRow key={o.id} className={cn("hover:bg-muted/40 transition-colors", checked && "bg-primary/5")}>
+                      <TableCell>
+                        <Checkbox checked={checked} onCheckedChange={() => toggleOne(o.id)} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-xs text-muted-foreground">#{o.id.slice(0, 8)}</div>
+                        <div className="text-[10px] text-muted-foreground/70 mt-0.5">{new Date(o.created_at).toLocaleDateString()}</div>
+                      </TableCell>
+                      <TableCell className="font-medium">{o.customers?.name ?? <span className="text-muted-foreground">Walk-in</span>}</TableCell>
+                      <TableCell className="font-semibold">{o.payment_currency} {Number(o.total_amount).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("border", paymentColors[o.payment_status] ?? "")}>
+                          {o.payment_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <span>{sourceIcons[o.source] ?? "📦"}</span>
+                          <span className="capitalize">{o.source}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("border gap-1 font-normal", urgencyStyles[elapsed.urgency])}>
+                          <Clock className="h-3 w-3" />
+                          {elapsed.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetails(o)} title="View details">
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStatus(o.id, "completed")}>
+                            <CheckCircle2 className="h-3 w-3" /> Complete
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
+                            <XCircle className="h-3 w-3" /> Cancel
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
-        </div>
+
+          {/* Pro Tip Footer */}
+          <div className="mt-4 rounded-xl border border-dashed bg-muted/30 p-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+            <span>
+              <strong className="text-foreground">Pro tip:</strong> Process urgent orders (red badges) first to keep customers happy and improve fulfillment time.
+            </span>
+          </div>
+        </>
       )}
+
+      {/* Bulk confirm */}
+      <AlertDialog open={!!bulkAction} onOpenChange={(o) => !o && setBulkAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkAction === "completed" ? "Complete" : "Cancel"} {selectedIds.size} order{selectedIds.size > 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkAction === "completed"
+                ? "These orders will be marked as completed and removed from pending."
+                : "These orders will be cancelled. This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={bulkAction === "cancelled" ? "bg-destructive hover:bg-destructive/90" : "bg-emerald-600 hover:bg-emerald-700"}
+              onClick={performBulk}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Order Details Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              Order Details
+            </DialogTitle>
+            <DialogDescription>
+              View order summary, items, and take action on this pending order.
+            </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm rounded-xl bg-muted/40 p-3">
                 <div>
-                  <span className="text-muted-foreground">Order ID</span>
-                  <p className="font-mono text-xs">{selectedOrder.id}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Order ID</span>
+                  <p className="font-mono text-xs">#{selectedOrder.id.slice(0, 12)}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Customer</span>
-                  <p className="font-medium">{selectedOrder.customers?.name ?? "—"}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Customer</span>
+                  <p className="font-medium">{selectedOrder.customers?.name ?? "Walk-in"}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Payment</span>
-                  <p className="capitalize font-medium">{selectedOrder.payment_status}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Payment</span>
+                  <Badge variant="outline" className={cn("border mt-0.5", paymentColors[selectedOrder.payment_status] ?? "")}>
+                    {selectedOrder.payment_status}
+                  </Badge>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Method</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Method</span>
                   <p className="capitalize">{selectedOrder.payment_method}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Date</span>
-                  <p>{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Created</span>
+                  <p className="text-xs">{new Date(selectedOrder.created_at).toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Total</span>
-                  <p className="text-lg font-bold">{selectedOrder.payment_currency} {Number(selectedOrder.total_amount).toFixed(2)}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</span>
+                  <p className="text-lg font-bold text-primary">{selectedOrder.payment_currency} {Number(selectedOrder.total_amount).toFixed(2)}</p>
                 </div>
               </div>
               {selectedOrder.notes && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-semibold mb-1 text-sm">Notes</h3>
-                    <p className="text-sm text-muted-foreground">{selectedOrder.notes}</p>
-                  </div>
-                </>
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                  <h3 className="font-semibold mb-1 text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400">Notes</h3>
+                  <p className="text-sm">{selectedOrder.notes}</p>
+                </div>
               )}
               <Separator />
               <div>
-                <h3 className="font-semibold mb-2">Items</h3>
+                <h3 className="font-semibold mb-2 text-sm flex items-center gap-1.5">
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  Items ({orderItems.length})
+                </h3>
                 {orderItems.length === 0 ? (
                   <p className="text-muted-foreground text-sm">No items</p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Subtotal</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orderItems.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{item.products?.name ?? "—"}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>{Number(item.price).toFixed(2)}</TableCell>
-                          <TableCell>{(Number(item.price) * item.quantity).toFixed(2)}</TableCell>
+                  <div className="rounded-xl border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead>Product</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {orderItems.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.products?.name ?? "—"}</TableCell>
+                            <TableCell className="text-center">{item.quantity}</TableCell>
+                            <TableCell className="text-right">{Number(item.price).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-semibold">{(Number(item.price) * item.quantity).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </div>
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
+                  <CheckCircle2 className="h-4 w-4" />
                   Mark Completed
                 </Button>
-                <Button variant="outline" className="flex-1 text-destructive" onClick={() => { updateStatus(selectedOrder.id, "cancelled"); setDetailOpen(false); }}>
+                <Button variant="outline" className="flex-1 text-destructive hover:text-destructive gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "cancelled"); setDetailOpen(false); }}>
+                  <XCircle className="h-4 w-4" />
                   Cancel Order
                 </Button>
               </div>
@@ -301,5 +648,24 @@ const PendingOrders = () => {
     </DashboardLayout>
   );
 };
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: string;
+}
+
+const StatCard = ({ icon, label, value, accent }: StatCardProps) => (
+  <div className={cn("relative rounded-2xl border bg-gradient-to-br p-3 sm:p-4 overflow-hidden", accent)}>
+    <div className="flex items-center gap-2 mb-1.5">
+      <div className="h-7 w-7 rounded-lg bg-background/80 backdrop-blur flex items-center justify-center">
+        {icon}
+      </div>
+      <span className="text-[10px] sm:text-xs font-medium uppercase tracking-wider opacity-80">{label}</span>
+    </div>
+    <p className="text-lg sm:text-2xl font-bold tracking-tight truncate">{value}</p>
+  </div>
+);
 
 export default PendingOrders;
