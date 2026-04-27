@@ -44,9 +44,9 @@ interface PendingOrder {
 }
 
 const paymentColors: Record<string, string> = {
-  paid: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-  unpaid: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-  partial: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  paid: "bg-success/10 text-success border-success/20",
+  unpaid: "bg-destructive/10 text-destructive border-destructive/20",
+  partial: "bg-warning/10 text-warning border-warning/20",
 };
 
 const sourceIcons: Record<string, string> = {
@@ -70,9 +70,9 @@ const getElapsed = (created: string) => {
 };
 
 const urgencyStyles = {
-  fresh: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  urgent: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  fresh: "bg-primary/10 text-primary border-primary/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  urgent: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 const PendingOrders = () => {
@@ -220,18 +220,18 @@ const PendingOrders = () => {
   return (
     <DashboardLayout>
       {/* Premium Header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-background p-5 sm:p-6 mb-6">
-        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 sm:p-6 mb-6">
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Hourglass className="h-6 w-6 text-white" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+              <Hourglass className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
                 Pending Orders
                 {stats.urgent > 0 && (
-                  <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 gap-1">
+                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 gap-1">
                     <AlertTriangle className="h-3 w-3" />
                     {stats.urgent} urgent
                   </Badge>
@@ -268,25 +268,25 @@ const PendingOrders = () => {
           icon={<Package className="h-4 w-4" />}
           label="Total Pending"
           value={stats.total.toString()}
-          accent="from-blue-500/10 to-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-500/20"
+          accent="from-primary/10 to-primary/5 text-primary border-primary/20"
         />
         <StatCard
           icon={<DollarSign className="h-4 w-4" />}
           label="Pending Value"
           value={`${stats.currency} ${stats.totalValue.toFixed(2)}`}
-          accent="from-emerald-500/10 to-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+          accent="from-success/10 to-success/5 text-success border-success/20"
         />
         <StatCard
           icon={<XCircle className="h-4 w-4" />}
           label="Unpaid"
           value={stats.unpaid.toString()}
-          accent="from-rose-500/10 to-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/20"
+          accent="from-destructive/10 to-destructive/5 text-destructive border-destructive/20"
         />
         <StatCard
           icon={<Timer className="h-4 w-4" />}
           label="Urgent (>6h)"
           value={stats.urgent.toString()}
-          accent="from-amber-500/10 to-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-500/20"
+          accent="from-warning/10 to-warning/5 text-warning border-warning/20"
         />
       </div>
 
@@ -355,7 +355,7 @@ const PendingOrders = () => {
               <XCircle className="h-3.5 w-3.5" />
               Cancel All
             </Button>
-            <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setBulkAction("completed")}>
+            <Button size="sm" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground" onClick={() => setBulkAction("completed")}>
               <CheckCircle2 className="h-3.5 w-3.5" />
               Complete All
             </Button>
@@ -372,9 +372,9 @@ const PendingOrders = () => {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border bg-gradient-to-br from-card to-muted/20 flex flex-col items-center justify-center py-20 px-4">
           <div className="relative mb-4">
-            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
-            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center border border-emerald-500/20">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full" />
+            <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-success/20 to-success/10 flex items-center justify-center border border-success/20">
+              <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
           </div>
           <h3 className="text-lg font-semibold mb-1">All caught up! 🎉</h3>
@@ -425,7 +425,7 @@ const PendingOrders = () => {
                     </div>
                   </div>
                   <div className="flex gap-1.5 pt-1">
-                    <Button size="sm" className="h-8 text-xs flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => updateStatus(o.id, "completed")}>
+                    <Button size="sm" className="h-8 text-xs flex-1 bg-success hover:bg-success/90 text-success-foreground gap-1" onClick={() => updateStatus(o.id, "completed")}>
                       <CheckCircle2 className="h-3 w-3" /> Complete
                     </Button>
                     <Button size="sm" variant="outline" className="h-8 text-xs flex-1 text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
@@ -500,7 +500,7 @@ const PendingOrders = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewDetails(o)} title="View details">
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => updateStatus(o.id, "completed")}>
+                          <Button size="sm" className="h-8 text-xs gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus(o.id, "completed")}>
                             <CheckCircle2 className="h-3 w-3" /> Complete
                           </Button>
                           <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive gap-1" onClick={() => updateStatus(o.id, "cancelled")}>
@@ -541,7 +541,7 @@ const PendingOrders = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className={bulkAction === "cancelled" ? "bg-destructive hover:bg-destructive/90" : "bg-emerald-600 hover:bg-emerald-700"}
+              className={bulkAction === "cancelled" ? "bg-destructive hover:bg-destructive/90" : "bg-success hover:bg-success/90"}
               onClick={performBulk}
             >
               Confirm
@@ -593,8 +593,8 @@ const PendingOrders = () => {
                 </div>
               </div>
               {selectedOrder.notes && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                  <h3 className="font-semibold mb-1 text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400">Notes</h3>
+                <div className="rounded-xl border border-warning/20 bg-warning/5 p-3">
+                  <h3 className="font-semibold mb-1 text-xs uppercase tracking-wider text-warning">Notes</h3>
                   <p className="text-sm">{selectedOrder.notes}</p>
                 </div>
               )}
@@ -632,7 +632,7 @@ const PendingOrders = () => {
                 )}
               </div>
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
+                <Button className="flex-1 bg-success hover:bg-success/90 text-success-foreground gap-1.5" onClick={() => { updateStatus(selectedOrder.id, "completed"); setDetailOpen(false); }}>
                   <CheckCircle2 className="h-4 w-4" />
                   Mark Completed
                 </Button>
