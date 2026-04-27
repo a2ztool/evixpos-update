@@ -250,11 +250,7 @@ const ROLE_PRESETS: Record<string, string[]> = {
   custom: [],
 };
 
-const defaultPaymentMethods: ActiveGateway[] = [
-  { id: "cash", name: "Cash", enabled: true, config: {} },
-  { id: "bkash", name: "bKash", enabled: true, config: {} },
-  { id: "nagad", name: "Nagad", enabled: true, config: {} },
-];
+const defaultPaymentMethods: ActiveGateway[] = [];
 
 const defaultSettings: BusinessSettings = {
   business_name: "", business_email: "", store_slug: "", shop_url: "",
@@ -329,7 +325,7 @@ const SettingsPage = () => {
           logo_url: s.logo_url, show_payment_in_pos: s.show_payment_in_pos,
           default_currency: s.default_currency, timezone: s.timezone,
           tax_rate: Number(s.tax_rate), app_language: s.app_language,
-          payment_methods: (s.payment_methods as any) ?? defaultPaymentMethods,
+          payment_methods: Array.isArray(s.payment_methods) ? (s.payment_methods as any) : [],
           currencies: (s.currencies as any[]) ?? defaultSettings.currencies,
         });
         if (s.app_language && LANGUAGES_LIST.find(l => l.code === s.app_language)) {
