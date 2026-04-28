@@ -7,6 +7,7 @@ import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import PaymentModal from "@/components/PaymentModal";
+import RazorpayUpgradeModal from "@/components/RazorpayUpgradeModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,6 @@ import {
   type VolumeStep,
 } from "@/lib/planConfig";
 import { usePlansConfig } from "@/contexts/PlansConfigContext";
-import { createRazorpayOrder, openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
 // Exchange rates from INR
 const RATES_FROM_INR = { INR: 1, USD: 1 / 84, BDT: 122 / 84 };
@@ -170,6 +170,9 @@ const MyPlan = () => {
   const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
     open: false, planKey: "", planName: "", amount: 0, volume: 500 as VolumeStep, billingType: "monthly",
   });
+  const [razorpayModal, setRazorpayModal] = useState<{ open: boolean; planKey: "pro" | "business"; planName: string; basePriceINR: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
+    open: false, planKey: "pro", planName: "", basePriceINR: 0, volume: 500 as VolumeStep, billingType: "monthly",
+  });
   const [processingPlanKey, setProcessingPlanKey] = useState<string | null>(null);
   const [razorpayEnabled, setRazorpayEnabled] = useState(false);
 
@@ -201,48 +204,19 @@ const MyPlan = () => {
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
 
-    // INR + Razorpay enabled by admin → live checkout. Otherwise → manual gateway modal.
+    // INR + Razorpay enabled by admin → coupon-first checkout modal. Otherwise → manual gateway modal.
     if (currency === "INR" && razorpayEnabled && (planDef.key === "pro" || planDef.key === "business")) {
       if (!user) { toast.error("Please log in to upgrade"); return; }
-      setProcessingPlanKey(planDef.key);
-      const billingType: "monthly" | "yearly" = yearly ? "yearly" : "monthly";
-      const expectedINR = Math.round(price * 100) / 100;
-      try {
-        const order = await createRazorpayOrder({
-          plan: planDef.key as "pro" | "business",
-          volume: selectedVolume,
-          billing_type: billingType,
-        });
-        const backendINR = order.amount / 100;
-        // Hard guard: UI price must equal Razorpay amount
-        if (Math.abs(backendINR - expectedINR) > 0.5) {
-          toast.error(`Price mismatch — please refresh and try again. (UI ₹${expectedINR}, server ₹${backendINR})`);
-          setProcessingPlanKey(null);
-          return;
-        }
-        await openRazorpayCheckout({
-          ...order,
-          planName: planDef.name,
-          prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
-          onSuccess: async () => {
-            toast.success("Payment received! Activating your plan…");
-            // Webhook will activate; poll briefly for confirmation
-            setProcessingPlanKey(null);
-            setTimeout(() => window.location.reload(), 2500);
-          },
-          onDismiss: () => {
-            setProcessingPlanKey(null);
-            toast.info("Payment cancelled");
-          },
-          onFailure: (err) => {
-            setProcessingPlanKey(null);
-            toast.error(err?.description || "Payment failed. Please retry.");
-          },
-        });
-      } catch (e: any) {
-        setProcessingPlanKey(null);
-        toast.error(e?.message || "Could not start checkout. Please retry.");
-      }
+      // Base INR price for the backend (yearly already includes 20% discount, no platform-coupon yet)
+      const baseInr = yearly ? priceINR * 12 * 0.8 : priceINR;
+      setRazorpayModal({
+        open: true,
+        planKey: planDef.key as "pro" | "business",
+        planName: planDef.name,
+        basePriceINR: Math.round(baseInr * 100) / 100,
+        volume: selectedVolume,
+        billingType: yearly ? "yearly" : "monthly",
+      });
       return;
     }
 
@@ -1048,6 +1022,16 @@ const MyPlan = () => {
         currency={currency}
         currencySymbol={CURRENCY_SYMBOLS[currency]}
         billingType={paymentModal.billingType}
+      />
+
+      <RazorpayUpgradeModal
+        open={razorpayModal.open}
+        onOpenChange={(open) => setRazorpayModal(prev => ({ ...prev, open }))}
+        planKey={razorpayModal.planKey}
+        planName={razorpayModal.planName}
+        volume={razorpayModal.volume}
+        billingType={razorpayModal.billingType}
+        basePriceINR={razorpayModal.basePriceINR}
       />
     </DashboardLayout>
   );

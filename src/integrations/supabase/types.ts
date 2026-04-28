@@ -1962,13 +1962,17 @@ export type Database = {
         Row: {
           admin_notes: string | null
           amount: number
+          applied_coupon_code: string | null
           billing_type: string | null
           created_at: string
           currency: string
+          discount_amount: number | null
           expires_at: string | null
+          final_amount: number | null
           gateway: string | null
           gateway_id: string | null
           id: string
+          original_amount: number | null
           payment_data: Json
           plan: string
           proof_url: string | null
@@ -1986,13 +1990,17 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           amount?: number
+          applied_coupon_code?: string | null
           billing_type?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number | null
           expires_at?: string | null
+          final_amount?: number | null
           gateway?: string | null
           gateway_id?: string | null
           id?: string
+          original_amount?: number | null
           payment_data?: Json
           plan?: string
           proof_url?: string | null
@@ -2010,13 +2018,17 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           amount?: number
+          applied_coupon_code?: string | null
           billing_type?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number | null
           expires_at?: string | null
+          final_amount?: number | null
           gateway?: string | null
           gateway_id?: string | null
           id?: string
+          original_amount?: number | null
           payment_data?: Json
           plan?: string
           proof_url?: string | null
