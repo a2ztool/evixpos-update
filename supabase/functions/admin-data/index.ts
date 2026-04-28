@@ -496,6 +496,23 @@ Deno.serve(async (req) => {
 
     // ─── GET PAYMENT GATEWAYS ───
     if (action === "get_payment_gateways") {
+      // handled below
+    }
+
+    if (action === "delete_plan_payment") {
+      const { payment_id } = params;
+      await supabase.from("plan_payments").delete().eq("id", payment_id);
+      return json({ success: true });
+    }
+
+    if (action === "bulk_delete_plan_payments") {
+      const { payment_ids } = params;
+      if (!Array.isArray(payment_ids) || payment_ids.length === 0) return errorResponse("No ids", 400);
+      await supabase.from("plan_payments").delete().in("id", payment_ids);
+      return json({ success: true, count: payment_ids.length });
+    }
+
+    if (action === "get_payment_gateways") {
       const { data } = await supabase.from("payment_gateways").select("*").order("sort_order", { ascending: true });
       return json(data || []);
     }
