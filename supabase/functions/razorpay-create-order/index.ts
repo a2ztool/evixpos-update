@@ -82,8 +82,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Could not determine price" }, 400);
     }
 
-    // Yearly = 12 months with 2 months free (10x), tweak if business rule differs
-    const finalInr = billingType === "yearly" ? priceInr * 10 : priceInr;
+    // Yearly = 12 months with 20% discount (matches UI: monthly * 12 * 0.8)
+    const finalInr = billingType === "yearly" ? priceInr * 12 * 0.8 : priceInr;
     const amountPaise = Math.round(finalInr * 100);
     const receipt = `evx_${user.id.slice(0, 8)}_${Date.now()}`;
 
