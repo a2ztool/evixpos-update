@@ -147,14 +147,14 @@ Deno.serve(async (req) => {
     if (action === "update_plans_config") {
       const { configs: configRows } = params;
       for (const row of configRows) {
-        const { id, plan_type, volume, price_inr, store_limit, product_limit, customer_limit } = row;
+        const { id, plan_type, volume, price_inr, price_bdt, store_limit, product_limit, customer_limit } = row;
         if (id) {
           await supabase.from("plans_config").update({
-            price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+            price_inr, price_bdt, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
           }).eq("id", id);
         } else {
           await supabase.from("plans_config").upsert({
-            plan_type, volume, price_inr, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
+            plan_type, volume, price_inr, price_bdt, store_limit, product_limit, customer_limit, updated_at: new Date().toISOString(),
           }, { onConflict: "plan_type,volume" });
         }
       }
