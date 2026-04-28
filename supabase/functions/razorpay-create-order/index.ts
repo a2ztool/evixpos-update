@@ -84,7 +84,13 @@ Deno.serve(async (req) => {
     }
 
     // Yearly = 12 months with 20% discount (matches UI: monthly * 12 * 0.8)
-    const baseInr = billingType === "yearly" ? priceInr * 12 * 0.8 : priceInr;
+    // Round to whole rupees to avoid float drift between UI and server.
+    const rawBaseInr = billingType === "yearly" ? priceInr * 12 * 0.8 : priceInr;
+    const baseInr = Math.round(rawBaseInr);
+    if (baseInr <= 0 || baseInr > 1_000_000) {
+      // Defense in depth: never create an order for absurd amounts
+      return jsonResponse({ error: "Computed amount out of range" }, 400);
+    }
 
     // Server-side coupon validation
     let discountInr = 0;
@@ -106,10 +112,17 @@ Deno.serve(async (req) => {
       if (coupon.max_uses > 0 && coupon.used_count >= coupon.max_uses) {
         return jsonResponse({ error: "This coupon has reached its usage limit" }, 400);
       }
+      const dv = Number(coupon.discount_value);
+      if (!Number.isFinite(dv) || dv < 0) {
+        return jsonResponse({ error: "Invalid coupon configuration" }, 400);
+      }
       if (coupon.discount_type === "percentage") {
-        discountInr = baseInr * (Number(coupon.discount_value) / 100);
+        if (dv > 100) {
+          return jsonResponse({ error: "Invalid coupon configuration" }, 400);
+        }
+        discountInr = Math.round(baseInr * (dv / 100));
       } else {
-        discountInr = Number(coupon.discount_value);
+        discountInr = Math.round(dv);
       }
       discountInr = Math.max(0, Math.min(discountInr, baseInr));
       appliedCouponCode = coupon.code;
@@ -118,6 +131,15 @@ Deno.serve(async (req) => {
 
     const finalInr = Math.max(1, baseInr - discountInr); // Razorpay min ₹1
     const amountPaise = Math.round(finalInr * 100);
+    // Final hard guard
+    if (amountPaise < 100 || amountPaise > 100_000_000) {
+      return jsonResponse({ error: "Final amount out of allowed range" }, 400);
+    }
+    console.log("[razorpay-create-order]", {
+      user: user.id, plan, volume, billingType,
+      priceInr, baseInr, discountInr, finalInr, amountPaise,
+      coupon: appliedCouponCode,
+    });
     const receipt = `evx_${user.id.slice(0, 8)}_${Date.now()}`;
 
     // Create Razorpay order
