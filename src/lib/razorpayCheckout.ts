@@ -68,6 +68,15 @@ export const openRazorpayCheckout = async (args: OpenCheckoutArgs): Promise<void
   const ok = await loadRazorpayScript();
   if (!ok || !window.Razorpay) throw new Error("Razorpay SDK failed to load");
 
+  // Defensive cleanup: some modal libraries (Radix Dialog, etc.) may leave
+  // `pointer-events: none` on <body> or leftover overlays that block clicks
+  // inside the Razorpay iframe. Clear them before opening checkout.
+  if (typeof document !== "undefined") {
+    document.body.style.pointerEvents = "";
+    document.body.style.overflow = "";
+    document.documentElement.style.pointerEvents = "";
+  }
+
   const rzp = new window.Razorpay({
     key: args.key_id,
     amount: args.amount,
