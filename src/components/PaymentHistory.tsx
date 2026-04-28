@@ -47,7 +47,7 @@ const PaymentHistory = () => {
 
   return (
     <Card className="border-border/50">
-      <CardContent className="pt-5 pb-4">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <Receipt className="h-5 w-5 text-muted-foreground" />
           <h3 className="font-semibold text-base">Payment History</h3>
