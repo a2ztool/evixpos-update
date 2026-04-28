@@ -293,6 +293,7 @@ const SettingsPage = () => {
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [stores, setStores] = useState<StoreItem[]>([]);
+  const [deletingStoreId, setDeletingStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [staffDialog, setStaffDialog] = useState(false);
   const [storeDialog, setStoreDialog] = useState(false);
