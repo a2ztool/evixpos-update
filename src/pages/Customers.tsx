@@ -113,14 +113,31 @@ const Customers = () => {
 
     const customerIds = data.map(c => c.id);
 
-    const [creditsRes, loyaltyRes, ordersRes] = await Promise.all([
-      supabase.from("customer_credits").select("customer_id, total_due").eq("store_id", activeStore.id).in("customer_id", customerIds),
+    const [loyaltyRes, ordersRes, duesRes] = await Promise.all([
       supabase.from("loyalty_points").select("customer_id, total_points, redeemed_points").eq("store_id", activeStore.id).in("customer_id", customerIds),
-      supabase.from("orders").select("customer_id, total_amount, created_at").eq("store_id", activeStore.id).in("customer_id", customerIds),
+      supabase.from("orders").select("id, customer_id, total_amount, created_at").eq("store_id", activeStore.id).in("customer_id", customerIds),
+      // Live dues: only count unpaid transactions whose order still exists for this store
+      supabase.from("transactions")
+        .select("order_id, amount, paid_amount, is_paid, type")
+        .eq("store_id", activeStore.id)
+        .eq("is_paid", false)
+        .eq("type", "income"),
     ]);
 
+    // Build order_id -> customer_id map (only for orders that still exist)
+    const orderToCustomer = new Map<string, string>();
+    (ordersRes.data || []).forEach((o: any) => {
+      if (o.customer_id) orderToCustomer.set(o.id, o.customer_id);
+    });
+
     const dueMap = new Map<string, number>();
-    (creditsRes.data || []).forEach((c: any) => dueMap.set(c.customer_id, Number(c.total_due)));
+    (duesRes.data || []).forEach((t: any) => {
+      const cid = orderToCustomer.get(t.order_id);
+      if (!cid) return; // order deleted → ignore
+      const remaining = Math.max(0, Number(t.amount || 0) - Number(t.paid_amount || 0));
+      if (remaining <= 0) return;
+      dueMap.set(cid, (dueMap.get(cid) || 0) + remaining);
+    });
 
     const pointsMap = new Map<string, number>();
     (loyaltyRes.data || []).forEach((l: any) => pointsMap.set(l.customer_id, Number(l.total_points) - Number(l.redeemed_points)));
@@ -156,6 +173,9 @@ const Customers = () => {
       { table: "customers", filter: `store_id=eq.${activeStore?.id}` },
       { table: "customer_credits", filter: `store_id=eq.${activeStore?.id}` },
       { table: "loyalty_points", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "transactions", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "orders", filter: `store_id=eq.${activeStore?.id}` },
+      { table: "due_payments", filter: `store_id=eq.${activeStore?.id}` },
     ],
     fetchCustomers,
     !!activeStore?.id && !!user
