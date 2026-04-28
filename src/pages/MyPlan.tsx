@@ -126,7 +126,7 @@ const MyPlan = () => {
   };
   const { plan: rawPlan, volume: subVolume, endDate, remainingDays, isExpiringSoon, loading: planLoading } = useSubscription();
   const plan = rawPlan ?? "free";
-  const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
+  const [volumeIndex, setVolumeIndex] = useState([0]); // default index 0 = 500
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
   const { getPriceINR, getPriceBDT, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
   const usage = useUsageLimits(plan, subVolume);
