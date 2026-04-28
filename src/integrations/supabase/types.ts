@@ -1962,56 +1962,74 @@ export type Database = {
         Row: {
           admin_notes: string | null
           amount: number
+          billing_type: string | null
           created_at: string
           currency: string
           expires_at: string | null
+          gateway: string | null
           gateway_id: string | null
           id: string
           payment_data: Json
           plan: string
           proof_url: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           store_id: string | null
           transaction_id: string | null
           user_id: string
+          volume: number | null
         }
         Insert: {
           admin_notes?: string | null
           amount?: number
+          billing_type?: string | null
           created_at?: string
           currency?: string
           expires_at?: string | null
+          gateway?: string | null
           gateway_id?: string | null
           id?: string
           payment_data?: Json
           plan?: string
           proof_url?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           store_id?: string | null
           transaction_id?: string | null
           user_id: string
+          volume?: number | null
         }
         Update: {
           admin_notes?: string | null
           amount?: number
+          billing_type?: string | null
           created_at?: string
           currency?: string
           expires_at?: string | null
+          gateway?: string | null
           gateway_id?: string | null
           id?: string
           payment_data?: Json
           plan?: string
           proof_url?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           store_id?: string | null
           transaction_id?: string | null
           user_id?: string
+          volume?: number | null
         }
         Relationships: [
           {
@@ -2367,6 +2385,30 @@ export type Database = {
           p256dh?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      razorpay_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string
         }
         Relationships: []
       }
