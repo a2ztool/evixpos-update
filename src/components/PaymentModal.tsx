@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { toast } from "sonner";
-import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer, Tag, X } from "lucide-react";
+import { Check, Upload, QrCode, CreditCard, Clock, CheckCircle2, XCircle, Loader2, AlertTriangle, Timer, Tag, X, ShieldCheck } from "lucide-react";
 
 interface PlatformCoupon {
   id: string;
@@ -52,6 +52,7 @@ interface PaymentModalProps {
   currency: string;
   currencySymbol: string;
   billingType?: "monthly" | "yearly";
+  volume?: number;
 }
 
 // Expiry countdown hook
@@ -79,7 +80,7 @@ const useExpiryTimer = (expiresAt: string | null) => {
   return { timeLeft, isExpired };
 };
 
-const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency, currencySymbol, billingType = "monthly" }: PaymentModalProps) => {
+const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency, currencySymbol, billingType = "monthly", volume }: PaymentModalProps) => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const [gateways, setGateways] = useState<PaymentGateway[]>([]);
@@ -331,6 +332,9 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     );
   }
 
+  const fmtAmt = (n: number) =>
+    `${currencySymbol}${n.toFixed(currency === "USD" ? 2 : 0)}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -339,70 +343,93 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
             <CreditCard className="h-5 w-5 text-primary" />
             Upgrade to {planName}
           </DialogTitle>
+          <DialogDescription>
+            Review your plan and apply a coupon before paying.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Order Summary */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="py-4 space-y-3">
-            <div className="flex justify-between items-start gap-3">
-              <div className="min-w-0">
-                <p className="font-semibold truncate">{planName} Plan</p>
-                <p className="text-xs text-muted-foreground">{billingType === "yearly" ? "Yearly" : "Monthly"} subscription</p>
-              </div>
-              <div className="text-right shrink-0">
-                {appliedCoupon && (
-                  <p className="text-xs text-muted-foreground line-through leading-none">
-                    {currencySymbol}{amount.toFixed(2)}
-                  </p>
-                )}
-                <p className="text-2xl font-bold text-primary leading-tight">
-                  {currencySymbol}{finalAmount.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">{currency}</p>
-              </div>
+        {/* Plan Summary */}
+        <div className="rounded-lg border bg-muted/30 p-3 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Plan</span>
+            <span className="font-medium">{planName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Billing</span>
+            <span className="font-medium capitalize">{billingType}</span>
+          </div>
+          {typeof volume === "number" && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Volume</span>
+              <span className="font-medium">{volume.toLocaleString()} customers</span>
             </div>
+          )}
+        </div>
 
-            {/* Coupon Section */}
-            {appliedCoupon ? (
-              <div className="flex items-center justify-between bg-success/10 border border-success/20 rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2 text-sm min-w-0">
-                  <Tag className="h-3.5 w-3.5 text-success shrink-0" />
-                  <span className="font-mono font-bold text-success truncate">{appliedCoupon.code}</span>
-                  <span className="text-xs text-success/80 truncate">
-                    -{appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}%` : `${currencySymbol}${appliedCoupon.discount_value}`}
-                    {savings > 0 && ` · Save ${currencySymbol}${savings.toFixed(2)}`}
-                  </span>
-                </div>
-                <button
-                  className="text-destructive hover:text-destructive/80 shrink-0"
-                  onClick={() => { setAppliedCoupon(null); setCouponCode(""); toast.info("Coupon removed"); }}
-                  aria-label="Remove coupon"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+        {/* Coupon */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-1.5">
+            <Tag className="h-3.5 w-3.5" /> Coupon code
+          </label>
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between rounded-lg border border-success/30 bg-success/5 px-3 py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Check className="h-4 w-4 text-success shrink-0" />
+                <span className="text-sm font-mono font-semibold truncate">{appliedCoupon.code}</span>
+                <Badge variant="outline" className="text-success border-success/30 text-[10px]">
+                  {appliedCoupon.discount_type === "percentage"
+                    ? `${appliedCoupon.discount_value}% OFF`
+                    : `${currencySymbol}${appliedCoupon.discount_value} OFF`}
+                </Badge>
               </div>
-            ) : (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Discount coupon code"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
-                  className="h-9 text-sm uppercase font-mono tracking-wider"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={applyCoupon}
-                  disabled={!couponCode.trim() || applyingCoupon}
-                  className="h-9 shrink-0"
-                >
-                  {applyingCoupon ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => { setAppliedCoupon(null); setCouponCode(""); toast.info("Coupon removed"); }}
+                aria-label="Remove coupon"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
+                disabled={applyingCoupon}
+                className="font-mono uppercase"
+              />
+              <Button
+                onClick={applyCoupon}
+                disabled={!couponCode.trim() || applyingCoupon}
+                variant="secondary"
+              >
+                {applyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Price breakdown */}
+        <div className="rounded-lg border p-3 space-y-1.5 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Original price</span>
+            <span className={appliedCoupon ? "line-through text-muted-foreground" : ""}>{fmtAmt(amount)}</span>
+          </div>
+          {appliedCoupon && (
+            <div className="flex justify-between text-success">
+              <span>Discount ({appliedCoupon.code})</span>
+              <span>− {fmtAmt(savings)}</span>
+            </div>
+          )}
+          <div className="border-t pt-1.5 flex justify-between items-baseline">
+            <span className="font-semibold">Final amount</span>
+            <span className="text-xl font-bold text-primary">{fmtAmt(finalAmount)}</span>
+          </div>
+        </div>
 
         {/* Expiry Info */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
@@ -579,16 +606,20 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
 
                 {/* Submit */}
                 <Button
-                  className="w-full"
+                  className="w-full gap-2"
+                  size="lg"
                   onClick={handleSubmit}
                   disabled={submitting || duplicateWarning || !txnIdValid}
                 >
                   {submitting ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
                   ) : (
-                    "Submit Payment"
+                    <><ShieldCheck className="h-4 w-4" /> Proceed to Payment · {fmtAmt(finalAmount)}</>
                   )}
                 </Button>
+                <p className="text-[11px] text-center text-muted-foreground">
+                  Secure payment powered by evixPos.
+                </p>
               </div>
             )}
           </>
