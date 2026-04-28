@@ -168,51 +168,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Razorpay error", details: rzpJson }, 502);
     }
 
-    // Create a Razorpay Payment Link bound to this order so we can redirect
-    // the user to the fully hosted Razorpay checkout page (branding/logo/color
-    // are managed from the Razorpay Dashboard).
-    const origin = req.headers.get("origin") || req.headers.get("referer") || "";
-    const callbackUrl = origin
-      ? `${origin.replace(/\/$/, "")}/my-plan?rzp_order=${rzpJson.id}`
-      : undefined;
-
-    const linkRes = await fetch("https://api.razorpay.com/v1/payment_links", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: amountPaise,
-        currency: "INR",
-        accept_partial: false,
-        reference_id: receipt,
-        description: `${plan.toUpperCase()} subscription (${billingType})`,
-        customer: {
-          name: user.user_metadata?.name || user.email || "Customer",
-          email: user.email || undefined,
-          contact: user.user_metadata?.phone || undefined,
-        },
-        notify: { sms: false, email: false },
-        reminder_enable: false,
-        notes: {
-          user_id: user.id,
-          plan,
-          volume: String(volume),
-          billing_type: billingType,
-          order_id: rzpJson.id,
-        },
-        ...(callbackUrl
-          ? { callback_url: callbackUrl, callback_method: "get" }
-          : {}),
-      }),
-    });
-    const linkJson = await linkRes.json();
-    if (!linkRes.ok) {
-      console.error("Razorpay payment link create failed", linkJson);
-      return jsonResponse({ error: "Razorpay payment link error", details: linkJson }, 502);
-    }
-
     // Persist pending payment
     const { error: insErr } = await admin.from("plan_payments").insert({
       user_id: user.id,
@@ -228,13 +183,7 @@ Deno.serve(async (req) => {
       razorpay_order_id: rzpJson.id,
       volume,
       billing_type: billingType,
-      payment_data: {
-        receipt,
-        amount_paise: amountPaise,
-        coupon: couponMeta,
-        payment_link_id: linkJson.id,
-        payment_link_url: linkJson.short_url,
-      },
+      payment_data: { receipt, amount_paise: amountPaise, coupon: couponMeta },
     });
     if (insErr) {
       console.error("plan_payments insert failed", insErr);
@@ -251,8 +200,6 @@ Deno.serve(async (req) => {
       discount_amount: Math.round(discountInr * 100) / 100,
       final_amount: Math.round(finalInr * 100) / 100,
       applied_coupon_code: appliedCouponCode,
-      payment_link_id: linkJson.id,
-      payment_link_url: linkJson.short_url,
     });
   } catch (e) {
     console.error("create-order error", e);
