@@ -208,6 +208,8 @@ const App = () => {
             <Route path="/reports" element={<P perm="reports.view" feature="reports"><Reports /></P>} />
             <Route path="/referral" element={<P ownerOnly feature="referral"><Referral /></P>} />
             <Route path="/my-plan" element={<P ownerOnly><MyPlan /></P>} />
+            <Route path="/payment/zinipay/success" element={<P ownerOnly><ZinipaySuccess /></P>} />
+            <Route path="/payment/zinipay/cancel" element={<P ownerOnly><ZinipayCancel /></P>} />
             <Route path="/support" element={<P><SupportPage /></P>} />
             <Route path="/staff-inbox" element={<P><StaffInbox /></P>} />
             <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
