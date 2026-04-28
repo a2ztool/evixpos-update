@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Settings as SettingsIcon, CreditCard, DollarSign, Languages, UsersRound,
-  Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
+  Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff, Pencil,
   Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
   QrCode, MessageSquare, Key, User as UserIcon, Sparkles, BookOpen, HelpCircle, X, Lightbulb,
   CheckCircle2, Zap, Lock, KeyRound
@@ -281,7 +281,7 @@ const defaultSettings: BusinessSettings = {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { activeStore } = useStore();
+  const { activeStore, refreshStores } = useStore();
   const { effectiveUserId } = useStaff();
   const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
@@ -306,6 +306,7 @@ const SettingsPage = () => {
   const [staffCreating, setStaffCreating] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [newStore, setNewStore] = useState({ name: "", address: "", phone: "" });
+  const [editStoreData, setEditStoreData] = useState<{ id: string; name: string; address: string; phone: string } | null>(null);
   const [profileForm, setProfileForm] = useState({ name: "", email: "", newPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
@@ -581,7 +582,32 @@ const SettingsPage = () => {
       user_id: effectiveUserId!, name: newStore.name, address: newStore.address, phone: newStore.phone,
     }).select().single();
     if (error) { toast.error(error.message); return; }
-    if (data) { setStores(prev => [...prev, data]); setNewStore({ name: "", address: "", phone: "" }); setStoreDialog(false); toast.success("Store added!"); }
+    if (data) {
+      setStores(prev => [...prev, data]);
+      setNewStore({ name: "", address: "", phone: "" });
+      setStoreDialog(false);
+      toast.success("Store added!");
+      refreshStores();
+    }
+  };
+  const updateStore = async () => {
+    if (!editStoreData) return;
+    if (!editStoreData.name.trim()) {
+      toast.error(lang === "bn" ? "স্টোরের নাম দিন" : "Store name is required");
+      return;
+    }
+    const { error } = await supabase.from("stores").update({
+      name: editStoreData.name.trim(),
+      address: editStoreData.address,
+      phone: editStoreData.phone,
+    }).eq("id", editStoreData.id);
+    if (error) { toast.error(error.message); return; }
+    setStores(prev => prev.map(s => s.id === editStoreData.id
+      ? { ...s, name: editStoreData.name.trim(), address: editStoreData.address, phone: editStoreData.phone }
+      : s));
+    setEditStoreData(null);
+    toast.success(lang === "bn" ? "স্টোর আপডেট হয়েছে" : "Store updated");
+    refreshStores();
   };
   const removeStore = async (id: string) => {
     // Frontend safety: never let user delete their last store
@@ -607,12 +633,14 @@ const SettingsPage = () => {
     }
     setStores(prev => prev.filter(s => s.id !== id));
     toast.success(lang === "bn" ? "স্টোর ডিলিট হয়েছে" : "Store deleted");
+    refreshStores();
   };
   const setDefaultStore = async (id: string) => {
     if (!user) return;
     await supabase.from("stores").update({ is_default: false }).eq("user_id", user.id);
     await supabase.from("stores").update({ is_default: true }).eq("id", id);
     setStores(prev => prev.map(s => ({ ...s, is_default: s.id === id })));
+    refreshStores();
   };
 
   // ─── Profile ───
@@ -1334,26 +1362,27 @@ const SettingsPage = () => {
       {stores.length === 0 ? (
         <div className="text-center py-12"><Store className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground text-sm">{lang === "bn" ? "কোনো স্টোর নেই" : "No stores"}</p></div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {stores.map(s => {
             const modeLabel = s.store_mode === "offline" ? "Offline" : "Online";
             const modeColor = s.store_mode === "offline" ? "bg-orange-500/10 text-orange-600 border-orange-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
             return (
-            <Card key={s.id} className={`border-border/50 ${s.is_default ? "ring-2 ring-primary" : ""}`}>
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-sm flex items-center gap-2 flex-wrap">
-                      {s.name}
-                      {s.is_default && <Badge className="bg-primary text-primary-foreground text-[10px]">Default</Badge>}
-                      <Badge variant="outline" className={`text-[10px] ${modeColor}`}>{modeLabel}</Badge>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">{s.address || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{s.phone || "—"}</p>
+            <Card key={s.id} className={`border-border/50 hover:border-primary/30 transition-colors ${s.is_default ? "ring-2 ring-primary" : ""}`}>
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <p className="font-semibold text-sm truncate">{s.name}</p>
+                      {s.is_default && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">Default</Badge>}
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${modeColor}`}>{modeLabel}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">📍 {s.address || (lang === "bn" ? "ঠিকানা নেই" : "No address")}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">📞 {s.phone || (lang === "bn" ? "ফোন নেই" : "No phone")}</p>
                   </div>
-                  <div className="flex gap-1 flex-wrap">
+                </div>
+                <div className="flex items-center gap-1 flex-wrap pt-3 border-t border-border/50">
                     <Button
-                      variant="ghost" size="sm" className="text-xs"
+                      variant="ghost" size="sm" className="h-7 px-2 text-xs"
                       onClick={async () => {
                         const newMode = s.store_mode === "online" ? "offline" : "online";
                         const confirmed = confirm(
@@ -1368,11 +1397,22 @@ const SettingsPage = () => {
                         if (error) { toast.error(error.message); return; }
                         setStores(prev => prev.map(st => st.id === s.id ? { ...st, store_mode: newMode } : st));
                         toast.success(`Store switched to ${newMode} mode`);
+                        refreshStores();
                       }}
                     >
                       {s.store_mode === "online" ? "→ Offline" : "→ Online"}
                     </Button>
-                    {!s.is_default && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setDefaultStore(s.id)}>Set Default</Button>}
+                    {!s.is_default && <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDefaultStore(s.id)}>Set Default</Button>}
+                    <div className="ml-auto flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        onClick={() => setEditStoreData({ id: s.id, name: s.name, address: s.address || "", phone: s.phone || "" })}
+                        aria-label={lang === "bn" ? "এডিট করুন" : "Edit store"}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                     {(() => {
                       const canDelete = stores.length > 1;
                       const isDeleting = deletingStoreId === s.id;
@@ -1389,12 +1429,12 @@ const SettingsPage = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={`h-8 w-8 ${canDelete ? "text-destructive hover:bg-destructive/10" : "text-muted-foreground/40 cursor-not-allowed"}`}
+                                  className={`h-7 w-7 ${canDelete ? "text-destructive hover:bg-destructive/10" : "text-muted-foreground/40 cursor-not-allowed"}`}
                                   disabled={!canDelete || isDeleting}
                                   onClick={() => canDelete && removeStore(s.id)}
                                   aria-label={tooltipMsg}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </span>
                             </TooltipTrigger>
@@ -1403,7 +1443,7 @@ const SettingsPage = () => {
                         </TooltipProvider>
                       );
                     })()}
-                  </div>
+                    </div>
                 </div>
               </CardContent>
             </Card>
@@ -1411,6 +1451,49 @@ const SettingsPage = () => {
           })}
         </div>
       )}
+
+      {/* Edit Store Dialog */}
+      <Dialog open={!!editStoreData} onOpenChange={(open) => !open && setEditStoreData(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{lang === "bn" ? "স্টোর এডিট করুন" : "Edit Store"}</DialogTitle>
+          </DialogHeader>
+          {editStoreData && (
+            <div className="space-y-4 mt-2">
+              <div className="space-y-1.5">
+                <Label>{t.name}</Label>
+                <Input
+                  value={editStoreData.name}
+                  onChange={e => setEditStoreData(p => p ? { ...p, name: e.target.value } : p)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t.address}</Label>
+                <Input
+                  value={editStoreData.address}
+                  onChange={e => setEditStoreData(p => p ? { ...p, address: e.target.value } : p)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t.phone}</Label>
+                <Input
+                  value={editStoreData.phone}
+                  onChange={e => setEditStoreData(p => p ? { ...p, phone: e.target.value } : p)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setEditStoreData(null)} className="flex-1">
+                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                </Button>
+                <Button onClick={updateStore} className="flex-1">
+                  <Save className="h-4 w-4 mr-1.5" />
+                  {lang === "bn" ? "সেভ করুন" : "Save"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

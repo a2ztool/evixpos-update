@@ -135,6 +135,24 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     fetchStores();
   }, [fetchStores]);
 
+  // Realtime: keep stores in sync across the app without requiring a refresh
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`stores-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "stores" },
+        () => {
+          fetchStores();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchStores]);
+
   const switchStore = (storeId: string) => {
     if (isStaffStore) return; // Staff can't switch stores
     const store = stores.find(s => s.id === storeId);
