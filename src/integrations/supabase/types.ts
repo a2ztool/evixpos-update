@@ -3434,6 +3434,10 @@ export type Database = {
         Returns: boolean
       }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
+      recalc_customer_due: {
+        Args: { _customer_id: string; _store_id: string }
+        Returns: undefined
+      }
       store_has_min_plan: {
         Args: { _min_plan: string; _store_id: string }
         Returns: boolean
