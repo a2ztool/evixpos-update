@@ -495,10 +495,6 @@ Deno.serve(async (req) => {
     }
 
     // ─── GET PAYMENT GATEWAYS ───
-    if (action === "get_payment_gateways") {
-      // handled below
-    }
-
     if (action === "delete_plan_payment") {
       const { payment_id } = params;
       await supabase.from("plan_payments").delete().eq("id", payment_id);
