@@ -608,12 +608,12 @@ const MyPlan = () => {
 
         {/* Volume Slider */}
         <Card className="border-border/50">
-          <CardContent className="p-5 sm:p-6">
-            <h3 className="text-center font-semibold text-lg">Select Customer Volume</h3>
-            <p className="text-center text-sm text-muted-foreground mb-6">Price adjusts automatically based on volume</p>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Customers / mo</span>
-              <span className="text-xl font-bold text-primary">{volumeLabel}</span>
+          <CardContent className="p-3.5 sm:p-6">
+            <h3 className="text-center font-semibold text-sm sm:text-lg">Select Customer Volume</h3>
+            <p className="text-center text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-6">Price adjusts automatically based on volume</p>
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <span className="text-xs sm:text-sm text-muted-foreground">Customers / mo</span>
+              <span className="text-base sm:text-xl font-bold text-primary">{volumeLabel}</span>
             </div>
             <Slider
               value={volumeIndex}
@@ -621,9 +621,9 @@ const MyPlan = () => {
               min={0}
               max={VOLUME_STEPS.length - 1}
               step={1}
-              className="my-4"
+              className="my-3 sm:my-4 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 sm:[&_[role=slider]]:h-5 sm:[&_[role=slider]]:w-5 [&>span:first-child]:h-1 sm:[&>span:first-child]:h-2"
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
               {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l) => (
                 <span key={l}>{l}</span>
               ))}
@@ -632,12 +632,12 @@ const MyPlan = () => {
         </Card>
 
         {/* Monthly / Yearly Toggle */}
-        <div className="flex justify-center items-center gap-3">
+        <div className="flex justify-center items-center gap-2 sm:gap-3 sticky top-14 sm:static z-20 sm:z-auto py-2 sm:py-0 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/85 sm:bg-transparent backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:supports-[backdrop-filter]:bg-transparent sm:backdrop-blur-0 rounded-full sm:rounded-none">
           <Button
             variant={!yearly ? "default" : "outline"}
             size="sm"
             onClick={() => setYearly(false)}
-            className="rounded-full px-6"
+            className="rounded-full px-4 sm:px-6 h-8 sm:h-9 text-xs sm:text-sm"
           >
             Monthly
           </Button>
@@ -645,19 +645,19 @@ const MyPlan = () => {
             variant={yearly ? "default" : "outline"}
             size="sm"
             onClick={() => setYearly(true)}
-            className="rounded-full px-6"
+            className="rounded-full px-4 sm:px-6 h-8 sm:h-9 text-xs sm:text-sm"
           >
             Yearly
           </Button>
           {yearly && (
-            <Badge variant="outline" className="text-success border-success/30 text-xs">
-              Save 20% on Yearly
+            <Badge variant="outline" className="text-success border-success/30 text-[10px] sm:text-xs px-1.5 sm:px-2.5">
+              Save 20%
             </Badge>
           )}
         </div>
 
         {/* Plan Cards — Premium SaaS Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
           {PLANS.map((p) => {
             const isActive = p.name === currentPlan;
             const Icon = p.icon;
@@ -665,15 +665,16 @@ const MyPlan = () => {
             const monthlySavings = yearly && priceINR && priceINR > 0
               ? Math.round(priceINR * RATES_FROM_INR[currency] * 12 * 0.2)
               : 0;
+            const showAllFeatures = !!expandedFeatures[p.key];
             return (
               <Card
                 key={p.name}
-                className={`group relative overflow-hidden border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col h-full ${
+                className={`group relative overflow-hidden border-border/50 transition-all duration-300 sm:hover:-translate-y-1 sm:hover:shadow-xl active:scale-[0.99] sm:active:scale-100 flex flex-col h-full bg-gradient-to-br from-background to-muted/20 sm:bg-none ${
                   p.popular ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""
                 }`}
               >
                 {/* Gradient top accent */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${p.gradient}`} />
+                <div className={`h-1 sm:h-1.5 w-full bg-gradient-to-r ${p.gradient}`} />
 
                 {/* Glow on popular */}
                 {p.popular && (
@@ -681,24 +682,24 @@ const MyPlan = () => {
                 )}
 
                 {isActive && (
-                  <Badge className="absolute top-3 right-3 bg-success text-success-foreground text-[10px] z-10 shadow-sm">
+                  <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-success text-success-foreground text-[9px] sm:text-[10px] z-10 shadow-sm px-1.5 py-0">
                     <Check className="h-2.5 w-2.5 mr-0.5" /> ACTIVE
                   </Badge>
                 )}
                 {p.popular && !isActive && (
-                  <Badge className="absolute top-3 right-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-[10px] z-10 shadow-sm">
+                  <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-[9px] sm:text-[10px] z-10 shadow-sm px-1.5 py-0">
                     <Star className="h-2.5 w-2.5 mr-0.5 fill-current" /> POPULAR
                   </Badge>
                 )}
 
-                <CardContent className="p-5 sm:p-6 relative flex flex-col flex-1">
+                <CardContent className="p-3.5 sm:p-6 relative flex flex-col flex-1">
                   {/* Icon + Name */}
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center shadow-sm`}>
-                      <Icon className="h-4 w-4 text-white" />
+                  <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
+                    <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center shadow-sm`}>
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                     </div>
                     <div>
-                      <div className={`${p.color} font-bold text-base leading-none`}>{p.name}</div>
+                      <div className={`${p.color} font-bold text-sm sm:text-base leading-none`}>{p.name}</div>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{p.tagline}</p>
                     </div>
                   </div>
@@ -706,31 +707,31 @@ const MyPlan = () => {
                   {/* Price */}
                   {(() => {
                     if (priceINR === 0) return (
-                      <div className="my-4 pb-3 border-b border-border/50">
-                        <span className={`text-3xl font-bold ${p.color}`}>Free</span>
-                        <span className="text-sm text-muted-foreground ml-1">forever</span>
+                      <div className="my-3 sm:my-4 pb-2.5 sm:pb-3 border-b border-border/50">
+                        <span className={`text-2xl sm:text-3xl font-bold ${p.color}`}>Free</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground ml-1">forever</span>
                       </div>
                     );
                     if (priceINR === null) return (
-                      <div className="my-4 pb-3 border-b border-border/50">
-                        <span className={`text-3xl font-bold ${p.color}`}>Custom</span>
+                      <div className="my-3 sm:my-4 pb-2.5 sm:pb-3 border-b border-border/50">
+                        <span className={`text-2xl sm:text-3xl font-bold ${p.color}`}>Custom</span>
                         <p className="text-xs text-muted-foreground mt-1">Tailored pricing</p>
                       </div>
                     );
                     return (
-                      <div className="my-4 pb-3 border-b border-border/50">
+                      <div className="my-3 sm:my-4 pb-2.5 sm:pb-3 border-b border-border/50">
                         <div className="flex items-baseline gap-1.5">
                           {hasDiscount(p.key) && (
-                            <span className="text-xs text-muted-foreground line-through">
+                            <span className="text-[11px] sm:text-xs text-muted-foreground line-through">
                               {originalPrice(p.key)}
                             </span>
                           )}
-                          <span className={`text-3xl font-bold ${p.color} leading-none`}>
+                          <span className={`text-2xl sm:text-3xl font-bold ${p.color} leading-none`}>
                             {formatPrice(p.key)}
                           </span>
-                          <span className="text-xs text-muted-foreground">{yearly ? "/yr" : "/mo"}</span>
+                          <span className="text-[11px] sm:text-xs text-muted-foreground">{yearly ? "/yr" : "/mo"}</span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1 mt-2">
+                        <div className="flex flex-wrap items-center gap-1 mt-1.5 sm:mt-2">
                           {yearly && (
                             <Badge variant="outline" className="text-success border-success/30 text-[10px] py-0 px-1.5">20% OFF</Badge>
                           )}
@@ -754,13 +755,13 @@ const MyPlan = () => {
                   })()}
 
                   {/* Limits chips */}
-                  <div className="space-y-1.5 mb-4 flex-1">
+                  <div className="space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 flex-1">
                     {[
                       { icon: Store, label: `${p.stores} ${typeof p.stores === "number" && p.stores > 1 ? "stores" : "store"}` },
                       { icon: Users, label: `${p.key === "free" ? "50" : p.key === "custom" ? "Unlimited" : p.key === "business" ? formatVolume(Math.max(selectedVolume, 1000) as VolumeStep) : formatVolume(selectedVolume)} customers` },
                       { icon: Package, label: `${p.products} products` },
                     ].map((l) => (
-                      <div key={l.label} className="flex items-center gap-2 text-xs">
+                      <div key={l.label} className="flex items-center gap-2 text-[11px] sm:text-xs">
                         <l.icon className="h-3 w-3 text-muted-foreground shrink-0" />
                         <span className="text-foreground/80">{l.label}</span>
                       </div>
@@ -769,16 +770,16 @@ const MyPlan = () => {
 
                   {/* CTA */}
                   {isActive ? (
-                    <Button variant="outline" className="w-full gap-1.5" disabled>
+                    <Button variant="outline" className="w-full gap-1.5 rounded-full sm:rounded-md h-9 sm:h-10 text-xs sm:text-sm" disabled>
                       <Check className="h-3.5 w-3.5" /> Current Plan
                     </Button>
                   ) : priceINR === null ? (
-                    <Button variant="outline" className="w-full gap-1.5" onClick={() => navigate("/support")}>
+                    <Button variant="outline" className="w-full gap-1.5 rounded-full sm:rounded-md h-9 sm:h-10 text-xs sm:text-sm active:scale-[0.97] transition-transform" onClick={() => navigate("/support")}>
                       <Headphones className="h-3.5 w-3.5" /> Contact Sales
                     </Button>
                   ) : (
                     <Button
-                      className={`w-full bg-gradient-to-r ${p.gradient} text-white shadow-sm hover:shadow-md gap-1.5 group/btn`}
+                      className={`w-full bg-gradient-to-r ${p.gradient} text-white shadow-sm hover:shadow-md gap-1.5 group/btn rounded-full sm:rounded-md h-9 sm:h-10 text-xs sm:text-sm active:scale-[0.97] transition-transform`}
                       onClick={() => handleUpgrade(p)}
                       disabled={processingPlanKey === p.key}
                     >
@@ -794,15 +795,21 @@ const MyPlan = () => {
                   )}
 
                   {/* Mini features preview */}
-                  <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
-                    {p.features.slice(0, 4).map((f) => (
+                  <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-border/50 space-y-1 sm:space-y-1.5">
+                    {(showAllFeatures ? p.features : p.features.slice(0, 3)).map((f) => (
                       <div key={f} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
                         <Check className="h-3 w-3 text-success shrink-0 mt-0.5" />
                         <span className="leading-snug">{f}</span>
                       </div>
                     ))}
-                    {p.features.length > 4 && (
-                      <p className="text-[10px] text-primary font-medium pt-0.5">+ {p.features.length - 4} more features</p>
+                    {p.features.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedFeatures((s) => ({ ...s, [p.key]: !s[p.key] }))}
+                        className="text-[10px] text-primary font-medium pt-0.5 hover:underline text-left"
+                      >
+                        {showAllFeatures ? "Show less" : `+ ${p.features.length - 3} more features`}
+                      </button>
                     )}
                   </div>
                 </CardContent>
