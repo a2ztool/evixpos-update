@@ -1,28 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-declare global {
-  interface Window {
-    Razorpay?: any;
-  }
-}
-
-let scriptPromise: Promise<boolean> | null = null;
-
-export const loadRazorpayScript = (): Promise<boolean> => {
-  if (typeof window === "undefined") return Promise.resolve(false);
-  if (window.Razorpay) return Promise.resolve(true);
-  if (scriptPromise) return scriptPromise;
-  scriptPromise = new Promise((resolve) => {
-    const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
-    s.async = true;
-    s.onload = () => resolve(true);
-    s.onerror = () => { scriptPromise = null; resolve(false); };
-    document.body.appendChild(s);
-  });
-  return scriptPromise;
-};
-
 export interface CreateOrderArgs {
   plan: "pro" | "business";
   volume: number;
@@ -40,6 +17,9 @@ export interface CreateOrderResult {
   discount_amount?: number;
   final_amount?: number;
   applied_coupon_code?: string | null;
+  /** Razorpay hosted Payment Link URL — redirect the browser here. */
+  payment_link_url?: string;
+  payment_link_id?: string;
 }
 
 export const createRazorpayOrder = async (args: CreateOrderArgs): Promise<CreateOrderResult> => {
@@ -56,43 +36,11 @@ export const createRazorpayOrder = async (args: CreateOrderArgs): Promise<Create
   return data as CreateOrderResult;
 };
 
-export interface OpenCheckoutArgs extends CreateOrderResult {
-  planName: string;
-  prefill?: { name?: string; email?: string; contact?: string };
-  onSuccess: (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
-  onDismiss?: () => void;
-  onFailure?: (err: any) => void;
-}
-
-export const openRazorpayCheckout = async (args: OpenCheckoutArgs): Promise<void> => {
-  const ok = await loadRazorpayScript();
-  if (!ok || !window.Razorpay) throw new Error("Razorpay SDK failed to load");
-
-  // Defensive cleanup: some modal libraries (Radix Dialog, etc.) may leave
-  // `pointer-events: none` on <body> or leftover overlays that block clicks
-  // inside the Razorpay iframe. Clear them before opening checkout.
-  if (typeof document !== "undefined") {
-    document.body.style.pointerEvents = "";
-    document.body.style.overflow = "";
-    document.documentElement.style.pointerEvents = "";
-  }
-
-  const rzp = new window.Razorpay({
-    key: args.key_id,
-    amount: args.amount,
-    currency: args.currency,
-    name: "EvixPOS",
-    description: `${args.planName} subscription`,
-    order_id: args.order_id,
-    prefill: {
-      name: args.prefill?.name || "",
-      email: args.prefill?.email || "",
-      contact: args.prefill?.contact || "",
-    },
-    theme: { color: "#6366f1" },
-    handler: (response: any) => args.onSuccess(response),
-    modal: { ondismiss: () => args.onDismiss?.() },
-  });
-  rzp.on("payment.failed", (resp: any) => args.onFailure?.(resp.error));
-  rzp.open();
+/**
+ * Redirect the browser to Razorpay's fully hosted checkout page.
+ * Branding (logo, theme color, font) is controlled from the Razorpay Dashboard.
+ */
+export const redirectToRazorpayHosted = (url: string): void => {
+  if (!url) throw new Error("Missing Razorpay payment link URL");
+  window.location.href = url;
 };
