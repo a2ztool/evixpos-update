@@ -52,10 +52,9 @@ const RazorpayUpgradeModal = ({
 
   const discount = (() => {
     if (!appliedCoupon) return 0;
-    if (appliedCoupon.discount_type === "percentage") {
-      return Math.min(basePriceINR, basePriceINR * (Number(appliedCoupon.discount_value) / 100));
-    }
-    return Math.min(basePriceINR, Number(appliedCoupon.discount_value));
+    const dv = Number(appliedCoupon.discount_value);
+    const raw = appliedCoupon.discount_type === "percentage" ? basePriceINR * (dv / 100) : dv;
+    return Math.max(0, Math.min(basePriceINR, Math.round(raw)));
   })();
   const finalPrice = Math.max(1, basePriceINR - discount);
 
