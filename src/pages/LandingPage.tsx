@@ -659,17 +659,17 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("pain_points") && <section id="pain-points" className="py-20 sm:py-28 relative overflow-hidden">
+      {show("pain_points") && <section id="pain-points" className="py-10 sm:py-14 relative overflow-hidden">
         {/* Premium ambient background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_30%,hsl(var(--destructive)/0.07),transparent_60%),radial-gradient(ellipse_60%_50%_at_80%_70%,hsl(var(--primary)/0.08),transparent_60%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.4)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_30%,transparent_80%)] opacity-30" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-14 sm:mb-20">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
             <Badge variant="outline" className="mb-5 text-destructive border-destructive/30 bg-destructive/5 backdrop-blur-sm px-3.5 py-1.5 rounded-full font-medium">
               <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-5 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent lg:text-4xl">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight mb-5 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
               {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
