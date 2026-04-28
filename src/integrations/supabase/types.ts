@@ -1986,6 +1986,10 @@ export type Database = {
           transaction_id: string | null
           user_id: string
           volume: number | null
+          zinipay_invoice_id: string | null
+          zinipay_payment_method: string | null
+          zinipay_transaction_id: string | null
+          zinipay_val_id: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -2014,6 +2018,10 @@ export type Database = {
           transaction_id?: string | null
           user_id: string
           volume?: number | null
+          zinipay_invoice_id?: string | null
+          zinipay_payment_method?: string | null
+          zinipay_transaction_id?: string | null
+          zinipay_val_id?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -2042,6 +2050,10 @@ export type Database = {
           transaction_id?: string | null
           user_id?: string
           volume?: number | null
+          zinipay_invoice_id?: string | null
+          zinipay_payment_method?: string | null
+          zinipay_transaction_id?: string | null
+          zinipay_val_id?: string | null
         }
         Relationships: [
           {
@@ -2066,6 +2078,7 @@ export type Database = {
           customer_limit: number
           id: string
           plan_type: string
+          price_bdt: number | null
           price_inr: number
           product_limit: number
           store_limit: number
@@ -2077,6 +2090,7 @@ export type Database = {
           customer_limit?: number
           id?: string
           plan_type: string
+          price_bdt?: number | null
           price_inr?: number
           product_limit?: number
           store_limit?: number
@@ -2088,6 +2102,7 @@ export type Database = {
           customer_limit?: number
           id?: string
           plan_type?: string
+          price_bdt?: number | null
           price_inr?: number
           product_limit?: number
           store_limit?: number
