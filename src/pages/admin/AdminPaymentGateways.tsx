@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, QrCode, CreditCard, Upload, Loader2, Zap, Hand, Settings2, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, QrCode, CreditCard, Upload, Loader2, Zap, Hand, Settings2, Link2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -171,6 +171,36 @@ const AdminPaymentGateways = () => {
     fetchGateways();
   };
 
+  const quickAddZinipay = async () => {
+    const exists = gateways.find(g => g.gateway_name?.toLowerCase().includes("zinipay"));
+    if (exists) {
+      toast.info("ZiniPay gateway already exists. Edit it instead.");
+      openEdit(exists);
+      return;
+    }
+    const payload = {
+      currency: "BDT",
+      gateway_name: "ZiniPay",
+      gateway_type: "redirect",
+      qr_code_url: "",
+      payment_details: {
+        info: "Pay via bKash, Nagad, Rocket, Upay or Card through ZiniPay secure checkout",
+      },
+      is_active: true,
+      sort_order: 0,
+      mode: "auto",
+      api_config: {
+        provider: "zinipay",
+        note: "API key is stored as ZINIPAY_API_KEY secret in Supabase Edge Functions",
+      },
+      icon_url: "https://zinipay.com/assets/img/logo.png",
+      required_fields: [],
+    };
+    await adminCall("create_payment_gateway", payload);
+    toast.success("ZiniPay gateway added! BDT users can now pay via bKash/Nagad/Card.");
+    fetchGateways();
+  };
+
   const addDetail = () => {
     if (!detailKey.trim()) return;
     setForm(f => ({ ...f, payment_details: { ...f.payment_details, [detailKey]: detailValue } }));
@@ -208,6 +238,9 @@ const AdminPaymentGateways = () => {
           <p className="text-slate-400 text-sm">Configure manual & automatic payment methods</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={quickAddZinipay} className="gap-2 border-pink-500/30 text-pink-400 hover:bg-pink-500/10">
+            <Sparkles className="h-4 w-4" /> Quick-Add ZiniPay
+          </Button>
           <Button variant="outline" onClick={() => navigate("/admin/auto-payments")} className="gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
             <Zap className="h-4 w-4" /> Auto Dashboard
           </Button>
