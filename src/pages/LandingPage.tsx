@@ -260,7 +260,7 @@ const LandingPage = () => {
   const [yearly, setYearly] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
-  const { getPriceINR: dynamicGetPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
+  const { getPriceINR: dynamicGetPriceINR, getPriceBDT: dynamicGetPriceBDT, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
 
   const renderPolicyContent = (text: string) => {
     if (!text) return <p>{get("policy_empty_text", "Content coming soon.")}</p>;
@@ -294,16 +294,26 @@ const LandingPage = () => {
   const getLandingPrice = (planKey: string): string => {
     if (planKey === "free") return "0";
     if (planKey === "custom") return get("plan_custom_price_label", "Custom");
-    const inr = dynamicGetPriceINR(planKey, selectedVolume);
-    let price = inr * RATES_FROM_INR[currency];
+    let price: number;
+    if (currency === "BDT") {
+      price = dynamicGetPriceBDT(planKey, selectedVolume);
+    } else {
+      const inr = dynamicGetPriceINR(planKey, selectedVolume);
+      price = inr * RATES_FROM_INR[currency];
+    }
     if (yearly) price = price * 12 * 0.8;
     return price.toFixed(currency === "USD" ? 2 : 0);
   };
 
   const getOriginalPrice = (planKey: string): string | null => {
     if (planKey === "free" || planKey === "custom" || !yearly) return null;
-    const inr = dynamicGetPriceINR(planKey, selectedVolume);
-    const price = inr * RATES_FROM_INR[currency] * 12;
+    let price: number;
+    if (currency === "BDT") {
+      price = dynamicGetPriceBDT(planKey, selectedVolume) * 12;
+    } else {
+      const inr = dynamicGetPriceINR(planKey, selectedVolume);
+      price = inr * RATES_FROM_INR[currency] * 12;
+    }
     return price.toFixed(currency === "USD" ? 2 : 0);
   };
 
