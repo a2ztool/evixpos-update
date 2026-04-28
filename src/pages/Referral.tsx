@@ -328,7 +328,7 @@ const Referral = () => {
         )}
 
         {/* ─── Stats Grid (premium) ─── */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
           {[
             { label: "Total Clicks", value: settings?.total_clicks || 0, icon: MousePointerClick, color: "text-rose-500", bg: "bg-rose-500/10", trend: null },
             { label: "Signups", value: totalSignups, icon: UserPlus, color: "text-blue-500", bg: "bg-blue-500/10", trend: `${conversionRate}% CR` },
@@ -336,19 +336,19 @@ const Referral = () => {
             { label: "Premium", value: premiumUsers, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", trend: `${premiumConversion}%` },
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
-            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-2xl h-full">
-              <CardContent className="p-5 h-full flex flex-col justify-between gap-3">
+            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-xl h-full">
+              <CardContent className="p-3 h-full flex flex-col justify-between gap-2">
                 <div className="flex items-center justify-between">
-                  <div className={`h-10 w-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="h-4 w-4" />
+                  <div className={`h-7 w-7 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="h-3.5 w-3.5" />
                   </div>
                   {stat.trend && (
-                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-semibold">{stat.trend}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 px-1 font-semibold">{stat.trend}</Badge>
                   )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
-                  <p className="text-xl font-bold tabular-nums leading-tight truncate">{stat.value}</p>
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
+                  <p className="text-base font-bold tabular-nums leading-tight truncate">{stat.value}</p>
                 </div>
               </CardContent>
             </Card>
