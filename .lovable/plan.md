@@ -1,89 +1,181 @@
 
+# ZiniPay BDT Payment Gateway — Full Production Build
 
-# Plan: Comprehensive Input Validation (Phased)
+ZiniPay redirect-based payment gateway-এর সম্পূর্ণ automation। ৬টি phase-এ বিভক্ত, প্রতিটি phase-এর শেষে testable state।
 
-## Goal
-সব ফর্মে **proper inline field-level validation** যোগ করা — শুধু toast-এ এক লাইনের error নয়, প্রতিটি input-এর নিচে red helper text + red border show হবে। এর সাথে real-time validation (typing-এর সময় error clear হবে) এবং submit-এর আগে full validation।
-
-বর্তমান অবস্থা: `validations.ts` (Zod schemas), `useFormValidation` hook, এবং `<FormField>` UI primitive আগে থেকেই আছে — কিন্তু বেশিরভাগ পেজ শুধু `validateWithToast` ব্যবহার করে toast দেখায়, inline error দেখায় না।
+API key: `21fd2796c86d674450752276fd6bad23db207482858e20d6` — `ZINIPAY_API_KEY` secret হিসেবে save হবে (codebase-এ hardcode করা হবে না)।
 
 ---
 
-## Phase 1 — Auth Module (highest priority)
+## Phase 1 — Database Schema & Secret
 
-**Pages:** `Auth.tsx` (Login + Signup tabs), `ResetPassword.tsx`, `admin/AdminLogin.tsx`, `admin/AdminSettings.tsx`.
+**Migration (schema only):**
+- `plans_config` table-এ `price_bdt numeric` column add (already-stored INR থেকে আলাদা, admin-controlled BDT price)
+- `plan_payments` table-এ ৪টি column add:
+  - `zinipay_invoice_id text`
+  - `zinipay_val_id text` (unique index)
+  - `zinipay_transaction_id text`
+  - `zinipay_payment_method text` (bkash/nagad/etc)
 
-**Changes:**
-- `useFormValidation(loginSchema)` / `signupSchema` / `resetPasswordSchema` use করে field-level errors track করা।
-- প্রতিটি `<Input>`-এর নিচে error message + `aria-invalid` + red border (`border-destructive`)।
-- Real-time clear: `onChange` হলে সেই field-এর error remove।
-- Email format, password strength (≥6), name (no URLs/numeric-only), referral code (max 8 alphanumeric) — সব already schema-তে আছে, inline দেখানো হবে।
-- Terms checkbox-এর জন্য আলাদা inline error (toast নয়)।
-- Server errors (e.g. "email already registered") schema error structure-এ map করে field-এর নিচে দেখানো হবে।
+**Secret:**
+- `ZINIPAY_API_KEY` add (Supabase Edge Functions secret)
 
-## Phase 2 — User Dashboard Pages
-
-**Targeted forms (input-heavy):**
-- `Products.tsx` — name, SKU, price, cost, stock, image URL, description
-- `Customers.tsx` — name, phone, email, address
-- `Suppliers.tsx` — name, phone, email
-- `Coupons.tsx` — code, value, min order, max uses
-- `Purchases.tsx` / `OnlineSuppliersPurchases.tsx` — supplier, amount, payment
-- `IncomeExpense.tsx` + `DueBook.tsx` — type, amount, category, note
-- `Onboarding.tsx` — store name, full name
-- `SettingsPage.tsx` — General/Business tab inputs (store name, phone, email, address)
-- `Integrations.tsx` (WhatsApp / WooCommerce keys)
-- `SupportPage.tsx` — subject, description, category, priority
-- `Subscriptions.tsx` — customer name, phone, product, price, dates
-- `LoyaltyPoints.tsx`, `CustomerCredits.tsx`, `OrderForms.tsx`, `AdCosts.tsx` — amounts, names
-
-**Pattern applied to each:**
-1. Replace `validateWithToast` with `useFormValidation(schema)`।
-2. প্রতিটি input wrap করা `<FormField label error={getError('field')}>`-এ অথবা inline `<p className="text-xs text-destructive">{getError('field')}</p>` যোগ করা।
-3. `onChange`-এ `clearField('field')` call।
-4. Submit হলে `validateAll(formData)` — false হলে first invalid field-এ scroll/focus।
-5. Numeric inputs (price, stock) — negative reject + paste sanitize।
-6. Phone fields — international format check (`phoneField`)।
-
-**New schemas to add in `validations.ts` for forms currently lacking one:**
-- `subscriptionSchema`, `loyaltyAdjustSchema`, `creditAdjustSchema`, `orderFormSchema`, `adCostSchema`, `businessSettingsSchema`, `storeSettingsSchema`।
-
-## Phase 3 — Staff Dashboard / Admin-side Forms
-
-**Pages:**
-- `StaffInbox.tsx` / `FloatingInbox.tsx` — message text (max length), task assign form (subscription name required, term, link order)।
-- POS pages (`POS.tsx`, `CashRegister.tsx`) — quantity, discount, customer info inline।
-- `admin/AdminUsers.tsx`, `AdminStores.tsx`, `AdminCoupons.tsx`, `AdminBroadcasts.tsx`, `AdminPlansPricing.tsx`, `AdminFeatureFlags.tsx`, `AdminPaymentGateways.tsx`, `AdminLandingEditor.tsx`, `AdminTemplates.tsx`, `AdminMaintenance.tsx` — সব admin CRUD forms।
-- Staff member create/edit form (name, email, phone, role)।
-
-**Same inline validation pattern as Phase 2 + admin-specific schemas (`broadcastSchema`, `planEditSchema`, `gatewayConfigSchema`, ইত্যাদি) যোগ করা।
+**Backfill:** existing INR price থেকে initial BDT price approximate (1 INR ≈ 1.45 BDT) — admin পরে adjust করতে পারবে।
 
 ---
 
-## Shared infrastructure tasks (Phase 1-এর শুরুতেই)
+## Phase 2 — Edge Function: zinipay-create-invoice
 
-1. `<Input>` (`components/ui/input.tsx`) এ optional `error?: boolean` prop যোগ — true হলে `border-destructive focus:ring-destructive`। (যাতে repeat না করতে হয় প্রতি জায়গায়)।
-2. `useFormValidation` hook-এ একটা helper `register(field)` যোগ করা যেটা return করে `{ 'aria-invalid', onBlur: validate-single-field }` — ergonomics-এর জন্য।
-3. Common `validateField(schema, field, value)` utility — single-field on-blur validation-এর জন্য।
+**File:** `supabase/functions/zinipay-create-invoice/index.ts` (verify_jwt = true)
+
+Flow:
+1. JWT validate করে user identify
+2. Body থেকে `plan` (pro/business), `volume`, `billing_type`, `coupon_code` নেয়
+3. **Server-side BDT price calculate** — `plans_config.price_bdt` থেকে; coupon থাকলে `coupons` table থেকে validate ও apply
+4. Generate `val_id = "EVX-{user_id_short}-{timestamp}"` (unique reference)
+5. Old pending payments (same user+plan) auto-expire
+6. `POST https://api.zinipay.com/v1/payment/create` call:
+   ```json
+   {
+     "cus_name": "<user name>",
+     "cus_email": "<user email>",
+     "amount": <final_bdt_amount>,
+     "metadata": { "plan": "pro", "volume": 1000, "billing": "monthly", "user_id": "..." },
+     "redirect_url": "https://evixpos.com/payment/zinipay/success?val_id=...",
+     "cancel_url": "https://evixpos.com/payment/zinipay/cancel?val_id=...",
+     "val_id": "EVX-...",
+     "webhook_url": "https://<project>.supabase.co/functions/v1/zinipay-webhook"
+   }
+   ```
+7. `plan_payments`-এ pending row insert (status=pending, gateway='zinipay', `zinipay_invoice_id`, `zinipay_val_id`, prices)
+8. Return `{ payment_url, val_id }` to frontend
 
 ---
 
-## Out of scope (for now)
-- Server-side validation rules (already enforced by Supabase RLS / DB constraints)।
-- Admin landing-page rich-text editor validation।
-- File upload size/type validation (separate concern)।
+## Phase 3 — Edge Function: zinipay-webhook + zinipay-verify-payment
+
+### `zinipay-webhook/index.ts` (verify_jwt = false)
+ZiniPay public ভাবে call করবে। Signature না থাকায় security এর জন্য double-verify:
+
+1. `invoice_id`, `val_id`, `status` extract করে (JSON body বা query param থেকে)
+2. **Always re-verify** — `POST /v1/payment/verify { invoice_id }` API call করে authoritative status নেয়
+3. ZiniPay response-এর status অনুযায়ী:
+   - `COMPLETED` → `plan_payments` update (status=approved, transaction_id, payment_method) + subscription activate (existing pattern from razorpay-webhook follow)
+   - `FAILED` → `plan_payments` update (status=rejected)
+   - `PENDING` → ignore (wait)
+4. Idempotent — already-approved row হলে skip
+
+### `zinipay-verify-payment/index.ts` (verify_jwt = true)
+User browser redirect হয়ে success page-এ আসলে call হবে — webhook fail করলেও safety net:
+
+1. JWT validate, user `val_id` দেয়
+2. `plan_payments` থেকে row fetch (user_id match check)
+3. ZiniPay `/v1/payment/verify` call
+4. COMPLETED হলে webhook এর মতই same approval logic run করে (idempotent)
+5. Return current status to frontend
+
+**`supabase/config.toml` update:**
+- `[functions.zinipay-create-invoice] verify_jwt = true`
+- `[functions.zinipay-webhook] verify_jwt = false`
+- `[functions.zinipay-verify-payment] verify_jwt = true`
 
 ---
 
-## Execution order
+## Phase 4 — Frontend: BDT Payment Modal & Pages
 
-```text
-Phase 1: Auth (Auth.tsx, ResetPassword, AdminLogin, AdminSettings) + shared Input/hook upgrade
-   ↓ ship & verify
-Phase 2: User dashboard forms (batch by domain — products/customers/suppliers first, then finance, then settings/integrations)
-   ↓ ship & verify
-Phase 3: Staff inbox + POS + admin CRUD pages
-```
+### New component: `src/components/ZinipayUpgradeModal.tsx`
+Existing `RazorpayUpgradeModal` এর design clone (same Plan Summary → Coupon → Pricing → CTA structure)। শুধু:
+- "Pay with ZiniPay (bKash, Nagad, Card)" branding
+- Click করলে `zinipay-create-invoice` call → response এর `payment_url`-এ `window.location.href` redirect
+- `val_id` `localStorage`-এ save করে (success page check করার জন্য)
 
-প্রতি phase শেষে আমি stop করব যাতে আপনি verify করতে পারেন, তারপর next phase শুরু হবে।
+### `src/pages/MyPlan.tsx` update:
+- BDT currency selected থাকলে → ZinipayUpgradeModal render
+- INR → existing RazorpayUpgradeModal
+- USD → existing PaymentModal (manual)
 
+### New pages:
+- `src/pages/payment/ZinipaySuccess.tsx` — `/payment/zinipay/success`
+  - Mount-এ `zinipay-verify-payment` call
+  - Status অনুযায়ী success/pending/failed UI
+  - "Go to My Plan" button (auto-redirect 5s পর)
+- `src/pages/payment/ZinipayCancel.tsx` — `/payment/zinipay/cancel`
+  - Cancel message + retry button
+
+### `src/App.tsx` routes add:
+- `/payment/zinipay/success` (protected)
+- `/payment/zinipay/cancel` (protected)
+
+---
+
+## Phase 5 — Admin Panel: BDT Pricing & Gateway Toggle
+
+### `src/pages/admin/AdminPlansPricing.tsx`:
+- প্রতিটি plan/volume row-এ `price_bdt` input field add (existing `price_inr` এর পাশে)
+- Save button update করে BDT price persist করে
+
+### `src/pages/admin/AdminPaymentGateways.tsx`:
+- ZiniPay gateway entry seed (currency=BDT, gateway_type='zinipay', is_active default true)
+- Admin enable/disable toggle support করবে
+- Frontend modal এই flag check করে BDT অপশন দেখাবে/hide করবে
+
+### `src/pages/admin/AdminPayments.tsx`:
+- ZiniPay transactions filter view + transaction_id, payment_method column display
+
+---
+
+## Phase 6 — QA & Production Checklist
+
+Implement-এর শেষে verify:
+1. Sandbox API key দিয়ে end-to-end test (create → redirect → webhook → activate)
+2. Webhook double-verify কাজ করছে (manually webhook fire করে দেখা)
+3. Browser redirect path (success page) verify call করছে
+4. Coupon discount BDT-তে সঠিক apply হচ্ছে
+5. Old pending payments auto-expire হচ্ছে
+6. Admin toggle BDT option hide/show করছে
+7. ZiniPay dashboard-এ `evixpos.com` redirect domain register করার reminder user-কে দেওয়া হবে
+8. Production-এ যাওয়ার আগে sandbox থেকে live API key swap করার instruction
+
+---
+
+## Technical Details
+
+**Files to create (8):**
+- `supabase/functions/zinipay-create-invoice/index.ts`
+- `supabase/functions/zinipay-webhook/index.ts`
+- `supabase/functions/zinipay-verify-payment/index.ts`
+- `src/components/ZinipayUpgradeModal.tsx`
+- `src/pages/payment/ZinipaySuccess.tsx`
+- `src/pages/payment/ZinipayCancel.tsx`
+- `src/lib/zinipayCheckout.ts` (helper for invoke + redirect)
+- Migration file (schema)
+
+**Files to modify (5):**
+- `supabase/config.toml` — 3 new function entries
+- `src/pages/MyPlan.tsx` — BDT branch → ZinipayUpgradeModal
+- `src/App.tsx` — new routes
+- `src/pages/admin/AdminPlansPricing.tsx` — BDT field
+- `src/pages/admin/AdminPaymentGateways.tsx` — ZiniPay row
+- `src/contexts/PlansConfigContext.tsx` — include `price_bdt` in select & types
+
+**Security guarantees:**
+- API key only in Supabase secret, never frontend
+- Server-side price calculation (no client trust)
+- Webhook always double-verifies via `/v1/payment/verify`
+- Idempotent approval (safe if webhook + redirect both fire)
+- `val_id` uniqueness prevents duplicate processing
+- RLS preserved on `plan_payments`
+
+**No external npm packages** — pure `fetch` to ZiniPay REST API।
+
+---
+
+## যা আপনার manually করতে হবে (একবার)
+
+1. **ZiniPay dashboard → Brands** এ গিয়ে redirect domain `evixpos.com` (এবং preview domain) register করুন
+2. **AdminPlansPricing** এ গিয়ে প্রতিটা plan-এর BDT price set করুন (default backfill হবে, কিন্তু আপনি adjust করতে পারবেন)
+3. Sandbox test pass হলে **production API key** আমাকে দিন, secret update করব
+
+---
+
+Approve করলে Phase 1 থেকে শুরু করব, প্রতিটা phase-এর শেষে testable হবে।
