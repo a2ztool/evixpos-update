@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import VideoModal from "@/components/VideoModal";
 import LandingChatbot from "@/components/LandingChatbot";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import InstallAppButton from "@/components/InstallAppButton";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
@@ -1574,6 +1575,7 @@ const LandingPage = () => {
         <VideoModal open={videoOpen} onOpenChange={setVideoOpen} videoUrl={get("hero_video_url")} videoType={get("hero_video_type", "youtube") as "youtube" | "mp4"} thumbnail={get("hero_video_thumbnail") || undefined} title={get("hero_video_title", "EvixPOS Product Demo")} />
       )}
       <LandingChatbot />
+      <ScrollToTopButton />
     </div>
   );
 };
