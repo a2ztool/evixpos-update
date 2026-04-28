@@ -207,13 +207,14 @@ const MyPlan = () => {
     // INR + Razorpay enabled by admin → coupon-first checkout modal. Otherwise → manual gateway modal.
     if (currency === "INR" && razorpayEnabled && (planDef.key === "pro" || planDef.key === "business")) {
       if (!user) { toast.error("Please log in to upgrade"); return; }
-      // Base INR price for the backend (yearly already includes 20% discount, no platform-coupon yet)
-      const baseInr = yearly ? priceINR * 12 * 0.8 : priceINR;
+      // Base INR price for the backend (yearly already includes 20% discount, no platform-coupon yet).
+      // Round to whole rupees so UI exactly matches server-side computation.
+      const baseInr = Math.round(yearly ? priceINR * 12 * 0.8 : priceINR);
       setRazorpayModal({
         open: true,
         planKey: planDef.key as "pro" | "business",
         planName: planDef.name,
-        basePriceINR: Math.round(baseInr * 100) / 100,
+        basePriceINR: baseInr,
         volume: selectedVolume,
         billingType: yearly ? "yearly" : "monthly",
       });
