@@ -14,6 +14,7 @@ interface PlanRow {
   plan_type: string;
   volume: number;
   price_inr: number;
+  price_bdt?: number;
   store_limit: number;
   product_limit: number;
   customer_limit: number;
@@ -239,6 +240,7 @@ const AdminPlansPricing = () => {
                       <tr className="text-slate-400 border-b border-slate-700">
                         <th className="text-left py-2 px-2">Volume</th>
                         <th className="text-left py-2 px-2">Price (₹/mo)</th>
+                        <th className="text-left py-2 px-2">Price (৳/mo)</th>
                         <th className="text-left py-2 px-2">Stores</th>
                         <th className="text-left py-2 px-2">Products</th>
                         <th className="text-left py-2 px-2">Customers</th>
@@ -261,6 +263,14 @@ const AdminPlansPricing = () => {
                                 type="number"
                                 value={row.price_inr}
                                 onChange={e => updateField(globalIdx, "price_inr", Number(e.target.value))}
+                                className="bg-slate-900 border-slate-600 text-white h-8 w-24"
+                              />
+                            </td>
+                            <td className="py-2 px-2">
+                              <Input
+                                type="number"
+                                value={row.price_bdt ?? 0}
+                                onChange={e => updateField(globalIdx, "price_bdt" as keyof PlanRow, Number(e.target.value))}
                                 className="bg-slate-900 border-slate-600 text-white h-8 w-24"
                               />
                             </td>
