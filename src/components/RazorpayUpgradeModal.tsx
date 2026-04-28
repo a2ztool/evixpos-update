@@ -104,6 +104,15 @@ const RazorpayUpgradeModal = ({
         setPaying(false);
         return;
       }
+      // CRITICAL: close our Radix Dialog before launching Razorpay.
+      // Radix's overlay traps focus and blocks pointer events outside its
+      // DialogContent, which would prevent typing in Razorpay's contact /
+      // OTP fields and clicking Continue. Razorpay manages its own overlay.
+      onOpenChange(false);
+      // Tiny delay so Radix unmount + scroll-lock cleanup fully runs
+      // before Razorpay paints its iframe on top.
+      await new Promise((r) => setTimeout(r, 120));
+
       await openRazorpayCheckout({
         ...order,
         planName,
@@ -111,7 +120,6 @@ const RazorpayUpgradeModal = ({
         onSuccess: () => {
           toast.success("Payment received! Activating your plan…");
           setPaying(false);
-          onOpenChange(false);
           onSuccess?.();
           setTimeout(() => window.location.reload(), 2500);
         },
