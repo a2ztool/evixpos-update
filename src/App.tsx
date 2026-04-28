@@ -58,6 +58,8 @@ const StaffInbox = lazyPage(() => import("./pages/StaffInbox"));
 const Suppliers = lazyPage(() => import("./pages/Suppliers"));
 const OnlineSuppliersPurchases = lazyPage(() => import("./pages/OnlineSuppliersPurchases"));
 const Inventory = lazyPage(() => import("./pages/Inventory"));
+const ZinipaySuccess = lazyPage(() => import("./pages/payment/ZinipaySuccess"));
+const ZinipayCancel = lazyPage(() => import("./pages/payment/ZinipayCancel"));
 const Purchases = lazyPage(() => import("./pages/Purchases"));
 const CashRegister = lazyPage(() => import("./pages/CashRegister"));
 const CustomerCredits = lazyPage(() => import("./pages/CustomerCredits"));
