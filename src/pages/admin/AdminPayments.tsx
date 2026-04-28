@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2, Timer, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Clock, Search, ExternalLink, Loader2, Timer, AlertTriangle, Trash2, Download, DollarSign, TrendingUp } from "lucide-react";
 
 interface PlanPayment {
   id: string; user_id: string; store_id: string | null; plan: string; amount: number; currency: string;
@@ -33,11 +35,14 @@ const AdminPayments = () => {
   const [selectedPayment, setSelectedPayment] = useState<PlanPayment | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; bulk: boolean } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchPayments = async () => {
     setLoading(true);
     const data = await adminCall("get_plan_payments");
-    setPayments(data || []); setLoading(false);
+    setPayments(data || []); setSelectedIds(new Set()); setLoading(false);
   };
 
   useEffect(() => { fetchPayments(); }, []);
@@ -52,6 +57,48 @@ const AdminPayments = () => {
     setActionLoading(false);
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      if (deleteTarget.bulk) {
+        await adminCall("bulk_delete_plan_payments", { payment_ids: deleteTarget.ids });
+        toast.success(`${deleteTarget.ids.length} payment(s) deleted`);
+      } else {
+        await adminCall("delete_plan_payment", { payment_id: deleteTarget.ids[0] });
+        toast.success("Payment deleted");
+      }
+      setDeleteTarget(null); setSelectedPayment(null); fetchPayments();
+    } catch (err: any) { toast.error(err.message || "Delete failed"); }
+    setDeleting(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelectedIds(next);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(p => p.id)));
+  };
+
+  const exportCSV = () => {
+    const rows = [["User", "Email", "Plan", "Amount", "Currency", "Gateway", "Txn ID", "Status", "Date"]];
+    filtered.forEach(p => rows.push([
+      p.user_name || "", p.user_email || "", p.plan, String(p.amount), p.currency,
+      p.gateway_name || "", p.transaction_id || "", p.status, new Date(p.created_at).toLocaleString(),
+    ]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `payments-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exported CSV");
+  };
+
   const filtered = payments.filter(p => {
     const matchSearch = !search || p.user_email?.toLowerCase().includes(search.toLowerCase()) || p.user_name?.toLowerCase().includes(search.toLowerCase()) || p.transaction_id?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || p.status === filterStatus;
@@ -59,6 +106,8 @@ const AdminPayments = () => {
   });
 
   const pendingCount = payments.filter(p => p.status === "pending").length;
+  const approvedCount = payments.filter(p => p.status === "approved").length;
+  const totalRevenue = payments.filter(p => p.status === "approved").reduce((s, p) => s + Number(p.amount || 0), 0);
   const currencySymbol = (c: string) => c === "BDT" ? "৳" : c === "INR" ? "₹" : "$";
 
   return (
@@ -68,7 +117,20 @@ const AdminPayments = () => {
           <h1 className="text-xl md:text-2xl font-bold text-white">Payments</h1>
           <p className="text-slate-400 text-xs mt-0.5">Review payment submissions</p>
         </div>
-        {pendingCount > 0 && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs px-2.5">{pendingCount} Pending</Badge>}
+        <div className="flex items-center gap-2">
+          {pendingCount > 0 && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs px-2.5">{pendingCount} Pending</Badge>}
+          <Button size="sm" variant="outline" onClick={exportCSV} className="border-slate-700 text-slate-300 rounded-xl h-9 hidden sm:flex">
+            <Download className="h-3.5 w-3.5 mr-1" /> Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-400" /><span className="text-xs text-slate-400">Pending</span></div><p className="text-lg font-bold text-white mt-1">{pendingCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><span className="text-xs text-slate-400">Approved</span></div><p className="text-lg font-bold text-white mt-1">{approvedCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-blue-400" /><span className="text-xs text-slate-400">Revenue</span></div><p className="text-lg font-bold text-white mt-1">{totalRevenue.toLocaleString()}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-400" /><span className="text-xs text-slate-400">Total</span></div><p className="text-lg font-bold text-white mt-1">{payments.length}</p></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -87,6 +149,19 @@ const AdminPayments = () => {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-3 py-2">
+          <span className="text-sm text-white">{selectedIds.size} selected</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="text-slate-400 h-8">Clear</Button>
+            <Button size="sm" variant="outline" onClick={() => setDeleteTarget({ ids: Array.from(selectedIds), bulk: true })} className="border-red-500/30 text-red-400 hover:bg-red-500/10 h-8">
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400" /></div>
       ) : (
@@ -96,26 +171,28 @@ const AdminPayments = () => {
             {filtered.length === 0 ? (
               <p className="text-center text-slate-500 py-8">No payments found</p>
             ) : filtered.map(p => (
-              <button key={p.id} onClick={() => { setSelectedPayment(p); setAdminNotes(p.admin_notes || ""); }}
-                className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-3.5 text-left active:scale-[0.98] transition-transform">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
+              <div key={p.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-3.5 flex gap-2.5">
+                <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="mt-1" />
+                <button onClick={() => { setSelectedPayment(p); setAdminNotes(p.admin_notes || ""); }} className="flex-1 text-left active:scale-[0.98] transition-transform min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-white truncate">{p.user_name || "Unknown"}</p>
                     <p className="text-xs text-slate-400 truncate mt-0.5">{p.user_email}</p>
+                    </div>
+                    <Badge variant="outline" className={`text-[10px] shrink-0 capitalize ${statusColors[p.status] || ""}`}>
+                      {p.status === "pending" && <Clock className="h-2.5 w-2.5 mr-0.5" />}
+                      {p.status}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] shrink-0 capitalize ${statusColors[p.status] || ""}`}>
-                    {p.status === "pending" && <Clock className="h-2.5 w-2.5 mr-0.5" />}
-                    {p.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-700/50">
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-white font-bold">{currencySymbol(p.currency)}{p.amount}</span>
                     <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-600 capitalize">{p.plan}</Badge>
                   </div>
                   <span className="text-[11px] text-slate-500">{new Date(p.created_at).toLocaleDateString()}</span>
-                </div>
-              </button>
+                  </div>
+                </button>
+              </div>
             ))}
           </div>
 
@@ -125,6 +202,7 @@ const AdminPayments = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="border-slate-700 hover:bg-transparent">
+                    <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} /></TableHead>
                     <TableHead className="text-slate-400">User</TableHead>
                     <TableHead className="text-slate-400">Plan</TableHead>
                     <TableHead className="text-slate-400">Amount</TableHead>
@@ -136,16 +214,22 @@ const AdminPayments = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-400">No payments found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-400">No payments found</TableCell></TableRow>
                   ) : filtered.map(p => (
                     <TableRow key={p.id} className="border-slate-700">
+                      <TableCell><Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
                       <TableCell><div><p className="text-white text-sm font-medium">{p.user_name || "Unknown"}</p><p className="text-slate-400 text-xs">{p.user_email}</p></div></TableCell>
                       <TableCell><Badge variant="outline" className="text-slate-300 border-slate-600 capitalize">{p.plan}</Badge></TableCell>
                       <TableCell className="text-white font-medium">{currencySymbol(p.currency)}{p.amount}</TableCell>
                       <TableCell className="text-slate-300 text-sm">{p.gateway_name || "N/A"}</TableCell>
                       <TableCell><Badge variant="outline" className={statusColors[p.status] || ""}>{p.status === "pending" && <Clock className="h-3 w-3 mr-1" />}{p.status === "approved" && <CheckCircle2 className="h-3 w-3 mr-1" />}{p.status === "rejected" && <XCircle className="h-3 w-3 mr-1" />}{p.status}</Badge></TableCell>
                       <TableCell className="text-slate-400 text-xs">{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={() => { setSelectedPayment(p); setAdminNotes(p.admin_notes || ""); }} className="text-slate-400 hover:text-white h-8 w-8"><Eye className="h-4 w-4" /></Button></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => { setSelectedPayment(p); setAdminNotes(p.admin_notes || ""); }} className="text-slate-400 hover:text-white h-8 w-8"><Eye className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ ids: [p.id], bulk: false })} className="text-slate-400 hover:text-red-400 h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -221,10 +305,32 @@ const AdminPayments = () => {
                   {selectedPayment.status === "approved" ? "✅ Approved" : "❌ Rejected"}
                 </Badge>
               )}
+
+              <Button variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 h-11 rounded-xl" onClick={() => setDeleteTarget({ ids: [selectedPayment.id], bulk: false })}>
+                <Trash2 className="h-4 w-4 mr-2" /> Delete Payment Record
+              </Button>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete payment{deleteTarget && deleteTarget.ids.length > 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This will permanently delete {deleteTarget?.ids.length || 0} payment record(s). This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />} Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
