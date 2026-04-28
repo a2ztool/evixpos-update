@@ -1702,14 +1702,14 @@ const SettingsPage = () => {
           {/* Premium desktop sidebar */}
           <div className="hidden lg:block">
             <Card className="border-border/50 sticky top-4">
-              <CardContent className="p-3 space-y-3">
+              <CardContent className="p-4 space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder={lang === "bn" ? "সেটিংস খুঁজুন..." : "Search settings..."}
                     value={tabSearch}
                     onChange={e => setTabSearch(e.target.value)}
-                    className="pl-9 h-9 text-sm bg-muted/30 border-border/50"
+                    className="pl-9 pr-3 h-10 text-sm bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/40"
                   />
                 </div>
 
