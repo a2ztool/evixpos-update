@@ -783,9 +783,16 @@ const MyPlan = () => {
                     <Button
                       className={`w-full bg-gradient-to-r ${p.gradient} text-white shadow-sm hover:shadow-md gap-1.5 group/btn`}
                       onClick={() => handleUpgrade(p)}
+                      disabled={processingPlanKey === p.key}
                     >
-                      {priceINR === 0 ? "Get Started" : "Upgrade Now"}
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+                      {processingPlanKey === p.key ? (
+                        <>Processing…</>
+                      ) : (
+                        <>
+                          {priceINR === 0 ? "Get Started" : "Upgrade Now"}
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+                        </>
+                      )}
                     </Button>
                   )}
 
