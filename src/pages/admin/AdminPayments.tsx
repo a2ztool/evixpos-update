@@ -127,10 +127,10 @@ const AdminPayments = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-400" /><span className="text-xs text-slate-400">Pending</span></div><p className="text-lg font-bold text-white mt-1">{pendingCount}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><span className="text-xs text-slate-400">Approved</span></div><p className="text-lg font-bold text-white mt-1">{approvedCount}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-blue-400" /><span className="text-xs text-slate-400">Revenue</span></div><p className="text-lg font-bold text-white mt-1">{totalRevenue.toLocaleString()}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="p-3"><div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-400" /><span className="text-xs text-slate-400">Total</span></div><p className="text-lg font-bold text-white mt-1">{payments.length}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-400" /><span className="text-xs text-slate-400">Pending</span></div><p className="text-xl font-bold text-white mt-1.5">{pendingCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><span className="text-xs text-slate-400">Approved</span></div><p className="text-xl font-bold text-white mt-1.5">{approvedCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-blue-400" /><span className="text-xs text-slate-400">Revenue</span></div><p className="text-xl font-bold text-white mt-1.5">{totalRevenue.toLocaleString()}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-400" /><span className="text-xs text-slate-400">Total</span></div><p className="text-xl font-bold text-white mt-1.5">{payments.length}</p></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -140,10 +140,16 @@ const AdminPayments = () => {
           <Input className="pl-9 h-10 bg-slate-800 border-slate-700 text-white rounded-xl" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {["all", "pending", "approved", "rejected", "expired"].map(s => (
-            <Button key={s} size="sm" variant={filterStatus === s ? "default" : "outline"} onClick={() => setFilterStatus(s)}
-              className={`text-xs capitalize shrink-0 rounded-xl h-10 px-3 ${filterStatus === s ? "bg-emerald-600 hover:bg-emerald-700 border-0" : "border-slate-700 text-slate-300"}`}>
-              {s}
+          {([
+            { k: "all", active: "bg-emerald-600 hover:bg-emerald-700 text-white border-0" },
+            { k: "pending", active: "bg-amber-500 hover:bg-amber-600 text-white border-0" },
+            { k: "approved", active: "bg-emerald-600 hover:bg-emerald-700 text-white border-0" },
+            { k: "rejected", active: "bg-red-600 hover:bg-red-700 text-white border-0" },
+            { k: "expired", active: "bg-slate-600 hover:bg-slate-500 text-white border-0" },
+          ]).map(({ k, active }) => (
+            <Button key={k} size="sm" variant={filterStatus === k ? "default" : "outline"} onClick={() => setFilterStatus(k)}
+              className={`text-xs capitalize shrink-0 rounded-xl h-10 px-4 ${filterStatus === k ? active : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"}`}>
+              {k}
             </Button>
           ))}
         </div>
