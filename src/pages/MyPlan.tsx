@@ -171,6 +171,27 @@ const MyPlan = () => {
     open: false, planKey: "", planName: "", amount: 0, volume: 500 as VolumeStep, billingType: "monthly",
   });
   const [processingPlanKey, setProcessingPlanKey] = useState<string | null>(null);
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+
+  // Watch admin-controlled Razorpay gateway toggle (INR + automatic mode)
+  useEffect(() => {
+    const fetchFlag = async () => {
+      const { data } = await supabase
+        .from("payment_gateways")
+        .select("id")
+        .eq("currency", "INR")
+        .eq("is_active", true)
+        .ilike("gateway_name", "razorpay")
+        .maybeSingle();
+      setRazorpayEnabled(!!data);
+    };
+    fetchFlag();
+    const ch = supabase
+      .channel("razorpay-flag")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways" }, fetchFlag)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const handleUpgrade = async (planDef: PlanDef) => {
     const priceINR = getINRPrice(planDef.key);
@@ -180,8 +201,8 @@ const MyPlan = () => {
     if (discountPct > 0) price = price * (1 - discountPct / 100);
     if (discountFixed > 0) price = Math.max(0, price - discountFixed);
 
-    // INR → Razorpay live checkout. Other currencies → manual gateway modal.
-    if (currency === "INR" && (planDef.key === "pro" || planDef.key === "business")) {
+    // INR + Razorpay enabled by admin → live checkout. Otherwise → manual gateway modal.
+    if (currency === "INR" && razorpayEnabled && (planDef.key === "pro" || planDef.key === "business")) {
       if (!user) { toast.error("Please log in to upgrade"); return; }
       setProcessingPlanKey(planDef.key);
       const billingType: "monthly" | "yearly" = yearly ? "yearly" : "monthly";
