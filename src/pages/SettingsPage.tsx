@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Settings as SettingsIcon, CreditCard, DollarSign, Languages, UsersRound,
-  Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
+  Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff, Pencil,
   Smartphone, Landmark, Globe, Wallet, Search, Download, Upload, FileDown, FileUp, AlertTriangle, Crown,
   QrCode, MessageSquare, Key, User as UserIcon, Sparkles, BookOpen, HelpCircle, X, Lightbulb,
   CheckCircle2, Zap, Lock, KeyRound
