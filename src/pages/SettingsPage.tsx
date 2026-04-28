@@ -1702,7 +1702,12 @@ const SettingsPage = () => {
           {/* Premium desktop sidebar */}
           <div className="hidden lg:block">
             <Card className="border-border/50 sticky top-4">
-              <CardContent className="p-4 space-y-4">
+              <CardContent className="p-3 space-y-3">
+                <div className="px-1 pt-1 pb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "bn" ? "সেটিংস মেনু" : lang === "hi" ? "सेटिंग्स मेनू" : "Settings Menu"}
+                  </p>
+                </div>
                 <div className="space-y-1">
                   {filteredTabs.map(tab => {
                     const Icon = tab.icon;
