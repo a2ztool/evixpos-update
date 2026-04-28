@@ -669,7 +669,7 @@ const LandingPage = () => {
             <Badge variant="outline" className="mb-5 text-destructive border-destructive/30 bg-destructive/5 backdrop-blur-sm px-3.5 py-1.5 rounded-full font-medium">
               <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-5 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent lg:text-4xl">
               {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
