@@ -433,8 +433,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
 
         {/* Expiry Info */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-          <Timer className="h-3.5 w-3.5" />
-          <span>Payment submit করার পর ১ ঘন্টার মধ্যে Admin verify করবে। সময় পার হলে আবার submit করতে হবে।</span>
+          <Timer className="h-3.5 w-3.5 shrink-0" />
+          <span>We manually verify payments for accuracy. Your plan will be activated within 5–10 minutes.</span>
         </div>
 
         {gateways.length === 0 ? (
