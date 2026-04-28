@@ -648,31 +648,38 @@ const MyPlan = () => {
           </Card>
         )}
 
-        <div className="flex justify-center gap-2">
-          {(["BDT", "USD", "INR"] as const).map((c) => (
-            <Button
-              key={c}
-              variant={currency === c ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrency(c)}
-              className="rounded-full px-5"
-            >
-              {c} ({CURRENCY_SYMBOLS[c]})
-            </Button>
-          ))}
-          <span className="text-xs text-muted-foreground self-center ml-2">
-            (1 INR ≈ {(RATES_FROM_INR.BDT).toFixed(2)} BDT ≈ {(RATES_FROM_INR.USD).toFixed(4)} USD)
-          </span>
-        </div>
-
-        {/* Volume Slider — SaaS highlighted */}
-        <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-primary/60 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.45)]">
-          <Card className="border-0 rounded-[14px] bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
+        {/* Volume Slider — SaaS highlighted (with currency selector inside) */}
+        <div className="relative rounded-lg p-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-primary/60 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.45)]">
+          <Card className="border-0 rounded-[7px] bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
             <CardContent className="p-4 sm:p-7 relative">
               <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
               <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-              <div className="relative flex flex-col items-center text-center mb-4 sm:mb-6">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold mb-2">
+
+              {/* Currency selector — inline pills inside card */}
+              <div className="relative flex flex-wrap items-center justify-center sm:justify-between gap-2 mb-4 sm:mb-5">
+                <div className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
+                  {(["BDT", "USD", "INR"] as const).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCurrency(c)}
+                      className={`text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded transition-all ${
+                        currency === c
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {c} ({CURRENCY_SYMBOLS[c]})
+                    </button>
+                  ))}
+                </div>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">
+                  1 INR ≈ {(RATES_FROM_INR.BDT).toFixed(2)} BDT ≈ {(RATES_FROM_INR.USD).toFixed(4)} USD
+                </span>
+              </div>
+
+              <div className="relative flex flex-col items-center text-center mb-4 sm:mb-5">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold mb-2">
                   <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Customer Volume
                 </div>
                 <h3 className="font-bold text-base sm:text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Select Customer Volume</h3>
@@ -704,7 +711,7 @@ const MyPlan = () => {
                       key={l}
                       type="button"
                       onClick={() => setVolumeIndex([i])}
-                      className={`text-[10px] sm:text-xs font-semibold py-1 sm:py-1.5 rounded-md transition-all ${
+                      className={`text-[10px] sm:text-xs font-semibold py-1 sm:py-1.5 rounded transition-all ${
                         active
                           ? "bg-primary text-primary-foreground shadow-md scale-105"
                           : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
