@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Settings as SettingsIcon, CreditCard, DollarSign, Languages, UsersRound,
   Store, UserCircle, ChevronRight, Plus, Trash2, Save, Shield, Eye, EyeOff,
@@ -582,8 +583,29 @@ const SettingsPage = () => {
     if (data) { setStores(prev => [...prev, data]); setNewStore({ name: "", address: "", phone: "" }); setStoreDialog(false); toast.success("Store added!"); }
   };
   const removeStore = async (id: string) => {
-    await supabase.from("stores").delete().eq("id", id);
+    // Frontend safety: never let user delete their last store
+    if (stores.length <= 1) {
+      toast.error(
+        plan === "free"
+          ? (lang === "bn" ? "ফ্রি প্ল্যানে আপনার একমাত্র স্টোর ডিলিট করা যাবে না" : "Free plan users cannot delete their only store")
+          : (lang === "bn" ? "কমপক্ষে ১টি স্টোর থাকা আবশ্যক" : "At least 1 store is required")
+      );
+      return;
+    }
+    if (deletingStoreId) return; // race-condition guard
+    const target = stores.find(s => s.id === id);
+    if (!target) return;
+    if (!confirm(lang === "bn" ? `"${target.name}" ডিলিট করতে চান?` : `Delete "${target.name}"?`)) return;
+
+    setDeletingStoreId(id);
+    const { error } = await supabase.from("stores").delete().eq("id", id);
+    setDeletingStoreId(null);
+    if (error) {
+      toast.error(error.message || (lang === "bn" ? "ডিলিট ব্যর্থ হয়েছে" : "Delete failed"));
+      return;
+    }
     setStores(prev => prev.filter(s => s.id !== id));
+    toast.success(lang === "bn" ? "স্টোর ডিলিট হয়েছে" : "Store deleted");
   };
   const setDefaultStore = async (id: string) => {
     if (!user) return;
