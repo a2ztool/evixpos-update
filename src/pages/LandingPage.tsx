@@ -659,108 +659,165 @@ const LandingPage = () => {
         </div>
       </section>}
 
-      {show("pain_points") && <section id="pain-points" className="py-12 sm:py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,hsl(var(--muted)/0.5),transparent)]" />
+      {show("pain_points") && <section id="pain-points" className="py-20 sm:py-28 relative overflow-hidden">
+        {/* Premium ambient background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_30%,hsl(var(--destructive)/0.07),transparent_60%),radial-gradient(ellipse_60%_50%_at_80%_70%,hsl(var(--primary)/0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.4)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_30%,transparent_80%)] opacity-30" />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <AnimSection className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="outline" className="mb-4 text-destructive border-destructive/30 px-3 py-1.5">
+          <AnimSection className="text-center max-w-3xl mx-auto mb-14 sm:mb-20">
+            <Badge variant="outline" className="mb-5 text-destructive border-destructive/30 bg-destructive/5 backdrop-blur-sm px-3.5 py-1.5 rounded-full font-medium">
               <AlertTriangle className="h-3 w-3 mr-1.5" /> {get("pain_badge", "The Problem")}
             </Badge>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-5">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-5 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
               {get("pain_title", "Running Online + Offline Shouldn't Feel Like Two Jobs")}
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
               {get("pain_subtitle", "You sell online and from a physical counter — but you're using separate tools for each. Disconnected data, missed sales, and zero visibility into real profits.")}
             </p>
           </AnimSection>
 
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
+          <div className="relative grid lg:grid-cols-2 gap-6 lg:gap-8">
+            {/* VS divider (desktop) */}
+            <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 items-center justify-center">
+              <div className="relative w-14 h-14 rounded-full bg-background border border-border shadow-xl shadow-primary/10 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-destructive/20 via-transparent to-primary/20 blur-md" />
+                <span className="relative text-xs font-bold tracking-wider text-muted-foreground">VS</span>
+              </div>
+            </div>
+
             {/* OLD WAY */}
             <AnimItem>
-              <div className="relative rounded-2xl border-2 border-destructive/20 bg-gradient-to-b from-destructive/5 to-card overflow-hidden h-full">
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-destructive/10 bg-destructive/5">
-                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center"><Clock className="h-4 w-4 text-destructive" /></div>
-                  <span className="font-bold text-destructive text-sm">🕐 {get("pain_old_title", "Without EvixPOS")}</span>
-                </div>
-                {get("pain_old_image") && (
-                  <div className="px-6 pt-4"><img src={get("pain_old_image")} alt="Old way" className="w-full rounded-xl border border-destructive/10" loading="lazy" /></div>
-                )}
-                <div className="p-6 grid grid-cols-2 gap-4">
-                  {[
-                     { label: get("pain_metric_1_label", "Tools Used"), val: get("pain_metric_1_val", "5+ Apps") },
-                     { label: get("pain_metric_2_label", "Data Sync"), val: get("pain_metric_2_val", "Manual") },
-                     { label: get("pain_metric_3_label", "Profit Visibility"), val: get("pain_metric_3_val", "Guesswork") },
-                     { label: get("pain_metric_4_label", "Time Wasted"), val: get("pain_metric_4_val", "5+ Hrs/Day") },
-                  ].map((m, i) => (
-                    <div key={i} className="bg-destructive/5 rounded-xl p-4 border border-destructive/10">
-                      <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
-                      <div className="text-lg font-black text-destructive">{m.val}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-6 pb-6 space-y-3">
-                  {[1, 2, 3, 4].map(i => {
-                    const text = get(`pain_${i}_title`);
-                    if (!text) return null;
-                    return (
-                      <div key={i} className="flex items-start gap-3 text-sm">
-                        <X className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold">{text}</span>
-                          {get(`pain_${i}_desc`) && <p className="text-muted-foreground text-xs mt-0.5">{get(`pain_${i}_desc`)}</p>}
-                        </div>
+              <div className="group relative rounded-3xl h-full">
+                {/* gradient border */}
+                <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-destructive/30 via-destructive/10 to-transparent opacity-70" aria-hidden />
+                <div className="relative rounded-3xl bg-card/80 backdrop-blur-xl overflow-hidden h-full border border-destructive/10">
+                  {/* top accent */}
+                  <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-destructive/50 to-transparent" />
+                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-destructive/10 blur-3xl" />
+
+                  <div className="relative flex items-center justify-between px-7 py-5 border-b border-destructive/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center shadow-inner">
+                        <Clock className="h-4 w-4 text-destructive" />
                       </div>
-                    );
-                  })}
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.18em] text-destructive/70 font-semibold">Before</div>
+                        <span className="font-bold text-foreground text-base leading-tight">{get("pain_old_title", "Without EvixPOS")}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-destructive/40" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-destructive/40" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                    </div>
+                  </div>
+
+                  {get("pain_old_image") && (
+                    <div className="px-7 pt-5"><img src={get("pain_old_image")} alt="Old way" className="w-full rounded-2xl border border-destructive/10" loading="lazy" /></div>
+                  )}
+
+                  <div className="p-7 grid grid-cols-2 gap-3">
+                    {[
+                       { label: get("pain_metric_1_label", "Tools Used"), val: get("pain_metric_1_val", "5+ Apps") },
+                       { label: get("pain_metric_2_label", "Data Sync"), val: get("pain_metric_2_val", "Manual") },
+                       { label: get("pain_metric_3_label", "Profit Visibility"), val: get("pain_metric_3_val", "Guesswork") },
+                       { label: get("pain_metric_4_label", "Time Wasted"), val: get("pain_metric_4_val", "5+ Hrs/Day") },
+                    ].map((m, i) => (
+                      <div key={i} className="relative rounded-2xl p-4 bg-gradient-to-br from-destructive/[0.06] to-transparent border border-destructive/10 hover:border-destructive/25 transition-colors">
+                        <div className="text-[11px] text-muted-foreground/80 mb-1.5 font-medium">{m.label}</div>
+                        <div className="text-xl font-bold text-destructive tracking-tight">{m.val}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="px-7 pb-7 space-y-3.5">
+                    {[1, 2, 3, 4].map(i => {
+                      const text = get(`pain_${i}_title`);
+                      if (!text) return null;
+                      return (
+                        <div key={i} className="flex items-start gap-3 text-sm group/item">
+                          <div className="mt-0.5 w-5 h-5 rounded-md bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
+                            <X className="h-3 w-3 text-destructive" strokeWidth={3} />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground/90">{text}</span>
+                            {get(`pain_${i}_desc`) && <p className="text-muted-foreground text-xs mt-1 leading-relaxed">{get(`pain_${i}_desc`)}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </AnimItem>
 
             {/* NEW WAY */}
             <AnimItem delay={0.15}>
-              <div className="relative rounded-2xl border-2 border-primary/20 bg-gradient-to-b from-primary/5 to-card overflow-hidden h-full">
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-primary/5">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Sparkles className="h-4 w-4 text-primary" /></div>
-                  <span className="font-bold text-primary text-sm">✨ {get("pain_new_title", "With EvixPOS")}</span>
-                </div>
-                {get("pain_new_image") && (
-                  <div className="px-6 pt-4"><img src={get("pain_new_image")} alt="New way" className="w-full rounded-xl border border-primary/10" loading="lazy" /></div>
-                )}
-                <div className="p-6 grid grid-cols-2 gap-4">
-                  {[
-                     { label: get("solution_metric_1_label", "One Panel"), val: get("solution_metric_1_val", "Online + Offline") },
-                     { label: get("solution_metric_2_label", "Data Sync"), val: get("solution_metric_2_val", "Real-Time") },
-                     { label: get("solution_metric_3_label", "Profit View"), val: get("solution_metric_3_val", "Instant") },
-                     { label: get("solution_metric_4_label", "Time Saved"), val: get("solution_metric_4_val", "4+ Hrs/Day") },
-                  ].map((m, i) => (
-                    <div key={i} className="bg-primary/5 rounded-xl p-4 border border-primary/10">
-                      <div className="text-xs text-muted-foreground mb-1">{m.label}</div>
-                      <div className="text-lg font-black text-primary">{m.val}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-6 pb-6 space-y-3">
-                  {[1, 2, 3, 4].map(i => {
-                    const text = get(`solution_${i}_title`);
-                    if (!text) return null;
-                    return (
-                      <div key={i} className="flex items-start gap-3 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold">{text}</span>
-                          {get(`solution_${i}_desc`) && <p className="text-muted-foreground text-xs mt-0.5">{get(`solution_${i}_desc`)}</p>}
-                        </div>
+              <div className="group relative rounded-3xl h-full">
+                {/* premium glow */}
+                <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-primary/40 via-primary/15 to-transparent opacity-80" aria-hidden />
+                <div className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl opacity-50 -z-10" aria-hidden />
+                <div className="relative rounded-3xl bg-card/80 backdrop-blur-xl overflow-hidden h-full border border-primary/15 shadow-xl shadow-primary/5">
+                  <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+                  <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+
+                  <div className="relative flex items-center justify-between px-7 py-5 border-b border-primary/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner">
+                        <Sparkles className="h-4 w-4 text-primary" />
                       </div>
-                    );
-                  })}
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.18em] text-primary/80 font-semibold">After</div>
+                        <span className="font-bold text-foreground text-base leading-tight">{get("pain_new_title", "With EvixPOS")}</span>
+                      </div>
+                    </div>
+                    <Badge className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 rounded-full text-[10px] font-bold tracking-wider px-2.5 py-0.5 uppercase">Recommended</Badge>
+                  </div>
+
+                  {get("pain_new_image") && (
+                    <div className="px-7 pt-5"><img src={get("pain_new_image")} alt="New way" className="w-full rounded-2xl border border-primary/10" loading="lazy" /></div>
+                  )}
+
+                  <div className="p-7 grid grid-cols-2 gap-3">
+                    {[
+                       { label: get("solution_metric_1_label", "One Panel"), val: get("solution_metric_1_val", "Online + Offline") },
+                       { label: get("solution_metric_2_label", "Data Sync"), val: get("solution_metric_2_val", "Real-Time") },
+                       { label: get("solution_metric_3_label", "Profit View"), val: get("solution_metric_3_val", "Instant") },
+                       { label: get("solution_metric_4_label", "Time Saved"), val: get("solution_metric_4_val", "4+ Hrs/Day") },
+                    ].map((m, i) => (
+                      <div key={i} className="relative rounded-2xl p-4 bg-gradient-to-br from-primary/[0.08] to-transparent border border-primary/15 hover:border-primary/30 transition-colors">
+                        <div className="text-[11px] text-muted-foreground/80 mb-1.5 font-medium">{m.label}</div>
+                        <div className="text-xl font-bold text-primary tracking-tight">{m.val}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="px-7 pb-7 space-y-3.5">
+                    {[1, 2, 3, 4].map(i => {
+                      const text = get(`solution_${i}_title`);
+                      if (!text) return null;
+                      return (
+                        <div key={i} className="flex items-start gap-3 text-sm">
+                          <div className="mt-0.5 w-5 h-5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-foreground/90">{text}</span>
+                            {get(`solution_${i}_desc`) && <p className="text-muted-foreground text-xs mt-1 leading-relaxed">{get(`solution_${i}_desc`)}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </AnimItem>
           </div>
 
           {/* Transition CTA */}
-          <AnimSection className="text-center mt-8" delay={0.2}>
-            <Button size="lg" onClick={() => navigate("/auth")} className="gap-2 rounded-xl shadow-lg shadow-primary/20 px-8">
+          <AnimSection className="text-center mt-12" delay={0.2}>
+            <Button size="lg" onClick={() => navigate("/auth")} className="gap-2 rounded-full shadow-2xl shadow-primary/30 px-8 h-12 bg-gradient-to-b from-primary to-primary/90 hover:from-primary hover:to-primary font-semibold">
               {get("pain_cta", "Unify Your Business Today")} <ArrowRight className="h-4 w-4" />
             </Button>
           </AnimSection>
