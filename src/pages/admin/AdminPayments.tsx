@@ -112,25 +112,26 @@ const AdminPayments = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-bold text-white">Payments</h1>
           <p className="text-slate-400 text-xs mt-0.5">Review payment submissions</p>
         </div>
-        <div className="flex items-center gap-2">
-          {pendingCount > 0 && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs px-2.5">{pendingCount} Pending</Badge>}
-          <Button size="sm" variant="outline" onClick={exportCSV} className="border-slate-700 text-slate-300 rounded-xl h-9 hidden sm:flex">
-            <Download className="h-3.5 w-3.5 mr-1" /> Export
+        <div className="flex items-center gap-1.5 shrink-0">
+          {pendingCount > 0 && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] sm:text-xs px-2 py-0.5">{pendingCount} Pending</Badge>}
+          <Button size="sm" variant="outline" onClick={exportCSV} className="border-slate-700 text-slate-300 rounded-xl h-9 px-2.5 sm:px-3">
+            <Download className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-400" /><span className="text-xs text-slate-400">Pending</span></div><p className="text-xl font-bold text-white mt-1.5">{pendingCount}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><span className="text-xs text-slate-400">Approved</span></div><p className="text-xl font-bold text-white mt-1.5">{approvedCount}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-blue-400" /><span className="text-xs text-slate-400">Revenue</span></div><p className="text-xl font-bold text-white mt-1.5">{totalRevenue.toLocaleString()}</p></CardContent></Card>
-        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-4"><div className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-400" /><span className="text-xs text-slate-400">Total</span></div><p className="text-xl font-bold text-white mt-1.5">{payments.length}</p></CardContent></Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-2.5">
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-3 md:!p-4"><div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-amber-400 shrink-0" /><span className="text-[11px] md:text-xs text-slate-400 truncate">Pending</span></div><p className="text-base md:text-xl font-bold text-white mt-1">{pendingCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-3 md:!p-4"><div className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-400 shrink-0" /><span className="text-[11px] md:text-xs text-slate-400 truncate">Approved</span></div><p className="text-base md:text-xl font-bold text-white mt-1">{approvedCount}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-3 md:!p-4"><div className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-400 shrink-0" /><span className="text-[11px] md:text-xs text-slate-400 truncate">Revenue</span></div><p className="text-base md:text-xl font-bold text-white mt-1 truncate">{totalRevenue.toLocaleString()}</p></CardContent></Card>
+        <Card className="bg-slate-800 border-slate-700"><CardContent className="!p-3 md:!p-4"><div className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-400 shrink-0" /><span className="text-[11px] md:text-xs text-slate-400 truncate">Total</span></div><p className="text-base md:text-xl font-bold text-white mt-1">{payments.length}</p></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -139,7 +140,7 @@ const AdminPayments = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input className="pl-9 h-10 bg-slate-800 border-slate-700 text-white rounded-xl" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
           {([
             { k: "all", active: "bg-emerald-600 hover:bg-emerald-700 text-white border-0" },
             { k: "pending", active: "bg-amber-500 hover:bg-amber-600 text-white border-0" },
@@ -148,7 +149,7 @@ const AdminPayments = () => {
             { k: "expired", active: "bg-slate-600 hover:bg-slate-500 text-white border-0" },
           ]).map(({ k, active }) => (
             <Button key={k} size="sm" variant={filterStatus === k ? "default" : "outline"} onClick={() => setFilterStatus(k)}
-              className={`text-xs capitalize shrink-0 rounded-xl h-10 px-4 ${filterStatus === k ? active : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"}`}>
+              className={`text-xs capitalize shrink-0 rounded-xl h-9 md:h-10 px-3 md:px-4 ${filterStatus === k ? active : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white"}`}>
               {k}
             </Button>
           ))}
@@ -177,8 +178,8 @@ const AdminPayments = () => {
             {filtered.length === 0 ? (
               <p className="text-center text-slate-500 py-8">No payments found</p>
             ) : filtered.map(p => (
-              <div key={p.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-3.5 flex gap-2.5">
-                <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="mt-1" />
+              <div key={p.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-3 flex gap-2.5">
+                <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="mt-1 shrink-0" />
                 <button onClick={() => { setSelectedPayment(p); setAdminNotes(p.admin_notes || ""); }} className="flex-1 text-left active:scale-[0.98] transition-transform min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -198,6 +199,7 @@ const AdminPayments = () => {
                   <span className="text-[11px] text-slate-500">{new Date(p.created_at).toLocaleDateString()}</span>
                   </div>
                 </button>
+                <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ ids: [p.id], bulk: false })} className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 shrink-0 self-start"><Trash2 className="h-4 w-4" /></Button>
               </div>
             ))}
           </div>
