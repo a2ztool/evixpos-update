@@ -11,6 +11,7 @@ import {
   rememberPendingValId,
 } from "@/lib/zinipayCheckout";
 import { useAuth } from "@/contexts/AuthContext";
+import ZinipayPaymentDialog from "./ZinipayPaymentDialog";
 
 interface PlatformCoupon {
   id: string;
@@ -36,13 +37,15 @@ interface Props {
 }
 
 const ZinipayUpgradeModal = ({
-  open, onOpenChange, planKey, planName, volume, billingType, basePriceBDT,
+  open, onOpenChange, planKey, planName, volume, billingType, basePriceBDT, onSuccess,
 }: Props) => {
   const { user } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [applying, setApplying] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payInfo, setPayInfo] = useState<{ url: string; valId: string; amount: number } | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -128,11 +131,9 @@ const ZinipayUpgradeModal = ({
       // Remember val_id so success page can verify
       rememberPendingValId(invoice.val_id);
 
-      toast.success("Redirecting to ZiniPay…");
-      // Small delay so toast is visible
-      setTimeout(() => {
-        window.location.href = invoice.payment_url;
-      }, 400);
+      setPayInfo({ url: invoice.payment_url, valId: invoice.val_id, amount: invoice.final_amount });
+      setPayOpen(true);
+      setPaying(false);
     } catch (e: any) {
       setPaying(false);
       toast.error(e?.message || "Could not start payment. Please retry.");
@@ -140,6 +141,7 @@ const ZinipayUpgradeModal = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !paying && onOpenChange(o)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -235,7 +237,7 @@ const ZinipayUpgradeModal = ({
           disabled={paying || applying}
         >
           {paying ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting…</>
+            <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</>
           ) : (
             <><ShieldCheck className="h-4 w-4" /> Proceed to Payment · {fmt(finalPrice)}</>
           )}
@@ -245,6 +247,24 @@ const ZinipayUpgradeModal = ({
         </p>
       </DialogContent>
     </Dialog>
+
+    {payInfo && (
+      <ZinipayPaymentDialog
+        open={payOpen}
+        onOpenChange={(o) => {
+          setPayOpen(o);
+          if (!o) {
+            // Close the upgrade modal too after payment dialog closes
+            onOpenChange(false);
+          }
+        }}
+        paymentUrl={payInfo.url}
+        valId={payInfo.valId}
+        amount={payInfo.amount}
+        onSuccess={onSuccess}
+      />
+    )}
+    </>
   );
 };
 
