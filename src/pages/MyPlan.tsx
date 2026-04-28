@@ -167,6 +167,7 @@ const MyPlan = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [activeBanner, setActiveBanner] = useState<PlatformCoupon | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [expandedFeatures, setExpandedFeatures] = useState<Record<string, boolean>>({});
   const [paymentModal, setPaymentModal] = useState<{ open: boolean; planKey: string; planName: string; amount: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
     open: false, planKey: "", planName: "", amount: 0, volume: 500 as VolumeStep, billingType: "monthly",
   });
