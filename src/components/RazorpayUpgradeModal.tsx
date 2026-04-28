@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Tag, Check, X, ShieldCheck, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createRazorpayOrder, redirectToRazorpayHosted } from "@/lib/razorpayCheckout";
+import { createRazorpayOrder, openRazorpayCheckout } from "@/lib/razorpayCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PlatformCoupon {
@@ -104,16 +104,30 @@ const RazorpayUpgradeModal = ({
         setPaying(false);
         return;
       }
-      // Redirect the user to Razorpay's fully hosted checkout page.
-      // Branding (logo, theme color, font) comes from the Razorpay Dashboard.
-      if (!order.payment_link_url) {
-        toast.error("Could not get Razorpay checkout URL. Please retry.");
-        setPaying(false);
-        return;
-      }
-      toast.success("Redirecting to secure Razorpay checkout…");
+      // Close our Radix Dialog before opening Razorpay popup so its overlay
+      // doesn't trap focus / block pointer events on the Razorpay iframe.
       onOpenChange(false);
-      redirectToRazorpayHosted(order.payment_link_url);
+      await new Promise((r) => setTimeout(r, 150));
+
+      await openRazorpayCheckout({
+        ...order,
+        planName,
+        prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
+        onSuccess: () => {
+          toast.success("Payment received! Activating your plan…");
+          setPaying(false);
+          onSuccess?.();
+          setTimeout(() => window.location.reload(), 2500);
+        },
+        onDismiss: () => {
+          setPaying(false);
+          toast.info("Payment cancelled");
+        },
+        onFailure: (err) => {
+          setPaying(false);
+          toast.error(err?.description || "Payment failed. Please retry.");
+        },
+      });
     } catch (e: any) {
       setPaying(false);
       toast.error(e?.message || "Could not start checkout. Please retry.");
