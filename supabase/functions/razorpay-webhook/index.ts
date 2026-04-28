@@ -98,12 +98,29 @@ Deno.serve(async (req) => {
       // Find pending payment
       const { data: payment, error: pErr } = await admin
         .from("plan_payments")
-        .select("id, user_id, plan, volume, billing_type, amount, status")
+        .select("id, user_id, plan, volume, billing_type, amount, final_amount, applied_coupon_code, status, payment_data")
         .eq("razorpay_order_id", orderId)
         .maybeSingle();
       if (pErr) console.error("plan_payments lookup error", pErr);
 
-      if (payment && payment.status !== "paid") {
+      if (!payment) {
+        console.warn("[webhook] no plan_payments row for order", orderId);
+      } else if (payment.status === "paid") {
+        console.log("[webhook] order already paid, skipping", orderId);
+      } else {
+        // Amount cross-check: Razorpay paymentEntity.amount is in paise
+        const expectedPaise = Number((payment as any).payment_data?.amount_paise);
+        const receivedPaise = Number(paymentEntity.amount);
+        if (Number.isFinite(expectedPaise) && Math.abs(expectedPaise - receivedPaise) > 1) {
+          console.error("[webhook] amount mismatch — refusing to activate", {
+            orderId, expectedPaise, receivedPaise,
+          });
+          return new Response(JSON.stringify({ ok: true, mismatch: true }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         await admin
           .from("plan_payments")
           .update({
@@ -137,6 +154,21 @@ Deno.serve(async (req) => {
           price: payment.amount,
           billing_type: billingType,
         });
+
+        // Increment coupon usage (best-effort)
+        if (payment.applied_coupon_code) {
+          const { data: cpn } = await admin
+            .from("platform_coupons")
+            .select("id, used_count")
+            .eq("code", payment.applied_coupon_code)
+            .maybeSingle();
+          if (cpn) {
+            await admin
+              .from("platform_coupons")
+              .update({ used_count: (cpn.used_count ?? 0) + 1 })
+              .eq("id", cpn.id);
+          }
+        }
       }
     }
   } catch (e) {
