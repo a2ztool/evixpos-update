@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
     const plan = String(body.plan_id ?? body.plan ?? "").toLowerCase();
     const volume = Number(body.volume ?? 500);
     const billingType = body.billing_type === "yearly" ? "yearly" : "monthly";
+    const couponCodeRaw = typeof body.coupon_code === "string" ? body.coupon_code.trim().toUpperCase() : "";
 
     if (!["pro", "business"].includes(plan)) {
       return jsonResponse({ error: "Invalid plan" }, 400);
@@ -83,7 +84,39 @@ Deno.serve(async (req) => {
     }
 
     // Yearly = 12 months with 20% discount (matches UI: monthly * 12 * 0.8)
-    const finalInr = billingType === "yearly" ? priceInr * 12 * 0.8 : priceInr;
+    const baseInr = billingType === "yearly" ? priceInr * 12 * 0.8 : priceInr;
+
+    // Server-side coupon validation
+    let discountInr = 0;
+    let appliedCouponCode: string | null = null;
+    let couponMeta: any = null;
+    if (couponCodeRaw) {
+      const { data: coupon } = await admin
+        .from("platform_coupons")
+        .select("*")
+        .eq("code", couponCodeRaw)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!coupon) {
+        return jsonResponse({ error: "Invalid or inactive coupon code" }, 400);
+      }
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+        return jsonResponse({ error: "This coupon has expired" }, 400);
+      }
+      if (coupon.max_uses > 0 && coupon.used_count >= coupon.max_uses) {
+        return jsonResponse({ error: "This coupon has reached its usage limit" }, 400);
+      }
+      if (coupon.discount_type === "percentage") {
+        discountInr = baseInr * (Number(coupon.discount_value) / 100);
+      } else {
+        discountInr = Number(coupon.discount_value);
+      }
+      discountInr = Math.max(0, Math.min(discountInr, baseInr));
+      appliedCouponCode = coupon.code;
+      couponMeta = { id: coupon.id, type: coupon.discount_type, value: Number(coupon.discount_value) };
+    }
+
+    const finalInr = Math.max(1, baseInr - discountInr); // Razorpay min ₹1
     const amountPaise = Math.round(finalInr * 100);
     const receipt = `evx_${user.id.slice(0, 8)}_${Date.now()}`;
 
@@ -118,13 +151,17 @@ Deno.serve(async (req) => {
       user_id: user.id,
       plan,
       amount: finalInr,
+      original_amount: baseInr,
+      discount_amount: discountInr,
+      final_amount: finalInr,
+      applied_coupon_code: appliedCouponCode,
       currency: "INR",
       gateway: "razorpay",
       status: "pending",
       razorpay_order_id: rzpJson.id,
       volume,
       billing_type: billingType,
-      payment_data: { receipt, amount_paise: amountPaise },
+      payment_data: { receipt, amount_paise: amountPaise, coupon: couponMeta },
     });
     if (insErr) {
       console.error("plan_payments insert failed", insErr);
@@ -137,6 +174,10 @@ Deno.serve(async (req) => {
       currency: "INR",
       key_id: RZP_KEY_ID,
       receipt,
+      original_amount: Math.round(baseInr * 100) / 100,
+      discount_amount: Math.round(discountInr * 100) / 100,
+      final_amount: Math.round(finalInr * 100) / 100,
+      applied_coupon_code: appliedCouponCode,
     });
   } catch (e) {
     console.error("create-order error", e);
