@@ -665,30 +665,59 @@ const MyPlan = () => {
           </span>
         </div>
 
-        {/* Volume Slider */}
-        <Card className="border-border/50">
-          <CardContent className="p-3.5 sm:p-6">
-            <h3 className="text-center font-semibold text-sm sm:text-lg">Select Customer Volume</h3>
-            <p className="text-center text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-6">Price adjusts automatically based on volume</p>
-            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <span className="text-xs sm:text-sm text-muted-foreground">Customers / mo</span>
-              <span className="text-base sm:text-xl font-bold text-primary">{volumeLabel}</span>
-            </div>
-            <Slider
-              value={volumeIndex}
-              onValueChange={setVolumeIndex}
-              min={0}
-              max={VOLUME_STEPS.length - 1}
-              step={1}
-              className="my-3 sm:my-4 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 sm:[&_[role=slider]]:h-5 sm:[&_[role=slider]]:w-5 [&>span:first-child]:h-1 sm:[&>span:first-child]:h-2"
-            />
-            <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
-              {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l) => (
-                <span key={l}>{l}</span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Volume Slider — SaaS highlighted */}
+        <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-primary/60 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.45)]">
+          <Card className="border-0 rounded-[14px] bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
+            <CardContent className="p-4 sm:p-7 relative">
+              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+              <div className="relative flex flex-col items-center text-center mb-4 sm:mb-6">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold mb-2">
+                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Customer Volume
+                </div>
+                <h3 className="font-bold text-base sm:text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Select Customer Volume</h3>
+                <p className="text-[11px] sm:text-sm text-muted-foreground mt-1">Price adjusts automatically based on volume</p>
+              </div>
+
+              <div className="relative flex items-end justify-between mb-2 sm:mb-3">
+                <span className="text-xs sm:text-sm text-muted-foreground">Customers / mo</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight tabular-nums">{volumeLabel}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">/ month</span>
+                </div>
+              </div>
+
+              <Slider
+                value={volumeIndex}
+                onValueChange={setVolumeIndex}
+                min={0}
+                max={VOLUME_STEPS.length - 1}
+                step={1}
+                className="my-3 sm:my-4 [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 sm:[&_[role=slider]]:h-6 sm:[&_[role=slider]]:w-6 [&_[role=slider]]:shadow-lg [&_[role=slider]]:ring-4 [&_[role=slider]]:ring-primary/20 [&>span:first-child]:h-1.5 sm:[&>span:first-child]:h-2.5 [&>span:first-child]:bg-primary/15"
+              />
+
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mt-2 sm:mt-3">
+                {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l, i) => {
+                  const active = volumeIndex[0] === i;
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setVolumeIndex([i])}
+                      className={`text-[10px] sm:text-xs font-semibold py-1 sm:py-1.5 rounded-md transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-md scale-105"
+                          : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Monthly / Yearly Toggle */}
         <div className="flex justify-center items-center gap-2 sm:gap-3 sticky top-14 sm:static z-20 sm:z-auto py-2 sm:py-0 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/85 sm:bg-transparent backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:supports-[backdrop-filter]:bg-transparent sm:backdrop-blur-0 rounded-full sm:rounded-none">
