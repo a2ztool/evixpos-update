@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import PaymentModal from "@/components/PaymentModal";
 import RazorpayUpgradeModal from "@/components/RazorpayUpgradeModal";
+import ZinipayUpgradeModal from "@/components/ZinipayUpgradeModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +128,7 @@ const MyPlan = () => {
   const plan = rawPlan ?? "free";
   const [volumeIndex, setVolumeIndex] = useState([2]); // default index 2 = 5K
   const selectedVolume = VOLUME_STEPS[volumeIndex[0]] as VolumeStep;
-  const { getPriceINR, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
+  const { getPriceINR, getPriceBDT, getPlanLimits: dynamicGetPlanLimits } = usePlansConfig();
   const usage = useUsageLimits(plan, subVolume);
   const currentPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
 
@@ -174,8 +175,12 @@ const MyPlan = () => {
   const [razorpayModal, setRazorpayModal] = useState<{ open: boolean; planKey: "pro" | "business"; planName: string; basePriceINR: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
     open: false, planKey: "pro", planName: "", basePriceINR: 0, volume: 500 as VolumeStep, billingType: "monthly",
   });
+  const [zinipayModal, setZinipayModal] = useState<{ open: boolean; planKey: "pro" | "business"; planName: string; basePriceBDT: number; volume: VolumeStep; billingType: "monthly" | "yearly" }>({
+    open: false, planKey: "pro", planName: "", basePriceBDT: 0, volume: 500 as VolumeStep, billingType: "monthly",
+  });
   const [processingPlanKey, setProcessingPlanKey] = useState<string | null>(null);
   const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [zinipayEnabled, setZinipayEnabled] = useState(false);
 
   // Watch admin-controlled Razorpay gateway toggle (INR + automatic mode)
   useEffect(() => {
@@ -192,6 +197,26 @@ const MyPlan = () => {
     fetchFlag();
     const ch = supabase
       .channel("razorpay-flag")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways" }, fetchFlag)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  // Watch admin-controlled ZiniPay gateway toggle (BDT)
+  useEffect(() => {
+    const fetchFlag = async () => {
+      const { data } = await supabase
+        .from("payment_gateways")
+        .select("id")
+        .eq("currency", "BDT")
+        .eq("is_active", true)
+        .ilike("gateway_name", "zinipay")
+        .maybeSingle();
+      setZinipayEnabled(!!data);
+    };
+    fetchFlag();
+    const ch = supabase
+      .channel("zinipay-flag")
       .on("postgres_changes", { event: "*", schema: "public", table: "payment_gateways" }, fetchFlag)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -216,6 +241,22 @@ const MyPlan = () => {
         planKey: planDef.key as "pro" | "business",
         planName: planDef.name,
         basePriceINR: baseInr,
+        volume: selectedVolume,
+        billingType: yearly ? "yearly" : "monthly",
+      });
+      return;
+    }
+
+    // BDT + ZiniPay enabled by admin → ZiniPay redirect-based checkout
+    if (currency === "BDT" && zinipayEnabled && (planDef.key === "pro" || planDef.key === "business")) {
+      if (!user) { toast.error("Please log in to upgrade"); return; }
+      const priceBdt = getPriceBDT(planDef.key, selectedVolume);
+      const baseBdt = Math.round(yearly ? priceBdt * 12 * 0.8 : priceBdt);
+      setZinipayModal({
+        open: true,
+        planKey: planDef.key as "pro" | "business",
+        planName: planDef.name,
+        basePriceBDT: baseBdt,
         volume: selectedVolume,
         billingType: yearly ? "yearly" : "monthly",
       });
@@ -1050,6 +1091,16 @@ const MyPlan = () => {
         volume={razorpayModal.volume}
         billingType={razorpayModal.billingType}
         basePriceINR={razorpayModal.basePriceINR}
+      />
+
+      <ZinipayUpgradeModal
+        open={zinipayModal.open}
+        onOpenChange={(open) => setZinipayModal(prev => ({ ...prev, open }))}
+        planKey={zinipayModal.planKey}
+        planName={zinipayModal.planName}
+        volume={zinipayModal.volume}
+        billingType={zinipayModal.billingType}
+        basePriceBDT={zinipayModal.basePriceBDT}
       />
     </DashboardLayout>
   );
