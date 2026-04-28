@@ -337,17 +337,17 @@ const Referral = () => {
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
             <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-xl h-full">
-              <CardContent className="p-3 h-full flex flex-col justify-between gap-2">
-                <div className="flex items-center justify-between">
-                  <div className={`h-7 w-7 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="h-3.5 w-3.5" />
-                  </div>
-                  {stat.trend && (
-                    <Badge variant="outline" className="text-[9px] h-4 px-1 font-semibold">{stat.trend}</Badge>
-                  )}
+              <CardContent className="px-3 py-3 h-full flex items-center gap-3">
+                <div className={`h-9 w-9 shrink-0 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center`}>
+                  <stat.icon className="h-4 w-4" />
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{stat.label}</p>
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight truncate">{stat.label}</p>
+                    {stat.trend && (
+                      <Badge variant="outline" className="text-[9px] h-4 px-1 font-semibold shrink-0">{stat.trend}</Badge>
+                    )}
+                  </div>
                   <p className="text-base font-bold tabular-nums leading-tight truncate">{stat.value}</p>
                 </div>
               </CardContent>
