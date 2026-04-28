@@ -582,7 +582,32 @@ const SettingsPage = () => {
       user_id: effectiveUserId!, name: newStore.name, address: newStore.address, phone: newStore.phone,
     }).select().single();
     if (error) { toast.error(error.message); return; }
-    if (data) { setStores(prev => [...prev, data]); setNewStore({ name: "", address: "", phone: "" }); setStoreDialog(false); toast.success("Store added!"); }
+    if (data) {
+      setStores(prev => [...prev, data]);
+      setNewStore({ name: "", address: "", phone: "" });
+      setStoreDialog(false);
+      toast.success("Store added!");
+      refreshStores();
+    }
+  };
+  const updateStore = async () => {
+    if (!editStoreData) return;
+    if (!editStoreData.name.trim()) {
+      toast.error(lang === "bn" ? "স্টোরের নাম দিন" : "Store name is required");
+      return;
+    }
+    const { error } = await supabase.from("stores").update({
+      name: editStoreData.name.trim(),
+      address: editStoreData.address,
+      phone: editStoreData.phone,
+    }).eq("id", editStoreData.id);
+    if (error) { toast.error(error.message); return; }
+    setStores(prev => prev.map(s => s.id === editStoreData.id
+      ? { ...s, name: editStoreData.name.trim(), address: editStoreData.address, phone: editStoreData.phone }
+      : s));
+    setEditStoreData(null);
+    toast.success(lang === "bn" ? "স্টোর আপডেট হয়েছে" : "Store updated");
+    refreshStores();
   };
   const removeStore = async (id: string) => {
     // Frontend safety: never let user delete their last store
@@ -608,12 +633,14 @@ const SettingsPage = () => {
     }
     setStores(prev => prev.filter(s => s.id !== id));
     toast.success(lang === "bn" ? "স্টোর ডিলিট হয়েছে" : "Store deleted");
+    refreshStores();
   };
   const setDefaultStore = async (id: string) => {
     if (!user) return;
     await supabase.from("stores").update({ is_default: false }).eq("user_id", user.id);
     await supabase.from("stores").update({ is_default: true }).eq("id", id);
     setStores(prev => prev.map(s => ({ ...s, is_default: s.id === id })));
+    refreshStores();
   };
 
   // ─── Profile ───
