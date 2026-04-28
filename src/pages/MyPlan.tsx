@@ -1039,6 +1039,7 @@ const MyPlan = () => {
         currency={currency}
         currencySymbol={CURRENCY_SYMBOLS[currency]}
         billingType={paymentModal.billingType}
+        volume={paymentModal.volume}
       />
 
       <RazorpayUpgradeModal
