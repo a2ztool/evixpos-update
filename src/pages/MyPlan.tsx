@@ -1023,6 +1023,16 @@ const MyPlan = () => {
         currencySymbol={CURRENCY_SYMBOLS[currency]}
         billingType={paymentModal.billingType}
       />
+
+      <RazorpayUpgradeModal
+        open={razorpayModal.open}
+        onOpenChange={(open) => setRazorpayModal(prev => ({ ...prev, open }))}
+        planKey={razorpayModal.planKey}
+        planName={razorpayModal.planName}
+        volume={razorpayModal.volume}
+        billingType={razorpayModal.billingType}
+        basePriceINR={razorpayModal.basePriceINR}
+      />
     </DashboardLayout>
   );
 };
