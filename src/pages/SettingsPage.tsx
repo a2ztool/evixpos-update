@@ -281,7 +281,7 @@ const defaultSettings: BusinessSettings = {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { activeStore } = useStore();
+  const { activeStore, refreshStores } = useStore();
   const { effectiveUserId } = useStaff();
   const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
@@ -306,6 +306,7 @@ const SettingsPage = () => {
   const [staffCreating, setStaffCreating] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [newStore, setNewStore] = useState({ name: "", address: "", phone: "" });
+  const [editStoreData, setEditStoreData] = useState<{ id: string; name: string; address: string; phone: string } | null>(null);
   const [profileForm, setProfileForm] = useState({ name: "", email: "", newPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
