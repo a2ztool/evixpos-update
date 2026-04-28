@@ -459,32 +459,40 @@ const MyPlan = () => {
         </Card>
 
         {/* Special Offer Banner — merged with coupon */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white p-5 sm:p-6 shadow-lg">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.18),transparent_60%)] pointer-events-none" />
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_80%_50%,rgba(244,63,94,0.12),transparent_60%)] pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div
+          className="relative overflow-hidden rounded-2xl text-white p-4 sm:p-6 shadow-xl bg-gradient-to-br from-primary via-primary to-emerald-700 bg-[length:200%_200%] animate-shimmer-gradient ring-1 ring-primary/30"
+          style={{ boxShadow: "0 12px 40px -12px hsl(var(--primary) / 0.55)" }}
+        >
+          {/* Soft brand glows */}
+          <div className="absolute -top-24 -left-16 h-64 w-64 rounded-full bg-white/15 blur-3xl pointer-events-none animate-float" />
+          <div className="absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl pointer-events-none animate-float" style={{ animationDelay: "1.2s" }} />
+          {/* Shimmer sweep */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent skew-x-12 animate-shimmer" />
+          </div>
+          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
             {/* Left: Offer + coupon */}
-            <div className="flex flex-col gap-3 min-w-0 flex-1">
+            <div className="flex flex-col gap-2.5 sm:gap-3 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge className="bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 shadow-sm">
-                  <Sparkles className="h-3 w-3 mr-1" /> Special Offer
+                <Badge className="bg-white/95 text-primary text-[11px] sm:text-xs font-bold px-2.5 py-1 shadow-md animate-pulse-glow rounded-full">
+                  <Sparkles className="h-3 w-3 mr-1 animate-pulse" /> Special Offer
                 </Badge>
-                <span className="text-sm text-white/80">Limited-time pricing on Pro & Business plans</span>
+                <span className="text-xs sm:text-sm text-white/90">Limited-time pricing on Pro & Business plans</span>
               </div>
               {activeBanner && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-lg px-3 py-2">
-                    <Gift className="h-4 w-4 text-amber-300 shrink-0" />
-                    <span className="text-xs text-white/70">Use code</span>
-                    <code className="bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded font-mono font-bold text-sm tracking-wider">{activeBanner.code}</code>
-                    <span className="text-xs font-semibold text-emerald-300">
+                  <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 rounded-xl px-3 py-2 shadow-sm">
+                    <Gift className="h-4 w-4 text-amber-200 shrink-0 animate-pulse" />
+                    <span className="text-[11px] sm:text-xs text-white/80">Use code</span>
+                    <code className="bg-white text-primary px-2 py-0.5 rounded-md font-mono font-extrabold text-xs sm:text-sm tracking-wider shadow-sm">{activeBanner.code}</code>
+                    <span className="text-[11px] sm:text-xs font-semibold text-amber-200">
                       {activeBanner.discount_type === "percentage" ? `${activeBanner.discount_value}% OFF` : `${CURRENCY_SYMBOLS[currency]}${activeBanner.discount_value} OFF`}
                     </span>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="bg-white/5 border-white/20 text-white hover:bg-white/15 hover:text-white gap-1.5 w-full sm:w-auto"
+                    className="bg-white text-primary border-white hover:bg-white/90 hover:text-primary gap-1.5 w-full sm:w-auto font-semibold shadow-md transition-transform active:scale-95 hover:scale-[1.02]"
                     onClick={() => {
                       navigator.clipboard.writeText(activeBanner.code);
                       toast.success(`Coupon ${activeBanner.code} copied! Apply at checkout.`);
@@ -492,13 +500,13 @@ const MyPlan = () => {
                   >
                     <Copy className="h-3.5 w-3.5" /> Copy code
                   </Button>
-                  <span className="text-[11px] text-white/50 sm:ml-1">Apply at checkout</span>
+                  <span className="text-[11px] text-white/70 sm:ml-1">Apply at checkout</span>
                 </div>
               )}
             </div>
             {/* Right: Countdown */}
             <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0">
-              <span className="text-[11px] text-white/50 uppercase tracking-wide">Expires in</span>
+              <span className="text-[10px] sm:text-[11px] text-white/70 uppercase tracking-widest font-semibold">Expires in</span>
               <div className="flex gap-1.5">
                 {[
                   { val: timeLeft.days, label: "Days" },
@@ -506,9 +514,9 @@ const MyPlan = () => {
                   { val: timeLeft.mins, label: "Mins" },
                   { val: timeLeft.secs, label: "Secs" },
                 ].map((t) => (
-                  <div key={t.label} className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-[44px]">
-                    <span className="text-white font-bold text-base sm:text-lg block leading-none">{String(t.val).padStart(2, "0")}</span>
-                    <span className="text-[9px] text-white/50 uppercase">{t.label}</span>
+                  <div key={t.label} className="bg-white/15 backdrop-blur-sm border border-white/25 rounded-xl px-2.5 py-1.5 text-center min-w-[42px] sm:min-w-[48px] shadow-sm">
+                    <span className="text-white font-extrabold text-base sm:text-xl block leading-none tabular-nums">{String(t.val).padStart(2, "0")}</span>
+                    <span className="text-[9px] text-white/70 uppercase tracking-wide">{t.label}</span>
                   </div>
                 ))}
               </div>
