@@ -91,6 +91,15 @@ const RazorpayUpgradeModal = ({
     if (!user) { toast.error("Please log in"); return; }
     setPaying(true);
     try {
+      // Ensure we have a fresh, valid session before invoking the edge function.
+      // A stale/missing refresh token causes the function to return 401.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Your session has expired. Please log in again.");
+        await supabase.auth.signOut();
+        if (typeof window !== "undefined") window.location.href = "/auth";
+        return;
+      }
       const order = await createRazorpayOrder({
         plan: planKey,
         volume,
