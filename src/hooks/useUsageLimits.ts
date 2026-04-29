@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { type VolumeStep } from "@/lib/planConfig";
 import { usePlansConfig } from "@/contexts/PlansConfigContext";
 
@@ -18,6 +19,7 @@ export interface UsageLimits {
 
 export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null): UsageLimits => {
   const { user } = useAuth();
+  const { effectiveUserId } = useStaff();
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalStores, setTotalStores] = useState(0);
@@ -28,12 +30,14 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
   const { getPlanLimits } = usePlansConfig();
   const limits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
 
+  const ownerId = effectiveUserId ?? user?.id ?? null;
+
   const fetchUsage = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!ownerId) { setLoading(false); return; }
     const [prodRes, custRes, storeRes] = await Promise.all([
-      supabase.from("products").select("id, store_id", { count: "exact" }).eq("user_id", user.id),
-      supabase.from("customers").select("id, store_id", { count: "exact" }).eq("user_id", user.id),
-      supabase.from("stores").select("id, name", { count: "exact" }).eq("user_id", user.id),
+      supabase.from("products").select("id, store_id", { count: "exact" }).eq("user_id", ownerId),
+      supabase.from("customers").select("id, store_id", { count: "exact" }).eq("user_id", ownerId),
+      supabase.from("stores").select("id, name", { count: "exact" }).eq("user_id", ownerId),
     ]);
     setTotalProducts(prodRes.count ?? 0);
     setTotalCustomers(custRes.count ?? 0);
@@ -49,22 +53,22 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
     }));
     setPerStore(breakdown);
     setLoading(false);
-  }, [user?.id]);
+  }, [ownerId]);
 
   useEffect(() => { fetchUsage(); }, [fetchUsage]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!ownerId) return;
     if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
     const ch = supabase
-      .channel(`usage-global-${user.id}-${Date.now()}`)
+      .channel(`usage-global-${ownerId}-${Date.now()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => fetchUsage())
       .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, () => fetchUsage())
       .on("postgres_changes", { event: "*", schema: "public", table: "stores" }, () => fetchUsage())
       .subscribe();
     channelRef.current = ch;
     return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [user?.id, fetchUsage]);
+  }, [ownerId, fetchUsage]);
 
   return {
     totalProducts, totalCustomers, totalStores,
