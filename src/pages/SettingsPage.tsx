@@ -281,7 +281,7 @@ const defaultSettings: BusinessSettings = {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { activeStore, refreshStores } = useStore();
+  const { activeStore, refreshStores, lockedStoreIds } = useStore();
   const { effectiveUserId } = useStaff();
   const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
@@ -1366,8 +1366,9 @@ const SettingsPage = () => {
           {stores.map(s => {
             const modeLabel = s.store_mode === "offline" ? "Offline" : "Online";
             const modeColor = s.store_mode === "offline" ? "bg-orange-500/10 text-orange-600 border-orange-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+            const isLocked = lockedStoreIds.has(s.id);
             return (
-            <Card key={s.id} className={`border-border/50 hover:border-primary/30 transition-colors ${s.is_default ? "ring-2 ring-primary" : ""}`}>
+            <Card key={s.id} className={`border-border/50 hover:border-primary/30 transition-colors ${s.is_default ? "ring-2 ring-primary" : ""} ${isLocked ? "opacity-70" : ""}`}>
               <CardContent className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0 flex-1">
@@ -1375,15 +1376,30 @@ const SettingsPage = () => {
                       <p className="font-semibold text-sm truncate">{s.name}</p>
                       {s.is_default && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">Default</Badge>}
                       <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${modeColor}`}>{modeLabel}</Badge>
+                      {isLocked && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
+                          <Lock className="h-2.5 w-2.5" /> Locked
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">📍 {s.address || (lang === "bn" ? "ঠিকানা নেই" : "No address")}</p>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">📞 {s.phone || (lang === "bn" ? "ফোন নেই" : "No phone")}</p>
+                    {isLocked && (
+                      <button
+                        onClick={() => navigate("/my-plan")}
+                        className="mt-2 text-[11px] font-medium text-amber-600 hover:text-amber-700 underline-offset-2 hover:underline"
+                      >
+                        Upgrade to unlock this store →
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-wrap pt-3 border-t border-border/50">
                     <Button
                       variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                      disabled={isLocked}
                       onClick={async () => {
+                        if (isLocked) { navigate("/my-plan"); return; }
                         const newMode = s.store_mode === "online" ? "offline" : "online";
                         const confirmed = confirm(
                           `⚠️ Switch "${s.name}" to ${newMode.toUpperCase()} mode?\n\n` +
@@ -1402,7 +1418,7 @@ const SettingsPage = () => {
                     >
                       {s.store_mode === "online" ? "→ Offline" : "→ Online"}
                     </Button>
-                    {!s.is_default && <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDefaultStore(s.id)}>Set Default</Button>}
+                    {!s.is_default && <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={isLocked} onClick={() => { if (isLocked) { navigate("/my-plan"); return; } setDefaultStore(s.id); }}>Set Default</Button>}
                     <div className="ml-auto flex items-center gap-0.5">
                       <Button
                         variant="ghost"

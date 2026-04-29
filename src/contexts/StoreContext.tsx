@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export type StoreMode = "online" | "offline";
 
@@ -19,11 +20,17 @@ interface StoreContextType {
   stores: Store[];
   activeStore: Store | null;
   loading: boolean;
-  switchStore: (storeId: string) => void;
+  switchStore: (storeId: string) => boolean;
   createStore: (name: string, address?: string, phone?: string, storeMode?: StoreMode) => Promise<Store | null>;
   refreshStores: () => Promise<void>;
   storeLimit: number;
   canCreateStore: boolean;
+  /** Set of store ids that are locked due to plan limits (over the allowed quota) */
+  lockedStoreIds: Set<string>;
+  /** Returns true if a given store is locked by the plan limit */
+  isStoreLocked: (storeId: string) => boolean;
+  /** Current plan key */
+  plan: string;
   /** True when the current user is a staff member (store loaded from staff assignment) */
   isStaffStore: boolean;
 }
@@ -32,11 +39,14 @@ const StoreContext = createContext<StoreContextType>({
   stores: [],
   activeStore: null,
   loading: true,
-  switchStore: () => {},
+  switchStore: () => false,
   createStore: async () => null,
   refreshStores: async () => {},
   storeLimit: 1,
   canCreateStore: false,
+  lockedStoreIds: new Set(),
+  isStoreLocked: () => false,
+  plan: "free",
   isStaffStore: false,
 });
 
@@ -58,6 +68,26 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   const storeLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
   const canCreateStore = !isStaffStore && stores.length < storeLimit;
+
+  // Determine which stores are locked due to plan limit.
+  // Allowed stores = default store first, then oldest stores up to `storeLimit`.
+  // Any extras beyond the quota are locked (cannot be switched to).
+  const computeAllowedIds = (list: Store[], limit: number): Set<string> => {
+    const sorted = [...list].sort((a, b) => {
+      if (a.is_default && !b.is_default) return -1;
+      if (!a.is_default && b.is_default) return 1;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+    return new Set(sorted.slice(0, Math.max(1, limit)).map(s => s.id));
+  };
+
+  const allowedStoreIds = isStaffStore
+    ? new Set(stores.map(s => s.id))
+    : computeAllowedIds(stores, storeLimit);
+  const lockedStoreIds = new Set(
+    stores.filter(s => !allowedStoreIds.has(s.id)).map(s => s.id)
+  );
+  const isStoreLocked = (storeId: string) => lockedStoreIds.has(storeId);
 
   const fetchStores = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -135,6 +165,25 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     fetchStores();
   }, [fetchStores]);
 
+  // If active store becomes locked (e.g. plan downgrade), auto-switch to an allowed one.
+  useEffect(() => {
+    if (isStaffStore || !user || stores.length === 0) return;
+    if (activeStore && lockedStoreIds.has(activeStore.id)) {
+      const fallback =
+        stores.find(s => s.is_default && !lockedStoreIds.has(s.id)) ||
+        stores.find(s => !lockedStoreIds.has(s.id));
+      if (fallback) {
+        setActiveStore(fallback);
+        localStorage.setItem(`active_store_${user.id}`, fallback.id);
+      }
+    } else if (!activeStore) {
+      const fallback =
+        stores.find(s => s.is_default && !lockedStoreIds.has(s.id)) ||
+        stores.find(s => !lockedStoreIds.has(s.id));
+      if (fallback) setActiveStore(fallback);
+    }
+  }, [activeStore, stores, lockedStoreIds, isStaffStore, user]);
+
   // Realtime: keep stores in sync across the app without requiring a refresh
   useEffect(() => {
     if (!user) return;
@@ -153,13 +202,19 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, fetchStores]);
 
-  const switchStore = (storeId: string) => {
-    if (isStaffStore) return; // Staff can't switch stores
+  const switchStore = (storeId: string): boolean => {
+    if (isStaffStore) return false; // Staff can't switch stores
     const store = stores.find(s => s.id === storeId);
-    if (store && user) {
-      setActiveStore(store);
-      localStorage.setItem(`active_store_${user.id}`, storeId);
+    if (!store || !user) return false;
+    if (lockedStoreIds.has(storeId)) {
+      toast.error(
+        `This store is locked on the ${plan ?? "free"} plan. Upgrade to access more than ${storeLimit} store(s).`
+      );
+      return false;
     }
+    setActiveStore(store);
+    localStorage.setItem(`active_store_${user.id}`, storeId);
+    return true;
   };
 
   const createStore = async (name: string, address = "", phone = "", storeMode: StoreMode = "online"): Promise<Store | null> => {
@@ -198,6 +253,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       stores, activeStore, loading,
       switchStore, createStore, refreshStores: fetchStores,
       storeLimit, canCreateStore, isStaffStore,
+      lockedStoreIds, isStoreLocked, plan: plan ?? "free",
     }}>
       {children}
     </StoreContext.Provider>
