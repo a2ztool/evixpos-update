@@ -165,6 +165,25 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     fetchStores();
   }, [fetchStores]);
 
+  // If active store becomes locked (e.g. plan downgrade), auto-switch to an allowed one.
+  useEffect(() => {
+    if (isStaffStore || !user || stores.length === 0) return;
+    if (activeStore && lockedStoreIds.has(activeStore.id)) {
+      const fallback =
+        stores.find(s => s.is_default && !lockedStoreIds.has(s.id)) ||
+        stores.find(s => !lockedStoreIds.has(s.id));
+      if (fallback) {
+        setActiveStore(fallback);
+        localStorage.setItem(`active_store_${user.id}`, fallback.id);
+      }
+    } else if (!activeStore) {
+      const fallback =
+        stores.find(s => s.is_default && !lockedStoreIds.has(s.id)) ||
+        stores.find(s => !lockedStoreIds.has(s.id));
+      if (fallback) setActiveStore(fallback);
+    }
+  }, [activeStore, stores, lockedStoreIds, isStaffStore, user]);
+
   // Realtime: keep stores in sync across the app without requiring a refresh
   useEffect(() => {
     if (!user) return;
