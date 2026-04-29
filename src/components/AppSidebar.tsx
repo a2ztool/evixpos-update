@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, Users, ShoppingCart, CreditCard,
   Settings, Plug, Monitor, ClipboardList, Plus, Clock, ChevronDown, Tag, FileText,
   TrendingUp, ArrowUpDown, BookOpen, Megaphone, ListTodo, BarChart3, RefreshCw, Crown,
-  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, Sheet, Lock,
+  Bell, ShoppingBag, Bot, MessageCircle, MessageSquare, Gift, Headphones, Zap, Sheet, Lock, Sparkles,
   Truck, Wallet, Star, AlertTriangle, Receipt, CalendarDays
 } from "lucide-react";
 import SidebarUsageWidget from "@/components/SidebarUsageWidget";
@@ -145,12 +145,13 @@ const AppSidebar = () => {
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex h-5 w-5 min-h-5 min-w-5 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/25 cursor-help shrink-0">
-                    <Lock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                  <span className="ml-auto inline-flex items-center gap-0.5 h-[18px] pl-1 pr-1.5 rounded-full bg-gradient-to-r from-amber-400/20 via-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.05),0_1px_2px_rgba(245,158,11,0.15)] cursor-help shrink-0">
+                    <Sparkles className="h-2.5 w-2.5 shrink-0" strokeWidth={2.5} />
+                    <span className="text-[8px] font-bold tracking-wide uppercase leading-none">Pro</span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8} className="font-medium">
-                  Upgrade to access this feature
+                  ✨ Upgrade to unlock this feature
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
