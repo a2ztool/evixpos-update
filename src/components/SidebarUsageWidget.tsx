@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { type VolumeStep } from "@/lib/planConfig";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ interface Props {
 
 const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
   const usage = useUsageLimits(plan, volume);
 
   if (!user || usage.loading) return null;
@@ -27,36 +29,31 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
 
   const UsageBar = ({ label, count, max, pct }: { label: string; count: number; max: number; pct: number }) => (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded-md bg-primary/10 flex items-center justify-center">
-            <Zap className="h-3 w-3 text-primary" />
-          </div>
-          <span className="text-[10px] font-semibold">{label}</span>
-        </div>
-        <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{pct}%</span>
+      <div className="flex items-center justify-between mb-0.5">
+        <span className="text-[10px] font-semibold leading-none">{label}</span>
+        <span className="text-[9px] font-bold text-primary tabular-nums leading-none">{pct}%</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${pct >= 90 ? "bg-destructive" : "bg-gradient-to-r from-primary to-primary/70"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-[10px] text-muted-foreground mt-0.5">{count} of {max} used (All stores)</p>
+      <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{count}/{max}</p>
     </div>
   );
 
   return (
-    <div className="mx-1 rounded-xl bg-gradient-to-br from-primary/5 via-accent/30 to-primary/10 border border-primary/10 p-3.5 space-y-2.5">
+    <div className="mx-1 rounded-lg bg-gradient-to-br from-primary/5 via-accent/30 to-primary/10 border border-primary/10 px-2.5 py-2 space-y-2">
       <UsageBar label="Products" count={usage.totalProducts} max={usage.maxProducts} pct={productPct} />
       <UsageBar label="Customers" count={usage.totalCustomers} max={usage.maxCustomers} pct={customerPct} />
 
-      {/* Per-store breakdown tooltip */}
-      {usage.perStore.length > 1 && (
+      {/* Per-store breakdown tooltip — owners only */}
+      {!isStaff && usage.perStore.length > 1 && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-help text-[10px] text-muted-foreground hover:text-primary transition-colors">
+              <div className="flex items-center gap-1 cursor-help text-[9px] text-muted-foreground hover:text-primary transition-colors">
                 <Store className="h-3 w-3" />
                 <span>{usage.totalStores} / {usage.maxStores} stores • View breakdown</span>
               </div>
@@ -73,18 +70,20 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
         </TooltipProvider>
       )}
 
-      <div className="flex items-center justify-between pt-1">
-        <button onClick={() => navigate("/my-plan")} className="text-[10px] text-muted-foreground hover:text-primary transition-colors font-medium">
-          Learn more
-        </button>
-        <Button
-          size="sm"
-          onClick={() => navigate("/my-plan")}
-          className="h-7 px-3 text-[10px] font-semibold rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm shadow-primary/20"
-        >
-          Upgrade <ExternalLink className="h-2.5 w-2.5 ml-1" />
-        </Button>
-      </div>
+      {!isStaff && (
+        <div className="flex items-center justify-between pt-0.5">
+          <button onClick={() => navigate("/my-plan")} className="text-[9px] text-muted-foreground hover:text-primary transition-colors font-medium">
+            Learn more
+          </button>
+          <Button
+            size="sm"
+            onClick={() => navigate("/my-plan")}
+            className="h-6 px-2 text-[9px] font-semibold rounded-md bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm shadow-primary/20"
+          >
+            Upgrade <ExternalLink className="h-2.5 w-2.5 ml-1" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
