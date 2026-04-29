@@ -70,7 +70,7 @@ const FeatureGate = ({ children, feature, fullPage = true }: FeatureGateProps) =
 
   return (
     <DashboardLayout>
-      <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] -m-4 sm:-m-6 lg:-m-8 px-4 py-8 overflow-hidden">
+      <div className="relative flex items-center justify-center min-h-[calc(100vh-5rem)] -mx-3 -my-2 sm:-m-4 lg:-m-8 px-4 py-8 overflow-hidden">
         {/* Ambient grid + glow background — full page */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.18),transparent_60%)]" />
