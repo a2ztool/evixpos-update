@@ -139,15 +139,15 @@ const AppSidebar = () => {
           <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
         )}
         <item.icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
-        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden pr-1">
           <span className="truncate min-w-0">{item.title}</span>
           {locked && !collapsed && (
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="ml-auto inline-flex items-center gap-0.5 h-[18px] pl-1 pr-1.5 rounded-full bg-gradient-to-r from-amber-400/20 via-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.05),0_1px_2px_rgba(245,158,11,0.15)] cursor-help shrink-0">
-                    <Sparkles className="h-2.5 w-2.5 shrink-0" strokeWidth={2.5} />
-                    <span className="text-[8px] font-bold tracking-wide uppercase leading-none">Pro</span>
+                  <span className="ml-auto mr-1 inline-flex items-center gap-[2px] h-[15px] px-1 rounded-full bg-gradient-to-r from-amber-400/20 via-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 cursor-help shrink-0">
+                    <Sparkles className="h-2 w-2 shrink-0" strokeWidth={2.8} />
+                    <span className="text-[7px] font-bold tracking-wider uppercase leading-none">Pro</span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8} className="font-medium">
