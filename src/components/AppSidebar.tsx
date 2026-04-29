@@ -133,7 +133,7 @@ const AppSidebar = () => {
           active
             ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold shadow-sm"
             : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-        } ${locked ? "bg-muted/20" : ""}`}
+        } ${locked ? "" : ""}`}
       >
         {active && !collapsed && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
