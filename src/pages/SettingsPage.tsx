@@ -281,7 +281,7 @@ const defaultSettings: BusinessSettings = {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { activeStore, refreshStores } = useStore();
+  const { activeStore, refreshStores, lockedStoreIds } = useStore();
   const { effectiveUserId } = useStaff();
   const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
