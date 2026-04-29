@@ -234,6 +234,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       stores, activeStore, loading,
       switchStore, createStore, refreshStores: fetchStores,
       storeLimit, canCreateStore, isStaffStore,
+      lockedStoreIds, isStoreLocked, plan: plan ?? "free",
     }}>
       {children}
     </StoreContext.Provider>
