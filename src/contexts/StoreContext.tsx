@@ -69,6 +69,26 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const storeLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
   const canCreateStore = !isStaffStore && stores.length < storeLimit;
 
+  // Determine which stores are locked due to plan limit.
+  // Allowed stores = default store first, then oldest stores up to `storeLimit`.
+  // Any extras beyond the quota are locked (cannot be switched to).
+  const computeAllowedIds = (list: Store[], limit: number): Set<string> => {
+    const sorted = [...list].sort((a, b) => {
+      if (a.is_default && !b.is_default) return -1;
+      if (!a.is_default && b.is_default) return 1;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+    return new Set(sorted.slice(0, Math.max(1, limit)).map(s => s.id));
+  };
+
+  const allowedStoreIds = isStaffStore
+    ? new Set(stores.map(s => s.id))
+    : computeAllowedIds(stores, storeLimit);
+  const lockedStoreIds = new Set(
+    stores.filter(s => !allowedStoreIds.has(s.id)).map(s => s.id)
+  );
+  const isStoreLocked = (storeId: string) => lockedStoreIds.has(storeId);
+
   const fetchStores = useCallback(async () => {
     if (!user) { setLoading(false); return; }
 
@@ -163,13 +183,19 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, fetchStores]);
 
-  const switchStore = (storeId: string) => {
-    if (isStaffStore) return; // Staff can't switch stores
+  const switchStore = (storeId: string): boolean => {
+    if (isStaffStore) return false; // Staff can't switch stores
     const store = stores.find(s => s.id === storeId);
-    if (store && user) {
-      setActiveStore(store);
-      localStorage.setItem(`active_store_${user.id}`, storeId);
+    if (!store || !user) return false;
+    if (lockedStoreIds.has(storeId)) {
+      toast.error(
+        `This store is locked on the ${plan ?? "free"} plan. Upgrade to access more than ${storeLimit} store(s).`
+      );
+      return false;
     }
+    setActiveStore(store);
+    localStorage.setItem(`active_store_${user.id}`, storeId);
+    return true;
   };
 
   const createStore = async (name: string, address = "", phone = "", storeMode: StoreMode = "online"): Promise<Store | null> => {
