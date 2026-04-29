@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, ChevronDown, Plus, Check, Crown, Globe, MapPin } from "lucide-react";
+import { Store, ChevronDown, Plus, Check, Crown, Globe, MapPin, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const StoreSwitcher = () => {
-  const { stores, activeStore, switchStore, createStore, canCreateStore, storeLimit, isStaffStore } = useStore();
+  const { stores, activeStore, switchStore, createStore, canCreateStore, storeLimit, isStaffStore, lockedStoreIds } = useStore();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -92,8 +92,16 @@ const StoreSwitcher = () => {
           {stores.map(store => (
             <DropdownMenuItem
               key={store.id}
-              onClick={() => switchStore(store.id)}
-              className="gap-2"
+              onClick={(e) => {
+                if (lockedStoreIds.has(store.id)) {
+                  e.preventDefault();
+                  toast.error(`Locked on your current plan. Upgrade to access more stores.`);
+                  navigate("/my-plan");
+                  return;
+                }
+                switchStore(store.id);
+              }}
+              className={`gap-2 ${lockedStoreIds.has(store.id) ? "opacity-60" : ""}`}
             >
               <Store className="h-3.5 w-3.5" />
               <span className="flex-1 truncate text-sm">{store.name}</span>
@@ -102,7 +110,11 @@ const StoreSwitcher = () => {
               ) : (
                 <Globe className="h-3 w-3 text-green-500" />
               )}
-              {store.id === activeStore?.id && <Check className="h-3.5 w-3.5 text-primary" />}
+              {lockedStoreIds.has(store.id) ? (
+                <Lock className="h-3 w-3 text-amber-500" />
+              ) : store.id === activeStore?.id ? (
+                <Check className="h-3.5 w-3.5 text-primary" />
+              ) : null}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
