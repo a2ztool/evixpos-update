@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export type StoreMode = "online" | "offline";
 
@@ -19,11 +20,17 @@ interface StoreContextType {
   stores: Store[];
   activeStore: Store | null;
   loading: boolean;
-  switchStore: (storeId: string) => void;
+  switchStore: (storeId: string) => boolean;
   createStore: (name: string, address?: string, phone?: string, storeMode?: StoreMode) => Promise<Store | null>;
   refreshStores: () => Promise<void>;
   storeLimit: number;
   canCreateStore: boolean;
+  /** Set of store ids that are locked due to plan limits (over the allowed quota) */
+  lockedStoreIds: Set<string>;
+  /** Returns true if a given store is locked by the plan limit */
+  isStoreLocked: (storeId: string) => boolean;
+  /** Current plan key */
+  plan: string;
   /** True when the current user is a staff member (store loaded from staff assignment) */
   isStaffStore: boolean;
 }
@@ -32,11 +39,14 @@ const StoreContext = createContext<StoreContextType>({
   stores: [],
   activeStore: null,
   loading: true,
-  switchStore: () => {},
+  switchStore: () => false,
   createStore: async () => null,
   refreshStores: async () => {},
   storeLimit: 1,
   canCreateStore: false,
+  lockedStoreIds: new Set(),
+  isStoreLocked: () => false,
+  plan: "free",
   isStaffStore: false,
 });
 
