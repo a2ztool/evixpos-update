@@ -739,6 +739,58 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_task_comments: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          message: string
+          parent_comment_id: string | null
+          sender_id: string
+          task_message_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          message: string
+          parent_comment_id?: string | null
+          sender_id: string
+          task_message_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          message?: string
+          parent_comment_id?: string | null
+          sender_id?: string
+          task_message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_task_comments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_task_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "chat_task_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_task_comments_task_message_id_fkey"
+            columns: ["task_message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_group_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_tasks: {
         Row: {
           assigned_by: string

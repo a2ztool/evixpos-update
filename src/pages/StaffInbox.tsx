@@ -25,6 +25,7 @@ import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
+import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
@@ -142,6 +143,9 @@ const StaffInbox = () => {
   // Typing indicator
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Task comments thread
+  const [commentsTask, setCommentsTask] = useState<ChatMessage | null>(null);
+  const [taskCommentCounts, setTaskCommentCounts] = useState<Record<string, number>>({});
   // @Mention picker state (group chat only)
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
@@ -783,6 +787,52 @@ const StaffInbox = () => {
 
   const showChat = activeChat !== null;
   const visibleMessages = messages.filter(m => isVisible(m));
+
+  // Fetch comment counts for all task messages currently shown in a group chat
+  useEffect(() => {
+    if (activeChatType !== "group" || !activeChat) {
+      setTaskCommentCounts({});
+      return;
+    }
+    const taskIds = visibleMessages
+      .filter((m) => m.message_type === "task")
+      .map((m) => m.id);
+    if (taskIds.length === 0) { setTaskCommentCounts({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await db
+        .from("chat_task_comments")
+        .select("task_message_id")
+        .in("task_message_id", taskIds);
+      if (cancelled || !data) return;
+      const counts: Record<string, number> = {};
+      data.forEach((r: any) => {
+        counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1;
+      });
+      setTaskCommentCounts(counts);
+    })();
+    // Realtime: refresh on any insert/delete in this group's comments
+    const channel = supabase
+      .channel(`task-comment-counts-${activeChat}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "chat_task_comments", filter: `group_id=eq.${activeChat}` },
+        async () => {
+          const { data } = await db
+            .from("chat_task_comments")
+            .select("task_message_id")
+            .in("task_message_id", taskIds);
+          if (!data) return;
+          const counts: Record<string, number> = {};
+          data.forEach((r: any) => {
+            counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1;
+          });
+          setTaskCommentCounts(counts);
+        })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChat, activeChatType, visibleMessages.length]);
+
   const pinnedMessages = visibleMessages
     .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
     .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
@@ -1392,6 +1442,8 @@ const StaffInbox = () => {
                               if (error) toast.error("Failed to update task status");
                               else toast.success(`Task marked as ${status}`);
                             }}
+                            onOpenTaskComments={(m) => setCommentsTask(m)}
+                            taskCommentCount={taskCommentCounts[msg.id] || 0}
                             myId={myId!}
                             isStaff={isStaff}
                           />
@@ -1493,6 +1545,19 @@ const StaffInbox = () => {
           return containerEl;
         })()}
       </div>
+
+      {/* Task comments thread (group chats) */}
+      {commentsTask && activeChat && (
+        <TaskCommentsThread
+          open={!!commentsTask}
+          onOpenChange={(o) => { if (!o) setCommentsTask(null); }}
+          taskMessageId={commentsTask.id}
+          groupId={activeChat}
+          taskTitle={commentsTask.task_title || "Task"}
+          myId={myId!}
+          resolveName={getSenderNameById}
+        />
+      )}
     </DashboardLayout>
   );
 };
