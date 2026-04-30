@@ -435,6 +435,88 @@ const POS = () => {
       }
     }
 
+    // ─── Offline branch: queue sale, skip server flow ───
+    if (!netOnline) {
+      if (hasOpt("due") || hasOpt("partial") || splitMode) {
+        toast.error("Due / partial / split payments are disabled offline");
+        return;
+      }
+      const allowedOffline = ["cash", "card"];
+      const methodLower = (selectedPaymentMethod || "cash").toLowerCase();
+      const matched = allowedOffline.find(m => methodLower.includes(m)) || "cash";
+      setSubmitting(true);
+      try {
+        const tempId = genTempId();
+        const customer = customers.find(c => c.id === customerId);
+        const sale: OfflineSale = {
+          tempId,
+          storeId: activeStore!.id,
+          userId: effectiveUserId!,
+          customerId: customerId || null,
+          customerName: customer?.name || "Walk-in",
+          customerPhone: customer?.phone || null,
+          totalAmount: total,
+          subtotal,
+          discount: hasOpt("discount") ? (parseFloat(discountValue) || 0) : 0,
+          discountType,
+          discountAmount,
+          paymentMethod: matched === "card" ? "Card" : "Cash",
+          paymentMethodId: matched,
+          paymentCurrency: activeCurrency,
+          notes: orderNotes,
+          items: cart.map(i => ({
+            product_id: i.product.id,
+            quantity: i.quantity,
+            price: getItemPrice(i),
+            productType: i.product.type,
+            name: i.product.name,
+          })),
+          createdAt: new Date().toISOString(),
+        };
+        await enqueueSale(sale);
+        await applyLocalStockDelta(activeStore!.id, sale.items);
+        // Reflect local stock immediately
+        setProducts(prev => prev.map(p => {
+          const sold = sale.items.filter(i => i.product_id === p.id && i.productType === "physical")
+            .reduce((s, i) => s + i.quantity, 0);
+          return sold > 0 ? { ...p, stock: Math.max(0, p.stock - sold) } : p;
+        }));
+
+        const receiptInfo: ReceiptData = {
+          orderId: tempId,
+          customer: sale.customerName,
+          items: [...cart],
+          subtotal,
+          discount: subtotal - total > 0 ? subtotal - total : 0,
+          total,
+          paymentMethod: sale.paymentMethod + " (offline)",
+          paymentStatus: "Paid (Pending Sync)",
+          currency: activeCurrency,
+          notes: orderNotes,
+          date: new Date().toLocaleString(),
+          storeName: activeStore?.name || "Store",
+        };
+        toast.success("Sale queued offline — will sync automatically");
+        setCart([]);
+        setCustomerId("");
+        setPaymentOptions(new Set(["full"]));
+        setDiscountValue("");
+        setPaidAmount("");
+        setOrderNotes("");
+        setSelectedPaymentMethod("cash");
+        setSplitMode(false);
+        setMobileCartOpen(false);
+        setCheckoutOpen(false);
+        setReceiptData(receiptInfo);
+        setReceiptOpen(true);
+      } catch (e: any) {
+        toast.error("Failed to queue sale: " + (e?.message || String(e)));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     setSubmitting(true);
     try {
       const isDue = hasOpt("due");
