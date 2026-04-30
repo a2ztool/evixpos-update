@@ -1059,6 +1059,44 @@ const IncomeExpense = () => {
               </SheetTitle>
             </SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-5 mt-6">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Landmark className="h-3.5 w-3.5 text-primary" />
+                  Payment Account <span className="text-destructive">*</span>
+                </Label>
+                {accounts.length === 0 ? (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+                    No accounts found. Add a payment method in <strong>Settings → Payment Methods</strong> first.
+                  </div>
+                ) : (
+                  <Select value={formAccountId} onValueChange={(v) => { setFormAccountId(v); setAccountError(""); }}>
+                    <SelectTrigger className={`rounded-xl ${accountError ? "border-destructive" : ""}`}>
+                      <SelectValue placeholder="Select account (where money comes from / goes to)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((a) => {
+                        const b = accountBalances[a.id] || { income: 0, expense: 0 };
+                        const bal = b.income - b.expense;
+                        return (
+                          <SelectItem key={a.id} value={a.id}>
+                            <span className="flex items-center justify-between gap-3 w-full">
+                              <span className="font-medium">{a.name}</span>
+                              <span className={`text-xs tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                                {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                              </span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+                {accountError && <p className="text-xs text-destructive animate-fade-in">{accountError}</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  {form.type === "income" ? "Money will be added to this account." : "Money will be deducted from this account."}
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Type</Label>
                 <div className="grid grid-cols-2 gap-2">
