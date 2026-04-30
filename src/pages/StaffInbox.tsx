@@ -667,6 +667,11 @@ const StaffInbox = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChat || !storeId || !myId) return;
+    if (!navigator.onLine) {
+      toast.error("Attachments require an internet connection");
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
