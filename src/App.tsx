@@ -46,6 +46,7 @@ const GoogleSheetsPage = lazyPage(() => import("./pages/GoogleSheetsPage"));
 const POS = lazyPage(() => import("./pages/POS"));
 const SalesProfit = lazyPage(() => import("./pages/SalesProfit"));
 const IncomeExpense = lazyPage(() => import("./pages/IncomeExpense"));
+const AccountBook = lazyPage(() => import("./pages/AccountBook"));
 const DueBook = lazyPage(() => import("./pages/DueBook"));
 const AdCosts = lazyPage(() => import("./pages/AdCosts"));
 const FacebookAds = lazyPage(() => import("./pages/FacebookAds"));
@@ -200,6 +201,7 @@ const App = () => {
             <Route path="/pos" element={<P perm="pos.access"><POS /></P>} />
             <Route path="/finance/sales-profit" element={<P perm="reports.view" feature="reports"><SalesProfit /></P>} />
             <Route path="/finance/income-expense" element={<P perm="reports.view" feature="reports"><IncomeExpense /></P>} />
+            <Route path="/finance/account-book" element={<P perm="reports.view" feature="reports"><AccountBook /></P>} />
             <Route path="/finance/due-book" element={<P perm="reports.view" feature="due_book"><DueBook /></P>} />
             <Route path="/finance/ad-costs" element={<P perm="reports.view" feature="ad_costs"><AdCosts /></P>} />
             <Route path="/finance/facebook-ads" element={<Navigate to="/integrations/facebook-ads" replace />} />
