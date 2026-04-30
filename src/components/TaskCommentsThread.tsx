@@ -96,7 +96,7 @@ const TaskCommentsThread = ({
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [open, taskMessageId, scrollBottom]);
+  }, [open, taskMessageId, scrollBottom, myId]);
 
   const send = async () => {
     const msg = text.trim();
