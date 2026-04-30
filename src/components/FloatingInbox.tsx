@@ -1013,6 +1013,23 @@ const FloatingInbox = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Task comments thread (group chats only) */}
+      {commentsTask && activeConv?.type === "group" && (
+        <TaskCommentsThread
+          open={!!commentsTask}
+          onOpenChange={(o) => { if (!o) setCommentsTask(null); }}
+          taskMessageId={commentsTask.id}
+          groupId={activeConv.id}
+          taskTitle={commentsTask.task_title || "Task"}
+          myId={myId!}
+          resolveName={(uid) => {
+            if (uid === myId) return "You";
+            if (uid === ownerId) return "Store Owner";
+            return memberNames[uid] || "Member";
+          }}
+        />
+      )}
     </>
   );
 };
