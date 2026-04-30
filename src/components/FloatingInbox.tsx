@@ -24,6 +24,7 @@ import { parseTaskTitle } from "@/lib/chatHelpers";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
+import { enqueueChat, genChatTempId } from "@/lib/offlineChat";
 
 const db = supabase as any;
 
