@@ -22,6 +22,7 @@ import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
+import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -77,6 +78,11 @@ const FloatingInbox = () => {
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
+  // Task comments
+  const [commentsTask, setCommentsTask] = useState<ChatMessage | null>(null);
+  const [taskCommentCounts, setTaskCommentCounts] = useState<Record<string, number>>({});
+  const commentsTaskRef = useRef<ChatMessage | null>(null);
+  useEffect(() => { commentsTaskRef.current = commentsTask; }, [commentsTask]);
   const openRef = useRef(open);
   const soundRef = useRef(soundEnabled);
   const activeConvRef = useRef<ConvItem | null>(activeConv);
