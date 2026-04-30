@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>EvixPOS — Offline</title>
+<meta name="theme-color" content="#0F766E" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .card{max-width:420px}
+  .logo{width:96px;height:96px;border-radius:24px;box-shadow:0 20px 50px rgba(15,118,110,.35);margin:0 auto 24px;display:block}
+  h1{font-size:22px;margin:0 0 8px;font-weight:700;letter-spacing:-.01em}
+  p{font-size:14px;line-height:1.55;margin:0 0 24px;color:#94a3b8}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:8px;vertical-align:middle;animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  button{appearance:none;border:0;background:#0F766E;color:#fff;font-weight:600;font-size:14px;padding:12px 22px;border-radius:12px;cursor:pointer;transition:transform .15s,background .15s}
+  button:hover{background:#115e59}
+  button:active{transform:scale(.97)}
+  .status{margin-top:16px;font-size:12px;color:#64748b}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <img src="/pwa-icon-192.png" alt="EvixPOS" class="logo" />
+      <h1><span class="dot"></span>You're offline</h1>
+      <p>EvixPOS needs an internet connection to load this page. Your previous work is safe — reconnect and we'll resume right where you left off.</p>
+      <button onclick="location.reload()">Try again</button>
+      <div class="status" id="s">Waiting for connection…</div>
+    </div>
+  </div>
+  <script>
+    function setStatus(){
+      var s=document.getElementById('s');
+      if(navigator.onLine){s.textContent='Connection detected — reloading…';setTimeout(function(){location.reload()},600)}
+      else s.textContent='Waiting for connection…'
+    }
+    window.addEventListener('online',setStatus);
+    window.addEventListener('offline',setStatus);
+    setStatus();
+  </script>
+</body>
+</html>
