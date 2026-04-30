@@ -25,7 +25,7 @@ import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, DollarSign, Wallet, PiggyBank, BarChart3,
   FileText, Sparkles, Lightbulb, ShieldCheck, Zap, Target, ArrowUpRight,
-  ArrowDownRight, Activity, CreditCard
+  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar,
@@ -52,6 +52,14 @@ interface Transaction {
   is_paid: boolean;
   created_at: string;
   store_id: string | null;
+  account_id?: string | null;
+}
+
+interface PaymentAccount {
+  id: string;
+  name: string;
+  enabled: boolean;
+  config?: Record<string, any>;
 }
 
 const CHART_COLORS = [
@@ -89,6 +97,10 @@ const IncomeExpense = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [guideOpen, setGuideOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [accounts, setAccounts] = useState<PaymentAccount[]>([]);
+  const [accountFilter, setAccountFilter] = useState("all");
+  const [formAccountId, setFormAccountId] = useState<string>("");
+  const [accountError, setAccountError] = useState<string>("");
 
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
@@ -102,6 +114,33 @@ const IncomeExpense = () => {
     if (data) setTxns(data as Transaction[]);
     setLoading(false);
   }, [activeStore]);
+
+  // Fetch payment accounts (configured in Settings → Payment Methods)
+  const fetchAccounts = useCallback(async () => {
+    if (!activeStore || !effectiveUserId) return;
+    let { data } = await supabase
+      .from("business_settings")
+      .select("payment_methods")
+      .eq("user_id", effectiveUserId)
+      .eq("store_id", activeStore.id)
+      .maybeSingle();
+    if (!data) {
+      const fb = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("user_id", effectiveUserId)
+        .maybeSingle();
+      data = fb.data as any;
+    }
+    const list = (data?.payment_methods as any[] | null) || [];
+    setAccounts(
+      list
+        .filter((p) => p && p.enabled !== false)
+        .map((p) => ({ id: String(p.id), name: p.name || p.id, enabled: !!p.enabled, config: p.config }))
+    );
+  }, [activeStore, effectiveUserId]);
+
+  useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
 
   useEffect(() => {
     if (user && activeStore) fetchData();
@@ -141,6 +180,7 @@ const IncomeExpense = () => {
     return txns.filter((t) => {
       if (typeFilter !== "all" && t.type !== typeFilter) return false;
       if (categoryFilter !== "all" && (t.category || "Uncategorized") !== categoryFilter) return false;
+      if (accountFilter !== "all" && (t.account_id || "") !== accountFilter) return false;
       if (search && ![t.category, t.note].some((f) => (f || "").toLowerCase().includes(search.toLowerCase()))) return false;
       if (range) {
         const d = new Date(t.created_at);
@@ -148,7 +188,24 @@ const IncomeExpense = () => {
       }
       return true;
     });
-  }, [txns, typeFilter, categoryFilter, search, getDateRange]);
+  }, [txns, typeFilter, categoryFilter, accountFilter, search, getDateRange]);
+
+  // Per-account balances (across all transactions for this store, not filtered by date)
+  const accountBalances = useMemo(() => {
+    const map: Record<string, { income: number; expense: number; count: number }> = {};
+    accounts.forEach(a => { map[a.id] = { income: 0, expense: 0, count: 0 }; });
+    txns.forEach((t) => {
+      const aid = t.account_id || "__unassigned__";
+      if (!map[aid]) map[aid] = { income: 0, expense: 0, count: 0 };
+      map[aid][t.type] += Number(t.amount);
+      map[aid].count += 1;
+    });
+    return map;
+  }, [txns, accounts]);
+
+  const totalBalance = useMemo(() => {
+    return Object.values(accountBalances).reduce((s, b) => s + (b.income - b.expense), 0);
+  }, [accountBalances]);
 
   const stats = useMemo(() => {
     const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
@@ -238,6 +295,8 @@ const IncomeExpense = () => {
   const openAdd = (type: "income" | "expense") => {
     setEditId(null);
     setForm({ type, amount: "", category: "", note: "", created_at: new Date() });
+    setFormAccountId(accounts[0]?.id || "");
+    setAccountError("");
     setSheetOpen(true);
   };
 
@@ -247,6 +306,8 @@ const IncomeExpense = () => {
       type: t.type, amount: String(t.amount), category: t.category || "",
       note: t.note || "", created_at: new Date(t.created_at)
     });
+    setFormAccountId(t.account_id || "");
+    setAccountError("");
     setSheetOpen(true);
   };
 
@@ -255,10 +316,16 @@ const IncomeExpense = () => {
     const ok = formValidation.validateAll({
       type: form.type, amount: form.amount, category: form.category, note: form.note,
     });
+    if (!formAccountId) {
+      setAccountError("Please select a payment account");
+      toast.error("Select a payment account");
+      return;
+    }
     if (!ok) { toast.error("Please fix the errors below"); return; }
     const payload = {
       type: form.type, amount: Number(form.amount), category: form.category,
-      note: form.note, is_paid: true, created_at: form.created_at.toISOString()
+      note: form.note, is_paid: true, created_at: form.created_at.toISOString(),
+      account_id: formAccountId,
     };
     if (editId) {
       const { error } = await supabase.from("transactions").update(payload).eq("id", editId);
@@ -499,6 +566,95 @@ const IncomeExpense = () => {
           </CardContent>
         </Card>
 
+        {/* Per-Account Balances */}
+        <Card className="rounded-2xl">
+          <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Landmark className="h-4 w-4 text-primary" /> Account Balances
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-[10px] gap-1">
+                  <Wallet className="h-3 w-3" /> Total:
+                  <span className={`tabular-nums font-bold ${totalBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
+                    {totalBalance >= 0 ? "+" : "-"}{formatCurrency(Math.abs(totalBalance), 0)}
+                  </span>
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
+            {accounts.length === 0 ? (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-4">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+                  <p className="font-semibold mb-0.5">No payment accounts configured</p>
+                  <p>Add accounts (Cash, bKash, Bank, etc.) in <strong>Settings → Payment Methods</strong> before recording transactions. Every income/expense must be linked to an account.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {accounts.map((a) => {
+                  const b = accountBalances[a.id] || { income: 0, expense: 0, count: 0 };
+                  const bal = b.income - b.expense;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAccountFilter(accountFilter === a.id ? "all" : a.id)}
+                      className={`text-left rounded-xl border p-3 transition-all hover:shadow-md ${
+                        accountFilter === a.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border/60 bg-card"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Landmark className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate">{a.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{b.count} txns</p>
+                        </div>
+                      </div>
+                      <p className={`text-base font-bold tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                        {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                      </p>
+                      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground tabular-nums">
+                        <span className="text-green-600">↑ {formatCurrency(b.income, 0)}</span>
+                        <span className="text-destructive">↓ {formatCurrency(b.expense, 0)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {accountBalances["__unassigned__"] && (
+                  <div className="rounded-xl border border-dashed border-border/60 p-3 bg-muted/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">Unassigned</p>
+                        <p className="text-[10px] text-muted-foreground">{accountBalances["__unassigned__"].count} txns</p>
+                      </div>
+                    </div>
+                    <p className="text-base font-bold tabular-nums text-muted-foreground">
+                      {formatCurrency(accountBalances["__unassigned__"].income - accountBalances["__unassigned__"].expense, 0)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Legacy entries with no account</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {accountFilter !== "all" && (
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  Filtering by: <span className="font-semibold text-foreground">{accounts.find(a => a.id === accountFilter)?.name || accountFilter}</span>
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => setAccountFilter("all")} className="h-7 text-xs">Clear</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Tabs: Analytics / Transactions / Categories */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3 rounded-2xl h-11 p-1">
@@ -713,6 +869,12 @@ const IncomeExpense = () => {
                         <div>
                           <p className="text-sm font-semibold">{t.category || "Uncategorized"}</p>
                           {t.note && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{t.note}</p>}
+                          {t.account_id && (
+                            <p className="text-[10px] text-primary mt-0.5 flex items-center gap-1">
+                              <Landmark className="h-2.5 w-2.5" />
+                              {accounts.find(a => a.id === t.account_id)?.name || t.account_id}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <p className={`font-bold text-sm tabular-nums ${t.type === "income" ? "text-green-600" : "text-destructive"}`}>
@@ -761,6 +923,7 @@ const IncomeExpense = () => {
                         <TableHead>Date</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Account</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Note</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -769,11 +932,11 @@ const IncomeExpense = () => {
                     <TableBody>
                       {loading ? Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 6 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}
+                          {Array.from({ length: 7 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}
                         </TableRow>
                       )) : filtered.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-12">
+                          <TableCell colSpan={7} className="text-center py-12">
                             <ArrowUpDown className="h-10 w-10 text-muted-foreground/20 mx-auto mb-2" />
                             <p className="text-muted-foreground text-sm">No transactions found</p>
                           </TableCell>
@@ -791,6 +954,16 @@ const IncomeExpense = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="font-medium">{t.category || "Uncategorized"}</TableCell>
+                          <TableCell>
+                            {t.account_id ? (
+                              <Badge variant="secondary" className="text-[10px] gap-1">
+                                <Landmark className="h-2.5 w-2.5" />
+                                {accounts.find(a => a.id === t.account_id)?.name || t.account_id}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className={`text-right font-semibold tabular-nums ${t.type === "income" ? "text-green-600" : "text-destructive"}`}>
                             {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount, 0)}
                           </TableCell>
@@ -903,6 +1076,44 @@ const IncomeExpense = () => {
               </SheetTitle>
             </SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-5 mt-6">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Landmark className="h-3.5 w-3.5 text-primary" />
+                  Payment Account <span className="text-destructive">*</span>
+                </Label>
+                {accounts.length === 0 ? (
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+                    No accounts found. Add a payment method in <strong>Settings → Payment Methods</strong> first.
+                  </div>
+                ) : (
+                  <Select value={formAccountId} onValueChange={(v) => { setFormAccountId(v); setAccountError(""); }}>
+                    <SelectTrigger className={`rounded-xl ${accountError ? "border-destructive" : ""}`}>
+                      <SelectValue placeholder="Select account (where money comes from / goes to)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((a) => {
+                        const b = accountBalances[a.id] || { income: 0, expense: 0 };
+                        const bal = b.income - b.expense;
+                        return (
+                          <SelectItem key={a.id} value={a.id}>
+                            <span className="flex items-center justify-between gap-3 w-full">
+                              <span className="font-medium">{a.name}</span>
+                              <span className={`text-xs tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                                {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                              </span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+                {accountError && <p className="text-xs text-destructive animate-fade-in">{accountError}</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  {form.type === "income" ? "Money will be added to this account." : "Money will be deducted from this account."}
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Type</Label>
                 <div className="grid grid-cols-2 gap-2">
