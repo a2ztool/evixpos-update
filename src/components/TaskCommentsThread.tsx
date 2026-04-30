@@ -139,6 +139,21 @@ const TaskCommentsThread = ({
       sender_id: myId,
       message: msg,
     };
+    if (!navigator.onLine) {
+      const tempId = genChatTempId();
+      await enqueueChat({
+        tempId,
+        kind: "task_comment",
+        createdAt: new Date().toISOString(),
+        payload,
+      });
+      setSending(false);
+      setText("");
+      setReplyTo(null);
+      toast.success("Comment queued — will send when online");
+      refreshPending();
+      return;
+    }
     const { error } = await db.from("chat_task_comments").insert(payload);
     setSending(false);
     if (error) {
