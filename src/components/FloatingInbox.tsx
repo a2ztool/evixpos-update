@@ -346,6 +346,51 @@ const FloatingInbox = () => {
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, fetchGroups]);
 
+  // ─── Task comment counts (per visible task in active group) ───
+  useEffect(() => {
+    if (!activeConv || activeConv.type !== "group") {
+      setTaskCommentCounts({});
+      return;
+    }
+    const taskIds = messages.filter(m => m.message_type === "task").map(m => m.id);
+    if (taskIds.length === 0) { setTaskCommentCounts({}); return; }
+    let cancelled = false;
+    const refresh = async () => {
+      const { data } = await db
+        .from("chat_task_comments")
+        .select("task_message_id")
+        .in("task_message_id", taskIds);
+      if (cancelled || !data) return;
+      const counts: Record<string, number> = {};
+      data.forEach((r: any) => { counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1; });
+      setTaskCommentCounts(counts);
+    };
+    refresh();
+    return () => { cancelled = true; };
+  }, [activeConv, messages]);
+
+  // ─── Realtime: task comments (sound + count refresh) ───
+  useEffect(() => {
+    if (!storeId || !myId) return;
+    const channel = supabase
+      .channel(`floating-task-comments-${storeId}-${myId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_task_comments" }, (payload) => {
+        const c = payload.new as any;
+        // Refresh count for the affected task
+        setTaskCommentCounts(prev => ({ ...prev, [c.task_message_id]: (prev[c.task_message_id] || 0) + 1 }));
+        // Sound: only if from someone else
+        if (c.sender_id !== myId && soundRef.current) {
+          playNotificationSound("message");
+        }
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_task_comments" }, (payload) => {
+        const c = payload.old as any;
+        setTaskCommentCounts(prev => ({ ...prev, [c.task_message_id]: Math.max(0, (prev[c.task_message_id] || 1) - 1) }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, myId]);
+
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
   };
