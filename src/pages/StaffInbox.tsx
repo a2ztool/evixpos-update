@@ -787,6 +787,52 @@ const StaffInbox = () => {
 
   const showChat = activeChat !== null;
   const visibleMessages = messages.filter(m => isVisible(m));
+
+  // Fetch comment counts for all task messages currently shown in a group chat
+  useEffect(() => {
+    if (activeChatType !== "group" || !activeChat) {
+      setTaskCommentCounts({});
+      return;
+    }
+    const taskIds = visibleMessages
+      .filter((m) => m.message_type === "task")
+      .map((m) => m.id);
+    if (taskIds.length === 0) { setTaskCommentCounts({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await db
+        .from("chat_task_comments")
+        .select("task_message_id")
+        .in("task_message_id", taskIds);
+      if (cancelled || !data) return;
+      const counts: Record<string, number> = {};
+      data.forEach((r: any) => {
+        counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1;
+      });
+      setTaskCommentCounts(counts);
+    })();
+    // Realtime: refresh on any insert/delete in this group's comments
+    const channel = supabase
+      .channel(`task-comment-counts-${activeChat}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "chat_task_comments", filter: `group_id=eq.${activeChat}` },
+        async () => {
+          const { data } = await db
+            .from("chat_task_comments")
+            .select("task_message_id")
+            .in("task_message_id", taskIds);
+          if (!data) return;
+          const counts: Record<string, number> = {};
+          data.forEach((r: any) => {
+            counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1;
+          });
+          setTaskCommentCounts(counts);
+        })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChat, activeChatType, visibleMessages.length]);
+
   const pinnedMessages = visibleMessages
     .filter(m => m.is_pinned && !m.is_deleted_for_everyone)
     .sort((a, b) => (a.pinned_at && b.pinned_at) ? new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime() : 0);
