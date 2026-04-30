@@ -566,6 +566,95 @@ const IncomeExpense = () => {
           </CardContent>
         </Card>
 
+        {/* Per-Account Balances */}
+        <Card className="rounded-2xl">
+          <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Landmark className="h-4 w-4 text-primary" /> Account Balances
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-[10px] gap-1">
+                  <Wallet className="h-3 w-3" /> Total:
+                  <span className={`tabular-nums font-bold ${totalBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
+                    {totalBalance >= 0 ? "+" : "-"}{formatCurrency(Math.abs(totalBalance), 0)}
+                  </span>
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
+            {accounts.length === 0 ? (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-4">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+                  <p className="font-semibold mb-0.5">No payment accounts configured</p>
+                  <p>Add accounts (Cash, bKash, Bank, etc.) in <strong>Settings → Payment Methods</strong> before recording transactions. Every income/expense must be linked to an account.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {accounts.map((a) => {
+                  const b = accountBalances[a.id] || { income: 0, expense: 0, count: 0 };
+                  const bal = b.income - b.expense;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAccountFilter(accountFilter === a.id ? "all" : a.id)}
+                      className={`text-left rounded-xl border p-3 transition-all hover:shadow-md ${
+                        accountFilter === a.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border/60 bg-card"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Landmark className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate">{a.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{b.count} txns</p>
+                        </div>
+                      </div>
+                      <p className={`text-base font-bold tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                        {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                      </p>
+                      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground tabular-nums">
+                        <span className="text-green-600">↑ {formatCurrency(b.income, 0)}</span>
+                        <span className="text-destructive">↓ {formatCurrency(b.expense, 0)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {accountBalances["__unassigned__"] && (
+                  <div className="rounded-xl border border-dashed border-border/60 p-3 bg-muted/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">Unassigned</p>
+                        <p className="text-[10px] text-muted-foreground">{accountBalances["__unassigned__"].count} txns</p>
+                      </div>
+                    </div>
+                    <p className="text-base font-bold tabular-nums text-muted-foreground">
+                      {formatCurrency(accountBalances["__unassigned__"].income - accountBalances["__unassigned__"].expense, 0)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Legacy entries with no account</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {accountFilter !== "all" && (
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  Filtering by: <span className="font-semibold text-foreground">{accounts.find(a => a.id === accountFilter)?.name || accountFilter}</span>
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => setAccountFilter("all")} className="h-7 text-xs">Clear</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Tabs: Analytics / Transactions / Categories */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3 rounded-2xl h-11 p-1">
