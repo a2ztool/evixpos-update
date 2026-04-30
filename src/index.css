@@ -612,3 +612,18 @@ body,
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Premium SaaS-style glossy side beams for hero preview */
+@keyframes beam-glow-left {
+  0%, 100% { opacity: 0.55; transform: translateY(-50%) translateX(0) scaleY(1); }
+  50%      { opacity: 1;    transform: translateY(-50%) translateX(8px) scaleY(1.08); }
+}
+@keyframes beam-glow-right {
+  0%, 100% { opacity: 0.55; transform: translateY(-50%) translateX(0) scaleY(1); }
+  50%      { opacity: 1;    transform: translateY(-50%) translateX(-8px) scaleY(1.08); }
+}
+@keyframes beam-sheen {
+  0%   { transform: translateY(-120%) skewY(-12deg); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: translateY(120%) skewY(-12deg); opacity: 0; }
+}
