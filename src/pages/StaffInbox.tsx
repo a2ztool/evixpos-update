@@ -27,6 +27,7 @@ import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
 import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
+import { enqueueChat, genChatTempId } from "@/lib/offlineChat";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
 import {
