@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Send, Reply, MessageCircle, Trash2, X } from "lucide-react";
+import { Send, Reply, MessageCircle, Trash2, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday } from "date-fns";
 import { toast } from "sonner";
@@ -195,6 +195,11 @@ const TaskCommentsThread = ({
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-foreground">{mine ? "You" : name}</span>
               <span className="text-[10px] text-muted-foreground">{fmt(c.created_at)}</span>
+              {c.__pending && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+                  <Clock className="h-2.5 w-2.5" /> Sending…
+                </span>
+              )}
             </div>
             <div
               className="text-sm text-foreground whitespace-pre-wrap break-words mt-0.5 select-text"
