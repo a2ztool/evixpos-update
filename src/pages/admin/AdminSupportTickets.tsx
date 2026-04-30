@@ -119,12 +119,21 @@ const AdminSupportTickets = () => {
     if (!newMessage.trim() || !selectedTicket) return;
     setSendingMsg(true);
     const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase.from("support_messages").insert({
+    const payload = {
       ticket_id: selectedTicket.id,
       user_id: userData.user?.id || "",
       message: newMessage.trim(),
       sender_type: "admin",
-    } as any);
+    };
+    if (!navigator.onLine) {
+      const { enqueueChat, genChatTempId } = await import("@/lib/offlineChat");
+      await enqueueChat({ tempId: genChatTempId(), kind: "support_message", createdAt: new Date().toISOString(), payload });
+      setNewMessage("");
+      toast.success("Reply queued — will send when online");
+      setSendingMsg(false);
+      return;
+    }
+    const { error } = await supabase.from("support_messages").insert(payload as any);
     if (!error) {
       setNewMessage("");
       fetchMessages(selectedTicket.id);
