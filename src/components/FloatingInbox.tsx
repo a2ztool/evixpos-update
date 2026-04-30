@@ -795,7 +795,7 @@ const FloatingInbox = () => {
               </div>
               <div
                 ref={scrollRef}
-                className="absolute inset-0 top-[60px] bottom-[72px] px-3 py-3 space-y-3 bg-muted/20 overflow-y-auto"
+                className="absolute inset-0 top-[60px] bottom-[72px] px-2 sm:px-3 py-2.5 sm:py-3 space-y-2 sm:space-y-3 bg-muted/20 overflow-y-auto"
               >
                 {visibleMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-4">
