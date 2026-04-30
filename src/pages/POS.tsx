@@ -1251,6 +1251,11 @@ const POS = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
         <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-[120px] lg:pb-6">
+          {/* Offline / sync status */}
+          <div className="flex items-center justify-end mb-2">
+            <POSOfflineBadge onSynced={() => fetchProductsAndVariations()} />
+          </div>
+
           {/* Category tabs */}
           <ScrollArea className="w-full">
             <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-1">
