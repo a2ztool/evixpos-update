@@ -143,14 +143,14 @@ const ChatMessageBubble = ({
       }}
     >
       {!isMine && (
-        <Avatar className="h-7 w-7 shrink-0 mt-1">
-          <AvatarFallback className="bg-accent text-accent-foreground text-[10px] font-medium">
+        <Avatar className="h-6 w-6 sm:h-7 sm:w-7 shrink-0 mt-1">
+          <AvatarFallback className="bg-accent text-accent-foreground text-[9px] sm:text-[10px] font-medium">
             {senderInitial}
           </AvatarFallback>
         </Avatar>
       )}
 
-      <div className="flex flex-col max-w-[80%] md:max-w-[70%]">
+      <div className="flex flex-col max-w-[85%] sm:max-w-[80%] md:max-w-[70%]">
         {/* Pinned indicator */}
         {isPinned && !isDeleted && (
           <div className={cn(
@@ -181,7 +181,7 @@ const ChatMessageBubble = ({
         )}
 
         <div className={cn(
-          "rounded-2xl px-3.5 py-2.5 text-sm relative transition-shadow",
+          "rounded-2xl px-2.5 py-2 sm:px-3.5 sm:py-2.5 text-[13px] sm:text-sm relative transition-shadow",
           isTask && !isDeleted
             ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 text-foreground rounded-xl"
             : isMine
@@ -263,16 +263,16 @@ const ChatMessageBubble = ({
 
           {/* Task message - premium card */}
           {isTask && !isDeleted && (
-            <div className="mb-2">
-              <div className="flex items-center gap-2 mb-2">
-                <ListTodo className="w-4 h-4 text-primary" />
-                <span className="font-semibold text-sm">Task Assignment</span>
+            <div className="mb-1.5 sm:mb-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <ListTodo className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                <span className="font-semibold text-[12px] sm:text-sm">Task Assignment</span>
               </div>
-              <div className="bg-background/60 rounded-lg p-2.5 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{msg.task_title}</span>
+              <div className="bg-background/60 rounded-lg p-2 sm:p-2.5 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-[12px] sm:text-sm truncate">{msg.task_title}</span>
                   <Badge variant="outline" className={cn(
-                    "text-[10px] h-5 capitalize border transition-all",
+                    "text-[9px] sm:text-[10px] h-4 sm:h-5 px-1 sm:px-2 capitalize border transition-all shrink-0",
                     TASK_STATUS_COLORS[msg.task_status || "pending"] || TASK_STATUS_COLORS.pending,
                     highlight && "scale-110"
                   )}>
@@ -283,7 +283,7 @@ const ChatMessageBubble = ({
               </div>
               {/* Staff can update task status */}
               {canUpdateTask && onTaskStatusUpdate && (
-                <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-1 mt-1.5 sm:mt-2">
                   {["pending", "in-progress", "completed"].map(status => (
                     <Button
                       key={status}
@@ -333,7 +333,7 @@ const ChatMessageBubble = ({
           )}
           {isTask && !isDeleted && msg.message && (
             <p
-              className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1 select-text"
+              className="whitespace-pre-wrap break-words text-[11px] sm:text-xs text-muted-foreground mt-1 select-text leading-snug"
               style={{ userSelect: "text", WebkitUserSelect: "text" }}
             >
               {renderWithMentions(msg.message)}
@@ -345,9 +345,9 @@ const ChatMessageBubble = ({
             <button
               type="button"
               onClick={() => onOpenTaskComments(msg)}
-              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-primary hover:underline"
+              className="mt-1.5 sm:mt-2 inline-flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] font-medium text-primary hover:underline"
             >
-              <MessageCircle className="w-3 h-3" />
+              <MessageCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               {taskCommentCount && taskCommentCount > 0
                 ? `${taskCommentCount} comment${taskCommentCount === 1 ? "" : "s"}`
                 : "Comments"}
@@ -355,15 +355,15 @@ const ChatMessageBubble = ({
           )}
 
           <div className={cn(
-            "text-[10px] mt-1 flex items-center gap-1",
+            "text-[9px] sm:text-[10px] mt-1 flex items-center gap-1",
             isTask && !isDeleted
               ? "text-muted-foreground"
               : isMine ? "text-primary-foreground/70" : "text-muted-foreground"
           )}>
             {formatMsgTime(msg.created_at)}
             {isMine && (msg.is_read
-              ? <CheckCheck className="w-3 h-3 text-primary" />
-              : <Check className="w-3 h-3 opacity-70" />
+              ? <CheckCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+              : <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" />
             )}
           </div>
         </div>
