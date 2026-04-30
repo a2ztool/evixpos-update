@@ -189,7 +189,16 @@ const SupportPage = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket || !user) return;
     setSendingMsg(true);
-    const { error } = await supabase.from("support_messages").insert({ ticket_id: selectedTicket.id, user_id: effectiveUserId!, message: newMessage.trim(), sender_type: "user" } as any);
+    const payload = { ticket_id: selectedTicket.id, user_id: effectiveUserId!, message: newMessage.trim(), sender_type: "user" };
+    if (!navigator.onLine) {
+      const { enqueueChat, genChatTempId } = await import("@/lib/offlineChat");
+      await enqueueChat({ tempId: genChatTempId(), kind: "support_message", createdAt: new Date().toISOString(), payload });
+      setNewMessage("");
+      toast.success("Reply queued — will send when online");
+      setSendingMsg(false);
+      return;
+    }
+    const { error } = await supabase.from("support_messages").insert(payload as any);
     if (!error) {
       setNewMessage("");
       fetchMessages(selectedTicket.id);
