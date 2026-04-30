@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Send, Reply, MessageCircle, Trash2, X } from "lucide-react";
+import { Send, Reply, MessageCircle, Trash2, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday } from "date-fns";
 import { toast } from "sonner";
 import { playNotificationSound } from "@/lib/notificationSound";
+import { enqueueChat, genChatTempId, listPendingFor, subscribeChatOutbox } from "@/lib/offlineChat";
 
 const db = supabase as any;
 
@@ -21,6 +22,7 @@ interface TaskComment {
   sender_id: string;
   message: string;
   created_at: string;
+  __pending?: boolean;
 }
 
 interface Props {
@@ -47,6 +49,34 @@ const TaskCommentsThread = ({
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ─── Pending offline comments for this task ───
+  const refreshPending = useCallback(async () => {
+    const pending = await listPendingFor(
+      (e) => e.kind === "task_comment" && e.payload?.task_message_id === taskMessageId
+    );
+    setComments((prev) => {
+      const real = prev.filter((c) => !c.__pending);
+      const pendingMapped: TaskComment[] = pending.map((p) => ({
+        id: p.tempId,
+        task_message_id: p.payload.task_message_id,
+        group_id: p.payload.group_id,
+        parent_comment_id: p.payload.parent_comment_id ?? null,
+        sender_id: p.payload.sender_id,
+        message: p.payload.message,
+        created_at: p.createdAt,
+        __pending: true,
+      }));
+      return [...real, ...pendingMapped];
+    });
+  }, [taskMessageId]);
+
+  useEffect(() => {
+    if (!open) return;
+    refreshPending();
+    const unsub = subscribeChatOutbox(refreshPending);
+    return () => { unsub(); };
+  }, [open, refreshPending]);
 
   const scrollBottom = useCallback(() => {
     setTimeout(() => {
@@ -109,6 +139,21 @@ const TaskCommentsThread = ({
       sender_id: myId,
       message: msg,
     };
+    if (!navigator.onLine) {
+      const tempId = genChatTempId();
+      await enqueueChat({
+        tempId,
+        kind: "task_comment",
+        createdAt: new Date().toISOString(),
+        payload,
+      });
+      setSending(false);
+      setText("");
+      setReplyTo(null);
+      toast.success("Comment queued — will send when online");
+      refreshPending();
+      return;
+    }
     const { error } = await db.from("chat_task_comments").insert(payload);
     setSending(false);
     if (error) {
@@ -150,6 +195,11 @@ const TaskCommentsThread = ({
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-foreground">{mine ? "You" : name}</span>
               <span className="text-[10px] text-muted-foreground">{fmt(c.created_at)}</span>
+              {c.__pending && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+                  <Clock className="h-2.5 w-2.5" /> Sending…
+                </span>
+              )}
             </div>
             <div
               className="text-sm text-foreground whitespace-pre-wrap break-words mt-0.5 select-text"

@@ -27,6 +27,7 @@ import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
 import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
+import { enqueueChat, genChatTempId } from "@/lib/offlineChat";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
 import {
@@ -507,6 +508,14 @@ const StaffInbox = () => {
       };
       if (replyToId) insertData.reply_to_id = replyToId;
 
+      if (!navigator.onLine) {
+        const tId = genChatTempId();
+        await enqueueChat({ tempId: tId, kind: "direct_message", createdAt: new Date().toISOString(), payload: insertData });
+        setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, id: tId } as any : m));
+        toast.success("Queued — will send when online");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("staff_messages")
         .insert(insertData)
@@ -542,6 +551,22 @@ const StaffInbox = () => {
     const insertData: any = { group_id: activeChat, sender_id: myId, message: msg, type: "text" };
     if (replyToId) insertData.reply_to_id = replyToId;
     if (mentions.length) insertData.mentions = mentions;
+    if (!navigator.onLine) {
+      const tId = genChatTempId();
+      const optimistic: ChatMessage = {
+        id: tId, store_id: storeId, sender_id: myId, receiver_id: null as any,
+        message: msg, message_type: "text", file_url: null, file_name: null,
+        task_title: null, task_status: null, is_read: false,
+        created_at: new Date().toISOString(),
+        reply_to_id: replyToId, reactions: null,
+        deleted_for: null, is_deleted_for_everyone: false,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      scrollToBottom();
+      await enqueueChat({ tempId: tId, kind: "group_message", createdAt: new Date().toISOString(), payload: insertData });
+      toast.success("Queued — will send when online");
+      return;
+    }
     await db.from("chat_group_messages").insert(insertData);
   };
 
@@ -642,6 +667,11 @@ const StaffInbox = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChat || !storeId || !myId) return;
+    if (!navigator.onLine) {
+      toast.error("Attachments require an internet connection");
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();

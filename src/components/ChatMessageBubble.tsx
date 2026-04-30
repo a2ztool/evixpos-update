@@ -361,10 +361,21 @@ const ChatMessageBubble = ({
               : isMine ? "text-primary-foreground/70" : "text-muted-foreground"
           )}>
             {formatMsgTime(msg.created_at)}
-            {isMine && (msg.is_read
-              ? <CheckCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
-              : <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" />
-            )}
+            {isMine && (() => {
+              const idStr = String(msg.id || "");
+              const isPending = idStr.startsWith("temp-") || idStr.startsWith("chat_");
+              if (isPending) {
+                return (
+                  <span className="inline-flex items-center gap-0.5 opacity-90">
+                    <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span className="text-[9px] sm:text-[10px]">Sending…</span>
+                  </span>
+                );
+              }
+              return msg.is_read
+                ? <CheckCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                : <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" />;
+            })()}
           </div>
         </div>
 

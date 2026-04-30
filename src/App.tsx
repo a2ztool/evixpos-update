@@ -12,6 +12,7 @@ import { PlansConfigProvider } from "@/contexts/PlansConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import OfflineBanner from "@/components/OfflineBanner";
 import MaintenanceBanner from "@/components/MaintenanceBanner";
+import { OfflineChatDrainer } from "@/components/OfflineChatDrainer";
 import ScrollProgress from "@/components/ScrollProgress";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
@@ -172,6 +173,7 @@ const App = () => {
         <Sonner />
         <OfflineBanner />
         <MaintenanceBanner />
+        <OfflineChatDrainer />
         <ScrollProgress />
         <BrowserRouter>
           <Routes>
