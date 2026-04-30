@@ -25,7 +25,7 @@ import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, DollarSign, Wallet, PiggyBank, BarChart3,
   FileText, Sparkles, Lightbulb, ShieldCheck, Zap, Target, ArrowUpRight,
-  ArrowDownRight, Activity, CreditCard
+  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar,
