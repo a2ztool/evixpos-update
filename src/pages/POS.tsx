@@ -114,8 +114,9 @@ const POS = () => {
   const canSplitPayment = hasFeature("split_payment");
 
   // ─── Offline-first: network + queue ───
+  const refetchAfterSyncRef = useRef<() => void>(() => {});
   const { isOnline: netOnline, pendingCount: offlinePending, syncing: offlineSyncing, sync: triggerSync } =
-    useOfflinePOS({ onSynced: () => fetchProductsAndVariations() });
+    useOfflinePOS({ onSynced: () => refetchAfterSyncRef.current?.() });
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
