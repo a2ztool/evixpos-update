@@ -179,12 +179,27 @@ const POS = () => {
   // ─── Data Fetching ───
   const fetchProductsAndVariations = useCallback(async () => {
     if (!user || !activeStore) return;
+    if (!navigator.onLine) {
+      // Offline: fall back to cached snapshot
+      const cachedP = await getCachedProducts(activeStore.id);
+      const cachedV = await getCachedVariations(activeStore.id);
+      if (cachedP.length) setProducts(cachedP as unknown as Product[]);
+      if (cachedV.length) setAllVariations(cachedV as unknown as ProductVariation[]);
+      return;
+    }
     const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category, sku").eq("store_id", activeStore.id).eq("is_active", true).order("name");
-    if (data) setProducts(data as Product[]);
+    if (data) {
+      setProducts(data as Product[]);
+      // Cache for offline (best-effort)
+      cacheOfflineProducts(activeStore.id, data as any).catch(() => {});
+    }
     if (data && data.length > 0) {
       const prodIds = data.map(p => p.id);
       const { data: vars } = await (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any);
-      if (vars) setAllVariations(vars as ProductVariation[]);
+      if (vars) {
+        setAllVariations(vars as ProductVariation[]);
+        cacheOfflineVariations(activeStore.id, vars as any).catch(() => {});
+      }
     }
   }, [user, activeStore]);
 
@@ -192,9 +207,17 @@ const POS = () => {
     if (!user || !activeStore) return;
     const ownerId = effectiveUserId || user.id;
     fetchProductsAndVariations();
-    supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
-      if (data) setCustomers(data as Customer[]);
-    });
+    refetchAfterSyncRef.current = () => { fetchProductsAndVariations(); };
+    if (navigator.onLine) {
+      supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
+        if (data) {
+          setCustomers(data as Customer[]);
+          cacheOfflineCustomers(activeStore.id, data as any).catch(() => {});
+        }
+      });
+    } else {
+      getCachedCustomers(activeStore.id).then(c => { if (c.length) setCustomers(c as Customer[]); });
+    }
     supabase.from("business_settings").select("payment_methods").eq("user_id", ownerId).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
       if (data?.payment_methods) {
         const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
