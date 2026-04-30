@@ -396,31 +396,31 @@ const AccountBook = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-3 sm:space-y-5 max-w-7xl mx-auto px-2 sm:px-4 pb-4">
         {/* Header */}
         <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background overflow-hidden">
-          <CardContent className="p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30">
-                  <BookOpen className="h-6 w-6 text-primary-foreground" />
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+              <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
+                  <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold tracking-tight">Account Book</h1>
+                    <h1 className="text-lg sm:text-2xl font-bold tracking-tight truncate">Account Book</h1>
                     <Badge variant="outline" className="text-[10px] gap-1 border-primary/30 text-primary">
                       <Sparkles className="h-2.5 w-2.5" /> LIVE
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">Auto-synced ledger across all your payment accounts</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">Auto-synced ledger across all your payment accounts</p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={openMappingDialog} className="gap-1.5">
-                  <Link2 className="h-3.5 w-3.5" /> WC Mapping
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" onClick={openMappingDialog} className="gap-1.5 h-8 text-xs flex-1 sm:flex-none">
+                  <Link2 className="h-3.5 w-3.5" /> <span className="hidden xs:inline sm:inline">WC </span>Mapping
                 </Button>
                 <Select value={datePreset} onValueChange={(v) => setDatePreset(v as DatePreset)}>
-                  <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-[120px] sm:w-[150px] h-8 text-xs flex-1 sm:flex-none"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="today">Today</SelectItem>
                     <SelectItem value="week">This Week</SelectItem>
@@ -436,7 +436,7 @@ const AccountBook = () => {
                   <>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5">
+                        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
                           <CalendarIcon className="h-3.5 w-3.5" />
                           {customFrom ? format(customFrom, "MMM d") : "From"}
                         </Button>
@@ -445,7 +445,7 @@ const AccountBook = () => {
                     </Popover>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1.5">
+                        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
                           <CalendarIcon className="h-3.5 w-3.5" />
                           {customTo ? format(customTo, "MMM d") : "To"}
                         </Button>
@@ -454,14 +454,14 @@ const AccountBook = () => {
                     </Popover>
                   </>
                 )}
-                <Button size="sm" className="gap-1.5" onClick={() => setSheetOpen(true)}>
-                  <Plus className="h-3.5 w-3.5" /> Manual Entry
+                <Button size="sm" className="gap-1.5 h-8 text-xs flex-1 sm:flex-none" onClick={() => setSheetOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" /> <span className="sm:inline">Manual Entry</span>
                 </Button>
               </div>
             </div>
 
             {/* KPI strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mt-4 sm:mt-6">
               <KPI label="Net Balance" value={formatCurrency(totals.balance)} icon={Wallet} tone="primary" />
               <KPI label="Income (period)" value={`+${formatCurrency(totals.income)}`} icon={TrendingUp} tone="success" />
               <KPI label="Expense (period)" value={`-${formatCurrency(totals.expense)}`} icon={TrendingDown} tone="danger" />
@@ -472,32 +472,32 @@ const AccountBook = () => {
 
         {/* Account cards grid */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3 px-1">
+            <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2 min-w-0">
               <Wallet className="h-4 w-4 text-primary" /> Accounts ({accountSummaries.length})
             </h2>
             <div className="flex gap-1.5">
-              <Button variant="outline" size="sm" onClick={() => downloadCSV("summary")} className="gap-1.5 text-xs h-8">
-                <FileSpreadsheet className="h-3 w-3" /> CSV Summary
+              <Button variant="outline" size="sm" onClick={() => downloadCSV("summary")} className="gap-1.5 text-xs h-8 px-2 sm:px-3">
+                <FileSpreadsheet className="h-3 w-3" /> <span className="hidden sm:inline">CSV Summary</span><span className="sm:hidden">CSV</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => downloadPDF("summary")} className="gap-1.5 text-xs h-8">
-                <FileText className="h-3 w-3" /> PDF Summary
+              <Button variant="outline" size="sm" onClick={() => downloadPDF("summary")} className="gap-1.5 text-xs h-8 px-2 sm:px-3">
+                <FileText className="h-3 w-3" /> <span className="hidden sm:inline">PDF Summary</span><span className="sm:hidden">PDF</span>
               </Button>
             </div>
           </div>
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 sm:h-32 rounded-xl" />)}
             </div>
           ) : accountSummaries.length === 0 ? (
             <Card className="border-dashed">
-              <CardContent className="p-8 text-center text-muted-foreground">
+              <CardContent className="p-6 sm:p-8 text-center text-muted-foreground">
                 <Wallet className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">No accounts yet — add payment methods in <strong>Settings → Payments</strong> to get started.</p>
+                <p className="text-xs sm:text-sm">No accounts yet — add payment methods in <strong>Settings → Payments</strong> to get started.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               {accountSummaries.map((a) => {
                 const active = activeAccountId === a.id;
                 return (
@@ -506,31 +506,31 @@ const AccountBook = () => {
                     onClick={() => setActiveAccountId(active ? null : a.id)}
                     className={`cursor-pointer transition-all hover:shadow-md ${active ? "ring-2 ring-primary border-primary/40 shadow-md" : "hover:border-primary/30"}`}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${a.id === UNASSIGNED ? "bg-muted" : "bg-primary/10"}`}>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center shrink-0 ${a.id === UNASSIGNED ? "bg-muted" : "bg-primary/10"}`}>
                             <Wallet className={`h-4 w-4 ${a.id === UNASSIGNED ? "text-muted-foreground" : "text-primary"}`} />
                           </div>
-                          <div>
-                            <div className="font-semibold text-sm">{a.name}</div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{a.allCount} txns total</div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-xs sm:text-sm truncate">{a.name}</div>
+                            <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">{a.allCount} txns</div>
                           </div>
                         </div>
-                        <Badge variant={a.balance >= 0 ? "default" : "destructive"} className="text-[10px]">
+                        <Badge variant={a.balance >= 0 ? "default" : "destructive"} className="text-[10px] shrink-0 whitespace-nowrap">
                           {a.balance >= 0 ? "+" : ""}{formatCurrency(a.balance)}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t">
-                        <div className="flex items-center gap-1.5">
-                          <ArrowUpRight className="h-3 w-3 text-emerald-600" />
+                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-xs pt-2 sm:pt-3 border-t">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <ArrowUpRight className="h-3 w-3 text-emerald-600 shrink-0" />
                           <span className="text-muted-foreground">In:</span>
-                          <span className="font-semibold text-emerald-600">{formatCurrency(a.periodIncome)}</span>
+                          <span className="font-semibold text-emerald-600 truncate">{formatCurrency(a.periodIncome)}</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <ArrowDownRight className="h-3 w-3 text-rose-600" />
+                        <div className="flex items-center gap-1 min-w-0">
+                          <ArrowDownRight className="h-3 w-3 text-rose-600 shrink-0" />
                           <span className="text-muted-foreground">Out:</span>
-                          <span className="font-semibold text-rose-600">{formatCurrency(a.periodExpense)}</span>
+                          <span className="font-semibold text-rose-600 truncate">{formatCurrency(a.periodExpense)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -543,35 +543,35 @@ const AccountBook = () => {
 
         {/* Detail/transaction view */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+          <CardHeader className="pb-3 p-3 sm:p-6 sm:pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 min-w-0">
                 {activeAccountId && (
                   <Button variant="ghost" size="sm" onClick={() => setActiveAccountId(null)} className="h-7 gap-1">
                     <ArrowLeft className="h-3.5 w-3.5" /> All
                   </Button>
                 )}
-                <CardTitle className="text-base">
+                <CardTitle className="text-sm sm:text-base truncate">
                   {activeAccountId ? `${accountName(activeAccountId)} · Statement` : "Recent Transactions"}
                 </CardTitle>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="pl-8 h-8 w-[180px] text-xs" />
+                  <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className="pl-8 h-8 w-full sm:w-[180px] text-xs" />
                 </div>
                 <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
-                  <SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-[100px] sm:w-[110px] text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="income">Income</SelectItem>
                     <SelectItem value="expense">Expense</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" onClick={() => downloadCSV("account")} className="gap-1.5 text-xs h-8">
+                <Button variant="outline" size="sm" onClick={() => downloadCSV("account")} className="gap-1.5 text-xs h-8 px-2 sm:px-3">
                   <Download className="h-3 w-3" /> CSV
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => downloadPDF("account")} className="gap-1.5 text-xs h-8">
+                <Button variant="outline" size="sm" onClick={() => downloadPDF("account")} className="gap-1.5 text-xs h-8 px-2 sm:px-3">
                   <FileText className="h-3 w-3" /> PDF
                 </Button>
               </div>
@@ -579,17 +579,42 @@ const AccountBook = () => {
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-6 space-y-2">
+              <div className="p-3 sm:p-6 space-y-2">
                 {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10" />)}
               </div>
             ) : visibleTxns.length === 0 ? (
-              <div className="p-12 text-center text-muted-foreground text-sm">
+              <div className="p-8 sm:p-12 text-center text-muted-foreground text-sm">
                 <FileText className="h-10 w-10 mx-auto mb-3 opacity-40" />
                 No transactions in this view.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <>
+                {/* Mobile list */}
+                <div className="sm:hidden divide-y">
+                  {visibleTxns.slice(0, 200).map((t) => (
+                    <div key={t.id} className="flex items-center gap-2.5 px-3 py-2.5">
+                      <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${t.type === "income" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"}`}>
+                        {t.type === "income" ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <div className="text-[13px] font-semibold truncate">{accountName(t._accountId)}</div>
+                          <Badge variant="outline" className="text-[8px] uppercase tracking-wider px-1 py-0 h-3.5 shrink-0">{t._source}</Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {t.category || "—"}{t.note ? ` · ${t.note}` : ""}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{format(new Date(t.created_at), "PP p")}</div>
+                      </div>
+                      <div className={`text-sm font-bold whitespace-nowrap ${t.type === "income" ? "text-emerald-600" : "text-rose-600"}`}>
+                        {t.type === "income" ? "+" : "-"}{formatCurrency(Number(t.amount))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -623,13 +648,14 @@ const AccountBook = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
                 {visibleTxns.length > 200 && (
                   <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t">
                     Showing 200 of {visibleTxns.length} — refine date range or export full list.
                   </div>
                 )}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
