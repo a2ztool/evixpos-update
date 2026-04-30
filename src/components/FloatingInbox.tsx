@@ -835,6 +835,12 @@ const FloatingInbox = () => {
                             if (error) toast.error("Failed to update task status");
                             else toast.success(`Task marked as ${status}`);
                           }}
+                          onOpenTaskComments={
+                            activeConv.type === "group" ? (m) => setCommentsTask(m) : undefined
+                          }
+                          taskCommentCount={
+                            activeConv.type === "group" ? (taskCommentCounts[msg.id] || 0) : 0
+                          }
                           myId={myId!}
                           isStaff={true}
                         />
