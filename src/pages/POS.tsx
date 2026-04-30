@@ -37,6 +37,20 @@ import POSKeyboardShortcuts from "@/components/pos/POSKeyboardShortcuts";
 import POSHeldOrders, { saveHeldOrder, getHeldOrders } from "@/components/pos/POSHeldOrders";
 import POSRecentTransactions from "@/components/pos/POSRecentTransactions";
 import POSSplitPayment, { type SplitPaymentEntry } from "@/components/pos/POSSplitPayment";
+import { POSOfflineBadge } from "@/components/pos/POSOfflineBadge";
+import {
+  cacheProducts as cacheOfflineProducts,
+  cacheVariations as cacheOfflineVariations,
+  cacheCustomers as cacheOfflineCustomers,
+  getCachedProducts,
+  getCachedVariations,
+  getCachedCustomers,
+  enqueueSale,
+  applyLocalStockDelta,
+  genTempId,
+  type OfflineSale,
+} from "@/lib/offlinePOS";
+import { useOfflinePOS } from "@/hooks/useOfflinePOS";
 
 interface Product {
   id: string;
@@ -98,6 +112,10 @@ const POS = () => {
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
   const { hasFeature } = useStorePlan();
   const canSplitPayment = hasFeature("split_payment");
+
+  // ─── Offline-first: network + queue ───
+  const { isOnline: netOnline, pendingCount: offlinePending, syncing: offlineSyncing, sync: triggerSync } =
+    useOfflinePOS({ onSynced: () => fetchProductsAndVariations() });
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
