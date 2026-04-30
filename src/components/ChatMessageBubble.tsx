@@ -4,12 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Check, CheckCheck, FileText, ListTodo, Reply, Trash2, Smile,
-  MoreVertical, Download, Clock, ArrowRight, Pin, PinOff
+  MoreVertical, Download, Clock, ArrowRight, Pin, PinOff, Copy, MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { REACTION_EMOJIS } from "@/hooks/useChatFeatures";
 import { renderWithMentions } from "@/lib/chatHelpers";
+import { toast } from "sonner";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuSeparator
@@ -52,6 +53,8 @@ interface Props {
   onScrollToMessage?: (msgId: string) => void;
   onTaskStatusUpdate?: (msgId: string, status: string) => void;
   onPinToggle?: (msg: ChatMessage) => void;
+  onOpenTaskComments?: (msg: ChatMessage) => void;
+  taskCommentCount?: number;
   myId: string;
   isStaff?: boolean;
 }
@@ -73,7 +76,8 @@ const TASK_STATUS_COLORS: Record<string, string> = {
 const ChatMessageBubble = ({
   msg, isMine, senderInitial, replyToMessage,
   onReply, onReaction, onDeleteForMe, onDeleteForEveryone,
-  onScrollToMessage, onTaskStatusUpdate, onPinToggle, myId, isStaff
+  onScrollToMessage, onTaskStatusUpdate, onPinToggle, onOpenTaskComments,
+  taskCommentCount, myId, isStaff
 }: Props) => {
   const [showActions, setShowActions] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -91,6 +95,30 @@ const ChatMessageBubble = ({
   // Owner/creator (isMine) can also update their own task in groups.
   const canUpdateTask = !!onTaskStatusUpdate && isTask && !isDeleted;
   const isPinned = !!msg.is_pinned;
+
+  const handleCopy = async () => {
+    try {
+      const text = isTask
+        ? `${msg.task_title || ""}\n\n${msg.message || ""}`.trim()
+        : (msg.message || "");
+      if (!text) return;
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      toast.success("Message copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
 
   // Highlight when task_status changes
   const [highlight, setHighlight] = useState(false);
@@ -203,8 +231,12 @@ const ChatMessageBubble = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isMine ? "end" : "start"} className="w-48">
+                  <DropdownMenuItem onClick={() => { handleCopy(); setMenuOpen(false); }}>
+                    <Copy className="w-3.5 h-3.5 mr-2" /> Copy text
+                  </DropdownMenuItem>
                   {onPinToggle && (
                     <>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => { onPinToggle(msg); setMenuOpen(false); }}>
                         {isPinned ? (
                           <><PinOff className="w-3.5 h-3.5 mr-2" /> Unpin message</>
@@ -212,9 +244,9 @@ const ChatMessageBubble = ({
                           <><Pin className="w-3.5 h-3.5 mr-2" /> Pin message</>
                         )}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                     </>
                   )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => { onDeleteForMe(msg.id); setMenuOpen(false); }}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete for me
                   </DropdownMenuItem>
@@ -292,14 +324,34 @@ const ChatMessageBubble = ({
 
           {/* Message text - for tasks show after task card */}
           {(!isTask || isDeleted) && (
-            <p className="whitespace-pre-wrap break-words">
+            <p
+              className="whitespace-pre-wrap break-words select-text"
+              style={{ userSelect: "text", WebkitUserSelect: "text" }}
+            >
               {isDeleted ? "🚫 This message was deleted" : renderWithMentions(msg.message)}
             </p>
           )}
           {isTask && !isDeleted && msg.message && (
-            <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1">
+            <p
+              className="whitespace-pre-wrap break-words text-xs text-muted-foreground mt-1 select-text"
+              style={{ userSelect: "text", WebkitUserSelect: "text" }}
+            >
               {renderWithMentions(msg.message)}
             </p>
+          )}
+
+          {/* Task comments button */}
+          {isTask && !isDeleted && onOpenTaskComments && (
+            <button
+              type="button"
+              onClick={() => onOpenTaskComments(msg)}
+              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-primary hover:underline"
+            >
+              <MessageCircle className="w-3 h-3" />
+              {taskCommentCount && taskCommentCount > 0
+                ? `${taskCommentCount} comment${taskCommentCount === 1 ? "" : "s"}`
+                : "Comments"}
+            </button>
           )}
 
           <div className={cn(
