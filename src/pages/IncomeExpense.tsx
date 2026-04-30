@@ -869,6 +869,12 @@ const IncomeExpense = () => {
                         <div>
                           <p className="text-sm font-semibold">{t.category || "Uncategorized"}</p>
                           {t.note && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{t.note}</p>}
+                          {t.account_id && (
+                            <p className="text-[10px] text-primary mt-0.5 flex items-center gap-1">
+                              <Landmark className="h-2.5 w-2.5" />
+                              {accounts.find(a => a.id === t.account_id)?.name || t.account_id}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <p className={`font-bold text-sm tabular-nums ${t.type === "income" ? "text-green-600" : "text-destructive"}`}>
@@ -917,6 +923,7 @@ const IncomeExpense = () => {
                         <TableHead>Date</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Account</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Note</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -925,11 +932,11 @@ const IncomeExpense = () => {
                     <TableBody>
                       {loading ? Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 6 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}
+                          {Array.from({ length: 7 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}
                         </TableRow>
                       )) : filtered.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-12">
+                          <TableCell colSpan={7} className="text-center py-12">
                             <ArrowUpDown className="h-10 w-10 text-muted-foreground/20 mx-auto mb-2" />
                             <p className="text-muted-foreground text-sm">No transactions found</p>
                           </TableCell>
@@ -947,6 +954,16 @@ const IncomeExpense = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="font-medium">{t.category || "Uncategorized"}</TableCell>
+                          <TableCell>
+                            {t.account_id ? (
+                              <Badge variant="secondary" className="text-[10px] gap-1">
+                                <Landmark className="h-2.5 w-2.5" />
+                                {accounts.find(a => a.id === t.account_id)?.name || t.account_id}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className={`text-right font-semibold tabular-nums ${t.type === "income" ? "text-green-600" : "text-destructive"}`}>
                             {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount, 0)}
                           </TableCell>
