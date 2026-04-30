@@ -816,7 +816,14 @@ const StaffInbox = () => {
       .channel(`task-comment-counts-${activeChat}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "chat_task_comments", filter: `group_id=eq.${activeChat}` },
-        async () => {
+        async (payload) => {
+          // Sound for incoming comments from others
+          if (payload.eventType === "INSERT") {
+            const c = payload.new as any;
+            if (c.sender_id !== myId && soundEnabledRef.current) {
+              playNotificationSound("message");
+            }
+          }
           const { data } = await db
             .from("chat_task_comments")
             .select("task_message_id")

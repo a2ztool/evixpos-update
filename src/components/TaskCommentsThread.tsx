@@ -9,6 +9,7 @@ import { Send, Reply, MessageCircle, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday } from "date-fns";
 import { toast } from "sonner";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 const db = supabase as any;
 
@@ -83,6 +84,9 @@ const TaskCommentsThread = ({
           const c = payload.new as TaskComment;
           setComments((prev) => prev.some((x) => x.id === c.id) ? prev : [...prev, c]);
           scrollBottom();
+          if (c.sender_id !== myId) {
+            playNotificationSound("message");
+          }
         })
       .on("postgres_changes",
         { event: "DELETE", schema: "public", table: "chat_task_comments", filter: `task_message_id=eq.${taskMessageId}` },
@@ -92,7 +96,7 @@ const TaskCommentsThread = ({
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [open, taskMessageId, scrollBottom]);
+  }, [open, taskMessageId, scrollBottom, myId]);
 
   const send = async () => {
     const msg = text.trim();

@@ -22,6 +22,7 @@ import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
+import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -77,6 +78,11 @@ const FloatingInbox = () => {
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
+  // Task comments
+  const [commentsTask, setCommentsTask] = useState<ChatMessage | null>(null);
+  const [taskCommentCounts, setTaskCommentCounts] = useState<Record<string, number>>({});
+  const commentsTaskRef = useRef<ChatMessage | null>(null);
+  useEffect(() => { commentsTaskRef.current = commentsTask; }, [commentsTask]);
   const openRef = useRef(open);
   const soundRef = useRef(soundEnabled);
   const activeConvRef = useRef<ConvItem | null>(activeConv);
@@ -339,6 +345,51 @@ const FloatingInbox = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [storeId, myId, fetchGroups]);
+
+  // ─── Task comment counts (per visible task in active group) ───
+  useEffect(() => {
+    if (!activeConv || activeConv.type !== "group") {
+      setTaskCommentCounts({});
+      return;
+    }
+    const taskIds = messages.filter(m => m.message_type === "task").map(m => m.id);
+    if (taskIds.length === 0) { setTaskCommentCounts({}); return; }
+    let cancelled = false;
+    const refresh = async () => {
+      const { data } = await db
+        .from("chat_task_comments")
+        .select("task_message_id")
+        .in("task_message_id", taskIds);
+      if (cancelled || !data) return;
+      const counts: Record<string, number> = {};
+      data.forEach((r: any) => { counts[r.task_message_id] = (counts[r.task_message_id] || 0) + 1; });
+      setTaskCommentCounts(counts);
+    };
+    refresh();
+    return () => { cancelled = true; };
+  }, [activeConv, messages]);
+
+  // ─── Realtime: task comments (sound + count refresh) ───
+  useEffect(() => {
+    if (!storeId || !myId) return;
+    const channel = supabase
+      .channel(`floating-task-comments-${storeId}-${myId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_task_comments" }, (payload) => {
+        const c = payload.new as any;
+        // Refresh count for the affected task
+        setTaskCommentCounts(prev => ({ ...prev, [c.task_message_id]: (prev[c.task_message_id] || 0) + 1 }));
+        // Sound: only if from someone else
+        if (c.sender_id !== myId && soundRef.current) {
+          playNotificationSound("message");
+        }
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_task_comments" }, (payload) => {
+        const c = payload.old as any;
+        setTaskCommentCounts(prev => ({ ...prev, [c.task_message_id]: Math.max(0, (prev[c.task_message_id] || 1) - 1) }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, myId]);
 
   const scrollToBottom = () => {
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 80);
@@ -784,6 +835,12 @@ const FloatingInbox = () => {
                             if (error) toast.error("Failed to update task status");
                             else toast.success(`Task marked as ${status}`);
                           }}
+                          onOpenTaskComments={
+                            activeConv.type === "group" ? (m) => setCommentsTask(m) : undefined
+                          }
+                          taskCommentCount={
+                            activeConv.type === "group" ? (taskCommentCounts[msg.id] || 0) : 0
+                          }
                           myId={myId!}
                           isStaff={true}
                         />
@@ -956,6 +1013,23 @@ const FloatingInbox = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Task comments thread (group chats only) */}
+      {commentsTask && activeConv?.type === "group" && (
+        <TaskCommentsThread
+          open={!!commentsTask}
+          onOpenChange={(o) => { if (!o) setCommentsTask(null); }}
+          taskMessageId={commentsTask.id}
+          groupId={activeConv.id}
+          taskTitle={commentsTask.task_title || "Task"}
+          myId={myId!}
+          resolveName={(uid) => {
+            if (uid === myId) return "You";
+            if (uid === ownerId) return "Store Owner";
+            return memberNames[uid] || "Member";
+          }}
+        />
+      )}
     </>
   );
 };
