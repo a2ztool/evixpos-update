@@ -1442,6 +1442,8 @@ const StaffInbox = () => {
                               if (error) toast.error("Failed to update task status");
                               else toast.success(`Task marked as ${status}`);
                             }}
+                            onOpenTaskComments={(m) => setCommentsTask(m)}
+                            taskCommentCount={taskCommentCounts[msg.id] || 0}
                             myId={myId!}
                             isStaff={isStaff}
                           />
