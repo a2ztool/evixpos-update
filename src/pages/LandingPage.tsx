@@ -610,6 +610,40 @@ const LandingPage = () => {
           {/* Dashboard Preview */}
           <motion.div initial={{ opacity: 0, y: 60, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="relative max-w-5xl mx-auto mt-12">
             <div className="absolute -inset-6 bg-gradient-to-tr from-primary/15 via-primary/5 to-transparent rounded-3xl blur-3xl" />
+
+            {/* Premium glossy side light beams (animated) */}
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 -left-16 sm:-left-24 w-24 sm:w-40 overflow-hidden">
+              <div
+                className="absolute top-1/2 left-0 h-[120%] w-full"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.35) 40%, hsl(var(--primary) / 0.85) 55%, hsl(var(--primary) / 0.35) 70%, transparent 100%)",
+                  filter: "blur(28px)",
+                  animation: "beam-glow-left 4.5s ease-in-out infinite",
+                }}
+              />
+              <div
+                className="absolute top-0 left-6 sm:left-10 h-full w-[2px] bg-gradient-to-b from-transparent via-primary to-transparent opacity-70"
+                style={{ animation: "beam-sheen 3.8s ease-in-out infinite" }}
+              />
+            </div>
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 -right-16 sm:-right-24 w-24 sm:w-40 overflow-hidden">
+              <div
+                className="absolute top-1/2 right-0 h-[120%] w-full"
+                style={{
+                  background:
+                    "linear-gradient(270deg, transparent 0%, hsl(var(--primary) / 0.35) 40%, hsl(var(--primary) / 0.85) 55%, hsl(var(--primary) / 0.35) 70%, transparent 100%)",
+                  filter: "blur(28px)",
+                  animation: "beam-glow-right 4.5s ease-in-out infinite",
+                  animationDelay: "1.2s",
+                }}
+              />
+              <div
+                className="absolute top-0 right-6 sm:right-10 h-full w-[2px] bg-gradient-to-b from-transparent via-primary to-transparent opacity-70"
+                style={{ animation: "beam-sheen 3.8s ease-in-out infinite", animationDelay: "1.6s" }}
+              />
+            </div>
+
             <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl shadow-primary/10">
               <div className="bg-muted/80 h-9 flex items-center gap-2 px-4 border-b border-border/50">
                 <div className="w-3 h-3 rounded-full bg-destructive/60" />
