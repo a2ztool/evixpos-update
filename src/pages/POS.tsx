@@ -37,6 +37,20 @@ import POSKeyboardShortcuts from "@/components/pos/POSKeyboardShortcuts";
 import POSHeldOrders, { saveHeldOrder, getHeldOrders } from "@/components/pos/POSHeldOrders";
 import POSRecentTransactions from "@/components/pos/POSRecentTransactions";
 import POSSplitPayment, { type SplitPaymentEntry } from "@/components/pos/POSSplitPayment";
+import { POSOfflineBadge } from "@/components/pos/POSOfflineBadge";
+import {
+  cacheProducts as cacheOfflineProducts,
+  cacheVariations as cacheOfflineVariations,
+  cacheCustomers as cacheOfflineCustomers,
+  getCachedProducts,
+  getCachedVariations,
+  getCachedCustomers,
+  enqueueSale,
+  applyLocalStockDelta,
+  genTempId,
+  type OfflineSale,
+} from "@/lib/offlinePOS";
+import { useOfflinePOS } from "@/hooks/useOfflinePOS";
 
 interface Product {
   id: string;
@@ -98,6 +112,11 @@ const POS = () => {
   const { activeCurrency, setActiveCurrency, currencies, symbol, format } = useCurrency();
   const { hasFeature } = useStorePlan();
   const canSplitPayment = hasFeature("split_payment");
+
+  // ─── Offline-first: network + queue ───
+  const refetchAfterSyncRef = useRef<() => void>(() => {});
+  const { isOnline: netOnline, pendingCount: offlinePending, syncing: offlineSyncing, sync: triggerSync } =
+    useOfflinePOS({ onSynced: () => refetchAfterSyncRef.current?.() });
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -160,12 +179,27 @@ const POS = () => {
   // ─── Data Fetching ───
   const fetchProductsAndVariations = useCallback(async () => {
     if (!user || !activeStore) return;
+    if (!navigator.onLine) {
+      // Offline: fall back to cached snapshot
+      const cachedP = await getCachedProducts(activeStore.id);
+      const cachedV = await getCachedVariations(activeStore.id);
+      if (cachedP.length) setProducts(cachedP as unknown as Product[]);
+      if (cachedV.length) setAllVariations(cachedV as unknown as ProductVariation[]);
+      return;
+    }
     const { data } = await supabase.from("products").select("id, name, price, type, stock, image_url, category, sku").eq("store_id", activeStore.id).eq("is_active", true).order("name");
-    if (data) setProducts(data as Product[]);
+    if (data) {
+      setProducts(data as Product[]);
+      // Cache for offline (best-effort)
+      cacheOfflineProducts(activeStore.id, data as any).catch(() => {});
+    }
     if (data && data.length > 0) {
       const prodIds = data.map(p => p.id);
       const { data: vars } = await (supabase.from("product_variations" as any).select("*").in("product_id", prodIds).order("sort_order") as any);
-      if (vars) setAllVariations(vars as ProductVariation[]);
+      if (vars) {
+        setAllVariations(vars as ProductVariation[]);
+        cacheOfflineVariations(activeStore.id, vars as any).catch(() => {});
+      }
     }
   }, [user, activeStore]);
 
@@ -173,9 +207,17 @@ const POS = () => {
     if (!user || !activeStore) return;
     const ownerId = effectiveUserId || user.id;
     fetchProductsAndVariations();
-    supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
-      if (data) setCustomers(data as Customer[]);
-    });
+    refetchAfterSyncRef.current = () => { fetchProductsAndVariations(); };
+    if (navigator.onLine) {
+      supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id).order("name").then(({ data }) => {
+        if (data) {
+          setCustomers(data as Customer[]);
+          cacheOfflineCustomers(activeStore.id, data as any).catch(() => {});
+        }
+      });
+    } else {
+      getCachedCustomers(activeStore.id).then(c => { if (c.length) setCustomers(c as Customer[]); });
+    }
     supabase.from("business_settings").select("payment_methods").eq("user_id", ownerId).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
       if (data?.payment_methods) {
         const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
@@ -391,6 +433,88 @@ const POS = () => {
         toast.error("Split payment total exceeds order total");
         return;
       }
+    }
+
+    // ─── Offline branch: queue sale, skip server flow ───
+    if (!netOnline) {
+      if (hasOpt("due") || hasOpt("partial") || splitMode) {
+        toast.error("Due / partial / split payments are disabled offline");
+        return;
+      }
+      const allowedOffline = ["cash", "card"];
+      const methodLower = (selectedPaymentMethod || "cash").toLowerCase();
+      const matched = allowedOffline.find(m => methodLower.includes(m)) || "cash";
+      setSubmitting(true);
+      try {
+        const tempId = genTempId();
+        const customer = customers.find(c => c.id === customerId);
+        const sale: OfflineSale = {
+          tempId,
+          storeId: activeStore!.id,
+          userId: effectiveUserId!,
+          customerId: customerId || null,
+          customerName: customer?.name || "Walk-in",
+          customerPhone: customer?.phone || null,
+          totalAmount: total,
+          subtotal,
+          discount: hasOpt("discount") ? (parseFloat(discountValue) || 0) : 0,
+          discountType,
+          discountAmount,
+          paymentMethod: matched === "card" ? "Card" : "Cash",
+          paymentMethodId: matched,
+          paymentCurrency: activeCurrency,
+          notes: orderNotes,
+          items: cart.map(i => ({
+            product_id: i.product.id,
+            quantity: i.quantity,
+            price: getItemPrice(i),
+            productType: i.product.type,
+            name: i.product.name,
+          })),
+          createdAt: new Date().toISOString(),
+        };
+        await enqueueSale(sale);
+        await applyLocalStockDelta(activeStore!.id, sale.items);
+        // Reflect local stock immediately
+        setProducts(prev => prev.map(p => {
+          const sold = sale.items.filter(i => i.product_id === p.id && i.productType === "physical")
+            .reduce((s, i) => s + i.quantity, 0);
+          return sold > 0 ? { ...p, stock: Math.max(0, p.stock - sold) } : p;
+        }));
+
+        const receiptInfo: ReceiptData = {
+          orderId: tempId,
+          customer: sale.customerName,
+          items: [...cart],
+          subtotal,
+          discount: subtotal - total > 0 ? subtotal - total : 0,
+          total,
+          paymentMethod: sale.paymentMethod + " (offline)",
+          paymentStatus: "Paid (Pending Sync)",
+          currency: activeCurrency,
+          notes: orderNotes,
+          date: new Date().toLocaleString(),
+          storeName: activeStore?.name || "Store",
+        };
+        toast.success("Sale queued offline — will sync automatically");
+        setCart([]);
+        setCustomerId("");
+        setPaymentOptions(new Set(["full"]));
+        setDiscountValue("");
+        setPaidAmount("");
+        setOrderNotes("");
+        setSelectedPaymentMethod("cash");
+        setSplitMode(false);
+        setMobileCartOpen(false);
+        setCheckoutOpen(false);
+        setReceiptData(receiptInfo);
+        setReceiptOpen(true);
+      } catch (e: any) {
+        toast.error("Failed to queue sale: " + (e?.message || String(e)));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
     }
 
     setSubmitting(true);
@@ -1127,6 +1251,11 @@ const POS = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:h-[calc(100dvh-4rem)] -mx-3 sm:-mx-4 lg:-m-6">
         {/* Left: Products */}
         <div className="lg:col-span-2 p-3 sm:p-6 overflow-visible lg:overflow-y-auto pb-[120px] lg:pb-6">
+          {/* Offline / sync status */}
+          <div className="flex items-center justify-end mb-2">
+            <POSOfflineBadge onSynced={() => fetchProductsAndVariations()} />
+          </div>
+
           {/* Category tabs */}
           <ScrollArea className="w-full">
             <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-1">
