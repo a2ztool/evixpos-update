@@ -52,6 +52,14 @@ interface Transaction {
   is_paid: boolean;
   created_at: string;
   store_id: string | null;
+  account_id?: string | null;
+}
+
+interface PaymentAccount {
+  id: string;
+  name: string;
+  enabled: boolean;
+  config?: Record<string, any>;
 }
 
 const CHART_COLORS = [
@@ -89,6 +97,10 @@ const IncomeExpense = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [guideOpen, setGuideOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [accounts, setAccounts] = useState<PaymentAccount[]>([]);
+  const [accountFilter, setAccountFilter] = useState("all");
+  const [formAccountId, setFormAccountId] = useState<string>("");
+  const [accountError, setAccountError] = useState<string>("");
 
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
@@ -102,6 +114,33 @@ const IncomeExpense = () => {
     if (data) setTxns(data as Transaction[]);
     setLoading(false);
   }, [activeStore]);
+
+  // Fetch payment accounts (configured in Settings → Payment Methods)
+  const fetchAccounts = useCallback(async () => {
+    if (!activeStore || !effectiveUserId) return;
+    let { data } = await supabase
+      .from("business_settings")
+      .select("payment_methods")
+      .eq("user_id", effectiveUserId)
+      .eq("store_id", activeStore.id)
+      .maybeSingle();
+    if (!data) {
+      const fb = await supabase
+        .from("business_settings")
+        .select("payment_methods")
+        .eq("user_id", effectiveUserId)
+        .maybeSingle();
+      data = fb.data as any;
+    }
+    const list = (data?.payment_methods as any[] | null) || [];
+    setAccounts(
+      list
+        .filter((p) => p && p.enabled !== false)
+        .map((p) => ({ id: String(p.id), name: p.name || p.id, enabled: !!p.enabled, config: p.config }))
+    );
+  }, [activeStore, effectiveUserId]);
+
+  useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
 
   useEffect(() => {
     if (user && activeStore) fetchData();
@@ -141,6 +180,7 @@ const IncomeExpense = () => {
     return txns.filter((t) => {
       if (typeFilter !== "all" && t.type !== typeFilter) return false;
       if (categoryFilter !== "all" && (t.category || "Uncategorized") !== categoryFilter) return false;
+      if (accountFilter !== "all" && (t.account_id || "") !== accountFilter) return false;
       if (search && ![t.category, t.note].some((f) => (f || "").toLowerCase().includes(search.toLowerCase()))) return false;
       if (range) {
         const d = new Date(t.created_at);
@@ -148,7 +188,24 @@ const IncomeExpense = () => {
       }
       return true;
     });
-  }, [txns, typeFilter, categoryFilter, search, getDateRange]);
+  }, [txns, typeFilter, categoryFilter, accountFilter, search, getDateRange]);
+
+  // Per-account balances (across all transactions for this store, not filtered by date)
+  const accountBalances = useMemo(() => {
+    const map: Record<string, { income: number; expense: number; count: number }> = {};
+    accounts.forEach(a => { map[a.id] = { income: 0, expense: 0, count: 0 }; });
+    txns.forEach((t) => {
+      const aid = t.account_id || "__unassigned__";
+      if (!map[aid]) map[aid] = { income: 0, expense: 0, count: 0 };
+      map[aid][t.type] += Number(t.amount);
+      map[aid].count += 1;
+    });
+    return map;
+  }, [txns, accounts]);
+
+  const totalBalance = useMemo(() => {
+    return Object.values(accountBalances).reduce((s, b) => s + (b.income - b.expense), 0);
+  }, [accountBalances]);
 
   const stats = useMemo(() => {
     const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
@@ -238,6 +295,8 @@ const IncomeExpense = () => {
   const openAdd = (type: "income" | "expense") => {
     setEditId(null);
     setForm({ type, amount: "", category: "", note: "", created_at: new Date() });
+    setFormAccountId(accounts[0]?.id || "");
+    setAccountError("");
     setSheetOpen(true);
   };
 
@@ -247,6 +306,8 @@ const IncomeExpense = () => {
       type: t.type, amount: String(t.amount), category: t.category || "",
       note: t.note || "", created_at: new Date(t.created_at)
     });
+    setFormAccountId(t.account_id || "");
+    setAccountError("");
     setSheetOpen(true);
   };
 
@@ -255,10 +316,16 @@ const IncomeExpense = () => {
     const ok = formValidation.validateAll({
       type: form.type, amount: form.amount, category: form.category, note: form.note,
     });
+    if (!formAccountId) {
+      setAccountError("Please select a payment account");
+      toast.error("Select a payment account");
+      return;
+    }
     if (!ok) { toast.error("Please fix the errors below"); return; }
     const payload = {
       type: form.type, amount: Number(form.amount), category: form.category,
-      note: form.note, is_paid: true, created_at: form.created_at.toISOString()
+      note: form.note, is_paid: true, created_at: form.created_at.toISOString(),
+      account_id: formAccountId,
     };
     if (editId) {
       const { error } = await supabase.from("transactions").update(payload).eq("id", editId);
