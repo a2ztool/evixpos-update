@@ -122,11 +122,34 @@ const RazorpayUpgradeModal = ({
         ...order,
         planName,
         prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
-        onSuccess: () => {
-          toast.success("Payment received! Activating your plan…");
-          setPaying(false);
-          onSuccess?.();
-          setTimeout(() => window.location.reload(), 2500);
+        onSuccess: async (resp) => {
+          toast.loading("Verifying payment…", { id: "rzp-verify" });
+          try {
+            const { data, error } = await supabase.functions.invoke(
+              "razorpay-verify-payment",
+              {
+                body: {
+                  razorpay_order_id: resp.razorpay_order_id,
+                  razorpay_payment_id: resp.razorpay_payment_id,
+                  razorpay_signature: resp.razorpay_signature,
+                },
+              }
+            );
+            if (error || !(data as any)?.ok) {
+              throw new Error((data as any)?.error || error?.message || "Verification failed");
+            }
+            toast.success("Payment verified! Plan activated.", { id: "rzp-verify" });
+            setPaying(false);
+            onSuccess?.();
+            setTimeout(() => window.location.reload(), 1500);
+          } catch (err: any) {
+            toast.error(
+              err?.message ||
+                "Payment received but activation failed. Contact support with your payment ID.",
+              { id: "rzp-verify", duration: 8000 }
+            );
+            setPaying(false);
+          }
         },
         onDismiss: () => {
           setPaying(false);
