@@ -1545,6 +1545,19 @@ const StaffInbox = () => {
           return containerEl;
         })()}
       </div>
+
+      {/* Task comments thread (group chats) */}
+      {commentsTask && activeChat && (
+        <TaskCommentsThread
+          open={!!commentsTask}
+          onOpenChange={(o) => { if (!o) setCommentsTask(null); }}
+          taskMessageId={commentsTask.id}
+          groupId={activeChat}
+          taskTitle={commentsTask.task_title || "Task"}
+          myId={myId!}
+          resolveName={getSenderNameById}
+        />
+      )}
     </DashboardLayout>
   );
 };
