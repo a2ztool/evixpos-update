@@ -25,6 +25,7 @@ import PinnedMessagesBar from "@/components/PinnedMessagesBar";
 import MentionPicker, { MentionUser } from "@/components/MentionPicker";
 import { usePinMessage } from "@/hooks/usePinMessage";
 import { parseTaskTitle } from "@/lib/chatHelpers";
+import TaskCommentsThread from "@/components/TaskCommentsThread";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { taskAssignSchema, groupNameSchema } from "@/lib/validations";
@@ -142,6 +143,9 @@ const StaffInbox = () => {
   // Typing indicator
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Task comments thread
+  const [commentsTask, setCommentsTask] = useState<ChatMessage | null>(null);
+  const [taskCommentCounts, setTaskCommentCounts] = useState<Record<string, number>>({});
   // @Mention picker state (group chat only)
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
