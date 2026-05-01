@@ -27,8 +27,8 @@ jobs:
       - name: Deploy to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ftp.evixpos.com
-          username: u921789779.evixpos
-          password: Rishi@2025#baba
+server: ${{ secrets.ftp.evixpos.com }}
+username: ${{ secrets.u921789779.evixpos }}
+password: ${{ secrets.Rishi@2025#baba }}
           local-dir: dist/
           server-dir: public_html/
