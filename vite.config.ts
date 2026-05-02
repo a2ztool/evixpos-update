@@ -34,17 +34,39 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "esnext",
     minify: "esbuild",
+    cssCodeSplit: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react/jsx-runtime"],
-          "vendor-router": ["react-router-dom"],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-supabase": ["@supabase/supabase-js"],
-          "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tooltip", "@radix-ui/react-popover"],
-          "vendor-charts": ["recharts"],
+        // Smarter chunking: split heavy deps into their own chunks so
+        // pages that don't need them (e.g. dashboard pages don't need
+        // recharts/framer-motion) never download them.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("/react-dom/") || id.match(/\/react\/[^/]+$/)) return "vendor-react";
+          if (id.includes("react-router")) return "vendor-router";
+          if (id.includes("@tanstack/")) return "vendor-query";
+          if (id.includes("@supabase/")) return "vendor-supabase";
+          if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+          if (id.includes("framer-motion")) return "vendor-motion";
+          if (id.includes("lucide-react")) return "vendor-icons";
+          if (id.includes("@radix-ui/")) return "vendor-radix";
+          if (id.includes("date-fns")) return "vendor-date";
+          if (id.includes("zod") || id.includes("react-hook-form")) return "vendor-forms";
+          return "vendor";
         },
       },
     },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "@supabase/supabase-js",
+    ],
   },
 }));
