@@ -28,7 +28,10 @@ import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
+
+const FloatingInbox = lazy(() => import("./FloatingInbox"));
+const SupportPopup = lazy(() => import("./SupportPopup"));
 
 const langLabels: Record<Lang, string> = { en: "EN", bn: "বাং", hi: "हि" };
 const langFullLabels: Record<Lang, string> = { en: "English", bn: "বাংলা", hi: "हिन्दी" };
@@ -316,8 +319,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <MobileNav />
 
       {/* Floating widgets */}
-      <FloatingInbox />
-      {!isStaff && <SupportPopup />}
+      <Suspense fallback={null}>
+        <FloatingInbox />
+        {!isStaff && <SupportPopup />}
+      </Suspense>
 
       {/* Global Keyboard Shortcuts Dialog */}
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
