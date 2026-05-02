@@ -22,12 +22,12 @@ import { prefetchCriticalRoutes } from "@/lib/routePrefetch";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
-// ─── Eager-loaded (critical path) ───
-import LandingPage from "./pages/LandingPage";
-import Auth from "./pages/Auth";
+// ─── Keep public/auth pages lazy so logged-in dashboards don't load marketing code ───
 import NotFound from "./pages/NotFound";
 
 // ─── Lazy-loaded pages ───
+const LandingPage = lazyPage(() => import("./pages/LandingPage"));
+const Auth = lazyPage(() => import("./pages/Auth"));
 const Onboarding = lazyPage(() => import("./pages/Onboarding"));
 const Dashboard = lazyPage(() => import("./pages/Dashboard"));
 const Products = lazyPage(() => import("./pages/Products"));
