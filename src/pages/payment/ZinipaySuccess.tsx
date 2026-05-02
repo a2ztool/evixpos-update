@@ -42,8 +42,11 @@ const ZinipaySuccess = () => {
         if (status === "COMPLETED") {
           setState("success");
           clearPendingValId();
-          toast.success("Payment confirmed! Your plan is active.");
-          setTimeout(() => navigate("/my-plan"), 4000);
+          toast.success("🎉 Your plan has been upgraded!", {
+            description: "Redirecting to My Plan…",
+          });
+          // Short delay to let realtime propagate, then redirect
+          setTimeout(() => navigate("/my-plan", { replace: true }), 1200);
         } else if (status === "FAILED") {
           setState("failed");
           clearPendingValId();

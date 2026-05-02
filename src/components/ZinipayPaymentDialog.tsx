@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink, ShieldCheck, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { verifyZinipayPayment, clearPendingValId } from "@/lib/zinipayCheckout";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   open: boolean;
@@ -19,11 +20,13 @@ const MAX_POLL_DURATION_MS = 15 * 60 * 1000;
 
 const ZinipayPaymentDialog = ({ open, onOpenChange, paymentUrl, valId, amount, onSuccess }: Props) => {
   const [status, setStatus] = useState<"loading" | "pending" | "completed" | "failed">("loading");
+  const [verifying, setVerifying] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeBlocked, setIframeBlocked] = useState(false);
   const startedAtRef = useRef<number>(0);
   const pollTimerRef = useRef<number | null>(null);
   const loadCheckRef = useRef<number | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) {
@@ -49,11 +52,21 @@ const ZinipayPaymentDialog = ({ open, onOpenChange, paymentUrl, valId, amount, o
       try {
         const res = await verifyZinipayPayment(valId);
         if (res.status === "COMPLETED") {
+          setVerifying(true);
+          toast.loading("Verifying payment…", { id: "zini-verify" });
+          // Tiny delay to let realtime subscriptions table update propagate
+          await new Promise((r) => setTimeout(r, 600));
           setStatus("completed");
           clearPendingValId();
-          toast.success("Payment successful! Plan activated.");
+          toast.dismiss("zini-verify");
+          toast.success("🎉 Your plan has been upgraded!", {
+            description: "Redirecting to My Plan…",
+          });
           onSuccess?.();
-          window.setTimeout(() => onOpenChange(false), 1500);
+          window.setTimeout(() => {
+            onOpenChange(false);
+            navigate("/my-plan");
+          }, 900);
           return;
         }
         if (res.status === "FAILED") {
@@ -95,6 +108,15 @@ const ZinipayPaymentDialog = ({ open, onOpenChange, paymentUrl, valId, amount, o
         className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] p-0 gap-0 flex flex-col overflow-hidden"
         aria-describedby={undefined}
       >
+        {verifying && status !== "completed" && (
+          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <h3 className="text-lg font-semibold">Verifying payment…</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              Please wait while we confirm your payment and activate your plan.
+            </p>
+          </div>
+        )}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
