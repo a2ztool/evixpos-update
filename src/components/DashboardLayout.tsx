@@ -28,8 +28,9 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import { useLocation, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useState, useEffect } from "react";
 
-const FloatingInbox = lazy(() => import("./FloatingInbox"));
-const SupportPopup = lazy(() => import("./SupportPopup"));
+const LazyNotificationBell = lazy(() => import("./NotificationBell"));
+const LazyFloatingInbox = lazy(() => import("./FloatingInbox"));
+const LazySupportPopup = lazy(() => import("./SupportPopup"));
 
 const langLabels: Record<Lang, string> = { en: "EN", bn: "বাং", hi: "हि" };
 const langFullLabels: Record<Lang, string> = { en: "English", bn: "বাংলা", hi: "हिन्दी" };
@@ -236,7 +237,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </Tooltip>
 
                 {/* Notifications */}
-                <NotificationBell />
+                <Suspense fallback={<div className="h-8 w-8" aria-hidden />}>
+                  <LazyNotificationBell />
+                </Suspense>
 
                 {/* User Avatar */}
                 <DropdownMenu>
@@ -318,8 +321,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Floating widgets */}
       <Suspense fallback={null}>
-        <FloatingInbox />
-        {!isStaff && <SupportPopup />}
+        <LazyFloatingInbox />
+        {!isStaff && <LazySupportPopup />}
       </Suspense>
 
       {/* Global Keyboard Shortcuts Dialog */}
