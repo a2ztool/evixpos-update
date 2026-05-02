@@ -15,7 +15,7 @@ import { toast } from "sonner";
 declare const __BUILD_TIME__: string;
 const BUILD_ID = (import.meta.env.VITE_BUILD_ID as string | undefined) || `${import.meta.env.MODE}-${__BUILD_TIME__}`;
 const STORAGE_KEY = "evix_build_id";
-const UPDATE_POLL_MS = 60_000;
+const UPDATE_POLL_MS = 30_000;
 
 let updateToastShown = false;
 

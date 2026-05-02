@@ -1,7 +1,30 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
+
+// Inject build id into /sw.js so each production build produces a
+// byte-different service worker. Browsers only re-check & install a
+// new SW when /sw.js bytes change — without this, deploys may not
+// reach already-installed PWAs.
+function stampServiceWorker() {
+  return {
+    name: "stamp-sw-build-id",
+    apply: "build" as const,
+    closeBundle() {
+      const buildId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const swPath = path.resolve(__dirname, "dist/sw.js");
+      try {
+        const src = fs.readFileSync(swPath, "utf8");
+        const stamped = `// BUILD_ID=${buildId}\n` + src;
+        fs.writeFileSync(swPath, stamped);
+      } catch {
+        // sw.js may not exist in some builds — non-fatal
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 // NOTE: We deliberately do NOT use vite-plugin-pwa.
@@ -24,6 +47,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    mode === "production" && stampServiceWorker(),
   ].filter(Boolean),
   resolve: {
     alias: {
