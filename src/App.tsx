@@ -164,8 +164,8 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
     <LanguageProvider>
-    <StoreProvider>
     <StaffProvider>
+    <StoreProvider>
     <CurrencyProvider>
     <PlansConfigProvider>
       <TooltipProvider>
@@ -273,8 +273,8 @@ const App = () => {
       </TooltipProvider>
     </PlansConfigProvider>
     </CurrencyProvider>
-    </StaffProvider>
     </StoreProvider>
+    </StaffProvider>
     </LanguageProvider>
     </AuthProvider>
   </QueryClientProvider>
