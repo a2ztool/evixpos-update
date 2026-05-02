@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { usePlansConfig } from "@/contexts/PlansConfigContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,10 +18,11 @@ import {
   MessageCircle, RotateCcw, Bell, Shield, Globe, MapPin,
   Receipt, Wallet, AlertCircle, BarChart3
 } from "lucide-react";
-import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { format, differenceInDays, addDays } from "date-fns";
 import { toast } from "sonner";
+
+const DashboardAnalytics = lazy(() => import("@/components/DashboardAnalytics"));
 
 interface Subscription {
   id: string;
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const [profileName, setProfileName] = useState("");
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [productCount, setProductCount] = useState(0);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -91,6 +93,21 @@ const Dashboard = () => {
   }, [user, activeStore]);
 
   useEffect(() => { fetchMeta(); }, [fetchMeta]);
+
+  useEffect(() => {
+    if (isStaff) return;
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (window.requestIdleCallback) {
+      idleId = window.requestIdleCallback(() => setShowAnalytics(true));
+    } else {
+      timeoutId = setTimeout(() => setShowAnalytics(true), 1200);
+    }
+    return () => {
+      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [isStaff]);
 
   // Real-time sync for dashboard data
   useRealtimeSync(
@@ -344,7 +361,11 @@ const Dashboard = () => {
         )}
 
         {/* ========== REAL-TIME ANALYTICS (Single Source of Truth) ========== */}
-        {!isStaff && <DashboardAnalytics />}
+        {!isStaff && showAnalytics && (
+          <Suspense fallback={null}>
+            <DashboardAnalytics />
+          </Suspense>
+        )}
 
         {/* Product Limit - Owner Only */}
         {!isStaff && (
