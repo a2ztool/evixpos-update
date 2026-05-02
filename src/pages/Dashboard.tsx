@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { usePlansConfig } from "@/contexts/PlansConfigContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,10 +18,11 @@ import {
   MessageCircle, RotateCcw, Bell, Shield, Globe, MapPin,
   Receipt, Wallet, AlertCircle, BarChart3
 } from "lucide-react";
-import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { format, differenceInDays, addDays } from "date-fns";
 import { toast } from "sonner";
+
+const DashboardAnalytics = lazy(() => import("@/components/DashboardAnalytics"));
 
 interface Subscription {
   id: string;
@@ -344,7 +345,11 @@ const Dashboard = () => {
         )}
 
         {/* ========== REAL-TIME ANALYTICS (Single Source of Truth) ========== */}
-        {!isStaff && <DashboardAnalytics />}
+        {!isStaff && (
+          <Suspense fallback={null}>
+            <DashboardAnalytics />
+          </Suspense>
+        )}
 
         {/* Product Limit - Owner Only */}
         {!isStaff && (
