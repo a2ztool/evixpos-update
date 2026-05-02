@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { toast } from "sonner";
 
 export type StoreMode = "online" | "offline";
@@ -60,6 +61,7 @@ const PLAN_STORE_LIMITS: Record<string, number> = {
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { isStaff, staffInfo, loading: staffLoading } = useStaff();
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,43 +93,54 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchStores = useCallback(async () => {
     if (!user) { setLoading(false); return; }
+    if (staffLoading) return;
 
-    // First check if user is a staff member
-    const { data: staffData } = await supabase
-      .from("staff_members")
-      .select("store_id, user_id")
-      .eq("auth_user_id", user.id)
-      .eq("is_active", true)
+    const resolvePlan = (data: { plan?: string; end_date?: string | null } | null | undefined) => {
+      if (!data) return "free";
+      const isExpired = data.end_date && new Date(data.end_date) < new Date();
+      return isExpired ? "free" : (data.plan ?? "free");
+    };
+
+    const planUserId = isStaff && staffInfo ? staffInfo.owner_id : user.id;
+    const planQuery = supabase
+      .from("subscriptions")
+      .select("plan, status, end_date")
+      .eq("user_id", planUserId)
+      .eq("status", "active")
+      .is("customer_id", null)
+      .in("plan", ["free", "pro", "business"])
+      .order("start_date", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (staffData?.store_id) {
+    if (isStaff && staffInfo?.store_id) {
       // Staff user: load only their assigned store
-      const { data: storeData } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("id", staffData.store_id)
-        .single();
+      const [storeRes, planRes] = await Promise.all([
+        supabase.from("stores").select("*").eq("id", staffInfo.store_id).single(),
+        planQuery,
+      ]);
 
-      if (storeData) {
-        const store = storeData as Store;
+      if (storeRes.data) {
+        const store = storeRes.data as Store;
         setStores([store]);
         setActiveStore(store);
         setIsStaffStore(true);
       }
+      setPlan(resolvePlan(planRes.data));
       setLoading(false);
       return;
     }
 
     // Owner: load all their stores
     setIsStaffStore(false);
-    const { data } = await supabase
-      .from("stores")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
+    const [storesRes, planRes] = await Promise.all([
+      supabase.from("stores").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      planQuery,
+    ]);
 
-    const storeList = (data ?? []) as Store[];
+    const storeList = (storesRes.data ?? []) as Store[];
     setStores(storeList);
+    setPlan(resolvePlan(planRes.data));
 
     // Restore last active store from localStorage or pick default
     const savedStoreId = localStorage.getItem(`active_store_${user.id}`);
@@ -136,30 +149,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     setActiveStore(saved || defaultStore || null);
 
     setLoading(false);
-  }, [user]);
-
-  // Fetch plan (user-level)
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("subscriptions")
-      .select("plan, status, end_date")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .is("customer_id", null)
-      .in("plan", ["free", "pro", "business"])
-      .order("start_date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          const isExpired = data.end_date && new Date(data.end_date) < new Date();
-          setPlan(isExpired ? "free" : data.plan);
-        } else {
-          setPlan("free");
-        }
-      });
-  }, [user]);
+  }, [user, isStaff, staffInfo, staffLoading]);
 
   useEffect(() => {
     fetchStores();
