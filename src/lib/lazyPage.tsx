@@ -1,18 +1,19 @@
 import { Suspense, lazy, ComponentType } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
 /**
- * Lazy-load a page component. Routes are aggressively prefetched (see
- * routePrefetch.ts), so by the time the user navigates the chunk is usually
- * already in memory and Suspense never has to fall back. We render `null`
- * as the fallback to avoid a layout-less skeleton flash between pages —
- * the previous page stays painted until the new one is ready.
+ * Lazy-load a page component. Routes are aggressively prefetched, so the
+ * chunk is usually already cached and Suspense never falls back. When it
+ * does need to wait, we render a content skeleton (instead of `null` or a
+ * white screen) so the layout stays mounted and the user sees a smooth,
+ * app-like loading state — never a blank flash.
  */
 export function lazyPage<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>
 ) {
   const LazyComponent = lazy(factory);
   return (props: React.ComponentProps<T>) => (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageSkeleton />}>
       <LazyComponent {...props} />
     </Suspense>
   );
