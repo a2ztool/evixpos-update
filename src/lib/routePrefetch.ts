@@ -1,6 +1,6 @@
 /**
- * Route prefetch utility — preloads page chunks on hover/focus for instant navigation.
- * Also prefetches ALL routes during idle time for zero-delay navigation.
+ * Route prefetch utility — preloads page chunks on hover/focus for fast navigation.
+ * Keep automatic prefetching intentionally small so initial page open stays fast.
  */
 
 const prefetchedRoutes = new Set<string>();
@@ -77,20 +77,25 @@ export function prefetchRoute(path: string) {
   }
 }
 
-/** Prefetch critical routes immediately, then ALL routes during idle */
+/** Prefetch only a few likely next routes during idle time. */
 export function prefetchCriticalRoutes() {
-  // Phase 1: Critical routes — prefetch immediately (no delay)
-  const critical = ["/dashboard", "/pos", "/orders", "/products", "/customers", "/settings"];
-  critical.forEach(prefetchRoute);
+  if (typeof window === "undefined") return;
 
-  // Phase 2: Prefetch ALL remaining routes during idle time
-  const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 300));
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (connection?.saveData || connection?.effectiveType === "2g") return;
+
+  const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1200));
   schedule(() => {
-    const remaining = Object.keys(routeImports).filter(r => !prefetchedRoutes.has(r));
-    // Stagger to avoid network congestion
-    remaining.forEach((route, i) => {
-      setTimeout(() => prefetchRoute(route), i * 50);
-    });
+    const path = window.location.pathname;
+    const critical = path.startsWith("/pos")
+      ? ["/orders", "/products"]
+      : ["/dashboard", "/orders", "/products"];
+
+    critical
+      .filter(route => route !== path)
+      .forEach((route, i) => {
+        setTimeout(() => prefetchRoute(route), i * 250);
+      });
   });
 }
 
