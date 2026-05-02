@@ -96,11 +96,16 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isStaff) return;
-    const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1200));
-    const handle = schedule(() => setShowAnalytics(true));
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (window.requestIdleCallback) {
+      idleId = window.requestIdleCallback(() => setShowAnalytics(true));
+    } else {
+      timeoutId = setTimeout(() => setShowAnalytics(true), 1200);
+    }
     return () => {
-      if (typeof handle === "number") clearTimeout(handle);
-      else window.cancelIdleCallback?.(handle);
+      if (idleId !== undefined) window.cancelIdleCallback?.(idleId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
   }, [isStaff]);
 
