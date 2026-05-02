@@ -2,8 +2,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import StoreSwitcher from "./StoreSwitcher";
 import NotificationBell from "./NotificationBell";
-import FloatingInbox from "./FloatingInbox";
-import SupportPopup from "./SupportPopup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
