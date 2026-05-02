@@ -14,6 +14,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import MaintenanceBanner from "@/components/MaintenanceBanner";
 import { OfflineChatDrainer } from "@/components/OfflineChatDrainer";
 import ScrollProgress from "@/components/ScrollProgress";
+import RouteProgress from "@/components/RouteProgress";
 import PermissionGuard from "@/components/PermissionGuard";
 import FeatureGate from "@/components/FeatureGate";
 import type { FeatureKey } from "@/hooks/useStorePlan";
@@ -176,6 +177,7 @@ const App = () => {
         <OfflineChatDrainer />
         <ScrollProgress />
         <BrowserRouter>
+          <RouteProgress />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/app" element={<AppEntry />} />
