@@ -98,6 +98,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [notificationReady, setNotificationReady] = useState(false);
+  const [widgetsReady, setWidgetsReady] = useState(false);
   const { symbol: currencySymbol, activeCurrency } = useCurrency();
   const isPOS = location.pathname.startsWith("/pos");
 
@@ -119,6 +121,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       setDarkMode(true);
       document.documentElement.classList.add("dark");
     }
+  }, []);
+
+  useEffect(() => {
+    const notificationTimer = setTimeout(() => setNotificationReady(true), 900);
+    const widgetsTimer = setTimeout(() => setWidgetsReady(true), 1800);
+    return () => {
+      clearTimeout(notificationTimer);
+      clearTimeout(widgetsTimer);
+    };
   }, []);
 
   const toggleDark = () => {
@@ -236,9 +247,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </Tooltip>
 
                 {/* Notifications */}
-                <Suspense fallback={<div className="h-8 w-8" aria-hidden />}>
-                  <LazyNotificationBell />
-                </Suspense>
+                {notificationReady ? (
+                  <Suspense fallback={<div className="h-8 w-8" aria-hidden />}>
+                    <LazyNotificationBell />
+                  </Suspense>
+                ) : (
+                  <div className="h-8 w-8" aria-hidden />
+                )}
 
                 {/* User Avatar */}
                 <DropdownMenu>
@@ -319,10 +334,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <MobileNav />
 
       {/* Floating widgets */}
-      <Suspense fallback={null}>
-        <LazyFloatingInbox />
-        {!isStaff && <LazySupportPopup />}
-      </Suspense>
+      {widgetsReady && (
+        <Suspense fallback={null}>
+          <LazyFloatingInbox />
+          {!isStaff && <LazySupportPopup />}
+        </Suspense>
+      )}
 
       {/* Global Keyboard Shortcuts Dialog */}
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
