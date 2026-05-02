@@ -406,7 +406,7 @@ const MyPlan = () => {
                 <Sparkles className="h-3 w-3" /> Packages & Subscription
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Power up your business with the right plan
+                Grow your business with the right plan
               </h1>
               <p className="text-sm text-muted-foreground">
                 Flexible volume-based pricing. Upgrade, downgrade or cancel anytime — pay only for what you use.
