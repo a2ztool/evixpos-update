@@ -379,7 +379,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { prefetchRoute } from "@/lib/routePrefetch";
-import { motion, AnimatePresence } from "framer-motion";
 
 const ownerMoreMenuItems = [
   { icon: CreditCard, path: "/transactions", label: "Finance" },
@@ -503,26 +502,17 @@ const NavItem = ({
   const active = isMore ? !!isMoreActive : location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <motion.button
+    <button
       onClick={() => !isMore && navigate(path)}
       onMouseEnter={() => !isMore && prefetchRoute(path)}
       onFocus={() => !isMore && prefetchRoute(path)}
-      whileTap={{ scale: 0.82 }}
-      className="relative flex flex-col items-center gap-0.5 py-1 min-w-[56px]"
+      className="relative flex flex-col items-center gap-0.5 py-1 min-w-[56px] active:scale-90 transition-transform duration-150"
     >
       {/* Icon container with glossy active state */}
-      <motion.div
-        animate={active ? { y: -3, scale: 1.1 } : { y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 450, damping: 22 }}
-        className="relative"
-      >
+      <div className={`relative transition-transform duration-200 ${active ? "-translate-y-0.5 scale-110" : "translate-y-0 scale-100"}`}>
         {/* Active glow backdrop */}
         {active && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute inset-0 w-10 h-10 rounded-2xl bg-primary/12 dark:bg-primary/20 blur-[2px]"
-          />
+          <div className="absolute inset-0 w-10 h-10 rounded-2xl bg-primary/12 dark:bg-primary/20 blur-[2px]" />
         )}
         <div
           className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
@@ -540,7 +530,7 @@ const NavItem = ({
             strokeWidth={active ? 2.4 : 1.6}
           />
         </div>
-      </motion.div>
+      </div>
 
       {/* Label */}
       <span
@@ -551,7 +541,7 @@ const NavItem = ({
         {label}
       </span>
 
-    </motion.button>
+    </button>
   );
 };
 
@@ -568,7 +558,7 @@ const CenterNavButton = ({
   onClick: () => void;
 }) => (
   <div className="relative flex flex-col items-center">
-    <motion.button onClick={onClick} whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.05 }} className="relative">
+    <button onClick={onClick} className="relative transition-transform duration-150 hover:scale-105 active:scale-90">
       {/* Soft colored halo (like reference) */}
       <div
         className={`absolute inset-0 rounded-full transition-all duration-500 ${
@@ -592,14 +582,13 @@ const CenterNavButton = ({
           strokeWidth={2.4}
         />
       </div>
-    </motion.button>
+    </button>
     {label && (
-      <motion.span
-        animate={isActive ? { opacity: 1 } : { opacity: 0.6 }}
+      <span
         className={`text-[10px] mt-1.5 font-bold tracking-wide ${isActive ? "text-primary" : "text-muted-foreground"}`}
       >
         {label}
-      </motion.span>
+      </span>
     )}
   </div>
 );
