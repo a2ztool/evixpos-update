@@ -45,6 +45,7 @@ const Dashboard = () => {
   const [profileName, setProfileName] = useState("");
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [productCount, setProductCount] = useState(0);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -92,6 +93,16 @@ const Dashboard = () => {
   }, [user, activeStore]);
 
   useEffect(() => { fetchMeta(); }, [fetchMeta]);
+
+  useEffect(() => {
+    if (isStaff) return;
+    const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1200));
+    const handle = schedule(() => setShowAnalytics(true));
+    return () => {
+      if (typeof handle === "number") clearTimeout(handle);
+      else window.cancelIdleCallback?.(handle);
+    };
+  }, [isStaff]);
 
   // Real-time sync for dashboard data
   useRealtimeSync(
@@ -345,7 +356,7 @@ const Dashboard = () => {
         )}
 
         {/* ========== REAL-TIME ANALYTICS (Single Source of Truth) ========== */}
-        {!isStaff && (
+        {!isStaff && showAnalytics && (
           <Suspense fallback={null}>
             <DashboardAnalytics />
           </Suspense>
