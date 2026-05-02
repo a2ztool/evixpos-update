@@ -84,8 +84,8 @@ export function prefetchCriticalRoutes() {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   if (connection?.saveData || connection?.effectiveType === "2g") return;
 
-  const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1200));
-  schedule(() => {
+  const schedule = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1500));
+  const startWhenSettled = () => schedule(() => {
     const path = window.location.pathname;
     const critical = path.startsWith("/pos")
       ? ["/orders", "/products"]
@@ -97,6 +97,12 @@ export function prefetchCriticalRoutes() {
         setTimeout(() => prefetchRoute(route), i * 250);
       });
   });
+
+  if (document.readyState === "complete") {
+    setTimeout(startWhenSettled, 6000);
+  } else {
+    window.addEventListener("load", () => setTimeout(startWhenSettled, 6000), { once: true });
+  }
 }
 
 /** Create hover/focus handlers for a link element */
