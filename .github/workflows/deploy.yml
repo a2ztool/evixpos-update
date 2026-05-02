@@ -20,7 +20,7 @@ jobs:
 
       - name: Install
         run: npm install
-
+        
 - name: Deploy to Hostinger
   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
   with:
@@ -29,4 +29,6 @@ jobs:
     password: ${{ secrets.FTP_PASSWORD }}
     local-dir: dist/
     server-dir: public_html/
-    clean: true
+    exclude: |
+      **/.git*
+      **/.git*/**
