@@ -40,6 +40,7 @@ const RazorpayUpgradeModal = ({
   const [appliedCoupon, setAppliedCoupon] = useState<PlatformCoupon | null>(null);
   const [applying, setApplying] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -47,6 +48,7 @@ const RazorpayUpgradeModal = ({
       setAppliedCoupon(null);
       setApplying(false);
       setPaying(false);
+      setVerifying(false);
     }
   }, [open]);
 
@@ -123,6 +125,7 @@ const RazorpayUpgradeModal = ({
         planName,
         prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
         onSuccess: async (resp) => {
+          setVerifying(true);
           toast.loading("Verifying payment…", { id: "rzp-verify" });
           try {
             const { data, error } = await supabase.functions.invoke(
@@ -149,6 +152,7 @@ const RazorpayUpgradeModal = ({
               { id: "rzp-verify", duration: 8000 }
             );
             setPaying(false);
+            setVerifying(false);
           }
         },
         onDismiss: () => {
@@ -167,6 +171,23 @@ const RazorpayUpgradeModal = ({
   };
 
   return (
+    <>
+      {verifying && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-xl border bg-card p-8 shadow-2xl max-w-sm mx-4 text-center">
+            <div className="relative">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <ShieldCheck className="absolute inset-0 m-auto h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-lg">Verifying payment…</h3>
+              <p className="text-sm text-muted-foreground">
+                Please wait while we confirm your payment and activate your plan. Do not close this window.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     <Dialog open={open} onOpenChange={(o) => !paying && onOpenChange(o)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -266,6 +287,7 @@ const RazorpayUpgradeModal = ({
         </p>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
