@@ -4,10 +4,10 @@ const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
   const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
 
   useEffect(() => {
-    // Enter animation ~400ms, hold ~1.5s, exit ~400ms
+    // Keep splash short so app entry opens quickly.
     const holdTimer = setTimeout(() => setPhase("hold"), 50);
-    const exitTimer = setTimeout(() => setPhase("exit"), 2000);
-    const doneTimer = setTimeout(() => onFinish(), 2500);
+    const exitTimer = setTimeout(() => setPhase("exit"), 650);
+    const doneTimer = setTimeout(() => onFinish(), 850);
     return () => {
       clearTimeout(holdTimer);
       clearTimeout(exitTimer);
