@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY");
+    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY")?.trim();
     if (!ZINI_API_KEY) {
       return jsonResponse({ error: "ZiniPay API key not configured" }, 500);
     }
@@ -161,8 +161,10 @@ Deno.serve(async (req) => {
     const ziniRes = await fetch("https://api.zinipay.com/v1/payment/create", {
       method: "POST",
       headers: {
+        "Accept": "application/json",
         "Content-Type": "application/json",
         "zini-api-key": ZINI_API_KEY,
+        "zinipay-api-key": ZINI_API_KEY,
       },
       body: JSON.stringify({
         cus_name: cusName,
@@ -174,6 +176,7 @@ Deno.serve(async (req) => {
         },
         redirect_url: redirectUrl,
         cancel_url: cancelUrl,
+        return_type: "GET",
         val_id: valId,
         webhook_url: webhookUrl,
       }),
@@ -181,8 +184,14 @@ Deno.serve(async (req) => {
     const ziniJson = await ziniRes.json().catch(() => ({}));
     if (!ziniRes.ok || !ziniJson?.payment_url) {
       console.error("ZiniPay create failed", ziniRes.status, ziniJson);
+      const isAuthOrDomainIssue = ziniRes.status === 401 || ziniRes.status === 403;
       return jsonResponse(
-        { error: "ZiniPay error", details: ziniJson?.message || ziniJson },
+        {
+          error: isAuthOrDomainIssue
+            ? "ZiniPay API key rejected or brand domain mismatch"
+            : "ZiniPay error",
+          details: ziniJson?.message || ziniJson,
+        },
         502,
       );
     }
