@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY");
+    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY")?.trim();
     if (!ZINI_API_KEY) return jsonResponse({ error: "Misconfigured" }, 500);
 
     const authHeader = req.headers.get("Authorization") || "";
@@ -113,8 +113,10 @@ Deno.serve(async (req) => {
     const verifyRes = await fetch("https://api.zinipay.com/v1/payment/verify", {
       method: "POST",
       headers: {
+        "Accept": "application/json",
         "Content-Type": "application/json",
         "zini-api-key": ZINI_API_KEY,
+        "zinipay-api-key": ZINI_API_KEY,
       },
       body: JSON.stringify({ invoice_id: payment.zinipay_invoice_id }),
     });
