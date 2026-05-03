@@ -81,9 +81,23 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY")?.trim();
+    const adminEarly = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    let ZINI_API_KEY = "";
+    try {
+      const { data: gw } = await adminEarly
+        .from("payment_gateways")
+        .select("api_config")
+        .ilike("gateway_name", "%zinipay%")
+        .eq("is_active", true)
+        .maybeSingle();
+      const cfg = (gw?.api_config || {}) as Record<string, string>;
+      ZINI_API_KEY = String(cfg.api_key || cfg.apiKey || cfg.ZINIPAY_API_KEY || cfg.key || "").trim();
+    } catch { /* ignore */ }
+    if (!ZINI_API_KEY) ZINI_API_KEY = (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
     if (!ZINI_API_KEY) {
-      console.error("Missing ZINIPAY_API_KEY");
+      console.error("Missing ZiniPay API key (admin gateway + env)");
       return jsonResponse({ error: "Misconfigured" }, 500);
     }
 
