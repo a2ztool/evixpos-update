@@ -3469,6 +3469,7 @@ export type Database = {
           business_name: string
           default_currency: string
           logo_url: string
+          payment_methods: Json
           store_slug: string
         }[]
       }

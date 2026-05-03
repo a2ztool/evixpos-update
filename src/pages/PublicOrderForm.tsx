@@ -120,15 +120,16 @@ const PublicOrderForm = () => {
       productIds.length > 0
         ? supabase.from("product_variations").select("*").in("product_id", productIds).order("sort_order")
         : Promise.resolve({ data: [] }),
-      supabase.from("business_settings").select("*").eq("store_id", f.store_id).maybeSingle(),
+      supabase.rpc("get_public_business_settings", { _store_id: f.store_id }),
     ]);
 
     setProducts((prodRes.data as Product[]) || []);
     setVariations((varRes.data as ProductVariation[]) || []);
-    setBusinessSettings(bsRes.data);
+    const bs = Array.isArray(bsRes.data) ? bsRes.data[0] : bsRes.data;
+    setBusinessSettings(bs ?? null);
 
-    if (bsRes.data?.payment_methods) {
-      const allMethods = normalizePaymentMethods(bsRes.data.payment_methods);
+    if (bs?.payment_methods) {
+      const allMethods = normalizePaymentMethods(bs.payment_methods);
       const customerFacing = allMethods.filter(isCustomerFacingPaymentMethod);
       setGateways(customerFacing);
     }
@@ -184,31 +185,21 @@ const PublicOrderForm = () => {
 
     try {
       let customerId: string | null = null;
-      const { data: existingCustomer } = await supabase
+      // Anon users cannot read customer rows — always insert a new record.
+      // Server-side dedupe (if needed) should be handled by a trigger or by the merchant.
+      const { data: newCustomer } = await supabase
         .from("customers")
+        .insert({
+          user_id: form.user_id,
+          store_id: form.store_id,
+          name: customerName,
+          phone: customerPhone,
+          email: customerEmail,
+          address: customerAddress,
+        })
         .select("id")
-        .eq("user_id", form.user_id)
-        .eq("store_id", form.store_id)
-        .eq("phone", customerPhone)
-        .maybeSingle();
-
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-      } else {
-        const { data: newCustomer } = await supabase
-          .from("customers")
-          .insert({
-            user_id: form.user_id,
-            store_id: form.store_id,
-            name: customerName,
-            phone: customerPhone,
-            email: customerEmail,
-            address: customerAddress,
-          })
-          .select("id")
-          .single();
-        customerId = newCustomer?.id || null;
-      }
+        .single();
+      customerId = newCustomer?.id || null;
 
       let costPrice = 0;
       const orderItemsData: { product_id: string; quantity: number; price: number }[] = [];
