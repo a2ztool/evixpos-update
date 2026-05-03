@@ -70,7 +70,27 @@ const Auth = () => {
       if (window.location.hash || searchParams.has("code")) {
         window.history.replaceState({}, document.title, "/auth");
       }
-      navigate(roleData ? "/admin/dashboard" : "/dashboard", { replace: true });
+      if (roleData) {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+      // Staff users always go to dashboard
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("id")
+        .eq("auth_user_id", session.user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (staffRow) {
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+      // New owners (no stores yet) → onboarding directly
+      const { count } = await supabase
+        .from("stores")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
+      navigate((count ?? 0) > 0 ? "/dashboard" : "/onboarding", { replace: true });
     };
     checkAdminRedirect();
   }, [session, navigate, searchParams]);
