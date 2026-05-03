@@ -448,8 +448,9 @@ const MyPlan = () => {
                   { label: "Customers", icon: Users, current: usage.totalCustomers, max: usage.maxCustomers },
                   { label: "Products", icon: Package, current: usage.totalProducts, max: usage.maxProducts },
                 ].map((item) => {
-                  const pct = item.max > 0 ? Math.min((item.current / item.max) * 100, 100) : 0;
-                  const isHigh = pct >= 80;
+                  const unlimited = !isFinite(item.max);
+                  const pct = unlimited ? 0 : (item.max > 0 ? Math.min((item.current / item.max) * 100, 100) : 0);
+                  const isHigh = !unlimited && pct >= 80;
                   return (
                     <div key={item.label} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
@@ -458,7 +459,7 @@ const MyPlan = () => {
                           {item.label}
                         </span>
                         <span className={`font-semibold ${isHigh ? "text-destructive" : "text-foreground"}`}>
-                          {usage.loading ? "…" : `${item.current} / ${item.max}`}
+                          {usage.loading ? "…" : unlimited ? `${item.current} / ∞` : `${item.current} / ${item.max}`}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
@@ -589,8 +590,9 @@ const MyPlan = () => {
                   { label: "Products", current: usage.totalProducts, max: usage.maxProducts, icon: Package },
                   { label: "Customers", current: usage.totalCustomers, max: usage.maxCustomers, icon: Users },
                 ].map((item) => {
-                  const pct = item.max > 0 ? Math.min((item.current / item.max) * 100, 100) : 0;
-                  const isHigh = pct >= 80;
+                  const unlimited = !isFinite(item.max);
+                  const pct = unlimited ? 0 : (item.max > 0 ? Math.min((item.current / item.max) * 100, 100) : 0);
+                  const isHigh = !unlimited && pct >= 80;
                   return (
                     <div key={item.label} className="rounded-lg border p-3 space-y-2">
                       <div className="flex items-center justify-between text-sm">
@@ -599,7 +601,7 @@ const MyPlan = () => {
                           {item.label}
                         </span>
                         <span className={`font-semibold ${isHigh ? "text-destructive" : "text-foreground"}`}>
-                          {item.current} / {item.max}
+                          {unlimited ? `${item.current} / ∞` : `${item.current} / ${item.max}`}
                         </span>
                       </div>
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
