@@ -70,7 +70,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [override, setOverride] = useState<any>(null);
 
   const ov = override?.manual_override ? override : null;
-  const baseStoreLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
+  const isUnlimited = !!(ov && (ov.is_unlimited_store || ov.is_unlimited_customer || ov.is_unlimited_product));
+  const effectivePlan = isUnlimited ? "business" : (plan ?? "free");
+  const baseStoreLimit = PLAN_STORE_LIMITS[effectivePlan] ?? 1;
   const storeLimit = ov?.is_unlimited_store
     ? Number.POSITIVE_INFINITY
     : (ov?.override_max_stores ?? baseStoreLimit);
@@ -269,7 +271,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       stores, activeStore, loading,
       switchStore, createStore, refreshStores: fetchStores,
       storeLimit, canCreateStore, isStaffStore,
-      lockedStoreIds, isStoreLocked, plan: plan ?? "free",
+      lockedStoreIds, isStoreLocked, plan: isUnlimited ? "unlimited" : (plan ?? "free"),
     }}>
       {children}
     </StoreContext.Provider>

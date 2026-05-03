@@ -197,30 +197,21 @@ export const useStorePlan = () => {
     };
   }, [planUserId, fetchPlan]);
 
-  const hasFeature = useCallback(
-    (feature: FeatureKey): boolean => {
-      if (!plan) return false; // still loading
-      // Admin override: unlock all features when manual_override is on
-      if (override?.manual_override) {
-        const allUnlimited =
-          override.is_unlimited_store ||
-          override.is_unlimited_customer ||
-          override.is_unlimited_product;
-        if (allUnlimited) {
-          return PLAN_FEATURES.business.includes(feature);
-        }
-      }
-      const features = PLAN_FEATURES[plan] ?? PLAN_FEATURES.free;
-      return features.includes(feature);
-    },
-    [plan, override]
-  );
-  const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
-
-  // Display plan label — when admin override grants unlimited, show "Unlimited"
   const ov = override?.manual_override ? override : null;
   const isUnlimited = !!(ov && (ov.is_unlimited_store || ov.is_unlimited_customer || ov.is_unlimited_product));
+  // Effective plan: unlimited override promotes user to Business-tier features everywhere
+  const effectivePlan = isUnlimited ? "business" : plan;
+
+  const hasFeature = useCallback(
+    (feature: FeatureKey): boolean => {
+      if (!effectivePlan) return false;
+      const features = PLAN_FEATURES[effectivePlan] ?? PLAN_FEATURES.free;
+      return features.includes(feature);
+    },
+    [effectivePlan]
+  );
+  const remainingDays = endDate ? Math.max(0, Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const displayPlan = isUnlimited ? "unlimited" : (plan ?? "free");
 
-  return { plan, volume, loading, hasFeature, endDate, remainingDays, override, isUnlimited, displayPlan };
+  return { plan: effectivePlan, volume, loading, hasFeature, endDate, remainingDays, override, isUnlimited, displayPlan };
 };
