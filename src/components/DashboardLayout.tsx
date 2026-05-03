@@ -25,7 +25,19 @@ import { useLanguage, Lang } from "@/contexts/LanguageContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useLocation, useNavigate } from "react-router-dom";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect, createContext, useContext } from "react";
+
+/**
+ * Context flag set by the persistent layout route. When true, any inner
+ * <DashboardLayout> rendered by a page becomes a passthrough so the real
+ * sidebar/header stay mounted across route changes (no remount = instant nav).
+ */
+const LayoutMountedContext = createContext(false);
+export const PersistentDashboardLayout = ({ children }: { children: React.ReactNode }) => (
+  <LayoutMountedContext.Provider value={true}>
+    <DashboardLayoutInner>{children}</DashboardLayoutInner>
+  </LayoutMountedContext.Provider>
+);
 
 const LazyNotificationBell = lazy(() => import("./NotificationBell"));
 const LazyFloatingInbox = lazy(() => import("./FloatingInbox"));
@@ -77,6 +89,14 @@ const routeTitles: Record<string, string> = {
 };
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+  // If the persistent layout is already mounted higher in the tree, just
+  // render the page content — never remount sidebar/header on navigation.
+  const alreadyMounted = useContext(LayoutMountedContext);
+  if (alreadyMounted) return <>{children}</>;
+  return <DashboardLayoutInner>{children}</DashboardLayoutInner>;
+};
+
+const DashboardLayoutInner = ({ children }: { children: React.ReactNode }) => {
   const { signOut, user } = useAuth();
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
