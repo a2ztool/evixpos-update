@@ -86,7 +86,7 @@ const StoreSwitcher = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel className="text-xs">
-            Your Stores ({stores.length}/{storeLimit})
+            Your Stores ({stores.length}/{isFinite(storeLimit) ? storeLimit : "∞"})
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {stores.map(store => (

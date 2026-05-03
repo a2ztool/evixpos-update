@@ -67,8 +67,13 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<string | null>(null);
   const [isStaffStore, setIsStaffStore] = useState(false);
+  const [override, setOverride] = useState<any>(null);
 
-  const storeLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
+  const ov = override?.manual_override ? override : null;
+  const baseStoreLimit = PLAN_STORE_LIMITS[plan ?? "free"] ?? 1;
+  const storeLimit = ov?.is_unlimited_store
+    ? Number.POSITIVE_INFINITY
+    : (ov?.override_max_stores ?? baseStoreLimit);
   const canCreateStore = !isStaffStore && stores.length < storeLimit;
 
   // Determine which stores are locked due to plan limit.
@@ -85,7 +90,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   const allowedStoreIds = isStaffStore
     ? new Set(stores.map(s => s.id))
-    : computeAllowedIds(stores, storeLimit);
+    : (isFinite(storeLimit)
+        ? computeAllowedIds(stores, storeLimit)
+        : new Set(stores.map(s => s.id)));
   const lockedStoreIds = new Set(
     stores.filter(s => !allowedStoreIds.has(s.id)).map(s => s.id)
   );
@@ -112,12 +119,18 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
+    const overrideQuery = supabase
+      .from("admin_plan_overrides" as any)
+      .select("*")
+      .eq("user_id", planUserId)
+      .maybeSingle();
 
     if (isStaff && staffInfo?.store_id) {
       // Staff user: load only their assigned store
-      const [storeRes, planRes] = await Promise.all([
+      const [storeRes, planRes, ovRes] = await Promise.all([
         supabase.from("stores").select("*").eq("id", staffInfo.store_id).single(),
         planQuery,
+        overrideQuery,
       ]);
 
       if (storeRes.data) {
@@ -127,20 +140,23 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         setIsStaffStore(true);
       }
       setPlan(resolvePlan(planRes.data));
+      setOverride((ovRes as any)?.data || null);
       setLoading(false);
       return;
     }
 
     // Owner: load all their stores
     setIsStaffStore(false);
-    const [storesRes, planRes] = await Promise.all([
+    const [storesRes, planRes, ovRes] = await Promise.all([
       supabase.from("stores").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       planQuery,
+      overrideQuery,
     ]);
 
     const storeList = (storesRes.data ?? []) as Store[];
     setStores(storeList);
     setPlan(resolvePlan(planRes.data));
+    setOverride((ovRes as any)?.data || null);
 
     // Restore last active store from localStorage or pick default
     const savedStoreId = localStorage.getItem(`active_store_${user.id}`);
@@ -185,6 +201,16 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         () => {
           fetchStores();
         }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "admin_plan_overrides" },
+        () => { fetchStores(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions" },
+        () => { fetchStores(); }
       )
       .subscribe();
     return () => {

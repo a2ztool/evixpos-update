@@ -100,7 +100,7 @@ const DashboardLayoutInner = ({ children }: { children: React.ReactNode }) => {
   const { signOut, user } = useAuth();
   const { lang, setLang } = useLanguage();
   const { isStaff, staffInfo } = useStaff();
-  const { plan } = useStorePlan();
+  const { plan, isUnlimited } = useStorePlan();
   const { canInstall, isInstalled, isStandalone, promptInstall } = usePWAInstall();
   const appInstalled = isInstalled || isStandalone;
   const handleInstallApp = async () => {
@@ -293,7 +293,9 @@ const DashboardLayoutInner = ({ children }: { children: React.ReactNode }) => {
                         <p className="text-xs leading-none text-muted-foreground">
                           {isStaff
                             ? `Staff • ${staffInfo?.role}`
-                            : `${(plan ?? "free").charAt(0).toUpperCase() + (plan ?? "free").slice(1)} Plan`}
+                            : isUnlimited
+                              ? "Unlimited Plan"
+                              : `${(plan ?? "free").charAt(0).toUpperCase() + (plan ?? "free").slice(1)} Plan`}
                         </p>
                       </div>
                     </DropdownMenuLabel>

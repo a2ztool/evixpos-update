@@ -285,7 +285,7 @@ const SettingsPage = () => {
   const { effectiveUserId } = useStaff();
   const { setCurrency: setGlobalCurrency } = useCurrencyContext();
   const { t, lang, setLang } = useLanguage();
-  const { plan } = useSubscription();
+  const { plan, hasUnlimited } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) || "general";
@@ -1758,7 +1758,7 @@ const SettingsPage = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t.settings}</h1>
                   <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5">
-                    <Sparkles className="h-3 w-3" /> {plan === "free" ? "FREE" : (plan?.toUpperCase() || "")}
+                    <Sparkles className="h-3 w-3" /> {hasUnlimited ? "UNLIMITED" : (plan === "free" ? "FREE" : (plan?.toUpperCase() || ""))}
                   </Badge>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
