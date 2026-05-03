@@ -191,13 +191,45 @@ const AdminPaymentGateways = () => {
       mode: "auto",
       api_config: {
         provider: "zinipay",
-        note: "API key is stored as ZINIPAY_API_KEY secret in Supabase Edge Functions",
+        api_key: "",
       },
       icon_url: "https://zinipay.com/assets/img/logo.png",
       required_fields: [],
     };
     await adminCall("create_payment_gateway", payload);
-    toast.success("ZiniPay gateway added! BDT users can now pay via bKash/Nagad/Card.");
+    toast.success("ZiniPay gateway added! Now edit it and paste your ZiniPay api_key.");
+    fetchGateways();
+  };
+
+  const quickAddRazorpay = async () => {
+    const exists = gateways.find(g => g.gateway_name?.toLowerCase().includes("razorpay"));
+    if (exists) {
+      toast.info("Razorpay gateway already exists. Edit it instead.");
+      openEdit(exists);
+      return;
+    }
+    const payload = {
+      currency: "INR",
+      gateway_name: "Razorpay",
+      gateway_type: "redirect",
+      qr_code_url: "",
+      payment_details: {
+        info: "Pay via UPI, Card, Netbanking through Razorpay secure checkout",
+      },
+      is_active: true,
+      sort_order: 0,
+      mode: "auto",
+      api_config: {
+        provider: "razorpay",
+        key_id: "",
+        key_secret: "",
+        webhook_secret: "",
+      },
+      icon_url: "https://razorpay.com/assets/razorpay-logo.svg",
+      required_fields: [],
+    };
+    await adminCall("create_payment_gateway", payload);
+    toast.success("Razorpay gateway added! Now edit it and paste your key_id, key_secret & webhook_secret.");
     fetchGateways();
   };
 
@@ -240,6 +272,9 @@ const AdminPaymentGateways = () => {
         <div className="flex gap-2">
           <Button variant="outline" onClick={quickAddZinipay} className="gap-2 border-pink-500/30 text-pink-400 hover:bg-pink-500/10">
             <Sparkles className="h-4 w-4" /> Quick-Add ZiniPay
+          </Button>
+          <Button variant="outline" onClick={quickAddRazorpay} className="gap-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
+            <Sparkles className="h-4 w-4" /> Quick-Add Razorpay
           </Button>
           <Button variant="outline" onClick={() => navigate("/admin/auto-payments")} className="gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
             <Zap className="h-4 w-4" /> Auto Dashboard
