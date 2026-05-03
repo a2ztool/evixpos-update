@@ -648,62 +648,85 @@ const MyPlan = () => {
           </Card>
         )}
 
-        {/* Volume Slider — SaaS highlighted (with currency selector inside) */}
-        <div className="relative rounded-lg p-[1.5px] bg-gradient-to-r from-primary/60 via-primary/30 to-primary/60 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.45)]">
-          <Card className="border-0 rounded-[7px] bg-gradient-to-br from-card via-card to-primary/5 overflow-hidden">
-            <CardContent className="p-3 sm:p-4 relative">
-              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-
-              {/* Currency selector — inline pills inside card */}
-              <div className="relative flex flex-wrap items-center justify-center sm:justify-between gap-2 mb-2 sm:mb-3">
-                <div className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/50 border border-border/50">
-                  {(["BDT", "USD", "INR"] as const).map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCurrency(c)}
-                      className={`text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded transition-all ${
-                        currency === c
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {c} ({CURRENCY_SYMBOLS[c]})
-                    </button>
-                  ))}
+        {/* Volume Selector — modern SaaS card */}
+        <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
+          <CardContent className="p-0">
+            {/* Header strip */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 border-b border-border/60 bg-muted/30">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="h-4 w-4 text-primary" />
                 </div>
-                <span className="text-[10px] sm:text-xs text-muted-foreground">
-                  1 INR ≈ {(RATES_FROM_INR.BDT).toFixed(2)} BDT ≈ {(RATES_FROM_INR.USD).toFixed(4)} USD
-                </span>
-              </div>
-
-              <div className="relative flex flex-col items-center text-center mb-2 sm:mb-3">
-                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold mb-1">
-                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Customer Volume
-                </div>
-                <h3 className="font-bold text-sm sm:text-base bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Select Customer Volume</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Price adjusts automatically based on volume</p>
-              </div>
-
-              <div className="relative flex items-end justify-between mb-1 sm:mb-2">
-                <span className="text-xs sm:text-sm text-muted-foreground">Customers / mo</span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl sm:text-2xl font-extrabold text-primary tracking-tight tabular-nums">{volumeLabel}</span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">/ month</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground">Customer volume</h3>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      Auto-priced
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Pick your monthly customer capacity — price scales with usage.
+                  </p>
                 </div>
               </div>
+              {/* Currency segmented control */}
+              <div className="inline-flex items-center p-0.5 rounded-lg bg-background border border-border/60 self-start sm:self-auto">
+                {(["BDT", "USD", "INR"] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCurrency(c)}
+                    className={`text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-md transition-all ${
+                      currency === c
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {CURRENCY_SYMBOLS[c]} {c}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <Slider
-                value={volumeIndex}
-                onValueChange={setVolumeIndex}
-                min={0}
-                max={VOLUME_STEPS.length - 1}
-                step={1}
-                className="my-2 sm:my-2.5 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 sm:[&_[role=slider]]:h-5 sm:[&_[role=slider]]:w-5 [&_[role=slider]]:shadow [&_[role=slider]]:ring-2 [&_[role=slider]]:ring-primary/20 [&>span:first-child]:h-1.5 sm:[&>span:first-child]:h-2 [&>span:first-child]:bg-primary/15"
-              />
+            {/* Body */}
+            <div className="px-4 sm:px-6 py-5 space-y-4">
+              {/* Stat row */}
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    Selected capacity
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mt-1">
+                    <span className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight tabular-nums">
+                      {volumeLabel}
+                    </span>
+                    <span className="text-sm text-muted-foreground">customers / mo</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                    Exchange rate
+                  </div>
+                  <div className="text-xs text-foreground/80 font-medium mt-1 tabular-nums">
+                    1 INR ≈ {RATES_FROM_INR.BDT.toFixed(2)} BDT · {RATES_FROM_INR.USD.toFixed(4)} USD
+                  </div>
+                </div>
+              </div>
 
-              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
+              {/* Slider */}
+              <div className="pt-1">
+                <Slider
+                  value={volumeIndex}
+                  onValueChange={setVolumeIndex}
+                  min={0}
+                  max={VOLUME_STEPS.length - 1}
+                  step={1}
+                  className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-background [&_[role=slider]]:shadow-md [&_[role=slider]]:ring-4 [&_[role=slider]]:ring-primary/15 [&>span:first-child]:h-1.5 [&>span:first-child]:bg-muted [&>span:first-child>span]:bg-primary"
+                />
+              </div>
+
+              {/* Preset segmented control */}
+              <div className="grid grid-cols-7 gap-1 p-1 rounded-lg bg-muted/40 border border-border/40">
                 {["500", "1K", "5K", "10K", "20K", "50K", "100K"].map((l, i) => {
                   const active = volumeIndex[0] === i;
                   return (
@@ -711,10 +734,10 @@ const MyPlan = () => {
                       key={l}
                       type="button"
                       onClick={() => setVolumeIndex([i])}
-                      className={`text-[10px] sm:text-xs font-semibold py-1 sm:py-1.5 rounded transition-all ${
+                      className={`text-[11px] sm:text-xs font-semibold py-1.5 rounded-md transition-all ${
                         active
-                          ? "bg-primary text-primary-foreground shadow-md scale-105"
-                          : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {l}
@@ -722,9 +745,9 @@ const MyPlan = () => {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Monthly / Yearly Toggle */}
         <div className="flex justify-center items-center gap-2 sm:gap-3 sticky top-14 sm:static z-20 sm:z-auto py-2 sm:py-0 -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/85 sm:bg-transparent backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:supports-[backdrop-filter]:bg-transparent sm:backdrop-blur-0 rounded-full sm:rounded-none">
