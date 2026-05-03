@@ -24,14 +24,16 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
 
   if (!user || usage.loading) return null;
 
-  const productPct = Math.min(100, Math.round((usage.totalProducts / usage.maxProducts) * 100));
-  const customerPct = Math.min(100, Math.round((usage.totalCustomers / usage.maxCustomers) * 100));
+  const pctOf = (cur: number, max: number) => !isFinite(max) ? 0 : Math.min(100, Math.round((cur / max) * 100));
+  const fmt = (n: number) => isFinite(n) ? n : "∞";
+  const productPct = pctOf(usage.totalProducts, usage.maxProducts);
+  const customerPct = pctOf(usage.totalCustomers, usage.maxCustomers);
 
   const UsageBar = ({ label, count, max, pct }: { label: string; count: number; max: number; pct: number }) => (
     <div>
       <div className="flex items-center justify-between mb-0.5">
         <span className="text-[10px] font-semibold leading-none">{label}</span>
-        <span className="text-[9px] font-bold text-primary tabular-nums leading-none">{pct}%</span>
+        <span className="text-[9px] font-bold text-primary tabular-nums leading-none">{isFinite(max) ? `${pct}%` : "∞"}</span>
       </div>
       <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
         <div
@@ -39,7 +41,7 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{count}/{max}</p>
+      <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{count}/{fmt(max)}</p>
     </div>
   );
 
@@ -55,7 +57,7 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1 cursor-help text-[9px] text-muted-foreground hover:text-primary transition-colors">
                 <Store className="h-3 w-3" />
-                <span>{usage.totalStores} / {usage.maxStores} stores • View breakdown</span>
+              <span>{usage.totalStores} / {fmt(usage.maxStores)} stores • View breakdown</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="right" className="text-xs space-y-1 p-3 max-w-[200px]">
