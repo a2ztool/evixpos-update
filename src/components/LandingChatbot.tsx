@@ -36,6 +36,18 @@ const getVisitorId = (): string => {
   return id;
 };
 
+// Visitor-scoped client that sends the visitor id header so RLS policies
+// can scope chat_sessions/chat_messages rows to this visitor only.
+const SUPABASE_URL = "https://vuuesqrdjuqnduhiihwz.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dWVzcXJkanVxbmR1aGlpaHd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NDUxNDAsImV4cCI6MjA5MTEyMTE0MH0.VWuaxpk0t6UnkZTt8H7Z0t-JcsAVRdGoxfpu2OpI_ZM";
+const getVisitorClient = () => {
+  const visitorId = getVisitorId();
+  return createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { "x-visitor-id": visitorId } },
+  });
+};
+
 const LandingChatbot = () => {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
