@@ -38,10 +38,15 @@ export async function createZinipayInvoice(
     },
   );
   if (error) {
-    const details = typeof error.context === "object" && error.context !== null
-      ? (error.context as { details?: string; error?: string })
-      : null;
-    throw new Error(details?.details || details?.error || error.message || "Failed to create invoice");
+    let message = error.message || "Failed to create invoice";
+    const response = (error as any).context;
+    if (response && typeof response.json === "function") {
+      try {
+        const details = await response.clone().json();
+        message = details?.details || details?.error || message;
+      } catch { /* keep default message */ }
+    }
+    throw new Error(message);
   }
   if (!data?.payment_url) {
     throw new Error(data?.error || "Invalid response from ZiniPay");
