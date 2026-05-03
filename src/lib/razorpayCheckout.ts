@@ -137,6 +137,8 @@ export async function fetchBrandInfo(): Promise<BrandInfo> {
 export interface OpenCheckoutArgs extends CreateOrderResult {
   planName: string;
   prefill?: { name?: string; email?: string; contact?: string };
+  /** Checkout session timeout in seconds. Razorpay auto-closes when reached. */
+  timeoutSeconds?: number;
   onSuccess: (resp: {
     razorpay_payment_id: string;
     razorpay_order_id: string;
@@ -173,6 +175,10 @@ export const openRazorpayCheckout = async (args: OpenCheckoutArgs): Promise<void
     name: brand.name,
     description: `${args.planName} subscription`,
     order_id: args.order_id,
+    // Force a fresh dynamic checkout session — never let Razorpay reuse a
+    // cached/expired QR. Auto-close after timeoutSeconds (default 9 min,
+    // safely under Razorpay's 15-min order TTL).
+    timeout: Math.max(60, args.timeoutSeconds ?? 540),
     prefill: {
       name: args.prefill?.name || "",
       email: args.prefill?.email || "",
@@ -195,3 +201,16 @@ export const openRazorpayCheckout = async (args: OpenCheckoutArgs): Promise<void
   rzp.on("payment.failed", (resp: any) => args.onFailure?.(resp.error));
   rzp.open();
 };
+
+/** Heuristic: did this Razorpay error result from an expired/closed order? */
+export function isOrderExpiredError(err: any): boolean {
+  if (!err) return false;
+  const blob = JSON.stringify(err).toLowerCase();
+  return (
+    blob.includes("order") &&
+    (blob.includes("expire") ||
+      blob.includes("not active") ||
+      blob.includes("already paid") ||
+      blob.includes("invalid order"))
+  );
+}
