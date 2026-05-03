@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Tag, Check, X, ShieldCheck, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createRazorpayOrder, openRazorpayCheckout, isOrderExpiredError } from "@/lib/razorpayCheckout";
+import { createRazorpayOrder, openRazorpayCheckout, isOrderExpiredError, loadRazorpayScript, fetchBrandInfo } from "@/lib/razorpayCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PlatformCoupon {
@@ -49,6 +49,11 @@ const RazorpayUpgradeModal = ({
       setApplying(false);
       setPaying(false);
       setVerifying(false);
+    } else {
+      // Preload the Razorpay SDK + brand info as soon as the modal opens
+      // so the checkout popup appears instantly when user clicks Proceed.
+      loadRazorpayScript().catch(() => {});
+      fetchBrandInfo().catch(() => {});
     }
   }, [open]);
 
