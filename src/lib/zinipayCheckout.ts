@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicOrigin } from "@/lib/publicUrl";
 
 export interface CreateInvoiceArgs {
   plan: "pro" | "business";
@@ -23,8 +24,7 @@ const ZINIPAY_VAL_KEY = "evx_zinipay_pending_val_id";
 export async function createZinipayInvoice(
   args: CreateInvoiceArgs,
 ): Promise<CreateInvoiceResult> {
-  const redirectOrigin =
-    typeof window !== "undefined" ? window.location.origin : "";
+  const redirectOrigin = typeof window !== "undefined" ? getPublicOrigin() : "";
   const { data, error } = await supabase.functions.invoke(
     "zinipay-create-invoice",
     {
