@@ -64,22 +64,17 @@ export default defineConfig(({ mode }) => ({
     reportCompressedSize: false,
     rollupOptions: {
       output: {
-        // Smarter chunking: split heavy deps into their own chunks so
-        // pages that don't need them (e.g. dashboard pages don't need
-        // recharts/framer-motion) never download them.
+        // Split only heavy, leaf-style deps that don't depend on React's
+        // module shape. Bundling React/Radix/Router/Query separately can
+        // create init-order bugs in prod (e.g. React undefined when Radix
+        // calls forwardRef) — let Rollup handle those automatically.
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("/react-dom/") || id.match(/\/react\/[^/]+$/)) return "vendor-react";
-          if (id.includes("react-router")) return "vendor-router";
-          if (id.includes("@tanstack/")) return "vendor-query";
-          if (id.includes("@supabase/")) return "vendor-supabase";
           if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
           if (id.includes("framer-motion")) return "vendor-motion";
           if (id.includes("lucide-react")) return "vendor-icons";
-          if (id.includes("@radix-ui/")) return "vendor-radix";
           if (id.includes("date-fns")) return "vendor-date";
-          if (id.includes("zod") || id.includes("react-hook-form")) return "vendor-forms";
-          return "vendor";
+          return undefined;
         },
       },
     },
