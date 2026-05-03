@@ -30,6 +30,41 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/**
+ * Read the ZiniPay API key from the admin-configured payment gateway row
+ * regardless of which key name the admin used in api_config. Falls back to
+ * the ZINIPAY_API_KEY environment secret.
+ */
+async function resolveZiniKey(admin: any): Promise<string> {
+  try {
+    const { data: rows } = await admin
+      .from("payment_gateways")
+      .select("gateway_name, api_config, is_active, mode")
+      .or("gateway_name.ilike.%zinipay%,gateway_name.ilike.%zini%");
+    const candidates = (rows || []).filter((r: any) => r.is_active !== false);
+    for (const row of candidates) {
+      const cfg = (row.api_config || {}) as Record<string, unknown>;
+      // Direct known field names first
+      const known = [
+        "api_key", "apiKey", "ZINIPAY_API_KEY",
+        "zinipay_api_key", "zini_api_key", "zinipay", "zini",
+        "key", "secret_key", "secretKey",
+      ];
+      for (const k of known) {
+        const v = cfg[k];
+        if (typeof v === "string" && v.trim().length >= 10) return v.trim();
+      }
+      // Fallback: any string value that looks like a key
+      for (const v of Object.values(cfg)) {
+        if (typeof v === "string" && v.trim().length >= 16) return v.trim();
+      }
+    }
+  } catch (e) {
+    console.warn("[zinipay] gateway lookup failed", e);
+  }
+  return (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
