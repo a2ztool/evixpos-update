@@ -178,6 +178,65 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_plan_overrides: {
+        Row: {
+          applied_by: string | null
+          created_at: string
+          id: string
+          is_unlimited_customer: boolean
+          is_unlimited_product: boolean
+          is_unlimited_store: boolean
+          manual_override: boolean
+          notes: string | null
+          override_max_customers: number | null
+          override_max_products: number | null
+          override_max_stores: number | null
+          override_volume: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          is_unlimited_customer?: boolean
+          is_unlimited_product?: boolean
+          is_unlimited_store?: boolean
+          manual_override?: boolean
+          notes?: string | null
+          override_max_customers?: number | null
+          override_max_products?: number | null
+          override_max_stores?: number | null
+          override_volume?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          is_unlimited_customer?: boolean
+          is_unlimited_product?: boolean
+          is_unlimited_store?: boolean
+          manual_override?: boolean
+          notes?: string | null
+          override_max_customers?: number | null
+          override_max_products?: number | null
+          override_max_stores?: number | null
+          override_volume?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_plan_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_accounts: {
         Row: {
           access_token: string | null
@@ -3479,6 +3538,31 @@ export type Database = {
       }
       get_staff_limit: { Args: { _plan: string }; Returns: number }
       get_staff_owner_id: { Args: never; Returns: string }
+      get_user_override: {
+        Args: { _user_id: string }
+        Returns: {
+          applied_by: string | null
+          created_at: string
+          id: string
+          is_unlimited_customer: boolean
+          is_unlimited_product: boolean
+          is_unlimited_store: boolean
+          manual_override: boolean
+          notes: string | null
+          override_max_customers: number | null
+          override_max_products: number | null
+          override_max_stores: number | null
+          override_volume: number | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admin_plan_overrides"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

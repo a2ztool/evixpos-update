@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Store, Package, Users, ShoppingCart, DollarSign, Eye, Clock, Calendar, AlertTriangle, CheckCircle, Crown, Ban, Info } from "lucide-react";
+import AdminOverrideCard from "@/components/admin/AdminOverrideCard";
 
 interface StoreWithStats {
   id: string;
@@ -197,6 +198,9 @@ const AdminUserDetails = () => {
           </Card>
         );
       })()}
+
+      {/* Admin override controls */}
+      {userId && <AdminOverrideCard userId={userId} />}
 
       {/* Store cards */}
       <h2 className="text-lg font-semibold text-white">Stores</h2>
