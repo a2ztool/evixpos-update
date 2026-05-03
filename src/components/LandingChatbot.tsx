@@ -5,6 +5,7 @@ import {
   Home, HelpCircle, MessagesSquare, ChevronRight, ChevronDown, Globe, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { useLandingContent } from "@/hooks/useLandingContent";
 import brandLogo from "@/assets/evixPos.png";
 
@@ -33,6 +34,18 @@ const getVisitorId = (): string => {
     sessionStorage.setItem("chat_visitor_id", id);
   }
   return id;
+};
+
+// Visitor-scoped client that sends the visitor id header so RLS policies
+// can scope chat_sessions/chat_messages rows to this visitor only.
+const SUPABASE_URL = "https://vuuesqrdjuqnduhiihwz.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dWVzcXJkanVxbmR1aGlpaHd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NDUxNDAsImV4cCI6MjA5MTEyMTE0MH0.VWuaxpk0t6UnkZTt8H7Z0t-JcsAVRdGoxfpu2OpI_ZM";
+const getVisitorClient = () => {
+  const visitorId = getVisitorId();
+  return createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { "x-visitor-id": visitorId } },
+  });
 };
 
 const LandingChatbot = () => {
@@ -79,8 +92,9 @@ const LandingChatbot = () => {
 
   useEffect(() => {
     const visitorId = getVisitorId();
+    const vsb = getVisitorClient();
     const initSession = async () => {
-      const { data: existing } = await supabase
+      const { data: existing } = await vsb
         .from("chat_sessions")
         .select("id")
         .eq("visitor_id", visitorId)
@@ -90,7 +104,7 @@ const LandingChatbot = () => {
         .maybeSingle();
       if (existing) {
         setSessionId(existing.id);
-        const { data: msgs } = await supabase
+        const { data: msgs } = await vsb
           .from("chat_messages")
           .select("*")
           .eq("session_id", existing.id)
@@ -103,7 +117,8 @@ const LandingChatbot = () => {
 
   useEffect(() => {
     if (!sessionId) return;
-    const channel = supabase
+    const vsb = getVisitorClient();
+    const channel = vsb
       .channel(`chat-${sessionId}`)
       .on("postgres_changes", {
         event: "INSERT",
@@ -119,14 +134,14 @@ const LandingChatbot = () => {
         }
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { vsb.removeChannel(channel); };
   }, [sessionId, open, tab, scrollToBottom]);
 
   useEffect(() => { if (open && tab === "chat") scrollToBottom(); }, [open, tab, messages.length, scrollToBottom]);
 
   const createSession = async () => {
     const visitorId = getVisitorId();
-    const { data } = await supabase
+    const { data } = await getVisitorClient()
       .from("chat_sessions")
       .insert({ visitor_id: visitorId, visitor_name: "Visitor" })
       .select("id")
@@ -154,14 +169,15 @@ const LandingChatbot = () => {
     setMessages((prev) => [...prev, optimistic]);
     scrollToBottom();
 
-    const { data } = await supabase
+    const vsb = getVisitorClient();
+    const { data } = await vsb
       .from("chat_messages")
       .insert({ session_id: sid, sender_type: "visitor", message: msg })
       .select()
       .single();
     if (data) setMessages((prev) => prev.map((m) => m.id === optimistic.id ? (data as ChatMessage) : m));
 
-    await supabase.from("chat_sessions").update({ last_message_at: new Date().toISOString(), is_read: false }).eq("id", sid);
+    await vsb.from("chat_sessions").update({ last_message_at: new Date().toISOString(), is_read: false }).eq("id", sid);
 
     // Notify all admins of new landing chat (only first message in session triggers, dedup handles rest)
     try {
@@ -172,7 +188,7 @@ const LandingChatbot = () => {
     if (autoReplyEnabled && messages.filter((m) => m.sender_type === "visitor").length === 0) {
       setTyping(true);
       setTimeout(async () => {
-        const { data: reply } = await supabase
+        const { data: reply } = await vsb
           .from("chat_messages")
           .insert({ session_id: sid!, sender_type: "admin", message: autoReply })
           .select()

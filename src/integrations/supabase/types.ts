@@ -3463,6 +3463,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_business_settings: {
+        Args: { _store_id: string }
+        Returns: {
+          business_name: string
+          default_currency: string
+          logo_url: string
+          store_slug: string
+        }[]
+      }
       get_public_invoice: {
         Args: { _order_id: string; _token: string }
         Returns: Json
