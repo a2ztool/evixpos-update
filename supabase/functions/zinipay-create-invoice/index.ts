@@ -37,19 +37,35 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ZINI_API_KEY = Deno.env.get("ZINIPAY_API_KEY")?.trim();
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    // Resolve ZiniPay API key from admin-configured gateway, fallback to env
+    let ZINI_API_KEY = "";
+    try {
+      const { data: gw } = await admin
+        .from("payment_gateways")
+        .select("api_config, is_active")
+        .ilike("gateway_name", "%zinipay%")
+        .eq("is_active", true)
+        .maybeSingle();
+      const cfg = (gw?.api_config || {}) as Record<string, string>;
+      ZINI_API_KEY = String(
+        cfg.api_key || cfg.apiKey || cfg.ZINIPAY_API_KEY || cfg.key || ""
+      ).trim();
+    } catch (e) {
+      console.warn("[zinipay-create-invoice] gateway lookup failed", e);
+    }
+    if (!ZINI_API_KEY) ZINI_API_KEY = (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
     if (!ZINI_API_KEY) {
-      return jsonResponse({ error: "ZiniPay API key not configured" }, 500);
+      return jsonResponse({ error: "ZiniPay API key not configured by admin" }, 500);
     }
 
     // Validate caller JWT
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "").trim();
     if (!token) return jsonResponse({ error: "Unauthorized" }, 401);
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const { data: userData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userData?.user) return jsonResponse({ error: "Unauthorized" }, 401);
     const user = userData.user;
