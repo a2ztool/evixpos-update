@@ -517,6 +517,53 @@ const AdminPaymentGateways = () => {
 
               {form.mode === "auto" && (
                 <div className="space-y-3">
+                  {/* ZiniPay direct fields */}
+                  {form.gateway_name.toLowerCase().includes("zini") && (
+                    <div className="bg-slate-700/40 border border-pink-500/30 rounded-lg p-3 space-y-2">
+                      <Label className="text-pink-300 text-xs">ZiniPay API Key</Label>
+                      <Input
+                        className="bg-slate-800 border-slate-600 text-xs font-mono"
+                        type="password"
+                        placeholder="Paste your ZiniPay API key"
+                        value={String(form.api_config.api_key || form.api_config.zinipay || form.api_config.zini_api_key || "")}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          api_config: { ...f.api_config, api_key: e.target.value, zinipay: e.target.value },
+                        }))}
+                      />
+                      <p className="text-[10px] text-slate-400">Get it from ZiniPay dashboard → Brand Settings → API Key. Both <code>api_key</code> and <code>zinipay</code> will be saved for compatibility.</p>
+                    </div>
+                  )}
+
+                  {/* Razorpay direct fields */}
+                  {form.gateway_name.toLowerCase().includes("razor") && (
+                    <div className="bg-slate-700/40 border border-blue-500/30 rounded-lg p-3 space-y-2">
+                      <Label className="text-blue-300 text-xs">Razorpay Key ID</Label>
+                      <Input
+                        className="bg-slate-800 border-slate-600 text-xs font-mono"
+                        placeholder="rzp_live_xxx or rzp_test_xxx"
+                        value={String(form.api_config.key_id || "")}
+                        onChange={e => setForm(f => ({ ...f, api_config: { ...f.api_config, key_id: e.target.value } }))}
+                      />
+                      <Label className="text-blue-300 text-xs">Razorpay Key Secret</Label>
+                      <Input
+                        className="bg-slate-800 border-slate-600 text-xs font-mono"
+                        type="password"
+                        placeholder="Razorpay key secret"
+                        value={String(form.api_config.key_secret || "")}
+                        onChange={e => setForm(f => ({ ...f, api_config: { ...f.api_config, key_secret: e.target.value } }))}
+                      />
+                      <Label className="text-blue-300 text-xs">Webhook Secret</Label>
+                      <Input
+                        className="bg-slate-800 border-slate-600 text-xs font-mono"
+                        type="password"
+                        placeholder="Razorpay webhook secret"
+                        value={String(form.api_config.webhook_secret || "")}
+                        onChange={e => setForm(f => ({ ...f, api_config: { ...f.api_config, webhook_secret: e.target.value } }))}
+                      />
+                    </div>
+                  )}
+
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 text-amber-400 text-sm font-medium mb-1">
                       <Settings2 className="h-4 w-4" /> API Configuration

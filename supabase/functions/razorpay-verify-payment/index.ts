@@ -53,14 +53,16 @@ Deno.serve(async (req) => {
     });
     let RZP_KEY_SECRET = "";
     try {
-      const { data: gw } = await admin
+      const { data: rows } = await admin
         .from("payment_gateways")
-        .select("api_config")
-        .ilike("gateway_name", "%razorpay%")
-        .eq("is_active", true)
-        .maybeSingle();
-      const cfg = (gw?.api_config || {}) as Record<string, string>;
-      RZP_KEY_SECRET = String(cfg.key_secret || cfg.RAZORPAY_KEY_SECRET || cfg.keySecret || cfg.secret || "").trim();
+        .select("api_config, is_active, gateway_name")
+        .or("gateway_name.ilike.%razorpay%,gateway_name.ilike.%razor%");
+      const candidates = (rows || []).filter((r: any) => r.is_active !== false);
+      for (const row of candidates) {
+        const cfg = (row.api_config || {}) as Record<string, unknown>;
+        const sec = cfg.key_secret ?? cfg.RAZORPAY_KEY_SECRET ?? cfg.keySecret ?? cfg.razorpay_key_secret ?? cfg.secret;
+        if (typeof sec === "string" && sec.trim()) { RZP_KEY_SECRET = sec.trim(); break; }
+      }
     } catch { /* ignore */ }
     if (!RZP_KEY_SECRET) RZP_KEY_SECRET = (Deno.env.get("RAZORPAY_KEY_SECRET") || "").trim();
     if (!RZP_KEY_SECRET) return jsonResponse({ error: "Razorpay not configured by admin" }, 500);

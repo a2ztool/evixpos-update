@@ -18,6 +18,28 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+async function resolveZiniKey(admin: any): Promise<string> {
+  try {
+    const { data: rows } = await admin
+      .from("payment_gateways")
+      .select("api_config, is_active, gateway_name")
+      .or("gateway_name.ilike.%zinipay%,gateway_name.ilike.%zini%");
+    const candidates = (rows || []).filter((r: any) => r.is_active !== false);
+    const known = ["api_key","apiKey","ZINIPAY_API_KEY","zinipay_api_key","zini_api_key","zinipay","zini","key","secret_key","secretKey"];
+    for (const row of candidates) {
+      const cfg = (row.api_config || {}) as Record<string, unknown>;
+      for (const k of known) {
+        const v = cfg[k];
+        if (typeof v === "string" && v.trim().length >= 10) return v.trim();
+      }
+      for (const v of Object.values(cfg)) {
+        if (typeof v === "string" && v.trim().length >= 16) return v.trim();
+      }
+    }
+  } catch { /* ignore */ }
+  return (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
+}
+
 /** Activate subscription based on a paid plan_payments row. Idempotent. */
 async function activateForPayment(admin: any, payment: any, ziniData: any) {
   if (payment.status === "paid" || payment.status === "approved") {
@@ -84,18 +106,7 @@ Deno.serve(async (req) => {
     const adminEarly = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    let ZINI_API_KEY = "";
-    try {
-      const { data: gw } = await adminEarly
-        .from("payment_gateways")
-        .select("api_config")
-        .ilike("gateway_name", "%zinipay%")
-        .eq("is_active", true)
-        .maybeSingle();
-      const cfg = (gw?.api_config || {}) as Record<string, string>;
-      ZINI_API_KEY = String(cfg.api_key || cfg.apiKey || cfg.ZINIPAY_API_KEY || cfg.key || "").trim();
-    } catch { /* ignore */ }
-    if (!ZINI_API_KEY) ZINI_API_KEY = (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
+    const ZINI_API_KEY = await resolveZiniKey(adminEarly);
     if (!ZINI_API_KEY) {
       console.error("Missing ZiniPay API key (admin gateway + env)");
       return jsonResponse({ error: "Misconfigured" }, 500);
