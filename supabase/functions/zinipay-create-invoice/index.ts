@@ -42,24 +42,12 @@ Deno.serve(async (req) => {
     });
 
     // Resolve ZiniPay API key from admin-configured gateway, fallback to env
-    let ZINI_API_KEY = "";
-    try {
-      const { data: gw } = await admin
-        .from("payment_gateways")
-        .select("api_config, is_active")
-        .ilike("gateway_name", "%zinipay%")
-        .eq("is_active", true)
-        .maybeSingle();
-      const cfg = (gw?.api_config || {}) as Record<string, string>;
-      ZINI_API_KEY = String(
-        cfg.api_key || cfg.apiKey || cfg.ZINIPAY_API_KEY || cfg.key || ""
-      ).trim();
-    } catch (e) {
-      console.warn("[zinipay-create-invoice] gateway lookup failed", e);
-    }
-    if (!ZINI_API_KEY) ZINI_API_KEY = (Deno.env.get("ZINIPAY_API_KEY") || "").trim();
+    const ZINI_API_KEY = await resolveZiniKey(admin);
     if (!ZINI_API_KEY) {
-      return jsonResponse({ error: "ZiniPay API key not configured by admin" }, 500);
+      return jsonResponse({
+        error: "ZiniPay API key not configured by admin",
+        details: "Open Admin → Payment Gateways → ZiniPay → Mode & API and paste your ZiniPay API key.",
+      }, 500);
     }
 
     // Validate caller JWT
