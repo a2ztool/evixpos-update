@@ -443,8 +443,16 @@ Deno.serve(async (req) => {
       const storeMap: Record<string, string> = {};
       (stores || []).forEach((s: any) => { storeMap[s.id] = s.name; });
 
+      const prettyGateway = (g: string) => {
+        const k = (g || "").toLowerCase();
+        if (k === "zinipay") return "ZiniPay";
+        if (k === "razorpay") return "Razorpay";
+        if (!k) return "";
+        return g.charAt(0).toUpperCase() + g.slice(1);
+      };
       const result = (payments || []).map((p: any) => ({
-        ...p, gateway_name: p.payment_gateways?.gateway_name || "",
+        ...p,
+        gateway_name: p.payment_gateways?.gateway_name || prettyGateway(p.gateway) || "",
         user_name: profileMap[p.user_id]?.name || "", user_email: profileMap[p.user_id]?.email || "",
         store_name: p.store_id ? storeMap[p.store_id] || "" : "",
       }));
