@@ -48,16 +48,26 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const RZP_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
-    if (!RZP_KEY_SECRET) return jsonResponse({ error: "Razorpay not configured" }, 500);
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    let RZP_KEY_SECRET = "";
+    try {
+      const { data: gw } = await admin
+        .from("payment_gateways")
+        .select("api_config")
+        .ilike("gateway_name", "%razorpay%")
+        .eq("is_active", true)
+        .maybeSingle();
+      const cfg = (gw?.api_config || {}) as Record<string, string>;
+      RZP_KEY_SECRET = String(cfg.key_secret || cfg.RAZORPAY_KEY_SECRET || cfg.keySecret || cfg.secret || "").trim();
+    } catch { /* ignore */ }
+    if (!RZP_KEY_SECRET) RZP_KEY_SECRET = (Deno.env.get("RAZORPAY_KEY_SECRET") || "").trim();
+    if (!RZP_KEY_SECRET) return jsonResponse({ error: "Razorpay not configured by admin" }, 500);
 
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "").trim();
     if (!token) return jsonResponse({ error: "Unauthorized" }, 401);
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     const { data: userData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userData?.user) return jsonResponse({ error: "Unauthorized" }, 401);
     const user = userData.user;
