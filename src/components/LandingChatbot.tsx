@@ -117,7 +117,8 @@ const LandingChatbot = () => {
 
   useEffect(() => {
     if (!sessionId) return;
-    const channel = supabase
+    const vsb = getVisitorClient();
+    const channel = vsb
       .channel(`chat-${sessionId}`)
       .on("postgres_changes", {
         event: "INSERT",
@@ -133,7 +134,7 @@ const LandingChatbot = () => {
         }
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { vsb.removeChannel(channel); };
   }, [sessionId, open, tab, scrollToBottom]);
 
   useEffect(() => { if (open && tab === "chat") scrollToBottom(); }, [open, tab, messages.length, scrollToBottom]);
