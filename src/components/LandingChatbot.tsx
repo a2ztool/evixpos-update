@@ -5,6 +5,7 @@ import {
   Home, HelpCircle, MessagesSquare, ChevronRight, ChevronDown, Globe, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { useLandingContent } from "@/hooks/useLandingContent";
 import brandLogo from "@/assets/evixPos.png";
 
