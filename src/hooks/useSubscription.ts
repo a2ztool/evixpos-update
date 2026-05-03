@@ -168,5 +168,8 @@ export const useSubscription = () => {
     setEndDate(newEndDate);
   };
 
-  return { plan, volume, limits, loading, upgradeTo, endDate, remainingDays, isExpiringSoon, isExpired, override, isOverridden, hasUnlimited, refetch: fetchPlan };
+  const effectivePlan = hasUnlimited ? "business" : plan;
+  const displayPlan = hasUnlimited ? "unlimited" : (plan ?? "free");
+
+  return { plan: effectivePlan, rawPlan: plan, displayPlan, volume, limits, loading, upgradeTo, endDate, remainingDays, isExpiringSoon, isExpired, override, isOverridden, hasUnlimited, refetch: fetchPlan };
 };
