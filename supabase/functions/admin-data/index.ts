@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const SUPER_ONLY = new Set([
       "admin_change_user_plan","admin_extend_plan","update_plans_config","toggle_store","delete_store",
       "send_broadcast","delete_broadcast","update_system_setting","update_feature_flag","update_system_template",
-      "set_user_role","remove_user_role",
+      "set_user_role","remove_user_role","admin_set_overrides","admin_clear_overrides",
     ]);
 
     const body = await req.json();
@@ -917,6 +917,78 @@ Deno.serve(async (req) => {
       const { act, target_type = "", target_id = "", target_label = "", details = {} } = params;
       if (!act) return errorResponse("act required");
       await logAction(act, target_type, target_id, target_label, details);
+      return json({ success: true });
+    }
+
+    // ─── ADMIN PLAN OVERRIDES ───
+    if (action === "get_user_override") {
+      const { user_id: targetUserId } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+      const { data } = await supabase
+        .from("admin_plan_overrides")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      return json(data || null);
+    }
+
+    if (action === "admin_set_overrides") {
+      const {
+        user_id: targetUserId,
+        manual_override = false,
+        is_unlimited_store = false,
+        is_unlimited_customer = false,
+        is_unlimited_product = false,
+        override_volume = null,
+        override_max_stores = null,
+        override_max_products = null,
+        override_max_customers = null,
+        notes = null,
+      } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+
+      const payload = {
+        user_id: targetUserId,
+        manual_override: !!manual_override,
+        is_unlimited_store: !!is_unlimited_store,
+        is_unlimited_customer: !!is_unlimited_customer,
+        is_unlimited_product: !!is_unlimited_product,
+        override_volume: override_volume === "" || override_volume == null ? null : Number(override_volume),
+        override_max_stores: override_max_stores === "" || override_max_stores == null ? null : Number(override_max_stores),
+        override_max_products: override_max_products === "" || override_max_products == null ? null : Number(override_max_products),
+        override_max_customers: override_max_customers === "" || override_max_customers == null ? null : Number(override_max_customers),
+        notes,
+        applied_by: user.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("admin_plan_overrides")
+        .upsert(payload, { onConflict: "user_id" });
+      if (error) return errorResponse(error.message);
+
+      await logAction("admin_set_overrides", "user", targetUserId, targetUserId, payload);
+
+      await supabase.from("notifications").insert({
+        user_id: targetUserId,
+        type: "system",
+        message: manual_override
+          ? "⚙️ An admin has applied custom limits to your account."
+          : "⚙️ An admin has reset your account to standard plan limits.",
+      });
+
+      return json({ success: true });
+    }
+
+    if (action === "admin_clear_overrides") {
+      const { user_id: targetUserId } = params;
+      if (!targetUserId) return errorResponse("user_id required");
+      const { error } = await supabase
+        .from("admin_plan_overrides")
+        .delete()
+        .eq("user_id", targetUserId);
+      if (error) return errorResponse(error.message);
+      await logAction("admin_clear_overrides", "user", targetUserId, targetUserId);
       return json({ success: true });
     }
 
