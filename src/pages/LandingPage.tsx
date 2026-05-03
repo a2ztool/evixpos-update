@@ -395,16 +395,43 @@ const LandingPage = () => {
 
   // Check if user is logged in (for upgrade flow)
   useEffect(() => {
+    const handleSession = async (uid: string | null) => {
+      setLoggedInUser(uid);
+      if (!uid) return;
+      // If OAuth redirect landed here (tokens in hash or ?code=), route the user
+      // to the right place instead of leaving them on the marketing page.
+      const isOAuthReturn =
+        typeof window !== "undefined" &&
+        (window.location.hash.includes("access_token") ||
+          new URLSearchParams(window.location.search).has("code"));
+      if (!isOAuthReturn) return;
+
+      // Clean URL
+      window.history.replaceState({}, document.title, "/");
+
+      const { data: roleData } = await supabase
+        .from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
+      if (roleData) { navigate("/admin/dashboard", { replace: true }); return; }
+
+      const { data: staffRow } = await supabase
+        .from("staff_members").select("id").eq("auth_user_id", uid).eq("is_active", true).maybeSingle();
+      if (staffRow) { navigate("/dashboard", { replace: true }); return; }
+
+      const { count } = await supabase
+        .from("stores").select("id", { count: "exact", head: true }).eq("user_id", uid);
+      navigate((count ?? 0) > 0 ? "/dashboard" : "/onboarding", { replace: true });
+    };
+
     supabase.auth.getSession().then(({ data }) => {
-      setLoggedInUser(data.session?.user?.id ?? null);
+      handleSession(data.session?.user?.id ?? null);
     });
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_e, session) => {
-      setLoggedInUser(session?.user?.id ?? null);
+      handleSession(session?.user?.id ?? null);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   /** Get formatted price from planConfig for any plan + current currency */
   const getLandingPrice = (planKey: string): string => {
