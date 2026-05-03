@@ -92,8 +92,9 @@ const LandingChatbot = () => {
 
   useEffect(() => {
     const visitorId = getVisitorId();
+    const vsb = getVisitorClient();
     const initSession = async () => {
-      const { data: existing } = await supabase
+      const { data: existing } = await vsb
         .from("chat_sessions")
         .select("id")
         .eq("visitor_id", visitorId)
@@ -103,7 +104,7 @@ const LandingChatbot = () => {
         .maybeSingle();
       if (existing) {
         setSessionId(existing.id);
-        const { data: msgs } = await supabase
+        const { data: msgs } = await vsb
           .from("chat_messages")
           .select("*")
           .eq("session_id", existing.id)
@@ -139,7 +140,7 @@ const LandingChatbot = () => {
 
   const createSession = async () => {
     const visitorId = getVisitorId();
-    const { data } = await supabase
+    const { data } = await getVisitorClient()
       .from("chat_sessions")
       .insert({ visitor_id: visitorId, visitor_name: "Visitor" })
       .select("id")
@@ -167,14 +168,15 @@ const LandingChatbot = () => {
     setMessages((prev) => [...prev, optimistic]);
     scrollToBottom();
 
-    const { data } = await supabase
+    const vsb = getVisitorClient();
+    const { data } = await vsb
       .from("chat_messages")
       .insert({ session_id: sid, sender_type: "visitor", message: msg })
       .select()
       .single();
     if (data) setMessages((prev) => prev.map((m) => m.id === optimistic.id ? (data as ChatMessage) : m));
 
-    await supabase.from("chat_sessions").update({ last_message_at: new Date().toISOString(), is_read: false }).eq("id", sid);
+    await vsb.from("chat_sessions").update({ last_message_at: new Date().toISOString(), is_read: false }).eq("id", sid);
 
     // Notify all admins of new landing chat (only first message in session triggers, dedup handles rest)
     try {
@@ -185,7 +187,7 @@ const LandingChatbot = () => {
     if (autoReplyEnabled && messages.filter((m) => m.sender_type === "visitor").length === 0) {
       setTyping(true);
       setTimeout(async () => {
-        const { data: reply } = await supabase
+        const { data: reply } = await vsb
           .from("chat_messages")
           .insert({ session_id: sid!, sender_type: "admin", message: autoReply })
           .select()
