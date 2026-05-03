@@ -75,7 +75,35 @@ const AdminUsers = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const changePlan = async (storeId: string, newPlan: string) => {
+  const changePlan = async (storeId: string, newPlan: string, userId?: string) => {
+    if (newPlan === "unlimited") {
+      let uid = userId;
+      if (!uid) {
+        const owner = users.find((u) => u.stores?.some((s: any) => s.id === storeId));
+        uid = owner?.id;
+      }
+      if (!uid) { toast.error("User not found"); return; }
+      await adminCall("admin_set_overrides", {
+        user_id: uid,
+        manual_override: true,
+        is_unlimited_store: true,
+        is_unlimited_customer: true,
+        is_unlimited_product: true,
+        notes: "Unlimited access granted via admin panel",
+      });
+      toast.success("Unlimited access granted — all limits removed");
+      loadUsers();
+      return;
+    }
+    // Switching to a normal plan: clear any prior override, then change plan
+    let uid = userId;
+    if (!uid) {
+      const owner = users.find((u) => u.stores?.some((s: any) => s.id === storeId));
+      uid = owner?.id;
+    }
+    if (uid) {
+      await adminCall("admin_clear_overrides", { user_id: uid }, { silent: true } as any);
+    }
     await adminCall("change_plan", { store_id: storeId, new_plan: newPlan });
     toast.success("Plan updated"); loadUsers();
   };
@@ -226,7 +254,7 @@ const AdminUsers = () => {
                           <span className="text-sm text-white truncate">{store.name}</span>
                           <Badge variant="outline" className={`text-[9px] shrink-0 ${planColor(store.plan)}`}>{store.plan}</Badge>
                         </div>
-                        <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val)}>
+                        <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val, u.id)}>
                           <SelectTrigger className="w-24 h-7 bg-slate-700 border-slate-600 text-white text-[11px] rounded-lg">
                             <SelectValue />
                           </SelectTrigger>
@@ -234,6 +262,7 @@ const AdminUsers = () => {
                             <SelectItem value="free" className="text-white text-xs">Free</SelectItem>
                             <SelectItem value="pro" className="text-white text-xs">Pro</SelectItem>
                             <SelectItem value="business" className="text-white text-xs">Business</SelectItem>
+                            <SelectItem value="unlimited" className="text-emerald-400 text-xs font-semibold">∞ Unlimited</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -330,12 +359,13 @@ const AdminUsers = () => {
                                         <span className="text-sm text-white">{store.name}</span>
                                         <Badge variant="outline" className={`text-[10px] ${planColor(store.plan)}`}>{store.plan}</Badge>
                                       </div>
-                                      <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val)}>
+                                      <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val, u.id)}>
                                         <SelectTrigger className="w-28 h-7 bg-slate-700 border-slate-600 text-white text-xs"><SelectValue /></SelectTrigger>
                                         <SelectContent className="bg-slate-700 border-slate-600">
                                           <SelectItem value="free" className="text-white">Free</SelectItem>
                                           <SelectItem value="pro" className="text-white">Pro</SelectItem>
                                           <SelectItem value="business" className="text-white">Business</SelectItem>
+                                          <SelectItem value="unlimited" className="text-emerald-400 font-semibold">∞ Unlimited</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
