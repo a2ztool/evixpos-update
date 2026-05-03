@@ -29,6 +29,7 @@ import NotFound from "./pages/NotFound";
 // ─── Lazy-loaded pages ───
 const LandingPage = lazyPage(() => import("./pages/LandingPage"));
 const Auth = lazyPage(() => import("./pages/Auth"));
+const AuthCallback = lazyPage(() => import("./pages/AuthCallback"));
 const Onboarding = lazyPage(() => import("./pages/Onboarding"));
 const Dashboard = lazyPage(() => import("./pages/Dashboard"));
 const Products = lazyPage(() => import("./pages/Products"));
@@ -182,6 +183,7 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/app" element={<AppEntry />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/f/:slug" element={<PublicOrderForm />} />
             <Route path="/i/:id" element={<PublicInvoice />} />
