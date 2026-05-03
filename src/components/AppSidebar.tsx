@@ -37,7 +37,7 @@ const AppSidebar = () => {
   const { t } = useLanguage();
   const { isStaff, staffInfo, hasPermission } = useStaff();
   const { activeStore } = useStore();
-  const { plan, hasFeature } = useStorePlan();
+  const { plan, hasFeature, displayPlan, isUnlimited } = useStorePlan();
   const { unreadCount: msgUnread } = useMessageUnread();
   const collapsed = state === "collapsed";
   const isOffline = activeStore?.store_mode === "offline";
@@ -284,14 +284,14 @@ const AppSidebar = () => {
                     <img src={brandIcon} alt="EvixPOS" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" className="h-full w-full object-cover" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">EvixPOS · {plan}</TooltipContent>
+                <TooltipContent side="right" className="font-medium">EvixPOS · {displayPlan}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           ) : (
             <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 group min-w-0">
               <img src={brandLogo} alt="EvixPOS" width={120} height={28} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-auto transition-transform group-hover:scale-105" />
-              <span className="text-[10px] bg-gradient-to-r from-primary/15 to-primary/5 ring-1 ring-primary/20 px-1.5 py-0.5 rounded font-semibold text-primary uppercase tracking-wide">
-                {plan}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide ring-1 ${isUnlimited ? "bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 ring-emerald-500/30 text-emerald-600" : "bg-gradient-to-r from-primary/15 to-primary/5 ring-primary/20 text-primary"}`}>
+                {isUnlimited ? "Unlimited" : plan}
               </span>
             </button>
           )}
