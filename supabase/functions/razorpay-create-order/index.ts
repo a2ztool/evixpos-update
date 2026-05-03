@@ -28,6 +28,28 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+async function resolveRazorpayKeys(admin: any): Promise<{ id: string; secret: string }> {
+  let id = "", secret = "";
+  try {
+    const { data: rows } = await admin
+      .from("payment_gateways")
+      .select("api_config, is_active, gateway_name")
+      .or("gateway_name.ilike.%razorpay%,gateway_name.ilike.%razor%");
+    const candidates = (rows || []).filter((r: any) => r.is_active !== false);
+    for (const row of candidates) {
+      const cfg = (row.api_config || {}) as Record<string, unknown>;
+      const idCand = cfg.key_id ?? cfg.RAZORPAY_KEY_ID ?? cfg.keyId ?? cfg.razorpay_key_id ?? cfg.id;
+      const secCand = cfg.key_secret ?? cfg.RAZORPAY_KEY_SECRET ?? cfg.keySecret ?? cfg.razorpay_key_secret ?? cfg.secret;
+      if (typeof idCand === "string" && idCand.trim()) id = idCand.trim();
+      if (typeof secCand === "string" && secCand.trim()) secret = secCand.trim();
+      if (id && secret) break;
+    }
+  } catch { /* ignore */ }
+  if (!id) id = (Deno.env.get("RAZORPAY_KEY_ID") || "").trim();
+  if (!secret) secret = (Deno.env.get("RAZORPAY_KEY_SECRET") || "").trim();
+  return { id, secret };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -39,24 +61,12 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Resolve Razorpay keys: prefer admin-configured payment_gateways, fallback to env
-    let RZP_KEY_ID = "";
-    let RZP_KEY_SECRET = "";
-    try {
-      const { data: gw } = await admin
-        .from("payment_gateways")
-        .select("api_config")
-        .ilike("gateway_name", "%razorpay%")
-        .eq("is_active", true)
-        .maybeSingle();
-      const cfg = (gw?.api_config || {}) as Record<string, string>;
-      RZP_KEY_ID = String(cfg.key_id || cfg.RAZORPAY_KEY_ID || cfg.keyId || "").trim();
-      RZP_KEY_SECRET = String(cfg.key_secret || cfg.RAZORPAY_KEY_SECRET || cfg.keySecret || cfg.secret || "").trim();
-    } catch { /* ignore */ }
-    if (!RZP_KEY_ID) RZP_KEY_ID = (Deno.env.get("RAZORPAY_KEY_ID") || "").trim();
-    if (!RZP_KEY_SECRET) RZP_KEY_SECRET = (Deno.env.get("RAZORPAY_KEY_SECRET") || "").trim();
+    const { id: RZP_KEY_ID, secret: RZP_KEY_SECRET } = await resolveRazorpayKeys(admin);
     if (!RZP_KEY_ID || !RZP_KEY_SECRET) {
-      return jsonResponse({ error: "Razorpay keys not configured by admin" }, 500);
+      return jsonResponse({
+        error: "Razorpay keys not configured by admin",
+        details: "Admin → Payment Gateways → Razorpay → Mode & API: paste Key ID and Key Secret.",
+      }, 500);
     }
 
     // Validate caller JWT
