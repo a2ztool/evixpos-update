@@ -522,6 +522,10 @@ const AdminPaymentGateways = () => {
                       <Settings2 className="h-4 w-4" /> API Configuration
                     </div>
                     <p className="text-[11px] text-slate-400">Add your merchant API credentials below. These will be used for automatic payment verification.</p>
+                    <p className="text-[11px] text-slate-300 mt-2">
+                      <strong>ZiniPay:</strong> <code>api_key</code><br />
+                      <strong>Razorpay:</strong> <code>key_id</code>, <code>key_secret</code>, <code>webhook_secret</code>
+                    </p>
                   </div>
 
                   {Object.entries(form.api_config).map(([k, v]) => (
