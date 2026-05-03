@@ -254,7 +254,7 @@ const AdminUsers = () => {
                           <span className="text-sm text-white truncate">{store.name}</span>
                           <Badge variant="outline" className={`text-[9px] shrink-0 ${planColor(store.plan)}`}>{store.plan}</Badge>
                         </div>
-                        <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val)}>
+                        <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val, u.id)}>
                           <SelectTrigger className="w-24 h-7 bg-slate-700 border-slate-600 text-white text-[11px] rounded-lg">
                             <SelectValue />
                           </SelectTrigger>
@@ -359,7 +359,7 @@ const AdminUsers = () => {
                                         <span className="text-sm text-white">{store.name}</span>
                                         <Badge variant="outline" className={`text-[10px] ${planColor(store.plan)}`}>{store.plan}</Badge>
                                       </div>
-                                      <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val)}>
+                                      <Select value={store.plan} onValueChange={(val) => changePlan(store.id, val, u.id)}>
                                         <SelectTrigger className="w-28 h-7 bg-slate-700 border-slate-600 text-white text-xs"><SelectValue /></SelectTrigger>
                                         <SelectContent className="bg-slate-700 border-slate-600">
                                           <SelectItem value="free" className="text-white">Free</SelectItem>
