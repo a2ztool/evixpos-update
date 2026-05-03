@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Tag, Check, X, ShieldCheck, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createRazorpayOrder, openRazorpayCheckout } from "@/lib/razorpayCheckout";
+import { createRazorpayOrder, openRazorpayCheckout, isOrderExpiredError } from "@/lib/razorpayCheckout";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface PlatformCoupon {
@@ -102,29 +102,34 @@ const RazorpayUpgradeModal = ({
         if (typeof window !== "undefined") window.location.href = "/auth";
         return;
       }
-      const order = await createRazorpayOrder({
-        plan: planKey,
-        volume,
-        billing_type: billingType,
-        coupon_code: appliedCoupon?.code,
-      });
-      // Hard guard: backend amount must match what the user sees
-      const backendINR = order.amount / 100;
-      if (Math.abs(backendINR - finalPrice) > 0.5) {
-        toast.error(`Price mismatch. UI ₹${finalPrice.toFixed(0)} vs server ₹${backendINR.toFixed(0)}. Please retry.`);
-        setPaying(false);
-        return;
-      }
       // Close our Radix Dialog before opening Razorpay popup so its overlay
       // doesn't trap focus / block pointer events on the Razorpay iframe.
       onOpenChange(false);
       await new Promise((r) => setTimeout(r, 150));
 
-      await openRazorpayCheckout({
-        ...order,
-        planName,
-        prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
-        onSuccess: async (resp) => {
+      // Open checkout with auto-retry on order-expiry. We always create a
+      // fresh order right before opening so the QR/UPI session is live.
+      const launch = async (attempt: number): Promise<void> => {
+        const order = await createRazorpayOrder({
+          plan: planKey,
+          volume,
+          billing_type: billingType,
+          coupon_code: appliedCoupon?.code,
+        });
+        const backendINR = order.amount / 100;
+        if (Math.abs(backendINR - finalPrice) > 0.5) {
+          toast.error(`Price mismatch. UI ₹${finalPrice.toFixed(0)} vs server ₹${backendINR.toFixed(0)}. Please retry.`);
+          setPaying(false);
+          return;
+        }
+        await openRazorpayCheckout({
+          ...order,
+          planName,
+          // 9-min checkout window — under Razorpay's 15-min order TTL so
+          // the modal closes itself before the order can expire mid-payment.
+          timeoutSeconds: 540,
+          prefill: { name: user.user_metadata?.name || "", email: user.email || "" },
+          onSuccess: async (resp) => {
           setVerifying(true);
           toast.loading("Verifying payment…", { id: "rzp-verify" });
           try {
@@ -154,16 +159,32 @@ const RazorpayUpgradeModal = ({
             setPaying(false);
             setVerifying(false);
           }
-        },
-        onDismiss: () => {
-          setPaying(false);
-          toast.info("Payment cancelled");
-        },
-        onFailure: (err) => {
-          setPaying(false);
-          toast.error(err?.description || "Payment failed. Please retry.");
-        },
-      });
+          },
+          onDismiss: () => {
+            setPaying(false);
+            toast.info("Payment cancelled");
+          },
+          onFailure: async (err) => {
+            // If the order/QR expired mid-session, transparently spin up a
+            // fresh order and reopen checkout — once.
+            if (attempt === 0 && isOrderExpiredError(err)) {
+              toast.info("Payment session expired — generating a new one…");
+              try {
+                await launch(1);
+                return;
+              } catch (e: any) {
+                setPaying(false);
+                toast.error(e?.message || "Could not restart payment. Please retry.");
+                return;
+              }
+            }
+            setPaying(false);
+            toast.error(err?.description || "Payment failed. Please retry.");
+          },
+        });
+      };
+
+      await launch(0);
     } catch (e: any) {
       setPaying(false);
       toast.error(e?.message || "Could not start checkout. Please retry.");
