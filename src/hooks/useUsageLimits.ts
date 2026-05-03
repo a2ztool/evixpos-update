@@ -28,17 +28,20 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const { getPlanLimits } = usePlansConfig();
-  const limits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
+  const baseLimits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
+  const [override, setOverride] = useState<any>(null);
 
   const ownerId = effectiveUserId ?? user?.id ?? null;
 
   const fetchUsage = useCallback(async () => {
     if (!ownerId) { setLoading(false); return; }
-    const [prodRes, custRes, storeRes] = await Promise.all([
+    const [prodRes, custRes, storeRes, ovRes] = await Promise.all([
       supabase.from("products").select("id, store_id", { count: "exact" }).eq("user_id", ownerId),
       supabase.from("customers").select("id, store_id", { count: "exact" }).eq("user_id", ownerId),
       supabase.from("stores").select("id, name", { count: "exact" }).eq("user_id", ownerId),
+      supabase.from("admin_plan_overrides" as any).select("*").eq("user_id", ownerId).maybeSingle(),
     ]);
+    setOverride((ovRes as any)?.data || null);
     setTotalProducts(prodRes.count ?? 0);
     setTotalCustomers(custRes.count ?? 0);
     setTotalStores(storeRes.count ?? 0);
@@ -65,16 +68,22 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => fetchUsage())
       .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, () => fetchUsage())
       .on("postgres_changes", { event: "*", schema: "public", table: "stores" }, () => fetchUsage())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_plan_overrides", filter: `user_id=eq.${ownerId}` }, () => fetchUsage())
       .subscribe();
     channelRef.current = ch;
     return () => { supabase.removeChannel(ch); channelRef.current = null; };
   }, [ownerId, fetchUsage]);
 
+  const ov = override?.manual_override ? override : null;
+  const maxStores = ov?.is_unlimited_store ? Infinity : (ov?.override_max_stores ?? baseLimits.maxStores);
+  const maxProducts = ov?.is_unlimited_product ? Infinity : (ov?.override_max_products ?? baseLimits.maxProducts);
+  const maxCustomers = ov?.is_unlimited_customer
+    ? Infinity
+    : (ov?.override_max_customers ?? ov?.override_volume ?? baseLimits.maxCustomers);
+
   return {
     totalProducts, totalCustomers, totalStores,
-    maxProducts: limits.maxProducts,
-    maxCustomers: limits.maxCustomers,
-    maxStores: limits.maxStores,
+    maxProducts, maxCustomers, maxStores,
     perStore, loading, refetch: fetchUsage,
   };
 };
