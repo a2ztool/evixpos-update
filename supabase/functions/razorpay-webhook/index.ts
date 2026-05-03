@@ -41,9 +41,24 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  let WEBHOOK_SECRET = "";
+  try {
+    const { data: gw } = await admin
+      .from("payment_gateways")
+      .select("api_config")
+      .ilike("gateway_name", "%razorpay%")
+      .eq("is_active", true)
+      .maybeSingle();
+    const cfg = (gw?.api_config || {}) as Record<string, string>;
+    WEBHOOK_SECRET = String(cfg.webhook_secret || cfg.RAZORPAY_WEBHOOK_SECRET || cfg.webhookSecret || "").trim();
+  } catch { /* ignore */ }
+  if (!WEBHOOK_SECRET) WEBHOOK_SECRET = (Deno.env.get("RAZORPAY_WEBHOOK_SECRET") || "").trim();
   if (!WEBHOOK_SECRET) {
-    console.error("Missing RAZORPAY_WEBHOOK_SECRET");
+    console.error("Missing Razorpay webhook secret (admin gateway + env)");
     return new Response("Misconfigured", { status: 500, headers: corsHeaders });
   }
 
@@ -70,10 +85,6 @@ Deno.serve(async (req) => {
   const eventId =
     headerEventId ||
     `${eventType}:${paymentEntity?.id ?? orderEntity?.id ?? crypto.randomUUID()}`;
-
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   // Idempotency: insert event log; if duplicate, skip processing
   const { error: logErr } = await admin
