@@ -120,15 +120,16 @@ const PublicOrderForm = () => {
       productIds.length > 0
         ? supabase.from("product_variations").select("*").in("product_id", productIds).order("sort_order")
         : Promise.resolve({ data: [] }),
-      supabase.from("business_settings").select("*").eq("store_id", f.store_id).maybeSingle(),
+      supabase.rpc("get_public_business_settings", { _store_id: f.store_id }),
     ]);
 
     setProducts((prodRes.data as Product[]) || []);
     setVariations((varRes.data as ProductVariation[]) || []);
-    setBusinessSettings(bsRes.data);
+    const bs = Array.isArray(bsRes.data) ? bsRes.data[0] : bsRes.data;
+    setBusinessSettings(bs ?? null);
 
-    if (bsRes.data?.payment_methods) {
-      const allMethods = normalizePaymentMethods(bsRes.data.payment_methods);
+    if (bs?.payment_methods) {
+      const allMethods = normalizePaymentMethods(bs.payment_methods);
       const customerFacing = allMethods.filter(isCustomerFacingPaymentMethod);
       setGateways(customerFacing);
     }
