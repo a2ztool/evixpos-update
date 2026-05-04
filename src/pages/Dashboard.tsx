@@ -183,91 +183,87 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 sm:space-y-6">
-        {/* Welcome Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/95 to-primary/80 p-5 sm:p-7 text-primary-foreground shadow-lg">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
-          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
-          <div className="absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-          <div className="relative z-10">
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                  <span className="text-2xl">👋</span> {greeting}, <span className="text-primary-foreground/90">{profileName || "there"}</span>
+        {/* Welcome — Bento style header */}
+        <div className="rounded-3xl border border-border/60 bg-card p-5 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-medium tracking-tight">
+                  {greeting}, <span className="text-foreground">{profileName || "there"}</span>.
                 </h1>
-                <p className="text-primary-foreground/60 mt-1.5 text-xs sm:text-sm">
-                  {isStaff ? "Ready to assist customers and manage your tasks! 💼" : "Ready to crush today's goals? 🚀"}
-                </p>
-                {isStaff && staffInfo && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <Badge variant="secondary" className="px-2.5 py-1 backdrop-blur-sm">
-                      <Shield className="h-3 w-3 mr-1" />
-                      {staffInfo.role === "admin" ? "Admin" : "Staff"}
-                    </Badge>
-                    <span className="text-xs text-primary-foreground/60">{activeStore?.name}</span>
-                  </div>
-                )}
-                {/* Store Mode Badge */}
-                {activeStore && (
-                  <div className={`mt-2 flex items-center gap-1.5 ${isStaff && staffInfo ? '' : 'mt-3'}`}>
-                    <Badge variant="outline" className="backdrop-blur-sm border-primary-foreground/20 text-primary-foreground/80 text-[10px] px-2 py-0.5">
-                      {activeStore.store_mode === "offline" ? (
-                        <><MapPin className="h-3 w-3 mr-1" /> Offline Store</>
-                      ) : (
-                        <><Globe className="h-3 w-3 mr-1" /> Online Store</>
-                      )}
-                    </Badge>
-                  </div>
+                {!isStaff && (
+                  <span className="bg-primary/10 text-primary text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">
+                    {plan} Plan
+                  </span>
                 )}
               </div>
-              <div className="hidden sm:flex items-center gap-2">
-                {!isStaff && (
-                  <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-                    <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                    {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
+              <p className="text-muted-foreground text-sm mt-1.5">
+                {format(new Date(), "EEEE, dd MMMM yyyy")} — {isStaff ? "Ready to assist customers today." : "Your store is looking steady."}
+              </p>
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {isStaff && staffInfo && (
+                  <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px]">
+                    <Shield className="h-3 w-3 mr-1" />
+                    {staffInfo.role === "admin" ? "Admin" : "Staff"}
                   </Badge>
                 )}
-                <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-3 py-1.5 backdrop-blur-sm">
-                  <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                  {format(new Date(), "dd MMM yyyy")}
-                </Badge>
+                {activeStore && (
+                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] bg-muted/40 border-border/60 text-muted-foreground">
+                    {activeStore.store_mode === "offline" ? (
+                      <><MapPin className="h-3 w-3 mr-1" /> Offline Store</>
+                    ) : (
+                      <><Globe className="h-3 w-3 mr-1" /> Online Store</>
+                    )}
+                  </Badge>
+                )}
+                {activeStore?.name && (
+                  <span className="text-xs text-muted-foreground truncate">· {activeStore.name}</span>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-3 sm:hidden">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {!isStaff && (
-                <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-2 py-0.5 text-[10px]">
-                  <CreditCard className="h-3 w-3 mr-1" />
-                  {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-2xl border-border/60 bg-background hover:bg-muted/50"
+                  onClick={() => navigate("/finance/sales-profit")}
+                >
+                  <BarChart3 className="h-4 w-4 mr-1.5" /> View Reports
+                </Button>
               )}
-              <Badge variant="outline" className="border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 px-2 py-0.5 text-[10px]">
-                <CalendarDays className="h-3 w-3 mr-1" />
-                {format(new Date(), "dd MMM")}
-              </Badge>
+              <Button
+                size="sm"
+                className="rounded-2xl shadow-sm"
+                onClick={() => navigate("/pos")}
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> New Sale
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Announcement Bar - Hidden for Staff */}
         {!isStaff && (
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/30 px-4 py-3">
+          <div className="relative overflow-hidden rounded-2xl bg-card border border-border/60 px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Megaphone className="h-4 w-4 text-amber-600" />
+              <div className="flex-shrink-0 h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Megaphone className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <p key={announcementIndex} className="text-sm font-medium text-amber-800 dark:text-amber-300 animate-fade-in truncate">
+                <p key={announcementIndex} className="text-sm font-medium text-foreground animate-fade-in truncate">
                   {announcements[announcementIndex]}
                 </p>
               </div>
               {plan === "free" && (
-                <Button size="sm" variant="outline" className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-400 text-xs" onClick={() => navigate("/my-plan")}>
+                <Button size="sm" variant="outline" className="flex-shrink-0 rounded-xl text-xs" onClick={() => navigate("/my-plan")}>
                   Upgrade <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
               )}
             </div>
             <div className="flex justify-center gap-1 mt-2">
               {announcements.map((_, i) => (
-                <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === announcementIndex ? "w-4 bg-amber-500" : "w-1 bg-amber-300/50"}`} />
+                <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === announcementIndex ? "w-4 bg-primary" : "w-1 bg-border"}`} />
               ))}
             </div>
           </div>
@@ -275,8 +271,8 @@ const Dashboard = () => {
 
         {/* Profile Completion - Hidden for Staff */}
         {!isStaff && (!profileName || productCount === 0) && (
-          <div className="rounded-xl bg-primary/5 border border-primary/10 px-5 py-4 flex items-center gap-4">
-            <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          <div className="rounded-2xl bg-primary/5 border border-primary/15 px-5 py-4 flex items-center gap-4">
+            <div className="flex-shrink-0 h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -289,21 +285,23 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Quick Shortcuts - Staff Only See Staff-Allowed Actions */}
-        <div>
-          <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 mb-3">
-            <span className="w-1 h-5 bg-primary rounded-full inline-block" />
-            Quick Actions
-          </h3>
+        {/* Quick Shortcuts - Bento grid */}
+        <div className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-medium">Quick Actions</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Jump straight into your most-used flows</p>
+            </div>
+          </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
             {(isStaff ? shortcuts.filter(s => !["Products", "Subscriptions"].includes(s.label)) : shortcuts).map((s) => (
               <button
                 key={s.label}
                 onClick={() => navigate(s.path)}
-                className="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-xl border border-border/40 bg-card hover:bg-muted/50 hover:shadow-md transition-all group min-w-[72px] flex-shrink-0 sm:min-w-0"
+                className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border border-border/50 bg-background hover:bg-muted/40 hover:border-border hover:-translate-y-0.5 transition-all group min-w-[78px] flex-shrink-0 sm:min-w-0"
               >
-                <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-xl ${s.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <s.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <div className={`h-10 w-10 rounded-2xl ${s.color} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                  <s.icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                 </div>
                 <span className="text-[10px] sm:text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">{s.label}</span>
               </button>
@@ -313,17 +311,17 @@ const Dashboard = () => {
 
         {/* Expiring Subscriptions Alert */}
         {expiringUrgent.length > 0 && (
-          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm">
+          <Card className="rounded-3xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 shadow-none">
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-2xl bg-amber-500/10 flex items-center justify-center">
                   <Bell className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-semibold text-amber-800 dark:text-amber-300">
-                    ⚠️ Expiring Soon ({expiringUrgent.length})
+                  <CardTitle className="text-base font-medium text-amber-900 dark:text-amber-200">
+                    Expiring Soon · {expiringUrgent.length}
                   </CardTitle>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">Subscriptions expiring within 2 days</p>
+                  <p className="text-xs text-amber-700/80 dark:text-amber-400/80">Subscriptions ending within 2 days</p>
                 </div>
               </div>
             </CardHeader>
@@ -332,7 +330,7 @@ const Dashboard = () => {
                 const daysLeft = differenceInDays(new Date(sub.end_date!), new Date());
                 const hasPhone = !!sub.customers?.phone;
                 return (
-                  <div key={sub.id} className="flex items-center justify-between p-3 rounded-xl bg-background border border-border/50">
+                  <div key={sub.id} className="flex items-center justify-between p-3 rounded-2xl bg-background border border-border/50">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{sub.customers?.name || "Unknown"}</p>
                       <p className="text-xs text-muted-foreground truncate">{sub.product_name} · {sub.variation}</p>
@@ -369,8 +367,8 @@ const Dashboard = () => {
 
         {/* Product Limit - Owner Only */}
         {!isStaff && (
-          <Card className="border-border/40 shadow-sm">
-            <CardContent className="p-5">
+          <Card className="rounded-3xl border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <CardContent className="p-5 sm:p-6">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
