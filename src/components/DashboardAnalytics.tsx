@@ -284,27 +284,22 @@ const DashboardAnalytics = () => {
     <div className="space-y-5">
       {/* Section Header + Date Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
-            <BarChart3 className="h-4.5 w-4.5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
-              Live Analytics
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-            </h2>
-            <p className="text-[11px] text-muted-foreground">Real-time business insights · Auto-updates</p>
-          </div>
+        <div>
+          <h2 className="text-lg font-medium flex items-center gap-2">
+            Live Analytics
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time business insights · auto-updates</p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-muted/50 p-1 rounded-lg border border-border/40">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl border border-border/40">
           {(["today", "7d", "30d", "custom"] as DateRange[]).map(r => (
             <button
               key={r}
-              className={`text-[11px] font-medium px-3 py-1.5 rounded-md transition-all ${range === r ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`text-[11px] font-medium px-3 py-1.5 rounded-xl transition-all ${range === r ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setRange(r)}
             >
               {r === "today" ? "Today" : r === "7d" ? "7 Days" : r === "30d" ? "30 Days" : "Custom"}
@@ -322,42 +317,41 @@ const DashboardAnalytics = () => {
       )}
 
       {/* Main Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map(card => (
-          <Card key={card.label} className="border-border/30 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-muted/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="p-3 sm:p-4 relative">
-              <div className="flex items-start justify-between mb-2">
-                <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg ${card.iconBg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+          <Card key={card.label} className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all group">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div className={`h-10 w-10 rounded-2xl ${card.iconBg} flex items-center justify-center flex-shrink-0`}>
                   <card.icon className={`h-4 w-4 ${card.iconColor}`} />
                 </div>
                 {card.trend !== undefined && card.trend !== 0 && (
-                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-semibold ${card.trend > 0 ? "text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30" : "text-red-600 border-red-200 bg-red-50 dark:bg-red-950/30"}`}>
+                  <Badge variant="outline" className={`rounded-full text-[10px] px-2 py-0 font-medium border-0 ${card.trend > 0 ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400" : "text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400"}`}>
                     {card.trend > 0 ? <ArrowUpRight className="h-2.5 w-2.5 mr-0.5" /> : <ArrowDownRight className="h-2.5 w-2.5 mr-0.5" />}
                     {Math.abs(card.trend).toFixed(0)}%
                   </Badge>
                 )}
               </div>
-              <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground tracking-widest">{card.label}</p>
-              <p className="text-lg sm:text-xl font-extrabold tracking-tight mt-0.5">{card.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{card.sub}</p>
+              <p className="text-[10px] font-medium text-muted-foreground tracking-wider uppercase">{card.label}</p>
+              <p className="text-xl sm:text-2xl font-medium tracking-tight tabular-nums mt-1">{card.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{card.sub}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Finance Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {financeCards.map(card => (
-          <Card key={card.label} className="border-border/30 shadow-sm">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-2.5">
-                <div className={`h-8 w-8 rounded-lg ${card.iconBg} flex items-center justify-center flex-shrink-0`}>
+          <Card key={card.label} className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-2xl ${card.iconBg} flex items-center justify-center flex-shrink-0`}>
                   <card.icon className={`h-4 w-4 ${card.iconColor}`} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground tracking-widest">{card.label}</p>
-                  <p className="text-base sm:text-lg font-extrabold tracking-tight">{card.value}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground tracking-wider uppercase">{card.label}</p>
+                  <p className="text-lg font-medium tabular-nums tracking-tight">{card.value}</p>
                 </div>
               </div>
             </CardContent>
@@ -368,7 +362,7 @@ const DashboardAnalytics = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Sales & Profit Chart */}
-        <Card className="border-border/30 shadow-sm">
+        <Card className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -413,7 +407,7 @@ const DashboardAnalytics = () => {
         </Card>
 
         {/* Orders Trend */}
-        <Card className="border-border/30 shadow-sm">
+        <Card className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-violet-600" /> Orders Breakdown
@@ -449,7 +443,7 @@ const DashboardAnalytics = () => {
       {/* Bottom Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Top Products */}
-        <Card className="border-border/30 shadow-sm">
+        <Card className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Package className="h-4 w-4 text-emerald-600" /> Top Products
@@ -478,7 +472,7 @@ const DashboardAnalytics = () => {
         </Card>
 
         {/* Live Order Feed */}
-        <Card className="border-border/30 shadow-sm">
+        <Card className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-600" /> Recent Orders
@@ -518,7 +512,7 @@ const DashboardAnalytics = () => {
         </Card>
 
         {/* Best Customers */}
-        <Card className="border-border/30 shadow-sm">
+        <Card className="rounded-3xl border border-border/50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Users className="h-4 w-4 text-amber-600" /> Best Customers
