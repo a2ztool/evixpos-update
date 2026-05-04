@@ -44,13 +44,13 @@
     --radius-card: 1rem;
     --radius-button: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 224 71% 4%;
+    --sidebar-background: 40 30% 97%;
+    --sidebar-foreground: 224 25% 18%;
     --sidebar-primary: 174 98% 21%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent: 40 25% 92%;
     --sidebar-accent-foreground: 224 71% 4%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 36 18% 88%;
     --sidebar-ring: 174 98% 21%;
 
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.03);
