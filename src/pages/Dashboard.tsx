@@ -7,6 +7,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
+import { lazyWithRetry } from "@/lib/lazyPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { format, differenceInDays, addDays } from "date-fns";
 import { toast } from "sonner";
 
-const DashboardAnalytics = lazy(() => import("@/components/DashboardAnalytics"));
+const DashboardAnalytics = lazy(lazyWithRetry(() => import("@/components/DashboardAnalytics")));
 
 interface Subscription {
   id: string;
