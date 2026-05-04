@@ -184,32 +184,37 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 sm:space-y-6">
-        {/* Welcome — Bento style header */}
-        <div className="rounded-3xl border border-border/60 bg-card p-5 sm:p-7 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        {/* Welcome — Premium brand header */}
+        <div className="relative overflow-hidden rounded-3xl p-5 sm:p-7 text-primary-foreground shadow-[0_10px_40px_-12px_hsl(var(--primary)/0.45)] bg-[linear-gradient(135deg,hsl(var(--primary))_0%,hsl(var(--primary)/0.85)_55%,hsl(var(--primary)/0.7)_100%)]">
+          {/* Decorative orbs */}
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:18px_18px]" />
+
+          <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-medium tracking-tight">
-                  {greeting}, <span className="text-foreground">{profileName || "there"}</span>.
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-primary-foreground">
+                  {greeting}, <span className="text-primary-foreground">{profileName || "there"}</span>.
                 </h1>
                 {!isStaff && (
-                  <span className="bg-primary/10 text-primary text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">
+                  <span className="bg-white/20 backdrop-blur-sm text-primary-foreground text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest border border-white/25">
                     {plan} Plan
                   </span>
                 )}
               </div>
-              <p className="text-muted-foreground text-sm mt-1.5">
+              <p className="text-primary-foreground/85 text-sm mt-1.5">
                 {format(new Date(), "EEEE, dd MMMM yyyy")} — {isStaff ? "Ready to assist customers today." : "Your store is looking steady."}
               </p>
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 {isStaff && staffInfo && (
-                  <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px]">
+                  <Badge className="rounded-full px-2.5 py-0.5 text-[10px] bg-white/20 hover:bg-white/25 text-primary-foreground border border-white/25">
                     <Shield className="h-3 w-3 mr-1" />
                     {staffInfo.role === "admin" ? "Admin" : "Staff"}
                   </Badge>
                 )}
                 {activeStore && (
-                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] bg-muted/40 border-border/60 text-muted-foreground">
+                  <Badge className="rounded-full px-2.5 py-0.5 text-[10px] bg-white/15 hover:bg-white/20 text-primary-foreground border border-white/20">
                     {activeStore.store_mode === "offline" ? (
                       <><MapPin className="h-3 w-3 mr-1" /> Offline Store</>
                     ) : (
@@ -218,16 +223,15 @@ const Dashboard = () => {
                   </Badge>
                 )}
                 {activeStore?.name && (
-                  <span className="text-xs text-muted-foreground truncate">· {activeStore.name}</span>
+                  <span className="text-xs text-primary-foreground/80 truncate">· {activeStore.name}</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {!isStaff && (
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="rounded-2xl border-border/60 bg-background hover:bg-muted/50"
+                  className="rounded-2xl bg-white/15 hover:bg-white/25 text-primary-foreground border border-white/25 backdrop-blur-sm shadow-none"
                   onClick={() => navigate("/finance/sales-profit")}
                 >
                   <BarChart3 className="h-4 w-4 mr-1.5" /> View Reports
@@ -235,7 +239,7 @@ const Dashboard = () => {
               )}
               <Button
                 size="sm"
-                className="rounded-2xl shadow-sm"
+                className="rounded-2xl bg-white text-primary hover:bg-white/90 shadow-[0_4px_14px_rgba(0,0,0,0.12)]"
                 onClick={() => navigate("/pos")}
               >
                 <Plus className="h-4 w-4 mr-1.5" /> New Sale
