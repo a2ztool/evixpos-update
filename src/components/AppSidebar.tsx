@@ -268,10 +268,10 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/60 bg-gradient-to-b from-sidebar to-sidebar/95 h-full flex flex-col overflow-hidden">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar h-full flex flex-col overflow-hidden">
       <SidebarContent className="flex-1 overflow-y-auto min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
         {/* Brand */}
-        <div className={`flex items-center ${collapsed ? "justify-center px-0" : "px-4"} py-4 border-b border-border/40`}>
+        <div className={`flex items-center ${collapsed ? "justify-center px-0" : "px-4"} py-4 border-b border-sidebar-border/70`}>
           {collapsed ? (
             <TooltipProvider delayDuration={0}>
               <Tooltip>
