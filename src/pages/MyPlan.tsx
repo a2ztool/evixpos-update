@@ -185,14 +185,9 @@ const MyPlan = () => {
   // Watch admin-controlled Razorpay gateway toggle (INR + automatic mode)
   useEffect(() => {
     const fetchFlag = async () => {
-      const { data } = await supabase
-        .from("payment_gateways")
-        .select("id")
-        .eq("currency", "INR")
-        .eq("is_active", true)
-        .ilike("gateway_name", "razorpay")
-        .maybeSingle();
-      setRazorpayEnabled(!!data);
+      const { data } = await supabase.rpc("get_active_payment_gateways", { _currency: "INR" });
+      const list = (data as any[]) || [];
+      setRazorpayEnabled(list.some((g) => String(g.gateway_name).toLowerCase() === "razorpay"));
     };
     fetchFlag();
     const ch = supabase
@@ -205,14 +200,9 @@ const MyPlan = () => {
   // Watch admin-controlled ZiniPay gateway toggle (BDT)
   useEffect(() => {
     const fetchFlag = async () => {
-      const { data } = await supabase
-        .from("payment_gateways")
-        .select("id")
-        .eq("currency", "BDT")
-        .eq("is_active", true)
-        .ilike("gateway_name", "zinipay")
-        .maybeSingle();
-      setZinipayEnabled(!!data);
+      const { data } = await supabase.rpc("get_active_payment_gateways", { _currency: "BDT" });
+      const list = (data as any[]) || [];
+      setZinipayEnabled(list.some((g) => String(g.gateway_name).toLowerCase() === "zinipay"));
     };
     fetchFlag();
     const ch = supabase
@@ -275,21 +265,10 @@ const MyPlan = () => {
 
   // Fetch active coupons for banner
   useEffect(() => {
-    supabase
-      .from("platform_coupons")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          const coupon = data as unknown as PlatformCoupon;
-          if (!coupon.expires_at || new Date(coupon.expires_at) >= new Date()) {
-            setActiveBanner(coupon);
-          }
-        }
-      });
+    supabase.rpc("get_active_coupon_banner").then(({ data }) => {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setActiveBanner(row as unknown as PlatformCoupon);
+    });
   }, []);
 
   // Countdown timer for special offer
@@ -357,13 +336,8 @@ const MyPlan = () => {
     const code = couponCode.toUpperCase().trim();
     if (!code) return;
 
-    const { data } = await supabase
-      .from("platform_coupons")
-      .select("*")
-      .eq("code", code)
-      .eq("is_active", true)
-      .maybeSingle();
-
+    const { data: rows } = await supabase.rpc("validate_platform_coupon", { _code: code });
+    const data = Array.isArray(rows) ? rows[0] : rows;
     if (!data) {
       toast.error("Invalid or expired coupon code");
       return;
