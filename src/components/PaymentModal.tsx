@@ -115,13 +115,8 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     if (!code) return;
     setApplyingCoupon(true);
     try {
-      const { data } = await supabase
-        .from("platform_coupons")
-        .select("*")
-        .eq("code", code)
-        .eq("is_active", true)
-        .maybeSingle();
-
+      const { data: rows } = await supabase.rpc("validate_platform_coupon", { _code: code });
+      const data = Array.isArray(rows) ? rows[0] : rows;
       if (!data) {
         toast.error("Invalid or expired coupon code");
         return;
@@ -156,12 +151,7 @@ const PaymentModal = ({ open, onOpenChange, planKey, planName, amount, currency,
     setAppliedCoupon(null);
 
     const fetchData = async () => {
-      const { data: gw } = await supabase
-        .from("payment_gateways")
-        .select("*")
-        .eq("currency", currency)
-        .eq("is_active", true)
-        .order("sort_order");
+      const { data: gw } = await supabase.rpc("get_active_payment_gateways", { _currency: currency });
       // Show all active gateways for the currency. Admin controls visibility via is_active.
       setGateways(((gw || []) as unknown as PaymentGateway[]));
 

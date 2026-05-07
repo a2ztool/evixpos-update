@@ -73,12 +73,8 @@ const ZinipayUpgradeModal = ({
     if (!code) { toast.error("Enter a coupon code"); return; }
     setApplying(true);
     try {
-      const { data } = await supabase
-        .from("platform_coupons")
-        .select("*")
-        .eq("code", code)
-        .eq("is_active", true)
-        .maybeSingle();
+      const { data: rows } = await supabase.rpc("validate_platform_coupon", { _code: code });
+      const data = Array.isArray(rows) ? rows[0] : rows;
       if (!data) { toast.error("Invalid or expired coupon code"); return; }
       const c = data as unknown as PlatformCoupon;
       if (c.expires_at && new Date(c.expires_at) < new Date()) {
