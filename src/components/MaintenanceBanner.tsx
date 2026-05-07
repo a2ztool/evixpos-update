@@ -14,13 +14,9 @@ const MaintenanceBanner = () => {
 
   useEffect(() => {
     const fetchSetting = async () => {
-      const { data } = await supabase
-        .from("system_settings")
-        .select("value")
-        .eq("key", "maintenance_mode")
-        .maybeSingle();
-      if (data?.value) {
-        const v = data.value as any;
+      const { data } = await supabase.rpc("get_maintenance_mode");
+      if (data) {
+        const v = data as any;
         setEnabled(!!v.enabled);
         setMessage(v.message || "");
       }

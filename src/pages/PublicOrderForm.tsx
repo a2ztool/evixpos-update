@@ -86,22 +86,8 @@ const PublicOrderForm = () => {
   const loadForm = async () => {
     if (!slug) return;
 
-    let { data: formData } = await supabase
-      .from("order_forms")
-      .select("*")
-      .eq("slug", slug)
-      .eq("status", "active")
-      .maybeSingle();
-
-    if (!formData) {
-      const { data: byId } = await supabase
-        .from("order_forms")
-        .select("*")
-        .eq("id", slug)
-        .eq("status", "active")
-        .maybeSingle();
-      formData = byId;
-    }
+    const { data: rpcData } = await supabase.rpc("get_public_order_form", { _slug: slug });
+    const formData = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
     if (!formData) { setLoading(false); return; }
 
@@ -115,7 +101,7 @@ const PublicOrderForm = () => {
     const productIds = f.selected_products;
     const [prodRes, varRes, bsRes] = await Promise.all([
       productIds.length > 0
-        ? supabase.from("products").select("id, name, price, description, image_url, type").in("id", productIds)
+        ? supabase.rpc("get_public_products", { _ids: productIds })
         : Promise.resolve({ data: [] }),
       productIds.length > 0
         ? supabase.from("product_variations").select("*").in("product_id", productIds).order("sort_order")
