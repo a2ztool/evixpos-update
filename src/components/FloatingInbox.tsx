@@ -582,19 +582,20 @@ const FloatingInbox = () => {
       const path = `${storeId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("staff-chat").upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("staff-chat").getPublicUrl(path);
+      const { data: urlData } = await supabase.storage.from("staff-chat").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const fileUrl = urlData?.signedUrl ?? "";
 
       if (activeConv.type === "direct") {
         const { error } = await supabase.from("staff_messages").insert({
           store_id: storeId, sender_id: myId, receiver_id: activeConv.id,
           message: file.name, message_type: "file",
-          file_url: urlData.publicUrl, file_name: file.name,
+          file_url: fileUrl, file_name: file.name,
         });
         if (error) throw error;
       } else {
         const { error } = await db.from("chat_group_messages").insert({
           group_id: activeConv.id, sender_id: myId,
-          message: `📎 [${file.name}](${urlData.publicUrl})`, type: "text",
+          message: `📎 [${file.name}](${fileUrl})`, type: "text",
         });
         if (error) throw error;
       }
