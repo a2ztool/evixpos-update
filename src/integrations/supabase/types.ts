@@ -3522,6 +3522,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_active_coupon_banner: {
+        Args: never
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+        }[]
+      }
+      get_active_payment_gateways: {
+        Args: { _currency: string }
+        Returns: {
+          currency: string
+          gateway_name: string
+          gateway_type: string
+          icon_url: string
+          id: string
+          is_active: boolean
+          mode: string
+          payment_details: Json
+          qr_code_url: string
+          required_fields: Json
+          sort_order: number
+        }[]
+      }
+      get_maintenance_mode: { Args: never; Returns: Json }
       get_public_business_settings: {
         Args: { _store_id: string }
         Returns: {
@@ -3535,6 +3562,41 @@ export type Database = {
       get_public_invoice: {
         Args: { _order_id: string; _token: string }
         Returns: Json
+      }
+      get_public_order_form: {
+        Args: { _slug: string }
+        Returns: {
+          created_at: string
+          custom_fields: Json
+          description: string
+          fields: Json
+          id: string
+          name: string
+          selected_products: Json
+          show_coupon: boolean
+          slug: string
+          status: string
+          store_id: string | null
+          take_payment: boolean
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "order_forms"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_public_products: {
+        Args: { _ids: string[] }
+        Returns: {
+          description: string
+          id: string
+          image_url: string
+          name: string
+          price: number
+          type: string
+        }[]
       }
       get_staff_limit: { Args: { _plan: string }; Returns: number }
       get_staff_owner_id: { Args: never; Returns: string }
@@ -3590,6 +3652,18 @@ export type Database = {
       store_has_min_plan: {
         Args: { _min_plan: string; _store_id: string }
         Returns: boolean
+      }
+      validate_platform_coupon: {
+        Args: { _code: string }
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+          max_uses: number
+          used_count: number
+        }[]
       }
     }
     Enums: {
