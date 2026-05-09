@@ -1913,11 +1913,6 @@ const SettingsPage = () => {
                   <ChevronRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                   <span className="font-semibold text-foreground truncate">{activeMeta.label}</span>
                 </div>
-                {!guideOpen && (
-                  <Button variant="ghost" size="sm" onClick={() => setGuideOpen(true)} className="h-7 gap-1 text-xs text-muted-foreground hover:text-primary shrink-0">
-                    <HelpCircle className="h-3.5 w-3.5" /> {lang === "bn" ? "সাহায্য" : "Help"}
-                  </Button>
-                )}
               </div>
             )}
             <CardContent className="p-4 sm:p-6">{tabContent[activeTab]()}</CardContent>
