@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -25,7 +26,7 @@ import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, DollarSign, Wallet, PiggyBank, BarChart3,
   FileText, Sparkles, Lightbulb, ShieldCheck, Zap, Target, ArrowUpRight,
-  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle
+  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle, ArrowLeftRight
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar,
@@ -62,13 +63,22 @@ interface PaymentAccount {
   config?: Record<string, any>;
 }
 
+interface CustomCategory {
+  id: string;
+  name: string;
+  type: "income" | "expense";
+}
+
 const CHART_COLORS = [
   "hsl(142 76% 36%)", "hsl(217 91% 60%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)",
   "hsl(262 83% 58%)", "hsl(330 81% 60%)", "hsl(189 94% 43%)", "hsl(24 95% 53%)"
 ];
 
 const INCOME_CATEGORIES = ["Salary", "Freelance", "Sales", "Investment", "Gift", "Refund", "Other Income"];
-const EXPENSE_CATEGORIES = ["Rent", "Utilities", "Food", "Transport", "Marketing", "Supplies", "Salary Payment", "Tax", "Other Expense"];
+const EXPENSE_CATEGORIES = ["Rent", "Utilities", "Food", "Transport", "Marketing", "Supplies", "Salary Payment", "Tax", "Transaction Fee", "Fund Transfer", "Other Expense"];
+const TRANSFER_OUT_CATEGORY = "Fund Transfer (Out)";
+const TRANSFER_IN_CATEGORY = "Fund Transfer (In)";
+const FEE_CATEGORY = "Transaction Fee";
 
 type DatePreset = "today" | "week" | "month" | "last30" | "last90" | "year" | "all" | "custom";
 
@@ -86,7 +96,8 @@ const IncomeExpense = () => {
     amount: "",
     category: "",
     note: "",
-    created_at: new Date()
+    created_at: new Date(),
+    fee: "",
   });
   const formValidation = useFormValidation(transactionSchema);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -102,6 +113,25 @@ const IncomeExpense = () => {
   const [formAccountId, setFormAccountId] = useState<string>("");
   const [accountError, setAccountError] = useState<string>("");
 
+  // Custom categories
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatType, setNewCatType] = useState<"income" | "expense">("income");
+  const [creatingCat, setCreatingCat] = useState(false);
+
+  // Fund transfer sheet
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferForm, setTransferForm] = useState({
+    from_account: "",
+    to_account: "",
+    amount: "",
+    fee: "",
+    note: "",
+    created_at: new Date(),
+  });
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
+
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
     setLoading(true);
@@ -113,6 +143,16 @@ const IncomeExpense = () => {
       .order("created_at", { ascending: false });
     if (data) setTxns(data as Transaction[]);
     setLoading(false);
+  }, [activeStore]);
+
+  const fetchCustomCategories = useCallback(async () => {
+    if (!activeStore) return;
+    const { data } = await supabase
+      .from("transaction_categories")
+      .select("id, name, type")
+      .eq("store_id", activeStore.id)
+      .order("name");
+    if (data) setCustomCategories(data as CustomCategory[]);
   }, [activeStore]);
 
   // Fetch payment accounts (configured in Settings → Payment Methods)
@@ -141,6 +181,7 @@ const IncomeExpense = () => {
   }, [activeStore, effectiveUserId]);
 
   useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
+  useEffect(() => { fetchCustomCategories(); }, [fetchCustomCategories]);
 
   useEffect(() => {
     if (user && activeStore) fetchData();
@@ -294,7 +335,7 @@ const IncomeExpense = () => {
 
   const openAdd = (type: "income" | "expense") => {
     setEditId(null);
-    setForm({ type, amount: "", category: "", note: "", created_at: new Date() });
+    setForm({ type, amount: "", category: "", note: "", created_at: new Date(), fee: "" });
     setFormAccountId(accounts[0]?.id || "");
     setAccountError("");
     setSheetOpen(true);
@@ -304,7 +345,7 @@ const IncomeExpense = () => {
     setEditId(t.id);
     setForm({
       type: t.type, amount: String(t.amount), category: t.category || "",
-      note: t.note || "", created_at: new Date(t.created_at)
+      note: t.note || "", created_at: new Date(t.created_at), fee: "",
     });
     setFormAccountId(t.account_id || "");
     setAccountError("");
@@ -322,6 +363,8 @@ const IncomeExpense = () => {
       return;
     }
     if (!ok) { toast.error("Please fix the errors below"); return; }
+    const feeAmt = Number(form.fee || 0);
+    if (form.fee && (isNaN(feeAmt) || feeAmt < 0)) { toast.error("Invalid transaction fee"); return; }
     const payload = {
       type: form.type, amount: Number(form.amount), category: form.category,
       note: form.note, is_paid: true, created_at: form.created_at.toISOString(),
@@ -335,8 +378,104 @@ const IncomeExpense = () => {
         ...payload, user_id: effectiveUserId!, store_id: activeStore?.id
       });
       if (error) toast.error(error.message); else toast.success("Transaction added!");
+      // Record optional transaction fee as a separate expense on the same account
+      if (!error && feeAmt > 0) {
+        const { error: feeErr } = await supabase.from("transactions").insert({
+          type: "expense",
+          amount: feeAmt,
+          category: FEE_CATEGORY,
+          note: `Fee for ${form.type} ${form.category ? "(" + form.category + ")" : ""}${form.note ? " — " + form.note : ""}`.trim(),
+          is_paid: true,
+          created_at: form.created_at.toISOString(),
+          account_id: formAccountId,
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+        });
+        if (feeErr) toast.error("Fee not saved: " + feeErr.message);
+      }
     }
     setSheetOpen(false);
+    fetchData();
+  };
+
+  const handleCreateCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) { toast.error("Enter a category name"); return; }
+    if (!activeStore || !effectiveUserId) { toast.error("No active store"); return; }
+    setCreatingCat(true);
+    const { data, error } = await supabase
+      .from("transaction_categories")
+      .insert({ name, type: newCatType, store_id: activeStore.id, user_id: effectiveUserId })
+      .select("id, name, type")
+      .maybeSingle();
+    setCreatingCat(false);
+    if (error) { toast.error(error.message); return; }
+    if (data) {
+      setCustomCategories((prev) => [...prev, data as CustomCategory]);
+      // Auto-select if it matches the form type
+      if ((data as CustomCategory).type === form.type) {
+        setForm((f) => ({ ...f, category: (data as CustomCategory).name }));
+        formValidation.clearField("category");
+      }
+      toast.success("Category created");
+    }
+    setNewCatName("");
+    setCatDialogOpen(false);
+  };
+
+  const openTransfer = () => {
+    setTransferForm({
+      from_account: accounts[0]?.id || "",
+      to_account: accounts[1]?.id || "",
+      amount: "", fee: "", note: "", created_at: new Date(),
+    });
+    setTransferOpen(true);
+  };
+
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeStore || !effectiveUserId) return;
+    const amt = Number(transferForm.amount);
+    const fee = Number(transferForm.fee || 0);
+    if (!transferForm.from_account || !transferForm.to_account) { toast.error("Select both accounts"); return; }
+    if (transferForm.from_account === transferForm.to_account) { toast.error("From and To accounts must differ"); return; }
+    if (!amt || amt <= 0) { toast.error("Enter a valid transfer amount"); return; }
+    if (transferForm.fee && (isNaN(fee) || fee < 0)) { toast.error("Invalid transaction fee"); return; }
+
+    setTransferSubmitting(true);
+    const transferId = (globalThis.crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+    const fromName = accounts.find(a => a.id === transferForm.from_account)?.name || transferForm.from_account;
+    const toName = accounts.find(a => a.id === transferForm.to_account)?.name || transferForm.to_account;
+    const ts = transferForm.created_at.toISOString();
+    const noteBase = transferForm.note ? ` — ${transferForm.note}` : "";
+
+    const rows: any[] = [
+      {
+        type: "expense", amount: amt, category: TRANSFER_OUT_CATEGORY,
+        note: `Transfer to ${toName}${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.from_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      },
+      {
+        type: "income", amount: amt, category: TRANSFER_IN_CATEGORY,
+        note: `Transfer from ${fromName}${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.to_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      },
+    ];
+    if (fee > 0) {
+      rows.push({
+        type: "expense", amount: fee, category: FEE_CATEGORY,
+        note: `Transfer fee (${fromName} → ${toName})${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.from_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      });
+    }
+    const { error } = await supabase.from("transactions").insert(rows);
+    setTransferSubmitting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Fund transfer recorded");
+    setTransferOpen(false);
     fetchData();
   };
 
@@ -363,7 +502,11 @@ const IncomeExpense = () => {
     toast.success("CSV exported!");
   };
 
-  const currentCategories = form.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const currentCategories = useMemo(() => {
+    const builtins = form.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const custom = customCategories.filter(c => c.type === form.type).map(c => c.name);
+    return Array.from(new Set([...builtins, ...custom]));
+  }, [form.type, customCategories]);
 
   return (
     <DashboardLayout>
@@ -407,6 +550,9 @@ const IncomeExpense = () => {
                 </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={() => openAdd("expense")} className="gap-1.5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
                   <TrendingDown className="h-4 w-4" /> Expense
+                </Button>
+                <Button variant="outline" size="sm" onClick={openTransfer} className="gap-1.5 rounded-xl border-primary/40 text-primary hover:bg-primary/10" disabled={accounts.length < 2}>
+                  <ArrowLeftRight className="h-4 w-4" /> Transfer
                 </Button>
                 <Button size="sm" onClick={() => openAdd("income")} className="gap-1.5 rounded-xl shadow-md bg-green-600 hover:bg-green-700 text-white">
                   <TrendingUp className="h-4 w-4" /> Income
@@ -1145,9 +1291,24 @@ const IncomeExpense = () => {
 
               <div className="space-y-1.5">
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => { setForm({ ...form, category: v }); formValidation.clearField("category"); }}>
+                <Select
+                  value={form.category}
+                  onValueChange={(v) => {
+                    if (v === "__create__") {
+                      setNewCatType(form.type);
+                      setNewCatName("");
+                      setCatDialogOpen(true);
+                      return;
+                    }
+                    setForm({ ...form, category: v });
+                    formValidation.clearField("category");
+                  }}
+                >
                   <SelectTrigger className={`rounded-xl ${formValidation.getError("category") ? "border-destructive" : ""}`}><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__create__" className="text-primary font-medium">
+                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Create Category</span>
+                    </SelectItem>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -1159,6 +1320,22 @@ const IncomeExpense = () => {
                   className="text-sm rounded-xl"
                 />
                 {formValidation.getError("category") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Transaction Fee ({symbol}) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={form.fee}
+                  onChange={(e) => setForm({ ...form, fee: e.target.value })}
+                  placeholder="0.00"
+                  className="rounded-xl"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {form.type === "income"
+                    ? "Provider fee deducted from the received amount. Logged as a separate Expense on this account."
+                    : "Extra processing fee. Logged as a separate Expense on this account."}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -1196,6 +1373,146 @@ const IncomeExpense = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* Fund Transfer Sheet */}
+        <Sheet open={transferOpen} onOpenChange={setTransferOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <ArrowLeftRight className="h-5 w-5 text-primary" /> Fund Transfer
+              </SheetTitle>
+            </SheetHeader>
+            <form onSubmit={handleTransferSubmit} className="space-y-5 mt-6">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5 text-destructive" /> From Account *</Label>
+                <Select value={transferForm.from_account} onValueChange={(v) => setTransferForm({ ...transferForm, from_account: v })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select source account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => {
+                      const b = accountBalances[a.id] || { income: 0, expense: 0 };
+                      const bal = b.income - b.expense;
+                      return (
+                        <SelectItem key={a.id} value={a.id}>
+                          <span className="flex items-center justify-between gap-3 w-full">
+                            <span className="font-medium">{a.name}</span>
+                            <span className={`text-xs tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                              {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                            </span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5 text-green-600" /> To Account *</Label>
+                <Select value={transferForm.to_account} onValueChange={(v) => setTransferForm({ ...transferForm, to_account: v })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select destination account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(a => a.id !== transferForm.from_account).map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Amount ({symbol}) *</Label>
+                  <Input type="number" step="0.01" min="0" value={transferForm.amount}
+                    onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
+                    placeholder="0.00" className="text-lg font-semibold rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fee ({symbol})</Label>
+                  <Input type="number" step="0.01" min="0" value={transferForm.fee}
+                    onChange={(e) => setTransferForm({ ...transferForm, fee: e.target.value })}
+                    placeholder="0.00" className="rounded-xl" />
+                </div>
+              </div>
+
+              {Number(transferForm.amount) > 0 && (
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">From account deducted</span>
+                    <span className="font-semibold text-destructive tabular-nums">-{formatCurrency(Number(transferForm.amount) + Number(transferForm.fee || 0), 2)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">To account added</span>
+                    <span className="font-semibold text-green-600 tabular-nums">+{formatCurrency(Number(transferForm.amount), 2)}</span></div>
+                  {Number(transferForm.fee || 0) > 0 && (
+                    <div className="flex justify-between"><span className="text-muted-foreground">Fee (logged as expense)</span>
+                      <span className="font-semibold tabular-nums">{formatCurrency(Number(transferForm.fee), 2)}</span></div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {format(transferForm.created_at, "dd MMM yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={transferForm.created_at}
+                      onSelect={(d) => d && setTransferForm({ ...transferForm, created_at: d })} className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Note</Label>
+                <Textarea rows={2} value={transferForm.note}
+                  onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })}
+                  placeholder="Reason for transfer..." className="rounded-xl" />
+              </div>
+
+              <Button type="submit" disabled={transferSubmitting} className="w-full rounded-xl" size="lg">
+                {transferSubmitting ? "Saving..." : "Record Transfer"}
+              </Button>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Create Category Dialog */}
+        <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Plus className="h-4 w-4" /> Create Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Category Name</Label>
+                <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="e.g. Facebook Ads, Domain Cost..." className="rounded-xl" autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateCategory(); } }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={newCatType === "income" ? "default" : "outline"}
+                    className={`rounded-xl ${newCatType === "income" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                    onClick={() => setNewCatType("income")}>
+                    <TrendingUp className="h-4 w-4 mr-1.5" /> Income
+                  </Button>
+                  <Button type="button" variant={newCatType === "expense" ? "default" : "outline"}
+                    className={`rounded-xl ${newCatType === "expense" ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                    onClick={() => setNewCatType("expense")}>
+                    <TrendingDown className="h-4 w-4 mr-1.5" /> Expense
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCatDialogOpen(false)} className="rounded-xl">Cancel</Button>
+              <Button onClick={handleCreateCategory} disabled={creatingCat} className="rounded-xl">
+                {creatingCat ? "Saving..." : "Save Category"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
