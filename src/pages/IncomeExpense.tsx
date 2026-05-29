@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -25,7 +26,7 @@ import {
   Plus, Trash2, Pencil, TrendingUp, TrendingDown, ArrowUpDown, Search,
   Download, Calendar, DollarSign, Wallet, PiggyBank, BarChart3,
   FileText, Sparkles, Lightbulb, ShieldCheck, Zap, Target, ArrowUpRight,
-  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle
+  ArrowDownRight, Activity, CreditCard, Landmark, AlertCircle, ArrowLeftRight
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar,
@@ -62,13 +63,22 @@ interface PaymentAccount {
   config?: Record<string, any>;
 }
 
+interface CustomCategory {
+  id: string;
+  name: string;
+  type: "income" | "expense";
+}
+
 const CHART_COLORS = [
   "hsl(142 76% 36%)", "hsl(217 91% 60%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)",
   "hsl(262 83% 58%)", "hsl(330 81% 60%)", "hsl(189 94% 43%)", "hsl(24 95% 53%)"
 ];
 
 const INCOME_CATEGORIES = ["Salary", "Freelance", "Sales", "Investment", "Gift", "Refund", "Other Income"];
-const EXPENSE_CATEGORIES = ["Rent", "Utilities", "Food", "Transport", "Marketing", "Supplies", "Salary Payment", "Tax", "Other Expense"];
+const EXPENSE_CATEGORIES = ["Rent", "Utilities", "Food", "Transport", "Marketing", "Supplies", "Salary Payment", "Tax", "Transaction Fee", "Fund Transfer", "Other Expense"];
+const TRANSFER_OUT_CATEGORY = "Fund Transfer (Out)";
+const TRANSFER_IN_CATEGORY = "Fund Transfer (In)";
+const FEE_CATEGORY = "Transaction Fee";
 
 type DatePreset = "today" | "week" | "month" | "last30" | "last90" | "year" | "all" | "custom";
 
@@ -86,7 +96,8 @@ const IncomeExpense = () => {
     amount: "",
     category: "",
     note: "",
-    created_at: new Date()
+    created_at: new Date(),
+    fee: "",
   });
   const formValidation = useFormValidation(transactionSchema);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -102,6 +113,25 @@ const IncomeExpense = () => {
   const [formAccountId, setFormAccountId] = useState<string>("");
   const [accountError, setAccountError] = useState<string>("");
 
+  // Custom categories
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatType, setNewCatType] = useState<"income" | "expense">("income");
+  const [creatingCat, setCreatingCat] = useState(false);
+
+  // Fund transfer sheet
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferForm, setTransferForm] = useState({
+    from_account: "",
+    to_account: "",
+    amount: "",
+    fee: "",
+    note: "",
+    created_at: new Date(),
+  });
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
+
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
     setLoading(true);
@@ -113,6 +143,16 @@ const IncomeExpense = () => {
       .order("created_at", { ascending: false });
     if (data) setTxns(data as Transaction[]);
     setLoading(false);
+  }, [activeStore]);
+
+  const fetchCustomCategories = useCallback(async () => {
+    if (!activeStore) return;
+    const { data } = await supabase
+      .from("transaction_categories")
+      .select("id, name, type")
+      .eq("store_id", activeStore.id)
+      .order("name");
+    if (data) setCustomCategories(data as CustomCategory[]);
   }, [activeStore]);
 
   // Fetch payment accounts (configured in Settings → Payment Methods)
@@ -141,6 +181,7 @@ const IncomeExpense = () => {
   }, [activeStore, effectiveUserId]);
 
   useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
+  useEffect(() => { fetchCustomCategories(); }, [fetchCustomCategories]);
 
   useEffect(() => {
     if (user && activeStore) fetchData();
