@@ -863,6 +863,9 @@ const fetchProducts = async () => {
                   <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={(e) => { e.stopPropagation(); openInvoice(o); }}>
                     <FileText className="h-3.5 w-3.5" /> Invoice
                   </Button>
+                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={(e) => { e.stopPropagation(); setEditOrder(o); setEditOpen(true); }}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
                   {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
                     <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
