@@ -127,6 +127,7 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -139,6 +140,7 @@ const Orders = () => {
   const [formProductName, setFormProductName] = useState("");
   const [formProductId, setFormProductId] = useState<string | null>(null);
   const [formProductPrice, setFormProductPrice] = useState("");
+  const [formVariationId, setFormVariationId] = useState<string | null>(null);
   const [formDateTime, setFormDateTime] = useState(() => {
     const now = new Date();
     return now.toISOString().slice(0, 16);
