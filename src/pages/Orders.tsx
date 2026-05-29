@@ -17,10 +17,11 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings, ShoppingBag, CheckCircle2, Clock, DollarSign, RefreshCw, TrendingUp } from "lucide-react";
+import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileText, RotateCcw, History, Globe, Trash2, Settings, ShoppingBag, CheckCircle2, Clock, DollarSign, RefreshCw, TrendingUp, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
+import EditOrderDialog from "@/components/EditOrderDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useRef, useCallback } from "react";
@@ -195,6 +196,10 @@ const Orders = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Edit order
+  const [editOpen, setEditOpen] = useState(false);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
 
   // Dynamic payment methods & currency from store settings
   const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([]);
@@ -858,6 +863,9 @@ const fetchProducts = async () => {
                   <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={(e) => { e.stopPropagation(); openInvoice(o); }}>
                     <FileText className="h-3.5 w-3.5" /> Invoice
                   </Button>
+                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={(e) => { e.stopPropagation(); setEditOrder(o); setEditOpen(true); }}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
                   {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
                     <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); openRefund(o); }}>
                       <RotateCcw className="h-3.5 w-3.5" /> Refund
@@ -936,6 +944,9 @@ const fetchProducts = async () => {
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openInvoice(o)} title="Invoice">
                           <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditOrder(o); setEditOpen(true); }} title="Edit Order">
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openRefund(o)} title="Refund">
@@ -1498,6 +1509,19 @@ const fetchProducts = async () => {
         onOpenChange={setInvoiceOpen}
         order={invoiceOrder}
         orderItems={invoiceItems}
+      />
+
+      {/* Edit Order Dialog */}
+      <EditOrderDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        order={editOrder}
+        products={products}
+        variations={variations}
+        customers={customers}
+        paymentMethods={storePaymentMethods}
+        storeId={activeStore?.id ?? null}
+        onSaved={() => { fetchOrders(); }}
       />
 
       {/* Import Orders Dialog */}
