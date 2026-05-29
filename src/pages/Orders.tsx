@@ -55,6 +55,7 @@ interface Order {
 interface Customer {
   id: string;
   name: string;
+  phone?: string | null;
 }
 
 interface Product {
@@ -123,12 +124,15 @@ const Orders = () => {
   // Create order sheet
   const [createOpen, setCreateOpen] = useState(false);
   const [formCustomerId, setFormCustomerId] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [formProductName, setFormProductName] = useState("");
+  const [formProductId, setFormProductId] = useState<string | null>(null);
+  const [formProductPrice, setFormProductPrice] = useState("");
   const [formDateTime, setFormDateTime] = useState(() => {
     const now = new Date();
     return now.toISOString().slice(0, 16);
   });
-  const [formAmountPaid, setFormAmountPaid] = useState("");
+  const [formPaidAmount, setFormPaidAmount] = useState("");
   const [formCostPrice, setFormCostPrice] = useState("");
   const [formDiscount, setFormDiscount] = useState("0");
   const [formDiscountType, setFormDiscountType] = useState("fixed");
@@ -140,6 +144,14 @@ const Orders = () => {
   const [formCreateSub, setFormCreateSub] = useState(false);
   const [formSubVariation, setFormSubVariation] = useState("1 Month");
   const [creating, setCreating] = useState(false);
+
+  // New customer modal
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustEmail, setNewCustEmail] = useState("");
+  const [newCustAddress, setNewCustAddress] = useState("");
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   // Import dialog
   const [importOpen, setImportOpen] = useState(false);
