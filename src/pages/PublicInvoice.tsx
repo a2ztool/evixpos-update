@@ -79,7 +79,7 @@ const PublicInvoice = () => {
   const paid = invoiceCalc.paidAmount;
   const due = invoiceCalc.dueAmount;
   const status = invoiceCalc.status;
-  const invoiceId = `INV-${order.id.slice(0, 8).toUpperCase()}`;
+  const invoiceId = order.id;
   const date = new Date(order.created_at);
 
   const statusBadge =
