@@ -933,14 +933,67 @@ const POS = () => {
           <UserPlus className="h-3.5 w-3.5" /> New
         </Button>
       </div>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          value={customerSearch}
+          onChange={(e) => setCustomerSearch(e.target.value)}
+          placeholder="Search by name or phone..."
+          className="h-9 pl-8 text-sm"
+        />
+      </div>
+      {customerSearch.trim() && (
+        <div className="rounded-md border bg-popover max-h-48 overflow-y-auto">
+          {filteredCustomers.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground">No customers found</div>
+          ) : (
+            filteredCustomers.slice(0, 20).map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setCustomerId(c.id); setCustomerSearch(""); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${customerId === c.id ? "bg-accent" : ""}`}
+              >
+                {c.name}{c.phone ? ` (${c.phone})` : ""}
+              </button>
+            ))
+          )}
+        </div>
+      )}
       <Select value={customerId} onValueChange={setCustomerId}>
-        <SelectTrigger><SelectValue placeholder={t.selectCustomer} /></SelectTrigger>
+        <SelectTrigger><SelectValue placeholder={selectedCustomer ? `${selectedCustomer.name}${selectedCustomer.phone ? ` (${selectedCustomer.phone})` : ""}` : t.selectCustomer} /></SelectTrigger>
         <SelectContent>
           {customers.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ""}</SelectItem>
           ))}
         </SelectContent>
       </Select>
+
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium flex items-center gap-1.5"><CalendarIcon className="h-3.5 w-3.5" /> Order Date</span>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
+              <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+              {formatDate(orderDate, "PPP")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={orderDate}
+              onSelect={(d) => { if (d) { setOrderDate(d); setDatePickerOpen(false); } }}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        {orderDate.toDateString() !== new Date().toDateString() && (
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+            Backdated/Future order — subscription will start from {formatDate(orderDate, "PP")}
+          </p>
+        )}
+      </div>
 
       <Separator />
 
