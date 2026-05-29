@@ -228,7 +228,7 @@ const Orders = () => {
 
   const fetchCustomers = async () => {
     if (!activeStore) return;
-    const { data } = await supabase.from("customers").select("id, name").eq("store_id", activeStore.id);
+    const { data } = await supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id);
     if (data) setCustomers(data);
   };
 
