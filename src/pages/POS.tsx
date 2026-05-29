@@ -505,6 +505,8 @@ const POS = () => {
         toast.success("Sale queued offline — will sync automatically");
         setCart([]);
         setCustomerId("");
+        setCustomerSearch("");
+        setOrderDate(new Date());
         setPaymentOptions(new Set(["full"]));
         setDiscountValue("");
         setPaidAmount("");
