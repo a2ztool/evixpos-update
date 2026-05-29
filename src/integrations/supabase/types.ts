@@ -3436,6 +3436,41 @@ export type Database = {
           },
         ]
       }
+      transaction_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          store_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          store_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          store_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           account_id: string | null
@@ -3451,6 +3486,7 @@ export type Database = {
           paid_amount: number
           phone_number: string | null
           store_id: string | null
+          transfer_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -3468,6 +3504,7 @@ export type Database = {
           paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
+          transfer_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -3485,6 +3522,7 @@ export type Database = {
           paid_amount?: number
           phone_number?: string | null
           store_id?: string | null
+          transfer_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string
         }
