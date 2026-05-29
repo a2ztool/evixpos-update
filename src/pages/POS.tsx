@@ -21,12 +21,15 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format as formatDate } from "date-fns";
 import { toast } from "sonner";
 import {
   Plus, Minus, Trash2, ShoppingCart, Search, Monitor,
   ChevronDown, RefreshCw, Clock, Percent, UserPlus, AlertTriangle, X,
   Check, ArrowRight, ArrowLeft, CreditCard, FileText, Package, User,
-  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet, Crown, Lock,
+  Printer, Zap, Layers, Pause, Play, Receipt, Split, Keyboard, CheckCircle2, Wallet, Crown, Lock, CalendarIcon,
 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import BarcodeScanner from "@/components/BarcodeScanner";
@@ -125,6 +128,9 @@ const POS = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [customerId, setCustomerId] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [orderDate, setOrderDate] = useState<Date>(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [paymentOptions, setPaymentOptions] = useState<Set<PaymentOption>>(new Set(["full"]));
   const [discountType, setDiscountType] = useState<"fixed" | "percentage">("fixed");
   const [discountValue, setDiscountValue] = useState("");
@@ -499,6 +505,8 @@ const POS = () => {
         toast.success("Sale queued offline — will sync automatically");
         setCart([]);
         setCustomerId("");
+        setCustomerSearch("");
+        setOrderDate(new Date());
         setPaymentOptions(new Set(["full"]));
         setDiscountValue("");
         setPaidAmount("");
@@ -569,6 +577,7 @@ const POS = () => {
           status: "completed" as const,
           payment_status: computedPaymentStatus,
           meta: orderMeta as any,
+          order_date: orderDate.toISOString(),
           notes: orderNotes || (isDue ? "Due order from POS" : hasDue ? `Partial payment: ${format(effectivePaid)} paid, ${format(effectiveDue)} due` : ""),
         })
         .select("id")
@@ -756,7 +765,7 @@ const POS = () => {
       let subsCreated = 0;
       let subsFailed = 0;
       if (subscriptionItems.length > 0) {
-        const now = new Date();
+        const now = new Date(orderDate);
         const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
         const subscriptionPayloads = subscriptionItems.flatMap((item) => {
           const startDate = new Date(now);
@@ -814,6 +823,8 @@ const POS = () => {
 
       setCart([]);
       setCustomerId("");
+      setCustomerSearch("");
+      setOrderDate(new Date());
       setPaymentOptions(new Set(["full"]));
       setDiscountValue("");
       setPaidAmount("");
@@ -852,7 +863,7 @@ const POS = () => {
                 currency: "BDT",
                 payment_status: computedPaymentStatus,
                 payment_method: payMethod,
-                order_date: new Date().toLocaleDateString(),
+                order_date: orderDate.toLocaleDateString(),
                 status: "completed",
                 notes: orderNotes,
                 discount: discAmount,
@@ -892,6 +903,14 @@ const POS = () => {
 
   const selectedCustomer = customers.find(c => c.id === customerId);
   const buttonLabel = hasOpt("due") ? "Place Order (Add to Due)" : hasOpt("partial") ? "Place Order (Partial)" : "Place Order";
+  const filteredCustomers = useMemo(() => {
+    const q = customerSearch.trim().toLowerCase();
+    if (!q) return customers;
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q)
+    );
+  }, [customers, customerSearch]);
   const receiptSymbol = receiptData ? (receiptData.currency === "BDT" ? "৳" : receiptData.currency === "INR" ? "₹" : "$") : symbol;
 
   const CHECKOUT_STEPS = [
@@ -919,14 +938,67 @@ const POS = () => {
           <UserPlus className="h-3.5 w-3.5" /> New
         </Button>
       </div>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          value={customerSearch}
+          onChange={(e) => setCustomerSearch(e.target.value)}
+          placeholder="Search by name or phone..."
+          className="h-9 pl-8 text-sm"
+        />
+      </div>
+      {customerSearch.trim() && (
+        <div className="rounded-md border bg-popover max-h-48 overflow-y-auto">
+          {filteredCustomers.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground">No customers found</div>
+          ) : (
+            filteredCustomers.slice(0, 20).map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setCustomerId(c.id); setCustomerSearch(""); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${customerId === c.id ? "bg-accent" : ""}`}
+              >
+                {c.name}{c.phone ? ` (${c.phone})` : ""}
+              </button>
+            ))
+          )}
+        </div>
+      )}
       <Select value={customerId} onValueChange={setCustomerId}>
-        <SelectTrigger><SelectValue placeholder={t.selectCustomer} /></SelectTrigger>
+        <SelectTrigger><SelectValue placeholder={selectedCustomer ? `${selectedCustomer.name}${selectedCustomer.phone ? ` (${selectedCustomer.phone})` : ""}` : t.selectCustomer} /></SelectTrigger>
         <SelectContent>
           {customers.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ""}</SelectItem>
           ))}
         </SelectContent>
       </Select>
+
+      <div className="space-y-1.5">
+        <span className="text-sm font-medium flex items-center gap-1.5"><CalendarIcon className="h-3.5 w-3.5" /> Order Date</span>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
+              <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+              {formatDate(orderDate, "PPP")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={orderDate}
+              onSelect={(d) => { if (d) { setOrderDate(d); setDatePickerOpen(false); } }}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        {orderDate.toDateString() !== new Date().toDateString() && (
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+            Backdated/Future order — subscription will start from {formatDate(orderDate, "PP")}
+          </p>
+        )}
+      </div>
 
       <Separator />
 
