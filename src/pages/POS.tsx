@@ -575,6 +575,7 @@ const POS = () => {
           status: "completed" as const,
           payment_status: computedPaymentStatus,
           meta: orderMeta as any,
+          order_date: orderDate.toISOString(),
           notes: orderNotes || (isDue ? "Due order from POS" : hasDue ? `Partial payment: ${format(effectivePaid)} paid, ${format(effectiveDue)} due` : ""),
         })
         .select("id")
