@@ -97,7 +97,7 @@ const InvoiceModal = ({ open, onOpenChange, order, orderItems }: InvoiceModalPro
   if (!order) return null;
 
   const curSymbol = CURRENCY_SYMBOLS[order.payment_currency] || order.payment_currency;
-  const invoiceId = order.id;
+  const invoiceId = (order as any).order_number ?? order.id;
   const orderDate = new Date(order.created_at);
   const storeName = businessSettings?.business_name || activeStore?.name || "Store";
   const storePhone = businessSettings?.business_phone || activeStore?.phone || "";

@@ -36,6 +36,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  order_number?: number | null;
   total_amount: number;
   cost_price: number;
   discount: number;
@@ -63,6 +64,16 @@ interface Product {
   name: string;
   price: number;
   stock: number;
+}
+
+interface ProductVariation {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  duration_days: number;
+  is_subscription: boolean;
+  sort_order: number;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = { BDT: "৳", INR: "₹", USD: "$" };
@@ -116,6 +127,7 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -128,6 +140,7 @@ const Orders = () => {
   const [formProductName, setFormProductName] = useState("");
   const [formProductId, setFormProductId] = useState<string | null>(null);
   const [formProductPrice, setFormProductPrice] = useState("");
+  const [formVariationId, setFormVariationId] = useState<string | null>(null);
   const [formDateTime, setFormDateTime] = useState(() => {
     const now = new Date();
     return now.toISOString().slice(0, 16);
@@ -235,7 +248,20 @@ const Orders = () => {
 const fetchProducts = async () => {
     if (!activeStore) return;
     const { data } = await supabase.from("products").select("id, name, price, stock").eq("store_id", activeStore.id);
-    if (data) setProducts(data);
+    if (data) {
+      setProducts(data);
+      const ids = data.map((p) => p.id);
+      if (ids.length > 0) {
+        const { data: vars } = await (supabase
+          .from("product_variations" as any)
+          .select("*")
+          .in("product_id", ids)
+          .order("sort_order") as any);
+        setVariations((vars ?? []) as ProductVariation[]);
+      } else {
+        setVariations([]);
+      }
+    }
   };
 
   const fetchRefunds = async () => {
@@ -467,6 +493,7 @@ const fetchProducts = async () => {
     setFormProductName("");
     setFormProductId(null);
     setFormProductPrice("");
+    setFormVariationId(null);
     setFormDateTime(new Date().toISOString().slice(0, 16));
     setFormPaidAmount("");
     setFormCostPrice("");
@@ -502,6 +529,13 @@ const fetchProducts = async () => {
         (formProductId && p.id === formProductId) ||
         p.name.toLowerCase() === formProductName.toLowerCase()
     );
+    const productVariations = matched ? variations.filter((v) => v.product_id === matched.id) : [];
+    const selectedVariation = formVariationId ? productVariations.find((v) => v.id === formVariationId) : null;
+    if (matched && productVariations.length > 0 && !selectedVariation) {
+      toast.error("Please select a variation for this product");
+      setCreating(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("orders")
@@ -524,8 +558,9 @@ const fetchProducts = async () => {
         meta: {
           product_id: matched?.id ?? null,
           product_price: price,
-          variant_id: null,
-          variant_price: null,
+          variation_id: selectedVariation?.id ?? null,
+          variation_name: selectedVariation?.name ?? null,
+          variation_price: selectedVariation ? Number(selectedVariation.price) : null,
           paid_amount: paid,
           due_amount: due,
         } as any,
@@ -557,15 +592,19 @@ const fetchProducts = async () => {
           "7 Days": 7, "15 Days": 15, "1 Month": 30, "2 Month": 60,
           "3 Month": 90, "6 Month": 180, "12 Month": 365,
         };
+        const durationDays = selectedVariation
+          ? Number(selectedVariation.duration_days) || 30
+          : (VARIATIONS[formSubVariation] || 30);
+        const variationLabel = selectedVariation?.name || formSubVariation;
         const startDate = format(new Date(), "yyyy-MM-dd");
-        const endDate = format(addDays(new Date(), VARIATIONS[formSubVariation] || 30), "yyyy-MM-dd");
+        const endDate = format(addDays(new Date(), durationDays), "yyyy-MM-dd");
         await supabase.from("subscriptions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
           order_id: data.id,
           customer_id: formCustomerId,
           product_name: formProductName || "Order Subscription",
-          variation: formSubVariation,
+          variation: variationLabel,
           start_date: startDate,
           end_date: endDate,
           price: finalTotal,
@@ -621,6 +660,7 @@ const fetchProducts = async () => {
         const q = search.toLowerCase();
         if (
           !o.id.toLowerCase().includes(q) &&
+          !String(o.order_number ?? "").toLowerCase().includes(q) &&
           !(o.customers?.name ?? "").toLowerCase().includes(q)
         )
           return false;
@@ -850,7 +890,7 @@ const fetchProducts = async () => {
               <TableBody>
                 {filtered.map((o) => (
                   <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.id}>{o.id}</TableCell>
+                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.order_number ? String(o.order_number) : o.id}>{o.order_number ?? o.id}</TableCell>
                     <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
                     <TableCell className="font-semibold">
                       {o.payment_currency} {Number(o.total_amount).toFixed(2)}
@@ -980,9 +1020,18 @@ const fetchProducts = async () => {
                   const m = products.find((p) => p.name.toLowerCase() === v.toLowerCase());
                   if (m) {
                     setFormProductId(m.id);
-                    setFormProductPrice(String(m.price ?? ""));
+                    const vars = variations.filter((x) => x.product_id === m.id);
+                    if (vars.length > 0) {
+                      const first = vars[0];
+                      setFormVariationId(first.id);
+                      setFormProductPrice(String(first.price ?? m.price ?? ""));
+                    } else {
+                      setFormVariationId(null);
+                      setFormProductPrice(String(m.price ?? ""));
+                    }
                   } else {
                     setFormProductId(null);
+                    setFormVariationId(null);
                   }
                 }}
                 list="product-list"
@@ -993,6 +1042,35 @@ const fetchProducts = async () => {
                 ))}
               </datalist>
             </div>
+
+            {/* Variation selector — only when product has variations */}
+            {formProductId && variations.some((v) => v.product_id === formProductId) && (
+              <div className="space-y-2">
+                <Label>Variation *</Label>
+                <Select
+                  value={formVariationId ?? ""}
+                  onValueChange={(val) => {
+                    setFormVariationId(val);
+                    const v = variations.find((x) => x.id === val);
+                    if (v) setFormProductPrice(String(v.price ?? ""));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select variation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variations
+                      .filter((v) => v.product_id === formProductId)
+                      .map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name} — {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{Number(v.price).toFixed(2)}
+                          {v.is_subscription ? ` · ${v.duration_days}d` : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Date & Time */}
             <div className="space-y-2">
@@ -1219,7 +1297,7 @@ const fetchProducts = async () => {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground">Order ID</span>
-                  <p className="font-mono text-xs">{selectedOrder.id}</p>
+                  <p className="font-mono text-xs">{selectedOrder.order_number ?? selectedOrder.id}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Customer</span>
@@ -1558,7 +1636,7 @@ const fetchProducts = async () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.id}</span>? 
+              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.order_number ?? orderToDelete?.id}</span>? 
               This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
