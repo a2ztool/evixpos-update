@@ -335,7 +335,7 @@ const IncomeExpense = () => {
 
   const openAdd = (type: "income" | "expense") => {
     setEditId(null);
-    setForm({ type, amount: "", category: "", note: "", created_at: new Date() });
+    setForm({ type, amount: "", category: "", note: "", created_at: new Date(), fee: "" });
     setFormAccountId(accounts[0]?.id || "");
     setAccountError("");
     setSheetOpen(true);
@@ -345,7 +345,7 @@ const IncomeExpense = () => {
     setEditId(t.id);
     setForm({
       type: t.type, amount: String(t.amount), category: t.category || "",
-      note: t.note || "", created_at: new Date(t.created_at)
+      note: t.note || "", created_at: new Date(t.created_at), fee: "",
     });
     setFormAccountId(t.account_id || "");
     setAccountError("");
