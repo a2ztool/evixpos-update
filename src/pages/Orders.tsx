@@ -36,6 +36,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  order_number?: number | null;
   total_amount: number;
   cost_price: number;
   discount: number;
@@ -63,6 +64,16 @@ interface Product {
   name: string;
   price: number;
   stock: number;
+}
+
+interface ProductVariation {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  duration_days: number;
+  is_subscription: boolean;
+  sort_order: number;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = { BDT: "৳", INR: "₹", USD: "$" };
