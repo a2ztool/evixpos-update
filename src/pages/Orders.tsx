@@ -21,6 +21,7 @@ import { Search, Plus, ClipboardList, Eye, Upload, Download, CloudUpload, FileTe
 import { cn } from "@/lib/utils";
 import InvoiceModal from "@/components/InvoiceModal";
 import RefundModal from "@/components/RefundModal";
+import EditOrderDialog from "@/components/EditOrderDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useRef, useCallback } from "react";
