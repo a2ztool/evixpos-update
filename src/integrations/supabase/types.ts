@@ -1917,6 +1917,7 @@ export type Database = {
           id: string
           meta: Json | null
           notes: string | null
+          order_date: string | null
           payment_currency: string
           payment_method: string
           payment_status: string
@@ -1935,6 +1936,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           notes?: string | null
+          order_date?: string | null
           payment_currency?: string
           payment_method?: string
           payment_status?: string
@@ -1953,6 +1955,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           notes?: string | null
+          order_date?: string | null
           payment_currency?: string
           payment_method?: string
           payment_status?: string
