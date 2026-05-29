@@ -55,6 +55,7 @@ interface Order {
 interface Customer {
   id: string;
   name: string;
+  phone?: string | null;
 }
 
 interface Product {
@@ -123,12 +124,15 @@ const Orders = () => {
   // Create order sheet
   const [createOpen, setCreateOpen] = useState(false);
   const [formCustomerId, setFormCustomerId] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [formProductName, setFormProductName] = useState("");
+  const [formProductId, setFormProductId] = useState<string | null>(null);
+  const [formProductPrice, setFormProductPrice] = useState("");
   const [formDateTime, setFormDateTime] = useState(() => {
     const now = new Date();
     return now.toISOString().slice(0, 16);
   });
-  const [formAmountPaid, setFormAmountPaid] = useState("");
+  const [formPaidAmount, setFormPaidAmount] = useState("");
   const [formCostPrice, setFormCostPrice] = useState("");
   const [formDiscount, setFormDiscount] = useState("0");
   const [formDiscountType, setFormDiscountType] = useState("fixed");
@@ -140,6 +144,14 @@ const Orders = () => {
   const [formCreateSub, setFormCreateSub] = useState(false);
   const [formSubVariation, setFormSubVariation] = useState("1 Month");
   const [creating, setCreating] = useState(false);
+
+  // New customer modal
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustEmail, setNewCustEmail] = useState("");
+  const [newCustAddress, setNewCustAddress] = useState("");
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   // Import dialog
   const [importOpen, setImportOpen] = useState(false);
@@ -216,7 +228,7 @@ const Orders = () => {
 
   const fetchCustomers = async () => {
     if (!activeStore) return;
-    const { data } = await supabase.from("customers").select("id, name").eq("store_id", activeStore.id);
+    const { data } = await supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id);
     if (data) setCustomers(data);
   };
 
@@ -436,18 +448,27 @@ const fetchProducts = async () => {
   };
 
   const profit = useMemo(() => {
-    const amount = parseFloat(formAmountPaid) || 0;
+    const price = parseFloat(formProductPrice) || 0;
     const cost = parseFloat(formCostPrice) || 0;
     const disc = parseFloat(formDiscount) || 0;
-    const discountVal = formDiscountType === "percentage" ? (amount * disc) / 100 : disc;
-    return amount - cost - discountVal;
-  }, [formAmountPaid, formCostPrice, formDiscount, formDiscountType]);
+    const discountVal = formDiscountType === "percentage" ? (price * disc) / 100 : disc;
+    return price - cost - discountVal;
+  }, [formProductPrice, formCostPrice, formDiscount, formDiscountType]);
+
+  const dueAmount = useMemo(() => {
+    const price = parseFloat(formProductPrice) || 0;
+    const paid = parseFloat(formPaidAmount) || 0;
+    return Math.max(price - paid, 0);
+  }, [formProductPrice, formPaidAmount]);
 
   const resetForm = () => {
     setFormCustomerId("");
+    setCustomerSearch("");
     setFormProductName("");
+    setFormProductId(null);
+    setFormProductPrice("");
     setFormDateTime(new Date().toISOString().slice(0, 16));
-    setFormAmountPaid("");
+    setFormPaidAmount("");
     setFormCostPrice("");
     setFormDiscount("0");
     setFormDiscountType("fixed");
@@ -462,15 +483,25 @@ const fetchProducts = async () => {
 
   const handleCreateOrder = async () => {
     if (!user) return;
-    const amount = parseFloat(formAmountPaid) || 0;
-    if (amount <= 0) {
-      toast.error("Amount must be greater than 0");
+    const price = parseFloat(formProductPrice) || 0;
+    const paid = parseFloat(formPaidAmount) || 0;
+    if (price <= 0) {
+      toast.error("Product price must be greater than 0");
       return;
     }
 
     setCreating(true);
     const disc = parseFloat(formDiscount) || 0;
-    const discountVal = formDiscountType === "percentage" ? (amount * disc) / 100 : disc;
+    const discountVal = formDiscountType === "percentage" ? (price * disc) / 100 : disc;
+    const finalTotal = price - discountVal;
+    const due = Math.max(finalTotal - paid, 0);
+    const paymentStatus =
+      paid <= 0 ? "unpaid" : paid >= finalTotal ? "paid" : "partial";
+    const matched = products.find(
+      (p) =>
+        (formProductId && p.id === formProductId) ||
+        p.name.toLowerCase() === formProductName.toLowerCase()
+    );
 
     const { data, error } = await supabase
       .from("orders")
@@ -478,7 +509,7 @@ const fetchProducts = async () => {
         user_id: effectiveUserId!,
         store_id: activeStore?.id,
         customer_id: formCustomerId || null,
-        total_amount: amount - discountVal,
+        total_amount: finalTotal,
         cost_price: parseFloat(formCostPrice) || 0,
         discount: disc,
         discount_type: formDiscountType,
@@ -487,8 +518,17 @@ const fetchProducts = async () => {
         payment_currency: formCurrency,
         notes: formNotes,
         status: formStatus as "pending" | "completed" | "cancelled",
-        payment_status: formStatus === "completed" ? "paid" : "unpaid",
+        payment_status:
+          formStatus === "completed" ? paymentStatus : "unpaid",
         created_at: new Date(formDateTime).toISOString(),
+        meta: {
+          product_id: matched?.id ?? null,
+          product_price: price,
+          variant_id: null,
+          variant_price: null,
+          paid_amount: paid,
+          due_amount: due,
+        } as any,
       })
       .select()
       .single();
@@ -496,23 +536,19 @@ const fetchProducts = async () => {
     if (error) {
       toast.error(error.message);
     } else if (data) {
-      // Find matching product and create order item
-      const matchedProduct = products.find(
-        (p) => p.name.toLowerCase() === formProductName.toLowerCase()
-      );
-      if (matchedProduct) {
+      if (matched) {
         await supabase.from("order_items").insert({
           order_id: data.id,
-          product_id: matchedProduct.id,
+          product_id: matched.id,
           quantity: 1,
-          price: amount,
+          price: price,
         });
         // Decrement stock
         await supabase.rpc("has_role", { _user_id: effectiveUserId!, _role: "user" }); // no-op, just to keep TS happy
         await supabase
           .from("products")
-          .update({ stock: matchedProduct.stock !== undefined ? matchedProduct.stock : 0 })
-          .eq("id", matchedProduct.id);
+          .update({ stock: matched.stock !== undefined ? matched.stock : 0 })
+          .eq("id", matched.id);
       }
 
       // Create subscription if checkbox is checked
@@ -532,7 +568,7 @@ const fetchProducts = async () => {
           variation: formSubVariation,
           start_date: startDate,
           end_date: endDate,
-          price: amount - discountVal,
+          price: finalTotal,
           cost_price: parseFloat(formCostPrice) || 0,
           notes: `Created from order ${data.id}`,
           status: "active",
@@ -814,7 +850,7 @@ const fetchProducts = async () => {
               <TableBody>
                 {filtered.map((o) => (
                   <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}...</TableCell>
+                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.id}>{o.id}</TableCell>
                     <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
                     <TableCell className="font-semibold">
                       {o.payment_currency} {Number(o.total_amount).toFixed(2)}
@@ -892,19 +928,44 @@ const fetchProducts = async () => {
           <div className="space-y-5 mt-6">
             {/* Customer */}
             <div className="space-y-2">
-              <Label>Customer *</Label>
-              <Select value={formCustomerId} onValueChange={setFormCustomerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Customer *</Label>
+                <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={() => setNewCustomerOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" /> New Customer
+                </Button>
+              </div>
+              <Input
+                placeholder="Search by name or phone..."
+                value={customerSearch}
+                onChange={(e) => { setCustomerSearch(e.target.value); if (formCustomerId) setFormCustomerId(""); }}
+              />
+              {customerSearch && !formCustomerId && (
+                <div className="border border-border rounded-md max-h-48 overflow-y-auto bg-popover">
+                  {customers
+                    .filter((c) => {
+                      const q = customerSearch.toLowerCase();
+                      return c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q);
+                    })
+                    .slice(0, 20)
+                    .map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
+                        onClick={() => { setFormCustomerId(c.id); setCustomerSearch(`${c.name}${c.phone ? ` · ${c.phone}` : ""}`); }}
+                      >
+                        <span>{c.name}</span>
+                        {c.phone && <span className="text-muted-foreground text-xs">{c.phone}</span>}
+                      </button>
+                    ))}
+                  {customers.filter((c) => {
+                    const q = customerSearch.toLowerCase();
+                    return c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q);
+                  }).length === 0 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">No matches. Use "New Customer".</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Product */}
@@ -913,7 +974,17 @@ const fetchProducts = async () => {
               <Input
                 placeholder={t.enterProductName}
                 value={formProductName}
-                onChange={(e) => setFormProductName(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormProductName(v);
+                  const m = products.find((p) => p.name.toLowerCase() === v.toLowerCase());
+                  if (m) {
+                    setFormProductId(m.id);
+                    setFormProductPrice(String(m.price ?? ""));
+                  } else {
+                    setFormProductId(null);
+                  }
+                }}
                 list="product-list"
               />
               <datalist id="product-list">
@@ -933,15 +1004,15 @@ const fetchProducts = async () => {
               />
             </div>
 
-            {/* Amount & Cost */}
+            {/* Product Price & Cost */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>{t.amountPaid} ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Label>Product Price ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
-                  value={formAmountPaid}
-                  onChange={(e) => setFormAmountPaid(e.target.value)}
+                  value={formProductPrice}
+                  onChange={(e) => setFormProductPrice(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -952,6 +1023,23 @@ const fetchProducts = async () => {
                   value={formCostPrice}
                   onChange={(e) => setFormCostPrice(e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* Paid & Due */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Paid Amount ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={formPaidAmount}
+                  onChange={(e) => setFormPaidAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Due Amount ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Input type="number" value={dueAmount.toFixed(2)} readOnly className="bg-muted" />
               </div>
             </div>
 
@@ -1431,7 +1519,7 @@ const fetchProducts = async () => {
                 return (
                   <div key={r.id} className="rounded-xl border border-border p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs text-muted-foreground">Order #{r.order_id?.slice(0, 8)}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground break-all" title={r.order_id}>{r.order_id}</span>
                       <Badge className={refundStatusColor[r.status] || "bg-muted text-muted-foreground"}>
                         {r.status}
                       </Badge>
@@ -1470,7 +1558,7 @@ const fetchProducts = async () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete order <span className="font-mono font-semibold">{orderToDelete?.id.slice(0, 8)}...</span>? 
+              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.id}</span>? 
               This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1486,6 +1574,70 @@ const fetchProducts = async () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* New Customer Dialog */}
+      <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Customer</DialogTitle>
+            <DialogDescription>Add a customer to this store and assign them to the current order.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Name *</Label>
+              <Input value={newCustName} onChange={(e) => setNewCustName(e.target.value)} placeholder="Customer name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone *</Label>
+              <Input value={newCustPhone} onChange={(e) => setNewCustPhone(e.target.value)} placeholder="Phone number" />
+            </div>
+            <div className="space-y-1">
+              <Label>Email</Label>
+              <Input type="email" value={newCustEmail} onChange={(e) => setNewCustEmail(e.target.value)} placeholder="Optional" />
+            </div>
+            <div className="space-y-1">
+              <Label>Address</Label>
+              <Textarea value={newCustAddress} onChange={(e) => setNewCustAddress(e.target.value)} placeholder="Optional" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewCustomerOpen(false)} disabled={creatingCustomer}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!newCustName.trim() || !newCustPhone.trim()) {
+                  toast.error("Name and phone are required");
+                  return;
+                }
+                if (!activeStore?.id || !effectiveUserId) return;
+                setCreatingCustomer(true);
+                const { data, error } = await supabase
+                  .from("customers")
+                  .insert({
+                    user_id: effectiveUserId,
+                    store_id: activeStore.id,
+                    name: newCustName.trim(),
+                    phone: newCustPhone.trim(),
+                    email: newCustEmail.trim() || null,
+                    address: newCustAddress.trim() || null,
+                  })
+                  .select("id, name, phone")
+                  .single();
+                setCreatingCustomer(false);
+                if (error || !data) { toast.error(error?.message || "Failed to create customer"); return; }
+                setCustomers((prev) => [{ id: data.id, name: data.name, phone: data.phone }, ...prev]);
+                setFormCustomerId(data.id);
+                setCustomerSearch(`${data.name}${data.phone ? ` · ${data.phone}` : ""}`);
+                setNewCustomerOpen(false);
+                setNewCustName(""); setNewCustPhone(""); setNewCustEmail(""); setNewCustAddress("");
+                toast.success("Customer created and selected");
+              }}
+              disabled={creatingCustomer}
+            >
+              {creatingCustomer ? "Saving..." : "Create & Select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
