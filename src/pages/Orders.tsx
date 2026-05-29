@@ -493,6 +493,7 @@ const fetchProducts = async () => {
     setFormProductName("");
     setFormProductId(null);
     setFormProductPrice("");
+    setFormVariationId(null);
     setFormDateTime(new Date().toISOString().slice(0, 16));
     setFormPaidAmount("");
     setFormCostPrice("");
