@@ -821,6 +821,8 @@ const POS = () => {
 
       setCart([]);
       setCustomerId("");
+      setCustomerSearch("");
+      setOrderDate(new Date());
       setPaymentOptions(new Set(["full"]));
       setDiscountValue("");
       setPaidAmount("");
