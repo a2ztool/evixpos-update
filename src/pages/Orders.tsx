@@ -1585,7 +1585,7 @@ const fetchProducts = async () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.id}</span>? 
+              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.order_number ?? orderToDelete?.id}</span>? 
               This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
