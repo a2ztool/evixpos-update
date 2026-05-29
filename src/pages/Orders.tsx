@@ -928,19 +928,44 @@ const fetchProducts = async () => {
           <div className="space-y-5 mt-6">
             {/* Customer */}
             <div className="space-y-2">
-              <Label>Customer *</Label>
-              <Select value={formCustomerId} onValueChange={setFormCustomerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Customer *</Label>
+                <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={() => setNewCustomerOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" /> New Customer
+                </Button>
+              </div>
+              <Input
+                placeholder="Search by name or phone..."
+                value={customerSearch}
+                onChange={(e) => { setCustomerSearch(e.target.value); if (formCustomerId) setFormCustomerId(""); }}
+              />
+              {customerSearch && !formCustomerId && (
+                <div className="border border-border rounded-md max-h-48 overflow-y-auto bg-popover">
+                  {customers
+                    .filter((c) => {
+                      const q = customerSearch.toLowerCase();
+                      return c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q);
+                    })
+                    .slice(0, 20)
+                    .map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
+                        onClick={() => { setFormCustomerId(c.id); setCustomerSearch(`${c.name}${c.phone ? ` · ${c.phone}` : ""}`); }}
+                      >
+                        <span>{c.name}</span>
+                        {c.phone && <span className="text-muted-foreground text-xs">{c.phone}</span>}
+                      </button>
+                    ))}
+                  {customers.filter((c) => {
+                    const q = customerSearch.toLowerCase();
+                    return c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q);
+                  }).length === 0 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">No matches. Use "New Customer".</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Product */}
@@ -949,7 +974,17 @@ const fetchProducts = async () => {
               <Input
                 placeholder={t.enterProductName}
                 value={formProductName}
-                onChange={(e) => setFormProductName(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormProductName(v);
+                  const m = products.find((p) => p.name.toLowerCase() === v.toLowerCase());
+                  if (m) {
+                    setFormProductId(m.id);
+                    setFormProductPrice(String(m.price ?? ""));
+                  } else {
+                    setFormProductId(null);
+                  }
+                }}
                 list="product-list"
               />
               <datalist id="product-list">
@@ -969,15 +1004,15 @@ const fetchProducts = async () => {
               />
             </div>
 
-            {/* Amount & Cost */}
+            {/* Product Price & Cost */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>{t.amountPaid} ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Label>Product Price ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="0"
-                  value={formAmountPaid}
-                  onChange={(e) => setFormAmountPaid(e.target.value)}
+                  value={formProductPrice}
+                  onChange={(e) => setFormProductPrice(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -988,6 +1023,23 @@ const fetchProducts = async () => {
                   value={formCostPrice}
                   onChange={(e) => setFormCostPrice(e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* Paid & Due */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Paid Amount ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={formPaidAmount}
+                  onChange={(e) => setFormPaidAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Due Amount ({CURRENCY_SYMBOLS[formCurrency] || formCurrency})</Label>
+                <Input type="number" value={dueAmount.toFixed(2)} readOnly className="bg-muted" />
               </div>
             </div>
 
