@@ -763,7 +763,7 @@ const POS = () => {
       let subsCreated = 0;
       let subsFailed = 0;
       if (subscriptionItems.length > 0) {
-        const now = new Date();
+        const now = new Date(orderDate);
         const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
         const subscriptionPayloads = subscriptionItems.flatMap((item) => {
           const startDate = new Date(now);
