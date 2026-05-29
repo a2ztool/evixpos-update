@@ -1511,6 +1511,19 @@ const fetchProducts = async () => {
         orderItems={invoiceItems}
       />
 
+      {/* Edit Order Dialog */}
+      <EditOrderDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        order={editOrder}
+        products={products}
+        variations={variations}
+        customers={customers}
+        paymentMethods={storePaymentMethods}
+        storeId={activeStore?.id ?? null}
+        onSaved={() => { fetchOrders(); }}
+      />
+
       {/* Import Orders Dialog */}
       <Dialog open={importOpen} onOpenChange={(open) => {
         setImportOpen(open);
