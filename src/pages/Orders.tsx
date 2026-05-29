@@ -1246,7 +1246,7 @@ const fetchProducts = async () => {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground">Order ID</span>
-                  <p className="font-mono text-xs">{selectedOrder.id}</p>
+                  <p className="font-mono text-xs">{selectedOrder.order_number ?? selectedOrder.id}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Customer</span>
