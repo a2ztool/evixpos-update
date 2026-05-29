@@ -529,6 +529,13 @@ const fetchProducts = async () => {
         (formProductId && p.id === formProductId) ||
         p.name.toLowerCase() === formProductName.toLowerCase()
     );
+    const productVariations = matched ? variations.filter((v) => v.product_id === matched.id) : [];
+    const selectedVariation = formVariationId ? productVariations.find((v) => v.id === formVariationId) : null;
+    if (matched && productVariations.length > 0 && !selectedVariation) {
+      toast.error("Please select a variation for this product");
+      setCreating(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("orders")
@@ -551,8 +558,9 @@ const fetchProducts = async () => {
         meta: {
           product_id: matched?.id ?? null,
           product_price: price,
-          variant_id: null,
-          variant_price: null,
+          variation_id: selectedVariation?.id ?? null,
+          variation_name: selectedVariation?.name ?? null,
+          variation_price: selectedVariation ? Number(selectedVariation.price) : null,
           paid_amount: paid,
           due_amount: due,
         } as any,
