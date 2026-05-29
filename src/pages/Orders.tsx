@@ -942,6 +942,9 @@ const fetchProducts = async () => {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openInvoice(o)} title="Invoice">
                           <FileText className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditOrder(o); setEditOpen(true); }} title="Edit Order">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         {o.status === "completed" && !["refunded"].includes(o.payment_status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openRefund(o)} title="Refund">
                             <RotateCcw className="h-4 w-4" />
