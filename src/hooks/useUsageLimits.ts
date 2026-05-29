@@ -26,6 +26,7 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
   const [perStore, setPerStore] = useState<UsageLimits["perStore"]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { getPlanLimits } = usePlansConfig();
   const baseLimits = getPlanLimits(plan ?? "free", (volume ?? 500) as VolumeStep);
@@ -60,19 +61,33 @@ export const useUsageLimits = (plan: string | null, volume?: VolumeStep | null):
 
   useEffect(() => { fetchUsage(); }, [fetchUsage]);
 
+  // Debounced refetch so realtime bursts (multiple inserts/updates in the
+  // same second) collapse into a single recompute instead of flickering the UI.
+  const scheduleRefetch = useCallback(() => {
+    if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = setTimeout(() => {
+      refetchTimerRef.current = null;
+      fetchUsage();
+    }, 600);
+  }, [fetchUsage]);
+
   useEffect(() => {
     if (!ownerId) return;
     if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
     const ch = supabase
       .channel(`usage-global-${ownerId}-${Date.now()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => fetchUsage())
-      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, () => fetchUsage())
-      .on("postgres_changes", { event: "*", schema: "public", table: "stores" }, () => fetchUsage())
-      .on("postgres_changes", { event: "*", schema: "public", table: "admin_plan_overrides", filter: `user_id=eq.${ownerId}` }, () => fetchUsage())
+      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `user_id=eq.${ownerId}` }, () => scheduleRefetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${ownerId}` }, () => scheduleRefetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "stores", filter: `user_id=eq.${ownerId}` }, () => scheduleRefetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_plan_overrides", filter: `user_id=eq.${ownerId}` }, () => scheduleRefetch())
       .subscribe();
     channelRef.current = ch;
-    return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [ownerId, fetchUsage]);
+    return () => {
+      if (refetchTimerRef.current) { clearTimeout(refetchTimerRef.current); refetchTimerRef.current = null; }
+      supabase.removeChannel(ch);
+      channelRef.current = null;
+    };
+  }, [ownerId, fetchUsage, scheduleRefetch]);
 
   const ov = override?.manual_override ? override : null;
   const maxStores = ov?.is_unlimited_store ? Infinity : (ov?.override_max_stores ?? baseLimits.maxStores);
