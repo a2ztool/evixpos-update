@@ -1020,9 +1020,18 @@ const fetchProducts = async () => {
                   const m = products.find((p) => p.name.toLowerCase() === v.toLowerCase());
                   if (m) {
                     setFormProductId(m.id);
-                    setFormProductPrice(String(m.price ?? ""));
+                    const vars = variations.filter((x) => x.product_id === m.id);
+                    if (vars.length > 0) {
+                      const first = vars[0];
+                      setFormVariationId(first.id);
+                      setFormProductPrice(String(first.price ?? m.price ?? ""));
+                    } else {
+                      setFormVariationId(null);
+                      setFormProductPrice(String(m.price ?? ""));
+                    }
                   } else {
                     setFormProductId(null);
+                    setFormVariationId(null);
                   }
                 }}
                 list="product-list"
@@ -1033,6 +1042,35 @@ const fetchProducts = async () => {
                 ))}
               </datalist>
             </div>
+
+            {/* Variation selector — only when product has variations */}
+            {formProductId && variations.some((v) => v.product_id === formProductId) && (
+              <div className="space-y-2">
+                <Label>Variation *</Label>
+                <Select
+                  value={formVariationId ?? ""}
+                  onValueChange={(val) => {
+                    setFormVariationId(val);
+                    const v = variations.find((x) => x.id === val);
+                    if (v) setFormProductPrice(String(v.price ?? ""));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select variation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variations
+                      .filter((v) => v.product_id === formProductId)
+                      .map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name} — {CURRENCY_SYMBOLS[formCurrency] || formCurrency}{Number(v.price).toFixed(2)}
+                          {v.is_subscription ? ` · ${v.duration_days}d` : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Date & Time */}
             <div className="space-y-2">
