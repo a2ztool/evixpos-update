@@ -898,6 +898,14 @@ const POS = () => {
 
   const selectedCustomer = customers.find(c => c.id === customerId);
   const buttonLabel = hasOpt("due") ? "Place Order (Add to Due)" : hasOpt("partial") ? "Place Order (Partial)" : "Place Order";
+  const filteredCustomers = useMemo(() => {
+    const q = customerSearch.trim().toLowerCase();
+    if (!q) return customers;
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q)
+    );
+  }, [customers, customerSearch]);
   const receiptSymbol = receiptData ? (receiptData.currency === "BDT" ? "৳" : receiptData.currency === "INR" ? "₹" : "$") : symbol;
 
   const CHECKOUT_STEPS = [
