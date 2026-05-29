@@ -1519,7 +1519,7 @@ const fetchProducts = async () => {
                 return (
                   <div key={r.id} className="rounded-xl border border-border p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs text-muted-foreground">Order #{r.order_id?.slice(0, 8)}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground break-all" title={r.order_id}>{r.order_id}</span>
                       <Badge className={refundStatusColor[r.status] || "bg-muted text-muted-foreground"}>
                         {r.status}
                       </Badge>
@@ -1558,7 +1558,7 @@ const fetchProducts = async () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete order <span className="font-mono font-semibold">{orderToDelete?.id.slice(0, 8)}...</span>? 
+              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.id}</span>? 
               This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1574,6 +1574,70 @@ const fetchProducts = async () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* New Customer Dialog */}
+      <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Customer</DialogTitle>
+            <DialogDescription>Add a customer to this store and assign them to the current order.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Name *</Label>
+              <Input value={newCustName} onChange={(e) => setNewCustName(e.target.value)} placeholder="Customer name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone *</Label>
+              <Input value={newCustPhone} onChange={(e) => setNewCustPhone(e.target.value)} placeholder="Phone number" />
+            </div>
+            <div className="space-y-1">
+              <Label>Email</Label>
+              <Input type="email" value={newCustEmail} onChange={(e) => setNewCustEmail(e.target.value)} placeholder="Optional" />
+            </div>
+            <div className="space-y-1">
+              <Label>Address</Label>
+              <Textarea value={newCustAddress} onChange={(e) => setNewCustAddress(e.target.value)} placeholder="Optional" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewCustomerOpen(false)} disabled={creatingCustomer}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!newCustName.trim() || !newCustPhone.trim()) {
+                  toast.error("Name and phone are required");
+                  return;
+                }
+                if (!activeStore?.id || !effectiveUserId) return;
+                setCreatingCustomer(true);
+                const { data, error } = await supabase
+                  .from("customers")
+                  .insert({
+                    user_id: effectiveUserId,
+                    store_id: activeStore.id,
+                    name: newCustName.trim(),
+                    phone: newCustPhone.trim(),
+                    email: newCustEmail.trim() || null,
+                    address: newCustAddress.trim() || null,
+                  })
+                  .select("id, name, phone")
+                  .single();
+                setCreatingCustomer(false);
+                if (error || !data) { toast.error(error?.message || "Failed to create customer"); return; }
+                setCustomers((prev) => [{ id: data.id, name: data.name, phone: data.phone }, ...prev]);
+                setFormCustomerId(data.id);
+                setCustomerSearch(`${data.name}${data.phone ? ` · ${data.phone}` : ""}`);
+                setNewCustomerOpen(false);
+                setNewCustName(""); setNewCustPhone(""); setNewCustEmail(""); setNewCustAddress("");
+                toast.success("Customer created and selected");
+              }}
+              disabled={creatingCustomer}
+            >
+              {creatingCustomer ? "Saving..." : "Create & Select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
