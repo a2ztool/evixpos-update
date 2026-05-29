@@ -850,7 +850,7 @@ const fetchProducts = async () => {
               <TableBody>
                 {filtered.map((o) => (
                   <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs">{o.id.slice(0, 8)}...</TableCell>
+                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.id}>{o.id}</TableCell>
                     <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
                     <TableCell className="font-semibold">
                       {o.payment_currency} {Number(o.total_amount).toFixed(2)}
