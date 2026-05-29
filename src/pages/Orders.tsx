@@ -592,15 +592,19 @@ const fetchProducts = async () => {
           "7 Days": 7, "15 Days": 15, "1 Month": 30, "2 Month": 60,
           "3 Month": 90, "6 Month": 180, "12 Month": 365,
         };
+        const durationDays = selectedVariation
+          ? Number(selectedVariation.duration_days) || 30
+          : (VARIATIONS[formSubVariation] || 30);
+        const variationLabel = selectedVariation?.name || formSubVariation;
         const startDate = format(new Date(), "yyyy-MM-dd");
-        const endDate = format(addDays(new Date(), VARIATIONS[formSubVariation] || 30), "yyyy-MM-dd");
+        const endDate = format(addDays(new Date(), durationDays), "yyyy-MM-dd");
         await supabase.from("subscriptions").insert({
           user_id: effectiveUserId!,
           store_id: activeStore?.id,
           order_id: data.id,
           customer_id: formCustomerId,
           product_name: formProductName || "Order Subscription",
-          variation: formSubVariation,
+          variation: variationLabel,
           start_date: startDate,
           end_date: endDate,
           price: finalTotal,
