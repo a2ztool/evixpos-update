@@ -1291,9 +1291,24 @@ const IncomeExpense = () => {
 
               <div className="space-y-1.5">
                 <Label>Category</Label>
-                <Select value={form.category} onValueChange={(v) => { setForm({ ...form, category: v }); formValidation.clearField("category"); }}>
+                <Select
+                  value={form.category}
+                  onValueChange={(v) => {
+                    if (v === "__create__") {
+                      setNewCatType(form.type);
+                      setNewCatName("");
+                      setCatDialogOpen(true);
+                      return;
+                    }
+                    setForm({ ...form, category: v });
+                    formValidation.clearField("category");
+                  }}
+                >
                   <SelectTrigger className={`rounded-xl ${formValidation.getError("category") ? "border-destructive" : ""}`}><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__create__" className="text-primary font-medium">
+                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Create Category</span>
+                    </SelectItem>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -1305,6 +1320,22 @@ const IncomeExpense = () => {
                   className="text-sm rounded-xl"
                 />
                 {formValidation.getError("category") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Transaction Fee ({symbol}) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={form.fee}
+                  onChange={(e) => setForm({ ...form, fee: e.target.value })}
+                  placeholder="0.00"
+                  className="rounded-xl"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {form.type === "income"
+                    ? "Provider fee deducted from the received amount. Logged as a separate Expense on this account."
+                    : "Extra processing fee. Logged as a separate Expense on this account."}
+                </p>
               </div>
 
               <div className="space-y-2">
