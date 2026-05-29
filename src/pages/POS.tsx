@@ -861,7 +861,7 @@ const POS = () => {
                 currency: "BDT",
                 payment_status: computedPaymentStatus,
                 payment_method: payMethod,
-                order_date: new Date().toLocaleDateString(),
+                order_date: orderDate.toLocaleDateString(),
                 status: "completed",
                 notes: orderNotes,
                 discount: discAmount,
