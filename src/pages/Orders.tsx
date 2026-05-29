@@ -647,6 +647,7 @@ const fetchProducts = async () => {
         const q = search.toLowerCase();
         if (
           !o.id.toLowerCase().includes(q) &&
+          !String(o.order_number ?? "").toLowerCase().includes(q) &&
           !(o.customers?.name ?? "").toLowerCase().includes(q)
         )
           return false;
