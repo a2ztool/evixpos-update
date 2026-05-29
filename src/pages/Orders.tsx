@@ -448,18 +448,27 @@ const fetchProducts = async () => {
   };
 
   const profit = useMemo(() => {
-    const amount = parseFloat(formAmountPaid) || 0;
+    const price = parseFloat(formProductPrice) || 0;
     const cost = parseFloat(formCostPrice) || 0;
     const disc = parseFloat(formDiscount) || 0;
-    const discountVal = formDiscountType === "percentage" ? (amount * disc) / 100 : disc;
-    return amount - cost - discountVal;
-  }, [formAmountPaid, formCostPrice, formDiscount, formDiscountType]);
+    const discountVal = formDiscountType === "percentage" ? (price * disc) / 100 : disc;
+    return price - cost - discountVal;
+  }, [formProductPrice, formCostPrice, formDiscount, formDiscountType]);
+
+  const dueAmount = useMemo(() => {
+    const price = parseFloat(formProductPrice) || 0;
+    const paid = parseFloat(formPaidAmount) || 0;
+    return Math.max(price - paid, 0);
+  }, [formProductPrice, formPaidAmount]);
 
   const resetForm = () => {
     setFormCustomerId("");
+    setCustomerSearch("");
     setFormProductName("");
+    setFormProductId(null);
+    setFormProductPrice("");
     setFormDateTime(new Date().toISOString().slice(0, 16));
-    setFormAmountPaid("");
+    setFormPaidAmount("");
     setFormCostPrice("");
     setFormDiscount("0");
     setFormDiscountType("fixed");
@@ -474,15 +483,25 @@ const fetchProducts = async () => {
 
   const handleCreateOrder = async () => {
     if (!user) return;
-    const amount = parseFloat(formAmountPaid) || 0;
-    if (amount <= 0) {
-      toast.error("Amount must be greater than 0");
+    const price = parseFloat(formProductPrice) || 0;
+    const paid = parseFloat(formPaidAmount) || 0;
+    if (price <= 0) {
+      toast.error("Product price must be greater than 0");
       return;
     }
 
     setCreating(true);
     const disc = parseFloat(formDiscount) || 0;
-    const discountVal = formDiscountType === "percentage" ? (amount * disc) / 100 : disc;
+    const discountVal = formDiscountType === "percentage" ? (price * disc) / 100 : disc;
+    const finalTotal = price - discountVal;
+    const due = Math.max(finalTotal - paid, 0);
+    const paymentStatus =
+      paid <= 0 ? "unpaid" : paid >= finalTotal ? "paid" : "partial";
+    const matched = products.find(
+      (p) =>
+        (formProductId && p.id === formProductId) ||
+        p.name.toLowerCase() === formProductName.toLowerCase()
+    );
 
     const { data, error } = await supabase
       .from("orders")
@@ -490,7 +509,7 @@ const fetchProducts = async () => {
         user_id: effectiveUserId!,
         store_id: activeStore?.id,
         customer_id: formCustomerId || null,
-        total_amount: amount - discountVal,
+        total_amount: finalTotal,
         cost_price: parseFloat(formCostPrice) || 0,
         discount: disc,
         discount_type: formDiscountType,
@@ -499,8 +518,17 @@ const fetchProducts = async () => {
         payment_currency: formCurrency,
         notes: formNotes,
         status: formStatus as "pending" | "completed" | "cancelled",
-        payment_status: formStatus === "completed" ? "paid" : "unpaid",
+        payment_status:
+          formStatus === "completed" ? paymentStatus : "unpaid",
         created_at: new Date(formDateTime).toISOString(),
+        meta: {
+          product_id: matched?.id ?? null,
+          product_price: price,
+          variant_id: null,
+          variant_price: null,
+          paid_amount: paid,
+          due_amount: due,
+        } as any,
       })
       .select()
       .single();
@@ -508,23 +536,19 @@ const fetchProducts = async () => {
     if (error) {
       toast.error(error.message);
     } else if (data) {
-      // Find matching product and create order item
-      const matchedProduct = products.find(
-        (p) => p.name.toLowerCase() === formProductName.toLowerCase()
-      );
-      if (matchedProduct) {
+      if (matched) {
         await supabase.from("order_items").insert({
           order_id: data.id,
-          product_id: matchedProduct.id,
+          product_id: matched.id,
           quantity: 1,
-          price: amount,
+          price: price,
         });
         // Decrement stock
         await supabase.rpc("has_role", { _user_id: effectiveUserId!, _role: "user" }); // no-op, just to keep TS happy
         await supabase
           .from("products")
-          .update({ stock: matchedProduct.stock !== undefined ? matchedProduct.stock : 0 })
-          .eq("id", matchedProduct.id);
+          .update({ stock: matched.stock !== undefined ? matched.stock : 0 })
+          .eq("id", matched.id);
       }
 
       // Create subscription if checkbox is checked
@@ -544,7 +568,7 @@ const fetchProducts = async () => {
           variation: formSubVariation,
           start_date: startDate,
           end_date: endDate,
-          price: amount - discountVal,
+          price: finalTotal,
           cost_price: parseFloat(formCostPrice) || 0,
           notes: `Created from order ${data.id}`,
           status: "active",
