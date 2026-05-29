@@ -248,7 +248,20 @@ const Orders = () => {
 const fetchProducts = async () => {
     if (!activeStore) return;
     const { data } = await supabase.from("products").select("id, name, price, stock").eq("store_id", activeStore.id);
-    if (data) setProducts(data);
+    if (data) {
+      setProducts(data);
+      const ids = data.map((p) => p.id);
+      if (ids.length > 0) {
+        const { data: vars } = await (supabase
+          .from("product_variations" as any)
+          .select("*")
+          .in("product_id", ids)
+          .order("sort_order") as any);
+        setVariations((vars ?? []) as ProductVariation[]);
+      } else {
+        setVariations([]);
+      }
+    }
   };
 
   const fetchRefunds = async () => {
