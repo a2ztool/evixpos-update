@@ -1373,6 +1373,146 @@ const IncomeExpense = () => {
             </form>
           </SheetContent>
         </Sheet>
+
+        {/* Fund Transfer Sheet */}
+        <Sheet open={transferOpen} onOpenChange={setTransferOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <ArrowLeftRight className="h-5 w-5 text-primary" /> Fund Transfer
+              </SheetTitle>
+            </SheetHeader>
+            <form onSubmit={handleTransferSubmit} className="space-y-5 mt-6">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5 text-destructive" /> From Account *</Label>
+                <Select value={transferForm.from_account} onValueChange={(v) => setTransferForm({ ...transferForm, from_account: v })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select source account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => {
+                      const b = accountBalances[a.id] || { income: 0, expense: 0 };
+                      const bal = b.income - b.expense;
+                      return (
+                        <SelectItem key={a.id} value={a.id}>
+                          <span className="flex items-center justify-between gap-3 w-full">
+                            <span className="font-medium">{a.name}</span>
+                            <span className={`text-xs tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                              {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                            </span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5 text-green-600" /> To Account *</Label>
+                <Select value={transferForm.to_account} onValueChange={(v) => setTransferForm({ ...transferForm, to_account: v })}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select destination account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(a => a.id !== transferForm.from_account).map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Amount ({symbol}) *</Label>
+                  <Input type="number" step="0.01" min="0" value={transferForm.amount}
+                    onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
+                    placeholder="0.00" className="text-lg font-semibold rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fee ({symbol})</Label>
+                  <Input type="number" step="0.01" min="0" value={transferForm.fee}
+                    onChange={(e) => setTransferForm({ ...transferForm, fee: e.target.value })}
+                    placeholder="0.00" className="rounded-xl" />
+                </div>
+              </div>
+
+              {Number(transferForm.amount) > 0 && (
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">From account deducted</span>
+                    <span className="font-semibold text-destructive tabular-nums">-{formatCurrency(Number(transferForm.amount) + Number(transferForm.fee || 0), 2)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">To account added</span>
+                    <span className="font-semibold text-green-600 tabular-nums">+{formatCurrency(Number(transferForm.amount), 2)}</span></div>
+                  {Number(transferForm.fee || 0) > 0 && (
+                    <div className="flex justify-between"><span className="text-muted-foreground">Fee (logged as expense)</span>
+                      <span className="font-semibold tabular-nums">{formatCurrency(Number(transferForm.fee), 2)}</span></div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {format(transferForm.created_at, "dd MMM yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={transferForm.created_at}
+                      onSelect={(d) => d && setTransferForm({ ...transferForm, created_at: d })} className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Note</Label>
+                <Textarea rows={2} value={transferForm.note}
+                  onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })}
+                  placeholder="Reason for transfer..." className="rounded-xl" />
+              </div>
+
+              <Button type="submit" disabled={transferSubmitting} className="w-full rounded-xl" size="lg">
+                {transferSubmitting ? "Saving..." : "Record Transfer"}
+              </Button>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Create Category Dialog */}
+        <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Plus className="h-4 w-4" /> Create Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Category Name</Label>
+                <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="e.g. Facebook Ads, Domain Cost..." className="rounded-xl" autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateCategory(); } }} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={newCatType === "income" ? "default" : "outline"}
+                    className={`rounded-xl ${newCatType === "income" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                    onClick={() => setNewCatType("income")}>
+                    <TrendingUp className="h-4 w-4 mr-1.5" /> Income
+                  </Button>
+                  <Button type="button" variant={newCatType === "expense" ? "default" : "outline"}
+                    className={`rounded-xl ${newCatType === "expense" ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                    onClick={() => setNewCatType("expense")}>
+                    <TrendingDown className="h-4 w-4 mr-1.5" /> Expense
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCatDialogOpen(false)} className="rounded-xl">Cancel</Button>
+              <Button onClick={handleCreateCategory} disabled={creatingCat} className="rounded-xl">
+                {creatingCat ? "Saving..." : "Save Category"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
