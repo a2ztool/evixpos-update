@@ -363,6 +363,8 @@ const IncomeExpense = () => {
       return;
     }
     if (!ok) { toast.error("Please fix the errors below"); return; }
+    const feeAmt = Number(form.fee || 0);
+    if (form.fee && (isNaN(feeAmt) || feeAmt < 0)) { toast.error("Invalid transaction fee"); return; }
     const payload = {
       type: form.type, amount: Number(form.amount), category: form.category,
       note: form.note, is_paid: true, created_at: form.created_at.toISOString(),
@@ -376,8 +378,104 @@ const IncomeExpense = () => {
         ...payload, user_id: effectiveUserId!, store_id: activeStore?.id
       });
       if (error) toast.error(error.message); else toast.success("Transaction added!");
+      // Record optional transaction fee as a separate expense on the same account
+      if (!error && feeAmt > 0) {
+        const { error: feeErr } = await supabase.from("transactions").insert({
+          type: "expense",
+          amount: feeAmt,
+          category: FEE_CATEGORY,
+          note: `Fee for ${form.type} ${form.category ? "(" + form.category + ")" : ""}${form.note ? " — " + form.note : ""}`.trim(),
+          is_paid: true,
+          created_at: form.created_at.toISOString(),
+          account_id: formAccountId,
+          user_id: effectiveUserId!,
+          store_id: activeStore?.id,
+        });
+        if (feeErr) toast.error("Fee not saved: " + feeErr.message);
+      }
     }
     setSheetOpen(false);
+    fetchData();
+  };
+
+  const handleCreateCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) { toast.error("Enter a category name"); return; }
+    if (!activeStore || !effectiveUserId) { toast.error("No active store"); return; }
+    setCreatingCat(true);
+    const { data, error } = await supabase
+      .from("transaction_categories")
+      .insert({ name, type: newCatType, store_id: activeStore.id, user_id: effectiveUserId })
+      .select("id, name, type")
+      .maybeSingle();
+    setCreatingCat(false);
+    if (error) { toast.error(error.message); return; }
+    if (data) {
+      setCustomCategories((prev) => [...prev, data as CustomCategory]);
+      // Auto-select if it matches the form type
+      if ((data as CustomCategory).type === form.type) {
+        setForm((f) => ({ ...f, category: (data as CustomCategory).name }));
+        formValidation.clearField("category");
+      }
+      toast.success("Category created");
+    }
+    setNewCatName("");
+    setCatDialogOpen(false);
+  };
+
+  const openTransfer = () => {
+    setTransferForm({
+      from_account: accounts[0]?.id || "",
+      to_account: accounts[1]?.id || "",
+      amount: "", fee: "", note: "", created_at: new Date(),
+    });
+    setTransferOpen(true);
+  };
+
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeStore || !effectiveUserId) return;
+    const amt = Number(transferForm.amount);
+    const fee = Number(transferForm.fee || 0);
+    if (!transferForm.from_account || !transferForm.to_account) { toast.error("Select both accounts"); return; }
+    if (transferForm.from_account === transferForm.to_account) { toast.error("From and To accounts must differ"); return; }
+    if (!amt || amt <= 0) { toast.error("Enter a valid transfer amount"); return; }
+    if (transferForm.fee && (isNaN(fee) || fee < 0)) { toast.error("Invalid transaction fee"); return; }
+
+    setTransferSubmitting(true);
+    const transferId = (globalThis.crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+    const fromName = accounts.find(a => a.id === transferForm.from_account)?.name || transferForm.from_account;
+    const toName = accounts.find(a => a.id === transferForm.to_account)?.name || transferForm.to_account;
+    const ts = transferForm.created_at.toISOString();
+    const noteBase = transferForm.note ? ` — ${transferForm.note}` : "";
+
+    const rows: any[] = [
+      {
+        type: "expense", amount: amt, category: TRANSFER_OUT_CATEGORY,
+        note: `Transfer to ${toName}${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.from_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      },
+      {
+        type: "income", amount: amt, category: TRANSFER_IN_CATEGORY,
+        note: `Transfer from ${fromName}${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.to_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      },
+    ];
+    if (fee > 0) {
+      rows.push({
+        type: "expense", amount: fee, category: FEE_CATEGORY,
+        note: `Transfer fee (${fromName} → ${toName})${noteBase}`, is_paid: true, created_at: ts,
+        account_id: transferForm.from_account, transfer_id: transferId,
+        user_id: effectiveUserId, store_id: activeStore.id,
+      });
+    }
+    const { error } = await supabase.from("transactions").insert(rows);
+    setTransferSubmitting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Fund transfer recorded");
+    setTransferOpen(false);
     fetchData();
   };
 
@@ -404,7 +502,11 @@ const IncomeExpense = () => {
     toast.success("CSV exported!");
   };
 
-  const currentCategories = form.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const currentCategories = useMemo(() => {
+    const builtins = form.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    const custom = customCategories.filter(c => c.type === form.type).map(c => c.name);
+    return Array.from(new Set([...builtins, ...custom]));
+  }, [form.type, customCategories]);
 
   return (
     <DashboardLayout>
