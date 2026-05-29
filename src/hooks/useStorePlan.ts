@@ -71,6 +71,7 @@ export const useStorePlan = () => {
   const [override, setOverride] = useState<any>(null);
   const initialLoadDone = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelInstanceIdRef = useRef(
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -148,6 +149,16 @@ export const useStorePlan = () => {
     fetchPlan();
   }, [fetchPlan]);
 
+  // Debounced realtime refetch — avoid fetch storms when many subscription
+  // rows (customer subscriptions, status flips, etc.) update in a burst.
+  const scheduleRealtimeRefetch = useCallback(() => {
+    if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = setTimeout(() => {
+      refetchTimerRef.current = null;
+      fetchPlan(true);
+    }, 600);
+  }, [fetchPlan]);
+
   // Realtime subscription for instant plan changes (user-level)
   useEffect(() => {
     if (channelRef.current) {
@@ -168,8 +179,16 @@ export const useStorePlan = () => {
           table: "subscriptions",
           filter: `user_id=eq.${planUserId}`,
         },
-        () => {
-          fetchPlan(true);
+        (payload: any) => {
+          // Only react when the user-level subscription row changes
+          // (customer_id IS NULL). Customer subscriptions for this user's
+          // customers also share user_id and would otherwise fire constantly.
+          const newRow = payload?.new ?? {};
+          const oldRow = payload?.old ?? {};
+          const isUserLevel =
+            newRow?.customer_id == null && oldRow?.customer_id == null;
+          if (!isUserLevel) return;
+          scheduleRealtimeRefetch();
         }
       )
       .on(
@@ -180,13 +199,17 @@ export const useStorePlan = () => {
           table: "admin_plan_overrides",
           filter: `user_id=eq.${planUserId}`,
         },
-        () => { fetchPlan(true); }
+        () => { scheduleRealtimeRefetch(); }
       )
       .subscribe();
 
     channelRef.current = channel;
 
     return () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current);
+        refetchTimerRef.current = null;
+      }
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -195,7 +218,7 @@ export const useStorePlan = () => {
 
       supabase.removeChannel(channel);
     };
-  }, [planUserId, fetchPlan]);
+  }, [planUserId, fetchPlan, scheduleRealtimeRefetch]);
 
   const ov = override?.manual_override ? override : null;
   const isUnlimited = !!(ov && (ov.is_unlimited_store || ov.is_unlimited_customer || ov.is_unlimited_product));
