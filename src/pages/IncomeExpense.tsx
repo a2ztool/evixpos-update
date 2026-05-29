@@ -551,6 +551,9 @@ const IncomeExpense = () => {
                 <Button variant="outline" size="sm" onClick={() => openAdd("expense")} className="gap-1.5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
                   <TrendingDown className="h-4 w-4" /> Expense
                 </Button>
+                <Button variant="outline" size="sm" onClick={openTransfer} className="gap-1.5 rounded-xl border-primary/40 text-primary hover:bg-primary/10" disabled={accounts.length < 2}>
+                  <ArrowLeftRight className="h-4 w-4" /> Transfer
+                </Button>
                 <Button size="sm" onClick={() => openAdd("income")} className="gap-1.5 rounded-xl shadow-md bg-green-600 hover:bg-green-700 text-white">
                   <TrendingUp className="h-4 w-4" /> Income
                 </Button>
