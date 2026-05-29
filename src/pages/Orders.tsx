@@ -197,6 +197,10 @@ const Orders = () => {
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Edit order
+  const [editOpen, setEditOpen] = useState(false);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+
   // Dynamic payment methods & currency from store settings
   const [storePaymentMethods, setStorePaymentMethods] = useState<NormalizedPaymentMethod[]>([]);
   const [defaultCurrency, setDefaultCurrency] = useState("BDT");
