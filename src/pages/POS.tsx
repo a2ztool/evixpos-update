@@ -1423,10 +1423,12 @@ const POS = () => {
         </div>
 
         {/* Right: Cart Panel - desktop */}
-        <div className="hidden lg:flex border-l border-border/50 bg-card flex-col h-full">
-          <ScrollArea className="flex-1"><div className="p-5 space-y-4">{renderCartContent()}</div></ScrollArea>
-          <div className="border-t border-border/50 p-5 bg-card">{renderCartTotals()}</div>
-        </div>
+        {isLgUp && (
+          <div className="flex border-l border-border/50 bg-card flex-col h-full">
+            <ScrollArea className="flex-1"><div className="p-5 space-y-4">{renderCartContent()}</div></ScrollArea>
+            <div className="border-t border-border/50 p-5 bg-card">{renderCartTotals()}</div>
+          </div>
+        )}
       </div>
 
       {/* Mobile cart drawer */}
@@ -1437,7 +1439,7 @@ const POS = () => {
               <DrawerTitle className="flex items-center gap-2 text-base"><ShoppingCart className="h-5 w-5 text-primary" />Cart ({cart.reduce((s, i) => s + i.quantity, 0)} items)</DrawerTitle>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileCartOpen(false)}><X className="h-4 w-4" /></Button>
             </DrawerHeader>
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">{renderCartContent()}</div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">{!isLgUp && renderCartContent()}</div>
             <div className="flex-shrink-0 border-t border-border/50 p-4 bg-card safe-area-bottom">{renderCartTotals()}</div>
           </div>
         </DrawerContent>
