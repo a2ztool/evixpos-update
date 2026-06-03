@@ -976,14 +976,19 @@ const POS = () => {
 
       <div className="space-y-1.5">
         <span className="text-sm font-medium flex items-center gap-1.5"><CalendarIcon className="h-3.5 w-3.5" /> Order Date</span>
-        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+        <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen} modal={true}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-start text-left font-normal h-9">
               <CalendarIcon className="mr-2 h-3.5 w-3.5" />
               {formatDate(orderDate, "PPP")}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent
+            className="w-auto p-0 z-[100]"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
             <Calendar
               mode="single"
               selected={orderDate}
