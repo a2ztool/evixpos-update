@@ -138,6 +138,15 @@ const POS = () => {
   const [paidAmount, setPaidAmount] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [isLgUp, setIsLgUp] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : true
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsLgUp(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   // Variations
   const [allVariations, setAllVariations] = useState<ProductVariation[]>([]);
