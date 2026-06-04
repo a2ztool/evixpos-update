@@ -713,6 +713,42 @@ const WhatsAppPage = () => {
                       Production-এ <strong>Permanent Token</strong> ব্যবহার করুন। Temporary token ২৪ ঘন্টা পর expire হয়।
                     </p>
                   </div>
+                  {wa && tokenStatus.valid !== null && (
+                    <div
+                      className={`flex items-start gap-2.5 p-3 rounded-xl border ${
+                        tokenStatus.valid === false
+                          ? "bg-red-500/5 border-red-500/30"
+                          : tokenStatus.expiresInDays !== null && tokenStatus.expiresInDays <= 7 && !tokenStatus.isPermanent
+                          ? "bg-amber-500/10 border-amber-500/40"
+                          : "bg-green-500/5 border-green-500/30"
+                      }`}
+                    >
+                      {tokenStatus.valid === false ? (
+                        <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                      ) : tokenStatus.expiresInDays !== null && tokenStatus.expiresInDays <= 7 && !tokenStatus.isPermanent ? (
+                        <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                      ) : (
+                        <Shield className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground">
+                          {tokenStatus.valid === false ? "Token Problem" : "Token Status"}
+                        </p>
+                        <p className="text-xs text-foreground/80 mt-0.5 break-words">{tokenStatus.message}</p>
+                        {tokenStatus.phoneDisplay && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">📱 {tokenStatus.phoneDisplay}</p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm" variant="ghost"
+                        onClick={() => verifyToken(false)}
+                        disabled={tokenStatus.checking || testing}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <RefreshCw className={`h-3 w-3 ${tokenStatus.checking ? "animate-spin" : ""}`} />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
