@@ -74,9 +74,18 @@ Deno.serve(async (req) => {
     const waData = await waResponse.json();
 
     if (!waResponse.ok) {
-      const errMsg = waData?.error?.message || "WhatsApp API error";
+      let errMsg = waData?.error?.message || "WhatsApp API error";
+      const code = waData?.error?.code;
+      if (code === 190) {
+        errMsg = "WhatsApp access token invalid or expired. Please update your token in Integrations → WhatsApp.";
+      } else if (code === 100) {
+        errMsg = `${errMsg} (check Phone Number ID & recipient format)`;
+      }
       console.error("WhatsApp API error:", JSON.stringify(waData));
-      throw new Error(errMsg);
+      return new Response(
+        JSON.stringify({ error: errMsg, code }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
