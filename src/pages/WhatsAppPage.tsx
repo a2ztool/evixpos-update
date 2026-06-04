@@ -84,6 +84,16 @@ const WhatsAppPage = () => {
 
   useEffect(() => { fetchData(); }, [effectiveUserId, activeStore]);
 
+  // Auto-verify token whenever active WhatsApp integration loads
+  useEffect(() => {
+    if (wa && wa.status === "active") {
+      verifyToken(true);
+    } else {
+      setTokenStatus({ checking: false, valid: null, expiresInDays: null, isPermanent: false, message: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wa?.id, wa?.status, wa?.api_key]);
+
   const save = async () => {
     if (!effectiveUserId || !form.api_key.trim() || !form.phone_number.trim()) {
       toast.error("Access Token ও Phone Number ID দুটোই দিতে হবে");
