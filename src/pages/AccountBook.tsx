@@ -230,7 +230,7 @@ const AccountBook = () => {
         allIncome, allExpense, allCount,
         periodIncome, periodExpense, periodCount,
       };
-    }).filter((a) => a.id !== UNASSIGNED || a.allCount > 0);
+    }).filter((a) => a.id !== UNASSIGNED);
   }, [enriched, accounts, dateRange]);
 
   const totals = useMemo(() => {
