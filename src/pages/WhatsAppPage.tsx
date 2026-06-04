@@ -54,6 +54,15 @@ const WhatsAppPage = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<{
+    checking: boolean;
+    valid: boolean | null;
+    expiresInDays: number | null;
+    isPermanent: boolean;
+    message: string;
+    phoneDisplay?: string;
+    checkedAt?: number;
+  }>({ checking: false, valid: null, expiresInDays: null, isPermanent: false, message: "" });
   const [guideOpen, setGuideOpen] = useState(false);
   const [logSearch, setLogSearch] = useState("");
   const [logFilter, setLogFilter] = useState("all");
@@ -108,31 +117,69 @@ const WhatsAppPage = () => {
     fetchData();
   };
 
-  const testConnection = async () => {
-    if (!wa || wa.status !== "active") {
-      toast.error("Please save and activate first");
-      return;
+  const verifyToken = async (silent = false): Promise<boolean> => {
+    if (!wa) {
+      if (!silent) toast.error("Please save credentials first");
+      return false;
     }
     setTesting(true);
+    setTokenStatus((s) => ({ ...s, checking: true }));
     try {
-      // Test by calling the graph API to check the phone number
-      const res = await fetch(`https://graph.facebook.com/v19.0/${wa.phone_number}`, {
-        headers: { Authorization: `Bearer ${wa.api_key}` },
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("verify-whatsapp-token", {
+        body: { store_id: activeStore?.id },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
       });
-      const data = await res.json();
-      if (res.ok && data.id) {
-        toast.success(`✅ Connection verified! Phone: ${data.display_phone_number || data.id}`);
-      } else {
-        toast.error(`❌ Connection failed: ${data?.error?.message || "Invalid credentials"}`);
+      const data: any = res.data || {};
+      if (res.error || !data.valid) {
+        const msg = data.error || res.error?.message || "Verification failed";
+        setTokenStatus({
+          checking: false, valid: false, expiresInDays: null, isPermanent: false,
+          message: msg, checkedAt: Date.now(),
+        });
+        if (!silent) toast.error(`❌ ${msg}`);
+        return false;
       }
-    } catch {
-      toast.error("❌ Connection test failed — check your credentials");
+      const days = data.expires_in_days;
+      const perm = !!data.is_permanent;
+      let msg = "";
+      if (perm) msg = "Permanent token — no expiry";
+      else if (days === null || days === undefined) msg = "Token valid";
+      else if (days <= 0) msg = "Token expired";
+      else if (days <= 7) msg = `Expires in ${days} day${days === 1 ? "" : "s"}`;
+      else msg = `Valid · ${days} days remaining`;
+      setTokenStatus({
+        checking: false, valid: days === 0 ? false : true,
+        expiresInDays: days ?? null, isPermanent: perm,
+        message: msg, phoneDisplay: data.phone_display, checkedAt: Date.now(),
+      });
+      if (!silent) {
+        if (days !== null && days !== undefined && days <= 7 && !perm) {
+          toast.warning(`⚠️ Token ${msg.toLowerCase()} — regenerate soon`);
+        } else {
+          toast.success(`✅ ${msg}${data.phone_display ? ` · ${data.phone_display}` : ""}`);
+        }
+      }
+      return true;
+    } catch (err: any) {
+      setTokenStatus({
+        checking: false, valid: false, expiresInDays: null, isPermanent: false,
+        message: err.message || "Verification failed", checkedAt: Date.now(),
+      });
+      if (!silent) toast.error("❌ Verification failed");
+      return false;
+    } finally {
+      setTesting(false);
     }
-    setTesting(false);
   };
+  const testConnection = () => verifyToken(false);
 
   const sendSingle = async () => {
     if (!sendForm.phone || !sendForm.message) return;
+    if (tokenStatus.valid === false) {
+      toast.error("Token invalid — please verify/regenerate first");
+      return;
+    }
     setSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
