@@ -47,6 +47,8 @@ interface Due {
   created_at: string;
   customer_name: string | null;
   phone_number: string | null;
+  order_id?: string | null;
+  orders?: { order_code: string | null; order_number: number | null } | null;
 }
 
 interface DuePayment {
@@ -136,7 +138,7 @@ const DueBook = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("transactions")
-      .select("*")
+      .select("*, orders(order_code, order_number)")
       .eq("store_id", activeStore.id)
       .not("due_date", "is", null)
       .order("due_date", { ascending: true });
@@ -276,7 +278,15 @@ const DueBook = () => {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((d) =>
-        [d.category, d.note].some((f) => (f || "").toLowerCase().includes(q))
+        [
+          d.category,
+          d.note,
+          d.customer_name,
+          d.phone_number,
+          d.orders?.order_code,
+          d.orders?.order_number != null ? String(d.orders?.order_number) : null,
+          d.order_id,
+        ].some((f) => (f || "").toString().toLowerCase().includes(q))
       );
     }
     return result;
@@ -857,7 +867,7 @@ const DueBook = () => {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search by person, phone or note..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 rounded-xl" />
+                    <Input placeholder="Search by order ID, person, phone or note..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 rounded-xl" />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-full sm:w-[140px] rounded-xl"><SelectValue /></SelectTrigger>
