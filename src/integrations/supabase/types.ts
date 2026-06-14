@@ -1917,6 +1917,7 @@ export type Database = {
           id: string
           meta: Json | null
           notes: string | null
+          order_code: string | null
           order_date: string | null
           order_number: number | null
           payment_currency: string
@@ -1937,6 +1938,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           notes?: string | null
+          order_code?: string | null
           order_date?: string | null
           order_number?: number | null
           payment_currency?: string
@@ -1957,6 +1959,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           notes?: string | null
+          order_code?: string | null
           order_date?: string | null
           order_number?: number | null
           payment_currency?: string
@@ -3566,6 +3569,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_order_code: { Args: { _store_id: string }; Returns: string }
       get_active_coupon_banner: {
         Args: never
         Returns: {
