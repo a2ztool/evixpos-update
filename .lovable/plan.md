@@ -1,35 +1,43 @@
-আমি logs/database দেখে পেয়েছি ZiniPay checkout fail করার মূল কারণ: admin panel-এ API config key name হিসেবে `zinipay` save হয়েছে, কিন্তু Edge Function শুধু `api_key`, `apiKey`, `ZINIPAY_API_KEY`, `key` পড়ছে। তাই admin key দেওয়ার পরও function সেটাকে ZiniPay API key হিসেবে ধরছে না, fallback/env না থাকলে বা ভুল key গেলে ZiniPay 401 দিয়ে `{ status:false, message:"Internal Server Error" }` ফেরাচ্ছে।
+## Goal
 
-Plan:
+Replace UUID-style order references shown to users with a readable, business-friendly **Order Code** in the format `NNNNNAAA` — 5 sequential digits + 3 uppercase letters (e.g. `10001ABC`). Keep `orders.id` (UUID) intact for all foreign keys to avoid breaking historical data.
 
-1. ZiniPay credential resolver ঠিক করব
-   - `zinipay-create-invoice`, `zinipay-verify-payment`, `zinipay-webhook`-এ DB থেকে API key পড়ার logic আরও flexible করব।
-   - Supported admin config keys হবে: `api_key`, `zinipay`, `zini_api_key`, `zinipay_api_key`, `ZINIPAY_API_KEY`, `apiKey`, `key`।
-   - Active gateway নির্বাচন currency/mode/provider অনুযায়ী বেশি reliable করব, যেন ভুল gateway না পড়ে।
+## Database
 
-2. Razorpay credential resolver harden করব
-   - Razorpay functions-এ `key_id`, `key_secret`, `razorpay_key_id`, `razorpay_key_secret`, `webhook_secret` variants support করব।
-   - Multiple active gateway থাকলে correct `provider: razorpay` বা gateway name/currency অনুযায়ী config pick করা হবে।
+1. **Add column** `orders.order_code text` (nullable initially).
+2. **Add unique index** `unique (store_id, order_code)` — guarantees no collisions inside a store; different stores can reuse the same code safely (store-isolated).
+3. **Generation function** `public.generate_order_code(_store_id uuid)` — `SECURITY DEFINER`:
+   - Numeric part: `max(numeric prefix) + 1` per store, starting at `10001`.
+   - Letter suffix: 3 random uppercase A–Z letters.
+   - Retry loop (max 10) on rare collision.
+4. **Trigger** `set_order_code` BEFORE INSERT on `orders`: if `order_code` is null and `store_id` is not null, assign one. Keeps existing `assign_order_number` trigger intact.
+5. **Backfill** every historical order with a deterministic code based on its current `order_number` (or a fresh sequential value when `order_number` is null), so old invoices/reports keep working and become searchable by code.
 
-3. Admin Payment Gateways UI সহজ করব
-   - ZiniPay edit screen-এ generic “Key/Value Add” এর বদলে direct field দেখাব: `ZiniPay API Key`। Save করলে internally `api_key`-তে save হবে।
-   - Existing ভুল key `zinipay` থাকলে UI সেটা read করে `api_key` হিসেবে দেখাবে, যাতে admin আবার paste না করলেও fix হয়।
-   - Razorpay-এর জন্য direct fields দেখাব: `Key ID`, `Key Secret`, `Webhook Secret`।
-   - Sensitive values mask করব, কিন্তু update করার option থাকবে।
+Existing `orders.id` (UUID) and all FK relationships (`order_items`, `transactions`, `refunds`, `subscriptions`, `due_payments`, etc.) are **unchanged** — only the display/search identifier changes.
 
-4. Checkout error message পরিষ্কার করব
-   - এখন user side শুধু “Internal Server Error” দেখাচ্ছে। এটাকে বদলে actionable message দেখাব: API key rejected / brand domain mismatch / gateway not configured।
-   - Frontend error parsing `zinipayCheckout.ts`-এ improve করব যাতে Edge Function-এর `details` বা `error` message toast-এ ঠিকমতো আসে।
+## Frontend
 
-5. Existing saved config migrate/fallback করব
-   - Code-level fallback থাকবে, তাই database migration ছাড়াও current `api_config: { "zinipay": "..." }` কাজ করবে।
-   - দরকার হলে একটি small migration দিয়ে existing `zinipay` key থেকে `api_key` copy করে normalize করব, কিন্তু secret value expose না করে।
+1. **Helper** `src/lib/orderCode.ts` → `getOrderCode(order)` returns `order.order_code || order.order_number || short-id-fallback`. Single source of truth used everywhere.
+2. **Display update** wherever an order is shown to users: Orders, POS recent transactions, Customer order history, Subscriptions, Due Book, Account Book, Refunds, Invoices (Public + Modal + Thermal receipt), Reports, Dashboard activity, Notifications. The code is shown in full (never truncated with `...`) and clickable to copy.
+3. **Copy-to-clipboard** icon next to the Order Code in tables/details.
+4. **Search**: order search inputs on Orders, Customers, Due Book, Account Book, Refunds, Subscriptions match against `order_code` (case-insensitive) in addition to the existing fields, scoped by `store_id` (already enforced by RLS).
+5. **Exports** (CSV/PDF/Invoice): include `Order Code` column / field.
 
-6. Verification
-   - Edge function logs দিয়ে confirm করব function আর “key missing/wrong field” অবস্থায় নেই।
-   - ZiniPay response যদি এরপরও 401 দেয়, তাহলে সেটা হবে real ZiniPay side issue: wrong API key, inactive merchant, test/live key mismatch, বা registered brand/domain mismatch. তখন UI-তে exact guidance দেখাবে।
+## Edge Functions / Webhooks
 
-Expected result:
-- Admin panel-এ API key দিলেই user side ZiniPay/Razorpay flow সেই config ব্যবহার করবে।
-- `zinipay` নামে ভুল key save থাকলেও checkout কাজ করবে।
-- Payment fail হলে admin/user বুঝতে পারবে API key ভুল, domain mismatch, না gateway config missing।
+- WooCommerce sync, public invoice RPC, renewal reminders, WhatsApp send — switch their display payloads to use `order_code` (still look up by `id` internally).
+
+## Migration Safety
+
+- Old orders keep their UUID `id` and `order_number`; they additionally get a backfilled `order_code`. Nothing about FKs, RLS, or store isolation changes.
+- The unique index is `(store_id, order_code)` so each store has its own sequence and codes never leak across tenants.
+
+## Rollout Order
+
+1. Migration (column + index + function + trigger + backfill).
+2. Wait for Supabase types regeneration.
+3. Add `getOrderCode` helper.
+4. Update display + search + export sites in batches.
+5. Update edge functions that surface order identifiers.
+
+Approve to proceed with the migration first.
