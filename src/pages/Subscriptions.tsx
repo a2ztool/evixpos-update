@@ -298,8 +298,15 @@ const Subscriptions = () => {
   // Filtered
   const filtered = useMemo(() => {
     return subs.filter((s) => {
-      const matchSearch = [s.product_name, s.customers?.name, s.customers?.phone]
-        .some((f) => (f || "").toLowerCase().includes(search.toLowerCase()));
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || [
+        s.product_name,
+        s.customers?.name,
+        s.customers?.phone,
+        s.orders?.order_code,
+        s.orders?.order_number != null ? String(s.orders?.order_number) : null,
+        s.order_id,
+      ].some((f) => (f || "").toString().toLowerCase().includes(q));
       if (!matchSearch) return false;
       if (statusFilter === "active") return s.status === "active" && getDaysLeft(s.end_date) >= 0;
       if (statusFilter === "expiring") return s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 7;
