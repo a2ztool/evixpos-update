@@ -141,7 +141,7 @@ const Subscriptions = () => {
     if (!activeStore || !user) return;
     setLoading(true);
     const [{ data: subData }, { data: custData }] = await Promise.all([
-      supabase.from("subscriptions").select("*, customers(name, phone)").eq("store_id", activeStore.id).order("end_date", { ascending: true }),
+      supabase.from("subscriptions").select("*, customers(name, phone), orders(order_code, order_number)").eq("store_id", activeStore.id).order("end_date", { ascending: true }),
       supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id),
     ]);
     if (subData) setSubs(subData as Subscription[]);
