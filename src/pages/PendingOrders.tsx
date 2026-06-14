@@ -32,6 +32,7 @@ interface OrderItem {
 interface PendingOrder {
   id: string;
   order_number?: number | null;
+  order_code?: string | null;
   total_amount: number;
   cost_price: number;
   payment_method: string;
@@ -405,7 +406,7 @@ const PendingOrders = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{o.customers?.name ?? "Walk-in customer"}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono mt-0.5 break-all" title={o.order_number ? String(o.order_number) : o.id}>{o.order_number ?? o.id}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono mt-0.5 break-all" title={o.order_code ?? (o.order_number ? String(o.order_number) : o.id)}>{o.order_code ?? o.order_number ?? o.id}</p>
                         </div>
                         <Badge variant="outline" className={cn("border", paymentColors[o.payment_status] ?? "")}>
                           {o.payment_status}
@@ -474,7 +475,7 @@ const PendingOrders = () => {
                         <Checkbox checked={checked} onCheckedChange={() => toggleOne(o.id)} />
                       </TableCell>
                       <TableCell>
-                        <div className="font-mono text-xs text-muted-foreground break-all" title={o.order_number ? String(o.order_number) : o.id}>{o.order_number ?? o.id}</div>
+                        <div className="font-mono text-xs text-muted-foreground break-all" title={o.order_code ?? (o.order_number ? String(o.order_number) : o.id)}>{o.order_code ?? o.order_number ?? o.id}</div>
                         <div className="text-[10px] text-muted-foreground/70 mt-0.5">{new Date(o.created_at).toLocaleDateString()}</div>
                       </TableCell>
                       <TableCell className="font-medium">{o.customers?.name ?? <span className="text-muted-foreground">Walk-in</span>}</TableCell>
@@ -568,7 +569,7 @@ const PendingOrders = () => {
               <div className="grid grid-cols-2 gap-3 text-sm rounded-xl bg-muted/40 p-3">
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Order ID</span>
-                  <p className="font-mono text-xs">{selectedOrder.order_number ?? selectedOrder.id}</p>
+                  <p className="font-mono text-xs">{selectedOrder.order_code ?? selectedOrder.order_number ?? selectedOrder.id}</p>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Customer</span>
