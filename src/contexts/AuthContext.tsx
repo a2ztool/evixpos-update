@@ -39,35 +39,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Single-session enforcement for store owners only.
-  // Staff users (rows in staff_members) are exempt — they may stay logged in on multiple devices.
+  // Session tracking (heartbeat only — no forced logout on new login).
+  // Previously this enforced single-session for owners by invalidating prior sessions
+  // and force-signing-out tabs when a newer login appeared. That caused users with a
+  // PWA + browser (or two tabs / devices) to be kicked out repeatedly in a loop, and
+  // also raced with Supabase token refresh (which rotates access_token → new sessionId).
+  // We now keep the active_sessions row up to date for visibility but never sign the
+  // user out from this effect.
   useEffect(() => {
     if (!session?.user) return;
     const uid = session.user.id;
     const sessionId = `${uid}-${session.access_token.slice(-24)}`;
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setup = async () => {
-      // Skip session control for staff
-      const { data: staffRow } = await supabase
-        .from("staff_members")
-        .select("id")
-        .eq("auth_user_id", uid)
-        .eq("is_active", true)
-        .maybeSingle();
       if (cancelled) return;
-      if (staffRow) return; // staff: multi-device allowed
-
-      // Invalidate any prior active sessions for this owner
-      await supabase
-        .from("active_sessions")
-        .update({ is_active: false, invalidated_reason: "replaced_by_new_login" })
-        .eq("user_id", uid)
-        .eq("is_active", true)
-        .neq("session_id", sessionId);
-
-      // Register current session
+      // Register / refresh current session row (no invalidation of others).
       await supabase.from("active_sessions").upsert(
         {
           user_id: uid,
@@ -79,26 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
         { onConflict: "session_id" },
       );
-
-      // Listen for invalidation of THIS session by a newer login
-      channel = supabase
-        .channel(`active-session-${sessionId}`)
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "active_sessions", filter: `user_id=eq.${uid}` },
-          (payload: { new?: { session_id?: string; is_active?: boolean } }) => {
-            if (
-              payload.new?.session_id === sessionId &&
-              payload.new?.is_active === false
-            ) {
-              toast.error("You have been logged out because you logged in from another device.");
-              supabase.auth.signOut().finally(() => {
-                if (typeof window !== "undefined") window.location.href = "/auth";
-              });
-            }
-          },
-        )
-        .subscribe();
     };
 
     setup();
@@ -115,7 +82,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
       clearInterval(heartbeat);
-      if (channel) supabase.removeChannel(channel);
     };
   }, [session?.user?.id, session?.access_token]);
 
