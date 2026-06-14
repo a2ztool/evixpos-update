@@ -53,7 +53,9 @@ interface Subscription {
   user_id: string;
   plan: string;
   store_id: string | null;
+  order_id?: string | null;
   customers?: { name: string; phone: string; email?: string } | null;
+  orders?: { order_code: string | null; order_number: number | null } | null;
 }
 
 interface Customer {
@@ -139,7 +141,7 @@ const Subscriptions = () => {
     if (!activeStore || !user) return;
     setLoading(true);
     const [{ data: subData }, { data: custData }] = await Promise.all([
-      supabase.from("subscriptions").select("*, customers(name, phone)").eq("store_id", activeStore.id).order("end_date", { ascending: true }),
+      supabase.from("subscriptions").select("*, customers(name, phone), orders(order_code, order_number)").eq("store_id", activeStore.id).order("end_date", { ascending: true }),
       supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id),
     ]);
     if (subData) setSubs(subData as Subscription[]);
@@ -296,8 +298,15 @@ const Subscriptions = () => {
   // Filtered
   const filtered = useMemo(() => {
     return subs.filter((s) => {
-      const matchSearch = [s.product_name, s.customers?.name, s.customers?.phone]
-        .some((f) => (f || "").toLowerCase().includes(search.toLowerCase()));
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || [
+        s.product_name,
+        s.customers?.name,
+        s.customers?.phone,
+        s.orders?.order_code,
+        s.orders?.order_number != null ? String(s.orders?.order_number) : null,
+        s.order_id,
+      ].some((f) => (f || "").toString().toLowerCase().includes(q));
       if (!matchSearch) return false;
       if (statusFilter === "active") return s.status === "active" && getDaysLeft(s.end_date) >= 0;
       if (statusFilter === "expiring") return s.status === "active" && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 7;
@@ -787,7 +796,7 @@ const Subscriptions = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by name, phone or product..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                <Input placeholder="Search by order ID, name, phone or product..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
