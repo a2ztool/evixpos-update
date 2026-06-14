@@ -38,6 +38,7 @@ interface OrderItem {
 interface Order {
   id: string;
   order_number?: number | null;
+  order_code?: string | null;
   total_amount: number;
   cost_price: number;
   discount: number;
@@ -666,6 +667,7 @@ const fetchProducts = async () => {
         if (
           !o.id.toLowerCase().includes(q) &&
           !String(o.order_number ?? "").toLowerCase().includes(q) &&
+          !String(o.order_code ?? "").toLowerCase().includes(q) &&
           !(o.customers?.name ?? "").toLowerCase().includes(q)
         )
           return false;
@@ -898,7 +900,7 @@ const fetchProducts = async () => {
               <TableBody>
                 {filtered.map((o) => (
                   <TableRow key={o.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.order_number ? String(o.order_number) : o.id}>{o.order_number ?? o.id}</TableCell>
+                    <TableCell className="font-mono text-xs break-all max-w-[280px]" title={o.order_code ?? (o.order_number ? String(o.order_number) : o.id)}>{o.order_code ?? o.order_number ?? o.id}</TableCell>
                     <TableCell className="font-medium">{o.customers?.name ?? "—"}</TableCell>
                     <TableCell className="font-semibold">
                       {o.payment_currency} {Number(o.total_amount).toFixed(2)}
@@ -1308,7 +1310,7 @@ const fetchProducts = async () => {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground">Order ID</span>
-                  <p className="font-mono text-xs">{selectedOrder.order_number ?? selectedOrder.id}</p>
+                  <p className="font-mono text-xs">{selectedOrder.order_code ?? selectedOrder.order_number ?? selectedOrder.id}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Customer</span>
@@ -1660,7 +1662,7 @@ const fetchProducts = async () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.order_number ?? orderToDelete?.id}</span>? 
+              Are you sure you want to delete order <span className="font-mono font-semibold break-all">{orderToDelete?.order_code ?? orderToDelete?.order_number ?? orderToDelete?.id}</span>? 
               This will permanently remove the order, its items, and any associated refunds. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
