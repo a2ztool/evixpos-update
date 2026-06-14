@@ -589,10 +589,11 @@ const POS = () => {
           order_date: orderDate.toISOString(),
           notes: orderNotes || (isDue ? "Due order from POS" : hasDue ? `Partial payment: ${format(effectivePaid)} paid, ${format(effectiveDue)} due` : ""),
         })
-        .select("id")
+        .select("id, order_code")
         .single();
 
       if (orderErr || !order) throw orderErr ?? new Error("Failed to create order");
+      const orderRef = (order as any).order_code ?? order.id.slice(0, 8).toUpperCase();
 
       const items = cart.map((i) => ({
         order_id: order.id,
@@ -622,7 +623,7 @@ const POS = () => {
               type: "income" as const,
               amount: e.amount,
               category: "sale",
-              note: `POS Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              note: `POS Order #${orderRef} (${e.methodName})`,
               is_paid: true,
               customer_name: txnCustomerName,
               phone_number: txnPhone,
@@ -636,7 +637,7 @@ const POS = () => {
             type: "income" as const,
             amount: total,
             category: "sale",
-            note: `POS Order #${order.id.slice(0, 8)}`,
+            note: `POS Order #${orderRef}`,
             is_paid: true,
             customer_name: txnCustomerName,
             phone_number: txnPhone,
@@ -653,7 +654,7 @@ const POS = () => {
               type: "income" as const,
               amount: e.amount,
               category: "sale",
-              note: `POS Partial Order #${order.id.slice(0, 8)} (${e.methodName})`,
+              note: `POS Partial Order #${orderRef} (${e.methodName})`,
               is_paid: true,
               customer_name: txnCustomerName,
               phone_number: txnPhone,
@@ -667,7 +668,7 @@ const POS = () => {
             type: "income" as const,
             amount: effectivePaid,
             category: "sale",
-            note: `POS Partial Order #${order.id.slice(0, 8)} (Paid)`,
+            note: `POS Partial Order #${orderRef} (Paid)`,
             is_paid: true,
             customer_name: txnCustomerName,
             phone_number: txnPhone,
@@ -680,7 +681,7 @@ const POS = () => {
           type: "income" as const,
           amount: effectiveDue,
           category: "sale",
-          note: `POS Partial Order #${order.id.slice(0, 8)} (Due)`,
+          note: `POS Partial Order #${orderRef} (Due)`,
           is_paid: false,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           customer_name: txnCustomerName,
@@ -695,7 +696,7 @@ const POS = () => {
           type: "income" as const,
           amount: total,
           category: "sale",
-          note: `POS Due Order #${order.id.slice(0, 8)}`,
+          note: `POS Due Order #${orderRef}`,
           is_paid: false,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           customer_name: txnCustomerName,
@@ -764,7 +765,7 @@ const POS = () => {
             points: pointsEarned,
             type: "earned",
             order_id: order.id,
-            notes: `Earned from POS Order #${order.id.slice(0, 8)}`,
+            notes: `Earned from POS Order #${orderRef}`,
           });
         }
       }
@@ -793,7 +794,7 @@ const POS = () => {
             end_date: toDateStr(endDate),
             status: computedPaymentStatus === "paid" ? "active" : "pending",
             renewals: 0,
-            notes: `Auto-created from POS Order #${order.id.slice(0, 8)} | product:${item.product.id}${item.quantity > 1 ? ` | unit ${index + 1}` : ""}`,
+            notes: `Auto-created from POS Order #${orderRef} | product:${item.product.id}${item.quantity > 1 ? ` | unit ${index + 1}` : ""}`,
           }));
           return quantityRows;
         });
@@ -862,7 +863,7 @@ const POS = () => {
               store_id: activeStore.id,
               action: "sync_single",
               order_data: {
-                order_id: order.id.slice(0, 8).toUpperCase(),
+                order_id: orderRef,
                 customer_name: selectedCustomer?.name || "Walk-in",
                 phone: "",
                 product_name: orderItems,

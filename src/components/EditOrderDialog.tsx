@@ -221,7 +221,7 @@ export default function EditOrderDialog({
         <DialogHeader>
           <DialogTitle>Edit Order</DialogTitle>
           <DialogDescription>
-            Order ID: <span className="font-mono">{order?.order_number ?? order?.id}</span>
+            Order ID: <span className="font-mono">{order?.order_code ?? order?.order_number ?? order?.id}</span>
           </DialogDescription>
         </DialogHeader>
 

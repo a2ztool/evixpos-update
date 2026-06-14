@@ -79,7 +79,7 @@ const PublicInvoice = () => {
   const paid = invoiceCalc.paidAmount;
   const due = invoiceCalc.dueAmount;
   const status = invoiceCalc.status;
-  const invoiceId = (order as any).order_number ?? order.id;
+  const invoiceId = (order as any).order_code ?? (order as any).order_number ?? order.id;
   const date = new Date(order.created_at);
 
   const statusBadge =
