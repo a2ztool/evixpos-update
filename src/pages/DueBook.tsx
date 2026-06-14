@@ -278,7 +278,15 @@ const DueBook = () => {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((d) =>
-        [d.category, d.note].some((f) => (f || "").toLowerCase().includes(q))
+        [
+          d.category,
+          d.note,
+          d.customer_name,
+          d.phone_number,
+          d.orders?.order_code,
+          d.orders?.order_number != null ? String(d.orders?.order_number) : null,
+          d.order_id,
+        ].some((f) => (f || "").toString().toLowerCase().includes(q))
       );
     }
     return result;
