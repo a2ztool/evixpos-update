@@ -53,7 +53,9 @@ interface Subscription {
   user_id: string;
   plan: string;
   store_id: string | null;
+  order_id?: string | null;
   customers?: { name: string; phone: string; email?: string } | null;
+  orders?: { order_code: string | null; order_number: number | null } | null;
 }
 
 interface Customer {
