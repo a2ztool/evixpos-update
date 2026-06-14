@@ -138,7 +138,7 @@ const DueBook = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("transactions")
-      .select("*")
+      .select("*, orders(order_code, order_number)")
       .eq("store_id", activeStore.id)
       .not("due_date", "is", null)
       .order("due_date", { ascending: true });
