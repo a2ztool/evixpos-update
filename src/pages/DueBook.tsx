@@ -47,6 +47,8 @@ interface Due {
   created_at: string;
   customer_name: string | null;
   phone_number: string | null;
+  order_id?: string | null;
+  orders?: { order_code: string | null; order_number: number | null } | null;
 }
 
 interface DuePayment {
