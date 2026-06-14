@@ -163,7 +163,7 @@ export async function pushSale(sale: OfflineSale): Promise<{ ok: true; orderId: 
       type: "income" as const,
       amount: sale.totalAmount,
       category: "sale",
-      note: `POS Order #${order.id.slice(0, 8)} (offline sync)`,
+      note: `POS Order #${(order as any).order_code ?? order.id.slice(0, 8)} (offline sync)`,
       is_paid: true,
       customer_name: sale.customerName,
       phone_number: sale.customerPhone,
