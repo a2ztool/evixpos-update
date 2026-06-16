@@ -1363,6 +1363,13 @@ const IncomeExpense = () => {
                       setCatDialogOpen(true);
                       return;
                     }
+                    if (v === "__manage__") {
+                      setNewCatType(form.type);
+                      setNewCatName("");
+                      cancelEditCategory();
+                      setCatDialogOpen(true);
+                      return;
+                    }
                     setForm({ ...form, category: v });
                     formValidation.clearField("category");
                   }}
