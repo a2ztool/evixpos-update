@@ -38,6 +38,7 @@ import {
 import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
+import { isExternalActionActive, openExternalUrlPreservingState, preservePageStateForExternalAction } from "@/lib/pageState";
 import SubscriptionRenewalWizard, { type SubscriptionRenewalSubject } from "@/components/SubscriptionRenewalWizard";
 
 interface Subscription {
@@ -93,6 +94,8 @@ const emptyForm = {
 
 const DEFAULT_WA_TEMPLATE = `Hi {customer_name}, your subscription for "{product_name}" ({variation}) {status_text}. Please renew to continue the service. Thank you!`;
 const TEMPLATE_STORAGE_KEY = "subscription_wa_template";
+const SUBS_SCROLL_KEY = "subs:scrollY";
+const SUBS_LAST_REMINDER_KEY = "subs:lastReminderId";
 
 const renderTemplate = (
   tpl: string,
@@ -140,6 +143,14 @@ const Subscriptions = () => {
   });
   const [templateDraft, setTemplateDraft] = useState(waTemplate);
   const formValidation = useFormValidation(subscriptionSchema);
+  const preserveSubscriptionListState = useCallback((targetId?: string) => {
+    preservePageStateForExternalAction({
+      "subs:search": search,
+      "subs:statusFilter": statusFilter,
+      "subs:activeTab": activeTab,
+      "subs:page": currentPage,
+    }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, targetId);
+  }, [search, statusFilter, activeTab, currentPage]);
 
   // Renewal wizard state
   const [renewOpen, setRenewOpen] = useState(false);
@@ -160,14 +171,16 @@ const Subscriptions = () => {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // Preserve scroll position across tab-switches / SW reloads
-  useScrollRestoration("subs:scrollY", !loading);
+  useScrollRestoration(SUBS_SCROLL_KEY, !loading);
 
   // Realtime
   useEffect(() => {
     if (!activeStore) return;
     const channel = supabase
       .channel(`subs-${activeStore.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => {
+        if (!isExternalActionActive()) fetchAll();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeStore, fetchAll]);
