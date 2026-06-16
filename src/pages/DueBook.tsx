@@ -115,6 +115,7 @@ const DueBook = () => {
   const [search, setSearch] = usePersistedState<string>("due:search", "");
   const [activeTab, setActiveTab] = usePersistedState<string>("due:activeTab", "overview");
   const [currentPage, setCurrentPage] = usePersistedState<number>("due:page", 1);
+  const [pageSize, setPageSize] = usePersistedState<number>("due:pageSize", 10);
   const [guideOpen, setGuideOpen] = useState(false);
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
@@ -313,7 +314,7 @@ const DueBook = () => {
     return result;
   }, [dues, statusFilter, typeFilter, datePreset, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / DUE_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const filterResetRef = useRef(true);
   useEffect(() => {
     if (loading) return;
@@ -328,11 +329,11 @@ const DueBook = () => {
     setCurrentPage(1);
   }, [search, statusFilter, typeFilter, datePreset, setCurrentPage]);
   const paginated = useMemo(
-    () => filtered.slice((currentPage - 1) * DUE_PAGE_SIZE, currentPage * DUE_PAGE_SIZE),
-    [filtered, currentPage]
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
   );
-  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * DUE_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(currentPage * DUE_PAGE_SIZE, filtered.length);
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(currentPage * pageSize, filtered.length);
   useEffect(() => {
     if (loading || !isExternalActionActive()) return;
     const savedY = Number(window.sessionStorage.getItem(DUE_SCROLL_KEY) || 0);
@@ -1123,19 +1124,14 @@ const DueBook = () => {
               </Card>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
-                <p className="text-xs text-muted-foreground">Page {currentPage} of {totalPages}</p>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}>
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
+            <DataPagination
+              page={currentPage}
+              pageSize={pageSize}
+              total={filtered.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+              itemLabel="dues"
+            />
           </TabsContent>
 
           {/* People Tab */}
