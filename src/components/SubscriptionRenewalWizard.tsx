@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   User, Package, Wallet, Receipt, Check, ChevronRight, ChevronLeft,
-  Calendar, Tag, CreditCard, RotateCcw, Loader2,
+  Calendar, Tag, RotateCcw, Loader2,
 } from "lucide-react";
 import { addDays, format as fnsFormat } from "date-fns";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
