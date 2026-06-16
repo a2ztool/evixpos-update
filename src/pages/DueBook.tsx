@@ -482,30 +482,57 @@ const DueBook = () => {
     setSheetOpen(false);
   };
 
-  // Sync linked POS order payment_status based on related transactions
-  const syncLinkedOrderStatus = async (note: string | null | undefined) => {
-    const orderMatch = note?.match(/POS.*Order #([a-f0-9]+)/i);
-    if (!orderMatch) return;
-    const orderIdPrefix = orderMatch[1];
-    const { data: orders } = await supabase.from("orders")
+  // Sync linked order payment_status + meta paid/due based on related transactions.
+  // Prefers the transaction's order_id FK; falls back to legacy note matching.
+  const syncLinkedOrderStatus = async (due: { order_id?: string | null; note?: string | null } | null | undefined) => {
+    if (!due || !activeStore) return;
+    let orderId: string | null = due.order_id || null;
+    if (!orderId) {
+      const orderMatch = due.note?.match(/POS.*Order #([a-f0-9]+)/i);
+      if (!orderMatch) return;
+      const { data: legacy } = await supabase.from("orders")
+        .select("id")
+        .ilike("id", `${orderMatch[1]}%`)
+        .eq("store_id", activeStore.id)
+        .limit(1);
+      orderId = legacy?.[0]?.id || null;
+    }
+    if (!orderId) return;
+
+    const { data: order } = await supabase.from("orders")
       .select("id, total_amount, meta, payment_status")
-      .ilike("id", `${orderIdPrefix}%`)
-      .eq("store_id", activeStore?.id || "")
-      .limit(1);
-    if (!orders?.[0]) return;
-    const order = orders[0];
+      .eq("id", orderId)
+      .eq("store_id", activeStore.id)
+      .maybeSingle();
+    if (!order) return;
+
     const { data: relatedTxns } = await supabase.from("transactions")
-      .select("is_paid, amount, paid_amount")
-      .ilike("note", `%${orderIdPrefix}%`)
-      .eq("store_id", activeStore?.id || "");
-    const allPaid = relatedTxns?.every(t => t.is_paid) ?? false;
-    const totalPaid = relatedTxns?.reduce((s, t) => s + (t.is_paid ? Number(t.amount) : Number(t.paid_amount || 0)), 0) || 0;
-    const newStatus = allPaid ? "paid" : totalPaid > 0 ? "partial" : "unpaid";
-    if (order.payment_status !== newStatus) {
+      .select("is_paid, amount, paid_amount, type")
+      .eq("order_id", orderId)
+      .eq("store_id", activeStore.id)
+      .eq("type", "income");
+
+    // Sum effectively-collected money across all income txns for this order.
+    const totalPaid = (relatedTxns || []).reduce(
+      (s, t: any) => s + (t.is_paid ? Number(t.amount || 0) : Number(t.paid_amount || 0)),
+      0
+    );
+    const total = Number(order.total_amount || 0);
+    const paidAmount = Math.max(0, Math.min(totalPaid, total));
+    const dueAmount = Math.max(0, total - paidAmount);
+    const newStatus =
+      dueAmount <= 0.01 ? "paid" : paidAmount > 0.01 ? "partial" : "unpaid";
+
+    const prevMeta = (order.meta as any) || {};
+    const metaChanged =
+      Number(prevMeta.paid_amount || 0) !== paidAmount ||
+      Number(prevMeta.due_amount || 0) !== dueAmount;
+
+    if (order.payment_status !== newStatus || metaChanged) {
       await supabase.from("orders").update({
         payment_status: newStatus,
-        meta: { ...(order.meta as any || {}), paid_amount: totalPaid, due_amount: Math.max(0, Number(order.total_amount) - totalPaid) },
-      }).eq("id", order.id);
+        meta: { ...prevMeta, paid_amount: paidAmount, due_amount: dueAmount },
+      }).eq("id", order.id).eq("store_id", activeStore.id);
     }
   };
 
@@ -558,8 +585,8 @@ const DueBook = () => {
         .eq("id", paymentModal.id);
       if (txnErr) throw txnErr;
 
-      // 3. Sync linked POS order
-      await syncLinkedOrderStatus(paymentModal.note);
+      // 3. Sync linked order (uses FK order_id; falls back to note for legacy rows)
+      await syncLinkedOrderStatus(paymentModal);
 
       toast.success(isFull ? "Settled in full ✓" : `Partial payment recorded (${formatCurrency(amt, 0)})`);
       setPaymentModal(null);
@@ -579,7 +606,7 @@ const DueBook = () => {
       toast.success("Due deleted");
       // Optimistic UI removal
       setDues((prev) => prev.filter((d) => d.id !== deleteTarget.id));
-      await syncLinkedOrderStatus(deleteTarget.note);
+      await syncLinkedOrderStatus(deleteTarget);
     }
     setDeleteTarget(null);
   };
