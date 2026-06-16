@@ -25,6 +25,8 @@ import { supplierSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate, differenceInDays, subDays } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RTooltip, CartesianGrid } from "recharts";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type FilterTier = "all" | "due" | "paid" | "critical";
 
@@ -247,6 +249,12 @@ const Suppliers = () => {
     else if (sortBy === "name") arr.sort((a: any, b: any) => a.name.localeCompare(b.name));
     return arr;
   }, [suppliers, search, filterTier, sortBy]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:suppliers:${storeId ?? "_"}`,
+    filterSignature: JSON.stringify({ search, filterTier, sortBy }),
+  });
+  const paged = paginate(filtered as any[], pagination.page, pagination.pageSize);
 
   const ageBadge = (s: any) => {
     if (Number(s.balance_due) === 0) return <Badge variant="secondary" className="text-xs">Clear</Badge>;
