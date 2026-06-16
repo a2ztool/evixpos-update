@@ -392,6 +392,7 @@ const OrderForms = () => {
         </div>
       ) : viewMode === "grid" ? (
         // GRID
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {pagedForms.map((f) => (
             <div key={f.id} className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-4 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
@@ -442,6 +443,7 @@ const OrderForms = () => {
             className="mt-3"
           />
         )}
+        </>
       ) : (
         <>
           {/* Mobile card list */}
