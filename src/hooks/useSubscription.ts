@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { PLAN_FEATURES_LIST, type VolumeStep } from "@/lib/planConfig";
 import { usePlansConfig } from "@/contexts/PlansConfigContext";
+import { isExternalActionActive } from "@/lib/pageState";
 
 export { PLAN_FEATURES_LIST };
 
@@ -88,8 +89,8 @@ export const useSubscription = () => {
 
   // Refetch on tab focus / visibility change so admin updates land instantly
   useEffect(() => {
-    const onFocus = () => fetchPlan();
-    const onVis = () => { if (document.visibilityState === "visible") fetchPlan(); };
+    const onFocus = () => { if (!isExternalActionActive()) fetchPlan(); };
+    const onVis = () => { if (document.visibilityState === "visible" && !isExternalActionActive()) fetchPlan(); };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVis);
     return () => {
