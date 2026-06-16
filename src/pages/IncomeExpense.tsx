@@ -429,6 +429,63 @@ const IncomeExpense = () => {
     setCatDialogOpen(false);
   };
 
+  const startEditCategory = (cat: CustomCategory) => {
+    setEditingCatId(cat.id);
+    setEditingCatName(cat.name);
+    setEditingCatType(cat.type);
+  };
+
+  const cancelEditCategory = () => {
+    setEditingCatId(null);
+    setEditingCatName("");
+  };
+
+  const handleSaveEditCategory = async () => {
+    if (!editingCatId) return;
+    const name = editingCatName.trim();
+    if (!name) { toast.error("Enter a category name"); return; }
+    if (!activeStore) return;
+    setSavingEditCat(true);
+    const prev = customCategories.find(c => c.id === editingCatId);
+    const { error } = await supabase
+      .from("transaction_categories")
+      .update({ name, type: editingCatType })
+      .eq("id", editingCatId)
+      .eq("store_id", activeStore.id);
+    setSavingEditCat(false);
+    if (error) { toast.error(error.message); return; }
+    // Rename matching transactions so reports keep working with the new label
+    if (prev && prev.name !== name) {
+      await supabase
+        .from("transactions")
+        .update({ category: name })
+        .eq("store_id", activeStore.id)
+        .eq("type", prev.type)
+        .eq("category", prev.name);
+    }
+    setCustomCategories((list) =>
+      list.map((c) => (c.id === editingCatId ? { ...c, name, type: editingCatType } : c))
+    );
+    toast.success("Category updated");
+    cancelEditCategory();
+    fetchData();
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!deleteCatId || !activeStore) return;
+    setDeletingCat(true);
+    const { error } = await supabase
+      .from("transaction_categories")
+      .delete()
+      .eq("id", deleteCatId)
+      .eq("store_id", activeStore.id);
+    setDeletingCat(false);
+    if (error) { toast.error(error.message); return; }
+    setCustomCategories((list) => list.filter((c) => c.id !== deleteCatId));
+    setDeleteCatId(null);
+    toast.success("Category deleted. Existing transactions are preserved.");
+  };
+
   const openTransfer = () => {
     setTransferForm({
       from_account: accounts[0]?.id || "",
