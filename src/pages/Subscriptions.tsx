@@ -152,6 +152,9 @@ const Subscriptions = () => {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // Preserve scroll position across tab-switches / SW reloads
+  useScrollRestoration("subs:scrollY", !loading);
+
   // Realtime
   useEffect(() => {
     if (!activeStore) return;
