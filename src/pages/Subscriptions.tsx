@@ -156,16 +156,19 @@ const Subscriptions = () => {
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewSubject, setRenewSubject] = useState<SubscriptionRenewalSubject | null>(null);
 
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (silent = false) => {
     if (!activeStore || !user) return;
-    setLoading(true);
+    // Skip refetches while user is in an external tab (e.g. WhatsApp) — keeps
+    // pagination, scroll, filters intact when they return.
+    if (silent && isExternalActionActive()) return;
+    if (!silent) setLoading(true);
     const [{ data: subData }, { data: custData }] = await Promise.all([
       supabase.from("subscriptions").select("*, customers(name, phone), orders(order_code, order_number)").eq("store_id", activeStore.id).order("end_date", { ascending: true }),
       supabase.from("customers").select("id, name, phone").eq("store_id", activeStore.id),
     ]);
     if (subData) setSubs(subData as Subscription[]);
     if (custData) setCustomers(custData as Customer[]);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [activeStore, user]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -178,7 +181,10 @@ const Subscriptions = () => {
     if (!activeStore) return;
     const channel = supabase
       .channel(`subs-${activeStore.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => {
+        if (isExternalActionActive()) return;
+        fetchAll(true);
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeStore, fetchAll]);

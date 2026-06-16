@@ -149,9 +149,11 @@ const DueBook = () => {
     }, DUE_SCROLL_KEY, DUE_LAST_REMINDER_KEY, targetId);
   }, [statusFilter, typeFilter, datePreset, search, activeTab, currentPage]);
 
-  const fetchDues = useCallback(async () => {
+  const fetchDues = useCallback(async (silent = false) => {
     if (!activeStore || !user) return;
-    setLoading(true);
+    // Skip silent refetches while user is in an external tab (WhatsApp etc.)
+    if (silent && isExternalActionActive()) return;
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from("transactions")
       .select("*, orders(order_code, order_number)")
@@ -176,7 +178,7 @@ const DueBook = () => {
     } else {
       setPaymentsByTxn({});
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [activeStore, user]);
 
   // Legacy fallback: resolve customer for old dues that don't have customer_name/phone_number stored
@@ -267,11 +269,11 @@ const DueBook = () => {
       .channel(`duebook-${activeStore.id}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "transactions", filter: `store_id=eq.${activeStore.id}` },
-        () => fetchDues()
+        () => { if (!isExternalActionActive()) fetchDues(true); }
       )
       .on("postgres_changes",
         { event: "*", schema: "public", table: "due_payments", filter: `store_id=eq.${activeStore.id}` },
-        () => fetchDues()
+        () => { if (!isExternalActionActive()) fetchDues(true); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
