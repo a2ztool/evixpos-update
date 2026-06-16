@@ -652,17 +652,13 @@ const Subscriptions = () => {
           </Card>
         </Collapsible>
 
-        {/* Unified KPI grid — 8 metrics, compact fintech tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        {/* Unified KPI grid — 4 core metrics, balanced & justified */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Active", value: stats.activeCount, sub: `MRR ${formatCurrency(stats.mrr, 0)}`, icon: CheckCircle2, tone: "green", valueColor: "text-green-600", primary: true },
-            { label: "Expiring", value: stats.expiringWeek, sub: `${stats.expiringToday} today`, icon: AlertTriangle, tone: "amber", valueColor: "text-amber-600", primary: true },
-            { label: "Expired", value: stats.expiredCount, sub: `Churn ${stats.churnRate.toFixed(0)}%`, icon: XCircle, tone: "red", valueColor: "text-destructive", primary: true },
-            { label: "Revenue", value: formatCurrency(stats.totalRevenue, 0), sub: `Profit ${formatCurrency(stats.profit, 0)}`, icon: DollarSign, tone: "primary", valueColor: "", primary: true },
-            { label: "Renewals", value: stats.totalRenewals, sub: "Total", icon: RotateCcw, tone: "primary", valueColor: "" },
-            { label: "Renewal %", value: `${stats.renewalRate.toFixed(0)}%`, sub: "Rate", icon: TrendingUp, tone: "green", valueColor: "" },
-            { label: "30-Day", value: stats.expiring30, sub: "Expiring", icon: Timer, tone: "amber", valueColor: "" },
-            { label: "Lifetime", value: stats.avgLifetime.toFixed(1), sub: "Avg yrs", icon: Crown, tone: "purple", valueColor: "" },
+            { label: "Active", value: stats.activeCount, sub: `MRR ${formatCurrency(stats.mrr, 0)}`, icon: CheckCircle2, tone: "green", valueColor: "text-green-600" },
+            { label: "Expiring", value: stats.expiringWeek, sub: `${stats.expiringToday} today`, icon: AlertTriangle, tone: "amber", valueColor: "text-amber-600" },
+            { label: "Expired", value: stats.expiredCount, sub: `Churn ${stats.churnRate.toFixed(0)}%`, icon: XCircle, tone: "red", valueColor: "text-destructive" },
+            { label: "Revenue", value: formatCurrency(stats.totalRevenue, 0), sub: `Profit ${formatCurrency(stats.profit, 0)}`, icon: DollarSign, tone: "primary", valueColor: "" },
           ].map((k, i) => {
             const KIcon = k.icon;
             const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
@@ -670,20 +666,19 @@ const Subscriptions = () => {
               amber:   { bg: "bg-amber-500/10", text: "text-amber-600", ring: "ring-amber-500/20" },
               red:     { bg: "bg-red-500/10",   text: "text-red-600",   ring: "ring-red-500/20" },
               primary: { bg: "bg-primary/10",   text: "text-primary",   ring: "ring-primary/20" },
-              purple:  { bg: "bg-purple-500/10",text: "text-purple-600",ring: "ring-purple-500/20" },
             };
             const t = toneMap[k.tone];
             return (
-              <Card key={i} className={`hover:shadow-sm transition-all ${k.primary ? "ring-1 " + t.ring : ""}`}>
-                <CardContent className="p-2.5 sm:p-3">
-                  <div className="flex items-center justify-between gap-1 mb-1">
+              <Card key={i} className={`hover:shadow-sm transition-all ring-1 ${t.ring}`}>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-1 mb-2">
                     <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide truncate">{k.label}</p>
-                    <div className={`p-1 rounded ${t.bg} shrink-0`}>
-                      <KIcon className={`h-3 w-3 ${t.text}`} />
+                    <div className={`p-1.5 rounded ${t.bg} shrink-0`}>
+                      <KIcon className={`h-3.5 w-3.5 ${t.text}`} />
                     </div>
                   </div>
-                  <p className={`text-lg sm:text-xl font-bold leading-tight truncate ${k.valueColor}`}>{k.value}</p>
-                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">{k.sub}</p>
+                  <p className={`text-xl sm:text-2xl font-bold leading-tight truncate ${k.valueColor}`}>{k.value}</p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-1">{k.sub}</p>
                 </CardContent>
               </Card>
             );
