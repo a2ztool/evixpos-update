@@ -1476,13 +1476,6 @@ const IncomeExpense = () => {
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Input
-                  value={form.category}
-                  onChange={(e) => { setForm({ ...form, category: e.target.value }); formValidation.clearField("category"); }}
-                  error={!!formValidation.getError("category")}
-                  placeholder="Or type a custom category..."
-                  className="text-sm rounded-xl"
-                />
                 {formValidation.getError("category") && <p className="text-xs text-destructive animate-fade-in">{formValidation.getError("category")}</p>}
               </div>
 
