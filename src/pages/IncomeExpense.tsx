@@ -125,6 +125,7 @@ const IncomeExpense = () => {
   const [savingEditCat, setSavingEditCat] = useState(false);
   const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
   const [deletingCat, setDeletingCat] = useState(false);
+  const [catFilter, setCatFilter] = useState<"all" | "income" | "expense">("all");
 
   // Fund transfer sheet
   const [transferOpen, setTransferOpen] = useState(false);
@@ -1357,31 +1358,12 @@ const IncomeExpense = () => {
                 <Select
                   value={form.category}
                   onValueChange={(v) => {
-                    if (v === "__create__") {
-                      setNewCatType(form.type);
-                      setNewCatName("");
-                      setCatDialogOpen(true);
-                      return;
-                    }
-                    if (v === "__manage__") {
-                      setNewCatType(form.type);
-                      setNewCatName("");
-                      cancelEditCategory();
-                      setCatDialogOpen(true);
-                      return;
-                    }
                     setForm({ ...form, category: v });
                     formValidation.clearField("category");
                   }}
                 >
                   <SelectTrigger className={`rounded-xl ${formValidation.getError("category") ? "border-destructive" : ""}`}><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__create__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Create Category</span>
-                    </SelectItem>
-                    <SelectItem value="__manage__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> Manage Categories</span>
-                    </SelectItem>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
