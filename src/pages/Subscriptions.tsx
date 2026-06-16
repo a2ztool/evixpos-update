@@ -858,7 +858,7 @@ const Subscriptions = () => {
               <>
                 {/* Mobile Cards */}
                 <div className="md:hidden space-y-3 pb-safe">
-                  {filtered.map((s) => {
+                  {paginated.map((s) => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
@@ -928,7 +928,7 @@ const Subscriptions = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filtered.map((s) => {
+                        {paginated.map((s) => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
