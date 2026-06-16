@@ -835,23 +835,6 @@ const IncomeExpense = () => {
                     </button>
                   );
                 })}
-                {accountBalances["__unassigned__"] && (
-                  <div className="rounded-xl border border-dashed border-border/60 p-3 bg-muted/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate">Unassigned</p>
-                        <p className="text-[10px] text-muted-foreground">{accountBalances["__unassigned__"].count} txns</p>
-                      </div>
-                    </div>
-                    <p className="text-base font-bold tabular-nums text-muted-foreground">
-                      {formatCurrency(accountBalances["__unassigned__"].income - accountBalances["__unassigned__"].expense, 0)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">Legacy entries with no account</p>
-                  </div>
-                )}
               </div>
             )}
             {accountFilter !== "all" && (
