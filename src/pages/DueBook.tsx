@@ -221,6 +221,9 @@ const DueBook = () => {
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
+  // Preserve scroll position across tab-switches / SW reloads
+  useScrollRestoration("due:scrollY", !loading);
+
   // Load store-configured payment methods (from Settings → Payment Methods)
   useEffect(() => {
     if (!activeStore || !effectiveUserId) return;
