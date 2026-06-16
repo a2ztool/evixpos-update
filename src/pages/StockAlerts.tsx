@@ -22,6 +22,8 @@ import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const StockAlerts = () => {
   const { storeId, ready } = useStoreQuery();
@@ -205,6 +207,23 @@ const StockAlerts = () => {
     p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const lowPagination = usePagination(filteredLow.length, {
+    storageKey: `pg:stock-low:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search, lowThreshold }),
+  });
+  const pagedLow = useMemo(
+    () => paginate(filteredLow, lowPagination.page, lowPagination.pageSize),
+    [filteredLow, lowPagination.page, lowPagination.pageSize],
+  );
+  const deadPagination = usePagination(filteredDead.length, {
+    storageKey: `pg:stock-dead:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search }),
+  });
+  const pagedDead = useMemo(
+    () => paginate(filteredDead, deadPagination.page, deadPagination.pageSize),
+    [filteredDead, deadPagination.page, deadPagination.pageSize],
+  );
+
   const stockBadge = (stock: number) => {
     if (stock === 0) return <Badge variant="destructive" className="gap-1"><PackageX className="h-3 w-3" />Out</Badge>;
     if (stock <= criticalThreshold) return <Badge className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20 gap-1"><ShieldAlert className="h-3 w-3" />Critical</Badge>;
@@ -226,8 +245,10 @@ const StockAlerts = () => {
   };
 
   const toggleAll = () => {
-    if (selectedIds.length === filteredLow.length) setSelectedIds([]);
-    else setSelectedIds(filteredLow.map((p: any) => p.id));
+    const pageIds = pagedLow.map((p: any) => p.id);
+    const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+    if (allOnPageSelected) setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    else setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
   };
 
   return (
@@ -418,7 +439,7 @@ const StockAlerts = () => {
                       <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-emerald-500" />
                       <p className="text-sm text-muted-foreground">All products well stocked!</p>
                     </div>
-                  ) : filteredLow.map((p: any) => {
+                  ) : pagedLow.map((p: any) => {
                     const pct = Math.min((p.stock / lowThreshold) * 100, 100);
                     return (
                       <div key={p.id} className="rounded-xl border bg-gradient-to-br from-card to-muted/20 p-3">
@@ -447,7 +468,7 @@ const StockAlerts = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
-                        <TableHead className="w-10"><Checkbox checked={filteredLow.length > 0 && selectedIds.length === filteredLow.length} onCheckedChange={toggleAll} /></TableHead>
+                        <TableHead className="w-10"><Checkbox checked={pagedLow.length > 0 && pagedLow.every((p: any) => selectedIds.includes(p.id))} onCheckedChange={toggleAll} /></TableHead>
                         <TableHead>Product</TableHead>
                         <TableHead>SKU</TableHead>
                         <TableHead>Stock Level</TableHead>
@@ -464,7 +485,7 @@ const StockAlerts = () => {
                           <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-emerald-500" />
                           <p className="text-muted-foreground">All products are well stocked!</p>
                         </TableCell></TableRow>
-                      ) : filteredLow.map((p: any) => {
+                      ) : pagedLow.map((p: any) => {
                         const pct = Math.min((p.stock / lowThreshold) * 100, 100);
                         return (
                           <TableRow key={p.id} className="hover:bg-muted/30">
@@ -491,6 +512,18 @@ const StockAlerts = () => {
                   </Table>
                 </div>
               </CardContent>
+              {filteredLow.length > 0 && (
+                <div className="px-3 pb-3">
+                  <DataPagination
+                    page={lowPagination.page}
+                    pageSize={lowPagination.pageSize}
+                    total={filteredLow.length}
+                    onPageChange={lowPagination.setPage}
+                    onPageSizeChange={lowPagination.setPageSize}
+                    itemLabel="products"
+                  />
+                </div>
+              )}
             </Card>
           </TabsContent>
 
@@ -511,7 +544,7 @@ const StockAlerts = () => {
                       <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-emerald-500" />
                       <p className="text-sm text-muted-foreground">No dead stock detected!</p>
                     </div>
-                  ) : filteredDead.map((p: any) => (
+                  ) : pagedDead.map((p: any) => (
                     <div key={p.id} className="rounded-xl border bg-gradient-to-br from-card to-amber-500/5 p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 min-w-0">
@@ -552,7 +585,7 @@ const StockAlerts = () => {
                           <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-emerald-500" />
                           <p className="text-muted-foreground">No dead stock detected!</p>
                         </TableCell></TableRow>
-                      ) : filteredDead.map((p: any) => (
+                      ) : pagedDead.map((p: any) => (
                         <TableRow key={p.id} className="hover:bg-muted/30">
                           <TableCell className="font-medium">{p.name}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{p.sku || "—"}</TableCell>
@@ -571,6 +604,18 @@ const StockAlerts = () => {
                   </Table>
                 </div>
               </CardContent>
+              {filteredDead.length > 0 && (
+                <div className="px-3 pb-3">
+                  <DataPagination
+                    page={deadPagination.page}
+                    pageSize={deadPagination.pageSize}
+                    total={filteredDead.length}
+                    onPageChange={deadPagination.setPage}
+                    onPageSizeChange={deadPagination.setPageSize}
+                    itemLabel="products"
+                  />
+                </div>
+              )}
             </Card>
           </TabsContent>
 

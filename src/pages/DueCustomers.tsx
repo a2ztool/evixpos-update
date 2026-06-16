@@ -23,6 +23,8 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { format as formatDate, subDays, differenceInDays } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type AgeFilter = "all" | "fresh" | "warning" | "critical";
 type SortKey = "due_desc" | "due_asc" | "name" | "oldest";
@@ -128,6 +130,15 @@ const DueCustomers = () => {
     else if (sortKey === "oldest") list.sort((a: any, b: any) => ageOf(b) - ageOf(a));
     return list;
   }, [dueCustomers, search, ageFilter, sortKey]);
+
+  const pagination = usePagination(processed.length, {
+    storageKey: `pg:due-customers:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search, ageFilter, sortKey }),
+  });
+  const pagedProcessed = useMemo(
+    () => paginate(processed, pagination.page, pagination.pageSize),
+    [processed, pagination.page, pagination.pageSize],
+  );
 
   const payMutation = useMutation({
     mutationFn: async () => {
@@ -490,7 +501,7 @@ const DueCustomers = () => {
                   <CheckCircle2 className="h-10 w-10 mx-auto text-emerald-500 mb-2" />
                   <p className="text-sm text-muted-foreground">No due customers 🎉</p>
                 </div>
-              ) : processed.map((c: any) => {
+              ) : pagedProcessed.map((c: any) => {
                 const due = Number(c.total_due);
                 const pctOfTotal = totalDue > 0 ? (due / totalDue) * 100 : 0;
                 return (
@@ -555,7 +566,7 @@ const DueCustomers = () => {
                       <CheckCircle2 className="h-10 w-10 mx-auto text-emerald-500 mb-2" />
                       <p className="text-sm text-muted-foreground">No due customers 🎉</p>
                     </TableCell></TableRow>
-                  ) : processed.map((c: any) => (
+                  ) : pagedProcessed.map((c: any) => (
                     <TableRow key={c.id} className="group">
                       <TableCell>
                         <div className="flex items-center gap-2.5">
@@ -602,6 +613,18 @@ const DueCustomers = () => {
               </Table>
             </div>
           </CardContent>
+          {processed.length > 0 && (
+            <div className="px-3 sm:px-4 pb-3">
+              <DataPagination
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                total={processed.length}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
+                itemLabel="customers"
+              />
+            </div>
+          )}
         </Card>
 
         {/* Pay dialog */}

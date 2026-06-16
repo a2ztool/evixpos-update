@@ -35,6 +35,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, isWithinInterval, subDays, startOfDay, isToday } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -237,6 +239,15 @@ const IncomeExpense = () => {
       return true;
     });
   }, [txns, typeFilter, categoryFilter, accountFilter, search, getDateRange]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:income-expense:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ typeFilter, categoryFilter, accountFilter, search, datePreset, customDateFrom, customDateTo }),
+  });
+  const pagedFiltered = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
 
   // Per-account balances (across all transactions for this store, not filtered by date)
   const accountBalances = useMemo(() => {
@@ -1045,7 +1056,7 @@ const IncomeExpense = () => {
                     <p className="text-muted-foreground/60 text-xs mt-1">Add your first income or expense</p>
                   </CardContent>
                 </Card>
-              ) : filtered.map((t) => (
+              ) : pagedFiltered.map((t) => (
                 <Card key={t.id} className="rounded-2xl overflow-hidden">
                   <CardContent className="!p-3.5">
                     <div className="flex items-start justify-between">
@@ -1100,6 +1111,16 @@ const IncomeExpense = () => {
                   </CardContent>
                 </Card>
               ))}
+              {filtered.length > 0 && (
+                <DataPagination
+                  page={pagination.page}
+                  pageSize={pagination.pageSize}
+                  total={filtered.length}
+                  onPageChange={pagination.setPage}
+                  onPageSizeChange={pagination.setPageSize}
+                  itemLabel="transactions"
+                />
+              )}
             </div>
 
             {/* Desktop table */}
@@ -1130,7 +1151,7 @@ const IncomeExpense = () => {
                             <p className="text-muted-foreground text-sm">No transactions found</p>
                           </TableCell>
                         </TableRow>
-                      ) : filtered.map((t) => (
+                      ) : pagedFiltered.map((t) => (
                         <TableRow key={t.id} className="group">
                           <TableCell className="text-sm text-muted-foreground">{format(new Date(t.created_at), "dd MMM yyyy")}</TableCell>
                           <TableCell>
@@ -1185,6 +1206,18 @@ const IncomeExpense = () => {
                   </Table>
                 </CardContent>
               </Card>
+              {filtered.length > 0 && (
+                <div className="mt-3">
+                  <DataPagination
+                    page={pagination.page}
+                    pageSize={pagination.pageSize}
+                    total={filtered.length}
+                    onPageChange={pagination.setPage}
+                    onPageSizeChange={pagination.setPageSize}
+                    itemLabel="transactions"
+                  />
+                </div>
+              )}
             </div>
           </TabsContent>
 

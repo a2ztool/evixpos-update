@@ -26,6 +26,8 @@ import {
   Settings2, Link2, Sparkles, BookOpen, Activity, ArrowLeft
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subDays, startOfDay } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 interface PaymentAccount { id: string; name: string; enabled: boolean; }
 interface Txn {
@@ -258,6 +260,15 @@ const AccountBook = () => {
       return true;
     });
   }, [dateFiltered, activeAccountId, typeFilter, search]);
+
+  const pagination = usePagination(visibleTxns.length, {
+    storageKey: `pg:account-book:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ activeAccountId, typeFilter, search, datePreset, customFrom, customTo }),
+  });
+  const pagedTxns = useMemo(
+    () => paginate(visibleTxns, pagination.page, pagination.pageSize),
+    [visibleTxns, pagination.page, pagination.pageSize],
+  );
 
   const accountName = useCallback((id: string) => {
     if (id === UNASSIGNED) return "Unassigned";
@@ -591,7 +602,7 @@ const AccountBook = () => {
               <>
                 {/* Mobile list */}
                 <div className="sm:hidden divide-y">
-                  {visibleTxns.slice(0, 200).map((t) => (
+                  {pagedTxns.map((t) => (
                     <div key={t.id} className="flex items-center gap-2.5 px-3 py-2.5">
                       <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${t.type === "income" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"}`}>
                         {t.type === "income" ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
@@ -627,7 +638,7 @@ const AccountBook = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {visibleTxns.slice(0, 200).map((t) => (
+                    {pagedTxns.map((t) => (
                       <TableRow key={t.id}>
                         <TableCell className="text-xs whitespace-nowrap">{format(new Date(t.created_at), "PP p")}</TableCell>
                         <TableCell>
@@ -650,11 +661,16 @@ const AccountBook = () => {
                   </TableBody>
                   </Table>
                 </div>
-                {visibleTxns.length > 200 && (
-                  <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t">
-                    Showing 200 of {visibleTxns.length} — refine date range or export full list.
-                  </div>
-                )}
+                <div className="px-3 sm:px-4 py-2">
+                  <DataPagination
+                    page={pagination.page}
+                    pageSize={pagination.pageSize}
+                    total={visibleTxns.length}
+                    onPageChange={pagination.setPage}
+                    onPageSizeChange={pagination.setPageSize}
+                    itemLabel="transactions"
+                  />
+                </div>
               </>
             )}
           </CardContent>

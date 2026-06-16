@@ -23,6 +23,8 @@ import { useStoreQuery } from "@/hooks/useStoreQuery";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
 import { format as formatDate } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const Inventory = () => {
   const { storeId, userId, ready } = useStoreQuery();
@@ -271,6 +273,15 @@ const Inventory = () => {
       return matchSearch && matchStatus && matchSupplier && matchDate;
     });
   }, [purchases, purchaseSearch, statusFilter, selectedSupplier, dateRange]);
+
+  const purchasesPagination = usePagination(filteredPurchases.length, {
+    storageKey: `pg:inventory-purchases:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ purchaseSearch, statusFilter, dateRange, sup: selectedSupplier?.id ?? null }),
+  });
+  const pagedPurchases = useMemo(
+    () => paginate(filteredPurchases, purchasesPagination.page, purchasesPagination.pageSize),
+    [filteredPurchases, purchasesPagination.page, purchasesPagination.pageSize],
+  );
 
   // --- Analytics ---
   const totalDue = suppliers.reduce((s: number, sup: any) => s + Number(sup.balance_due || 0), 0);
@@ -559,7 +570,7 @@ const Inventory = () => {
                     <p className="text-center py-6 text-xs text-muted-foreground">Loading...</p>
                   ) : filteredPurchases.length === 0 ? (
                     <p className="text-center py-6 text-xs text-muted-foreground">No purchases found</p>
-                  ) : filteredPurchases.map((p: any) => {
+                  ) : pagedPurchases.map((p: any) => {
                     const due = Math.max(0, Number(p.total_amount) - Number(p.paid_amount));
                     return (
                       <div key={p.id} className="border border-border/60 rounded-lg p-2.5 space-y-1.5 bg-card">
@@ -611,7 +622,7 @@ const Inventory = () => {
                         <TableRow><TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">Loading...</TableCell></TableRow>
                       ) : filteredPurchases.length === 0 ? (
                         <TableRow><TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">No purchases found</TableCell></TableRow>
-                      ) : filteredPurchases.map((p: any) => {
+                      ) : pagedPurchases.map((p: any) => {
                         const due = Math.max(0, Number(p.total_amount) - Number(p.paid_amount));
                         return (
                           <TableRow key={p.id}>
@@ -641,6 +652,17 @@ const Inventory = () => {
                 </div>
               </CardContent>
             </Card>
+            {filteredPurchases.length > 0 && (
+              <DataPagination
+                page={purchasesPagination.page}
+                pageSize={purchasesPagination.pageSize}
+                total={filteredPurchases.length}
+                onPageChange={purchasesPagination.setPage}
+                onPageSizeChange={purchasesPagination.setPageSize}
+                itemLabel="purchases"
+                className="px-3"
+              />
+            )}
 
             {/* Top suppliers leaderboard */}
             {topSuppliers.length > 0 && (
