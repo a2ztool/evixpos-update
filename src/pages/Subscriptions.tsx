@@ -37,6 +37,7 @@ import {
 } from "recharts";
 import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
 
 interface Subscription {
   id: string;
@@ -121,9 +122,9 @@ const Subscriptions = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState("subscriptions");
+  const [search, setSearch] = usePersistedState<string>("subs:search", "");
+  const [statusFilter, setStatusFilter] = usePersistedState<string>("subs:statusFilter", "all");
+  const [activeTab, setActiveTab] = usePersistedState<string>("subs:activeTab", "subscriptions");
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
