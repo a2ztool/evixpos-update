@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { creditPaymentSchema, creditLimitSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate, differenceInDays } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type RiskFilter = "all" | "overdue" | "over_limit" | "paid";
 type SortKey = "due_desc" | "due_asc" | "name" | "recent";
@@ -225,6 +227,12 @@ const CustomerCredits = () => {
 
     return list;
   }, [credits, search, riskFilter, sortKey]);
+
+  const pagination = usePagination(processed.length, {
+    storageKey: `pg:customer-credits:${storeId ?? "_"}`,
+    filterSignature: JSON.stringify({ search, riskFilter, sortKey }),
+  });
+  const pagedRecords = paginate(processed as any[], pagination.page, pagination.pageSize);
 
   const getRiskBadge = (c: any) => {
     const due = Number(c.total_due);
