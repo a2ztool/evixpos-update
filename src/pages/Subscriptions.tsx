@@ -126,6 +126,8 @@ const Subscriptions = () => {
   const [search, setSearch] = usePersistedState<string>("subs:search", "");
   const [statusFilter, setStatusFilter] = usePersistedState<string>("subs:statusFilter", "all");
   const [activeTab, setActiveTab] = usePersistedState<string>("subs:activeTab", "subscriptions");
+  const [currentPage, setCurrentPage] = usePersistedState<number>("subs:page", 1);
+  const PAGE_SIZE = 10;
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
