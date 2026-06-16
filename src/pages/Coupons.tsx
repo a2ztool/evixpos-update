@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { couponSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import {
   Plus, Tag, Search, Trash2, Pencil, Copy, HelpCircle, LayoutGrid, List,
   TicketPercent, CheckCircle2, XCircle, TrendingUp, Sparkles, Calendar,
