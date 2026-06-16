@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { loyaltyAdjustSchema, loyaltyRedeemSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type TierFilter = "all" | "bronze" | "silver" | "gold" | "platinum";
 type SortKey = "available_desc" | "total_desc" | "name" | "recent";
@@ -196,6 +198,12 @@ const LoyaltyPoints = () => {
     );
     return list;
   }, [loyaltyRecords, search, tierFilter, sortKey]);
+
+  const pagination = usePagination(processed.length, {
+    storageKey: `pg:loyalty:${storeId ?? "_"}`,
+    filterSignature: JSON.stringify({ search, tierFilter, sortKey }),
+  });
+  const pagedRecords = paginate(processed as any[], pagination.page, pagination.pageSize);
 
   const exportCSV = () => {
     const header = "Customer,Phone,Tier,Total,Redeemed,Available\n";
@@ -472,7 +480,7 @@ const LoyaltyPoints = () => {
                   <Star className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">No loyalty records yet</p>
                 </div>
-              ) : processed.map((r: any) => {
+              ) : pagedRecords.map((r: any) => {
                 const avail = Number(r.total_points) - Number(r.redeemed_points);
                 const t = tierOf(avail);
                 const nextProgress = t.next ? Math.min(100, (avail / t.next) * 100) : 100;
@@ -550,7 +558,7 @@ const LoyaltyPoints = () => {
                       <Star className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                       <p className="text-sm text-muted-foreground">No loyalty records yet</p>
                     </TableCell></TableRow>
-                  ) : processed.map((r: any) => {
+                  ) : pagedRecords.map((r: any) => {
                     const avail = Number(r.total_points) - Number(r.redeemed_points);
                     const t = tierOf(avail);
                     const nextProgress = t.next ? Math.min(100, (avail / t.next) * 100) : 100;
@@ -602,6 +610,17 @@ const LoyaltyPoints = () => {
             </div>
           </CardContent>
         </Card>
+
+        {processed.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={processed.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="loyalty records"
+          />
+        )}
 
         {/* Recent transactions */}
         {transactions.length > 0 && (
