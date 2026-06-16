@@ -39,14 +39,3 @@ export const preservePageStateForExternalAction = (
     markExternalAction();
   }
 };
-
-export const openExternalUrlPreservingState = (
-  url: string,
-  state: Record<string, unknown>,
-  scrollKey: string,
-  targetKey?: string,
-  targetId?: string,
-) => {
-  preservePageStateForExternalAction(state, scrollKey, targetKey, targetId);
-  return window.open(url, "_blank", "noopener,noreferrer");
-};
