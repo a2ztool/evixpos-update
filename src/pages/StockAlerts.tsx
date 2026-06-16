@@ -604,6 +604,18 @@ const StockAlerts = () => {
                   </Table>
                 </div>
               </CardContent>
+              {filteredDead.length > 0 && (
+                <div className="px-3 pb-3">
+                  <DataPagination
+                    page={deadPagination.page}
+                    pageSize={deadPagination.pageSize}
+                    total={filteredDead.length}
+                    onPageChange={deadPagination.setPage}
+                    onPageSizeChange={deadPagination.setPageSize}
+                    itemLabel="products"
+                  />
+                </div>
+              )}
             </Card>
           </TabsContent>
 

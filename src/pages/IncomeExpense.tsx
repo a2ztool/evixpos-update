@@ -35,6 +35,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, isWithinInterval, subDays, startOfDay, isToday } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -237,6 +239,15 @@ const IncomeExpense = () => {
       return true;
     });
   }, [txns, typeFilter, categoryFilter, accountFilter, search, getDateRange]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:income-expense:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ typeFilter, categoryFilter, accountFilter, search, datePreset, customDateFrom, customDateTo }),
+  });
+  const pagedFiltered = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
 
   // Per-account balances (across all transactions for this store, not filtered by date)
   const accountBalances = useMemo(() => {
