@@ -361,6 +361,14 @@ const Subscriptions = () => {
   );
   const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
+  useEffect(() => {
+    if (loading || !isExternalActionActive()) return;
+    const targetId = window.sessionStorage.getItem(SUBS_LAST_REMINDER_KEY);
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-subs-row="${targetId}"]`)?.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+  }, [loading, paginated]);
 
   // Handlers
   const openAdd = () => { setEditId(null); setForm(emptyForm); formValidation.clearErrors(); setSheetOpen(true); };
@@ -885,7 +893,7 @@ const Subscriptions = () => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
-                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
+                      <Card key={s.id} data-subs-row={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start gap-2">
                             <Checkbox
@@ -955,7 +963,7 @@ const Subscriptions = () => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
-                            <TableRow key={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                            <TableRow key={s.id} data-subs-row={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
                               <TableCell>
                                 <Checkbox
                                   checked={selectedIds.has(s.id)}
