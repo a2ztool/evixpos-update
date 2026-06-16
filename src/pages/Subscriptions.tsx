@@ -329,13 +329,17 @@ const Subscriptions = () => {
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const filterResetRef = useRef(true);
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(1);
   }, [totalPages, currentPage, setCurrentPage]);
   useEffect(() => {
+    if (filterResetRef.current) {
+      filterResetRef.current = false;
+      return;
+    }
     setCurrentPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter]);
+  }, [search, statusFilter, setCurrentPage]);
   const paginated = useMemo(
     () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [filtered, currentPage]
