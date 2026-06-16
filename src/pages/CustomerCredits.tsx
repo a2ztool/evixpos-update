@@ -496,7 +496,7 @@ const CustomerCredits = () => {
                   <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">No credit records found</p>
                 </div>
-              ) : processed.map((c: any) => {
+              ) : pagedRecords.map((c: any) => {
                 const due = Number(c.total_due);
                 const limit = Number(c.credit_limit);
                 const usagePct = limit > 0 ? Math.min(100, (due / limit) * 100) : 0;
@@ -566,7 +566,7 @@ const CustomerCredits = () => {
                       <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                       <p className="text-sm text-muted-foreground">No credit records found</p>
                     </TableCell></TableRow>
-                  ) : processed.map((c: any) => {
+                  ) : pagedRecords.map((c: any) => {
                     const due = Number(c.total_due);
                     const limit = Number(c.credit_limit);
                     const usagePct = limit > 0 ? Math.min(100, (due / limit) * 100) : 0;
@@ -629,6 +629,17 @@ const CustomerCredits = () => {
             </div>
           </CardContent>
         </Card>
+
+        {processed.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={processed.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="credit records"
+          />
+        )}
 
         {/* ===== Recent Payments ===== */}
         {payments.length > 0 && (
