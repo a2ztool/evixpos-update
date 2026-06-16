@@ -38,7 +38,7 @@ import {
 import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
-import { isExternalActionActive, openExternalUrlPreservingState, preservePageStateForExternalAction } from "@/lib/pageState";
+import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
 import SubscriptionRenewalWizard, { type SubscriptionRenewalSubject } from "@/components/SubscriptionRenewalWizard";
 
 interface Subscription {
@@ -463,12 +463,8 @@ const Subscriptions = () => {
     if (!customer?.phone) { toast.error("Customer has no phone number"); return; }
     const message = buildReminderMessage(s, customer.name);
     const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
-    openExternalUrlPreservingState(url, {
-      "subs:search": search,
-      "subs:statusFilter": statusFilter,
-      "subs:activeTab": activeTab,
-      "subs:page": currentPage,
-    }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, s.id);
+    preserveSubscriptionListState(s.id);
+    window.open(url, "_blank", "noopener,noreferrer");
     toast.success("WhatsApp opened");
   };
 
@@ -512,12 +508,8 @@ const Subscriptions = () => {
       if (!customer?.phone) { skipped++; continue; }
       const message = buildReminderMessage(s, customer.name);
       const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
-      openExternalUrlPreservingState(url, {
-        "subs:search": search,
-        "subs:statusFilter": statusFilter,
-        "subs:activeTab": activeTab,
-        "subs:page": currentPage,
-      }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, s.id);
+      preserveSubscriptionListState(s.id);
+      window.open(url, "_blank", "noopener,noreferrer");
       opened++;
       // small delay so the browser doesn't block multi-window opens
       await new Promise(r => setTimeout(r, 250));
