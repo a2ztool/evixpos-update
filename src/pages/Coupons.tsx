@@ -310,7 +310,7 @@ const Coupons = () => {
       ) : view === "grid" ? (
         // Grid view
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((c) => {
+          {paged.map((c) => {
             const expired = isExpired(c);
             return (
               <div key={c.id} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-4 hover:shadow-lg hover:shadow-primary/5 transition-all">
@@ -357,7 +357,7 @@ const Coupons = () => {
         <>
           {/* Mobile cards */}
           <div className="md:hidden space-y-2.5 pb-safe">
-            {filtered.map((c) => {
+            {paged.map((c) => {
               const expired = isExpired(c);
               return (
                 <div key={c.id} className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-3 space-y-2.5">
@@ -413,7 +413,7 @@ const Coupons = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => {
+                {paged.map((c) => {
                   const expired = isExpired(c);
                   return (
                     <TableRow key={c.id} className="hover:bg-muted/30 transition-colors border-border/60">
@@ -448,6 +448,17 @@ const Coupons = () => {
             </Table>
           </div>
         </>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <DataPagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="coupons"
+        />
       )}
 
       {/* Create / Edit Sheet */}
