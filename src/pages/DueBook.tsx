@@ -935,7 +935,9 @@ const DueBook = () => {
                   </Select>
                 </div>
                 <div className="flex items-center justify-between mt-3 px-1">
-                  <p className="text-xs text-muted-foreground">{filtered.length} entries</p>
+                  <p className="text-xs text-muted-foreground">
+                    {filtered.length === 0 ? "0 entries" : `Showing ${rangeStart}–${rangeEnd} of ${filtered.length} entries`}
+                  </p>
                   <p className="text-xs font-medium">
                     Total: <span className="font-bold text-foreground">{formatCurrency(filtered.reduce((s, d) => s + Number(d.amount), 0), 0)}</span>
                   </p>
@@ -954,7 +956,7 @@ const DueBook = () => {
                   </Button>
                 </Card>
               ) : (
-                filtered.map((d) => {
+                paginated.map((d) => {
                   const info = getDaysInfo(d);
                   const phone = extractPhone(d.note);
                   const cleanNote = stripPhone(d.note);
@@ -1032,7 +1034,7 @@ const DueBook = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((d) => {
+                    {paginated.map((d) => {
                       const info = getDaysInfo(d);
                       const contact = getDueContact(d);
                       const phone = contact.phone;
