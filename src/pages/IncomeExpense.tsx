@@ -1056,7 +1056,7 @@ const IncomeExpense = () => {
                     <p className="text-muted-foreground/60 text-xs mt-1">Add your first income or expense</p>
                   </CardContent>
                 </Card>
-              ) : filtered.map((t) => (
+              ) : pagedFiltered.map((t) => (
                 <Card key={t.id} className="rounded-2xl overflow-hidden">
                   <CardContent className="!p-3.5">
                     <div className="flex items-start justify-between">
@@ -1151,7 +1151,7 @@ const IncomeExpense = () => {
                             <p className="text-muted-foreground text-sm">No transactions found</p>
                           </TableCell>
                         </TableRow>
-                      ) : filtered.map((t) => (
+                      ) : pagedFiltered.map((t) => (
                         <TableRow key={t.id} className="group">
                           <TableCell className="text-sm text-muted-foreground">{format(new Date(t.created_at), "dd MMM yyyy")}</TableCell>
                           <TableCell>
