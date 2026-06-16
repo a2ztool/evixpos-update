@@ -539,7 +539,7 @@ export default function SubscriptionRenewalWizard({ open, onOpenChange, subscrip
             </div>
           )}
 
-          {/* STEP 3 — Payment type & discount */}
+          {/* STEP 3 — Payment (type, discount, method, paid) */}
           {step === 3 && (
             <div className="space-y-3">
               <div>
@@ -581,18 +581,8 @@ export default function SubscriptionRenewalWizard({ open, onOpenChange, subscrip
                 </div>
               </div>
 
-              <Card className="p-3 bg-muted/30 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Price</span><span>{fmt(price)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="text-destructive">- {fmt(discountVal)}</span></div>
-                <Separator />
-                <div className="flex justify-between font-semibold"><span>Total</span><span className="text-primary">{fmt(finalTotal)}</span></div>
-              </Card>
-            </div>
-          )}
+              <Separator />
 
-          {/* STEP 4 — Payment details */}
-          {step === 4 && (
-            <div className="space-y-3">
               <div>
                 <Label className="text-xs">Payment Account / Method</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -625,8 +615,8 @@ export default function SubscriptionRenewalWizard({ open, onOpenChange, subscrip
             </div>
           )}
 
-          {/* STEP 5 — Review */}
-          {step === 5 && (
+          {/* STEP 4 — Review */}
+          {step === 4 && (
             <div className="space-y-3">
               <Card className="p-3 space-y-2 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
                 <div className="flex items-center justify-between">
