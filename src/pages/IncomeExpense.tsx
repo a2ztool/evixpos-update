@@ -1553,9 +1553,11 @@ const IncomeExpense = () => {
         <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><Plus className="h-4 w-4" /> Create Category</DialogTitle>
+              <DialogTitle className="flex items-center gap-2"><Pencil className="h-4 w-4" /> Manage Categories</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add New</p>
               <div className="space-y-1.5">
                 <Label>Category Name</Label>
                 <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
@@ -1577,15 +1579,106 @@ const IncomeExpense = () => {
                   </Button>
                 </div>
               </div>
+                <Button onClick={handleCreateCategory} disabled={creatingCat} className="w-full rounded-xl" size="sm">
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {creatingCat ? "Saving..." : "Add Category"}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Your Custom Categories ({customCategories.length})
+                </p>
+                {customCategories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No custom categories yet. Add one above.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {customCategories.map((cat) => (
+                      <div key={cat.id} className="rounded-xl border border-border/60 p-2.5">
+                        {editingCatId === cat.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingCatName}
+                              onChange={(e) => setEditingCatName(e.target.value)}
+                              className="rounded-lg h-9"
+                              autoFocus
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button type="button" size="sm" variant={editingCatType === "income" ? "default" : "outline"}
+                                className={`rounded-lg h-8 ${editingCatType === "income" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                                onClick={() => setEditingCatType("income")}>
+                                <TrendingUp className="h-3.5 w-3.5 mr-1" /> Income
+                              </Button>
+                              <Button type="button" size="sm" variant={editingCatType === "expense" ? "default" : "outline"}
+                                className={`rounded-lg h-8 ${editingCatType === "expense" ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                                onClick={() => setEditingCatType("expense")}>
+                                <TrendingDown className="h-3.5 w-3.5 mr-1" /> Expense
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={handleSaveEditCategory} disabled={savingEditCat} className="flex-1 rounded-lg h-8">
+                                {savingEditCat ? "Saving..." : "Save"}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditCategory} className="rounded-lg h-8">
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Badge variant="outline" className={`shrink-0 ${cat.type === "income" ? "border-green-600/40 text-green-700 dark:text-green-400" : "border-destructive/40 text-destructive"}`}>
+                                {cat.type === "income" ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                                {cat.type}
+                              </Badge>
+                              <span className="text-sm font-medium truncate">{cat.name}</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEditCategory(cat)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteCatId(cat.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCatDialogOpen(false)} className="rounded-xl">Cancel</Button>
-              <Button onClick={handleCreateCategory} disabled={creatingCat} className="rounded-xl">
-                {creatingCat ? "Saving..." : "Save Category"}
-              </Button>
+              <Button variant="outline" onClick={() => setCatDialogOpen(false)} className="rounded-xl w-full sm:w-auto">Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Category Confirmation */}
+        <AlertDialog open={!!deleteCatId} onOpenChange={(open) => !open && setDeleteCatId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this category?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the category from the picker only. Existing transactions linked to it will keep their category label and continue to appear in reports unchanged.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletingCat}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); handleConfirmDeleteCategory(); }}
+                disabled={deletingCat}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingCat ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
