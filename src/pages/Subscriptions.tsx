@@ -38,6 +38,7 @@ import {
 import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
+import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
 import SubscriptionRenewalWizard, { type SubscriptionRenewalSubject } from "@/components/SubscriptionRenewalWizard";
 
 interface Subscription {
@@ -93,6 +94,8 @@ const emptyForm = {
 
 const DEFAULT_WA_TEMPLATE = `Hi {customer_name}, your subscription for "{product_name}" ({variation}) {status_text}. Please renew to continue the service. Thank you!`;
 const TEMPLATE_STORAGE_KEY = "subscription_wa_template";
+const SUBS_SCROLL_KEY = "subs:scrollY";
+const SUBS_LAST_REMINDER_KEY = "subs:lastReminderId";
 
 const renderTemplate = (
   tpl: string,
@@ -140,6 +143,14 @@ const Subscriptions = () => {
   });
   const [templateDraft, setTemplateDraft] = useState(waTemplate);
   const formValidation = useFormValidation(subscriptionSchema);
+  const preserveSubscriptionListState = useCallback((targetId?: string) => {
+    preservePageStateForExternalAction({
+      "subs:search": search,
+      "subs:statusFilter": statusFilter,
+      "subs:activeTab": activeTab,
+      "subs:page": currentPage,
+    }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, targetId);
+  }, [search, statusFilter, activeTab, currentPage]);
 
   // Renewal wizard state
   const [renewOpen, setRenewOpen] = useState(false);
@@ -160,7 +171,7 @@ const Subscriptions = () => {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // Preserve scroll position across tab-switches / SW reloads
-  useScrollRestoration("subs:scrollY", !loading);
+  useScrollRestoration(SUBS_SCROLL_KEY, !loading);
 
   // Realtime
   useEffect(() => {
@@ -331,13 +342,15 @@ const Subscriptions = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const filterResetRef = useRef(true);
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [totalPages, currentPage, setCurrentPage]);
+    if (loading) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [loading, totalPages, currentPage, setCurrentPage]);
   useEffect(() => {
     if (filterResetRef.current) {
       filterResetRef.current = false;
       return;
     }
+    if (isExternalActionActive()) return;
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
   const paginated = useMemo(
@@ -346,6 +359,16 @@ const Subscriptions = () => {
   );
   const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
+  useEffect(() => {
+    if (loading || !isExternalActionActive()) return;
+    const savedY = Number(window.sessionStorage.getItem(SUBS_SCROLL_KEY) || 0);
+    if (savedY > 0) return;
+    const targetId = window.sessionStorage.getItem(SUBS_LAST_REMINDER_KEY);
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-subs-row="${targetId}"]`)?.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+  }, [loading, paginated]);
 
   // Handlers
   const openAdd = () => { setEditId(null); setForm(emptyForm); formValidation.clearErrors(); setSheetOpen(true); };
@@ -449,7 +472,9 @@ const Subscriptions = () => {
     const customer = customers.find((c) => c.id === s.customer_id);
     if (!customer?.phone) { toast.error("Customer has no phone number"); return; }
     const message = buildReminderMessage(s, customer.name);
-    window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+    const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+    preserveSubscriptionListState(s.id);
+    window.open(url, "_blank", "noopener,noreferrer");
     toast.success("WhatsApp opened");
   };
 
@@ -492,7 +517,9 @@ const Subscriptions = () => {
       const customer = customers.find((c) => c.id === s.customer_id);
       if (!customer?.phone) { skipped++; continue; }
       const message = buildReminderMessage(s, customer.name);
-      window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+      const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+      preserveSubscriptionListState(s.id);
+      window.open(url, "_blank", "noopener,noreferrer");
       opened++;
       // small delay so the browser doesn't block multi-window opens
       await new Promise(r => setTimeout(r, 250));
@@ -866,7 +893,7 @@ const Subscriptions = () => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
-                      <Card key={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
+                      <Card key={s.id} data-subs-row={s.id} className={`overflow-hidden transition-all hover:shadow-md ${selectedIds.has(s.id) ? "ring-2 ring-primary border-primary" : isExpired ? "border-destructive/30" : daysLeft <= 3 ? "border-amber-300/50" : ""}`}>
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start gap-2">
                             <Checkbox
@@ -936,7 +963,7 @@ const Subscriptions = () => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
-                            <TableRow key={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
+                            <TableRow key={s.id} data-subs-row={s.id} className={`group transition-colors ${selectedIds.has(s.id) ? "bg-primary/5 hover:bg-primary/10" : isExpired ? "bg-destructive/5 hover:bg-destructive/10" : daysLeft <= 3 ? "bg-amber-50/50 dark:bg-amber-950/10" : "hover:bg-muted/50"}`}>
                               <TableCell>
                                 <Checkbox
                                   checked={selectedIds.has(s.id)}

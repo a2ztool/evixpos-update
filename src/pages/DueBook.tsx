@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -26,6 +26,7 @@ import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
+import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -69,6 +70,9 @@ const DATE_PRESETS = [
   { label: "Last 30 Days", value: "30d" },
   { label: "Last 90 Days", value: "90d" },
 ];
+const DUE_PAGE_SIZE = 10;
+const DUE_SCROLL_KEY = "due:scrollY";
+const DUE_LAST_REMINDER_KEY = "due:lastReminderId";
 
 // Phone helpers — phone is embedded in note as "📱+880xxx | actual note"
 const PHONE_RE = /📱\s*([+\d][\d\s\-()]{6,20})/;
@@ -110,6 +114,7 @@ const DueBook = () => {
   const [datePreset, setDatePreset] = usePersistedState<string>("due:datePreset", "all");
   const [search, setSearch] = usePersistedState<string>("due:search", "");
   const [activeTab, setActiveTab] = usePersistedState<string>("due:activeTab", "overview");
+  const [currentPage, setCurrentPage] = usePersistedState<number>("due:page", 1);
   const [guideOpen, setGuideOpen] = useState(false);
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
@@ -133,6 +138,16 @@ const DueBook = () => {
   const [paymentsByTxn, setPaymentsByTxn] = useState<Record<string, DuePayment[]>>({});
   // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders (legacy fallback for old dues)
   const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
+  const preserveDueListState = useCallback((targetId?: string) => {
+    preservePageStateForExternalAction({
+      "due:statusFilter": statusFilter,
+      "due:typeFilter": typeFilter,
+      "due:datePreset": datePreset,
+      "due:search": search,
+      "due:activeTab": activeTab,
+      "due:page": currentPage,
+    }, DUE_SCROLL_KEY, DUE_LAST_REMINDER_KEY, targetId);
+  }, [statusFilter, typeFilter, datePreset, search, activeTab, currentPage]);
 
   const fetchDues = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -222,7 +237,7 @@ const DueBook = () => {
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
   // Preserve scroll position across tab-switches / SW reloads
-  useScrollRestoration("due:scrollY", !loading);
+  useScrollRestoration(DUE_SCROLL_KEY, !loading);
 
   // Load store-configured payment methods (from Settings → Payment Methods)
   useEffect(() => {
@@ -295,6 +310,37 @@ const DueBook = () => {
     }
     return result;
   }, [dues, statusFilter, typeFilter, datePreset, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DUE_PAGE_SIZE));
+  const filterResetRef = useRef(true);
+  useEffect(() => {
+    if (loading) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [loading, currentPage, totalPages, setCurrentPage]);
+  useEffect(() => {
+    if (filterResetRef.current) {
+      filterResetRef.current = false;
+      return;
+    }
+    if (isExternalActionActive()) return;
+    setCurrentPage(1);
+  }, [search, statusFilter, typeFilter, datePreset, setCurrentPage]);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * DUE_PAGE_SIZE, currentPage * DUE_PAGE_SIZE),
+    [filtered, currentPage]
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * DUE_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * DUE_PAGE_SIZE, filtered.length);
+  useEffect(() => {
+    if (loading || !isExternalActionActive()) return;
+    const savedY = Number(window.sessionStorage.getItem(DUE_SCROLL_KEY) || 0);
+    if (savedY > 0) return;
+    const targetId = window.sessionStorage.getItem(DUE_LAST_REMINDER_KEY);
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-due-row="${targetId}"]`)?.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+  }, [loading, paginated]);
 
   const stats = useMemo(() => {
     const unpaid = dues.filter((d) => !d.is_paid);
@@ -590,13 +636,14 @@ const DueBook = () => {
     }
   };
 
-  const sendWhatsApp = (phone: string, message: string) => {
+  const sendWhatsApp = (phone: string, message: string, targetId?: string) => {
     const cleanPhone = phone.replace(/[\s\-()+]/g, "");
     if (!cleanPhone) {
       toast.error("Please enter a phone number");
       return;
     }
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    preserveDueListState(targetId);
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success("Opening WhatsApp...");
   };
@@ -611,7 +658,7 @@ const DueBook = () => {
       return;
     }
     targets.slice(0, 5).forEach(({ d, contact }, i) => {
-      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name)), i * 400);
+      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name), d.id), i * 400);
     });
     toast.success(`Opening ${Math.min(targets.length, 5)} WhatsApp chats...`);
   };
@@ -898,7 +945,9 @@ const DueBook = () => {
                   </Select>
                 </div>
                 <div className="flex items-center justify-between mt-3 px-1">
-                  <p className="text-xs text-muted-foreground">{filtered.length} entries</p>
+                  <p className="text-xs text-muted-foreground">
+                    {filtered.length === 0 ? "0 entries" : `Showing ${rangeStart}–${rangeEnd} of ${filtered.length} entries`}
+                  </p>
                   <p className="text-xs font-medium">
                     Total: <span className="font-bold text-foreground">{formatCurrency(filtered.reduce((s, d) => s + Number(d.amount), 0), 0)}</span>
                   </p>
@@ -917,12 +966,12 @@ const DueBook = () => {
                   </Button>
                 </Card>
               ) : (
-                filtered.map((d) => {
+                paginated.map((d) => {
                   const info = getDaysInfo(d);
                   const phone = extractPhone(d.note);
                   const cleanNote = stripPhone(d.note);
                   return (
-                    <Card key={d.id} className={`rounded-2xl overflow-hidden transition-all hover:shadow-md ${info.isOverdue ? "border-destructive/40" : ""}`}>
+                    <Card key={d.id} data-due-row={d.id} className={`rounded-2xl overflow-hidden transition-all hover:shadow-md ${info.isOverdue ? "border-destructive/40" : ""}`}>
                       <CardContent className="!p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -995,13 +1044,13 @@ const DueBook = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((d) => {
+                    {paginated.map((d) => {
                       const info = getDaysInfo(d);
                       const contact = getDueContact(d);
                       const phone = contact.phone;
                       const cleanNote = stripPhone(d.note);
                       return (
-                        <TableRow key={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
+                        <TableRow key={d.id} data-due-row={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
                           <TableCell>
                             <Badge className={d.type === "income"
                               ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -1071,6 +1120,20 @@ const DueBook = () => {
                 </Table>
               </Card>
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
+                <p className="text-xs text-muted-foreground">Page {currentPage} of {totalPages}</p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>
+                    Previous
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}>
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* People Tab */}
@@ -1191,7 +1254,7 @@ const DueBook = () => {
               <Button variant="outline" onClick={copyReminder} className="gap-1.5 rounded-xl">
                 <Copy className="h-4 w-4" /> Copy
               </Button>
-              <Button onClick={() => { sendWhatsApp(reminderPhone, reminderText); setReminderModal(null); }} className="gap-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white">
+              <Button onClick={() => { sendWhatsApp(reminderPhone, reminderText, reminderModal?.id); setReminderModal(null); }} className="gap-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white">
                 <Send className="h-4 w-4" /> Send via WhatsApp
               </Button>
             </DialogFooter>
