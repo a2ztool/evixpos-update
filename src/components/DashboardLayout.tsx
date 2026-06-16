@@ -359,7 +359,7 @@ const DashboardLayoutInner = ({ children }: { children: React.ReactNode }) => {
       {widgetsReady && (
         <Suspense fallback={null}>
           <LazyFloatingInbox />
-          {!isStaff && <LazySupportPopup />}
+          {!isStaff && location.pathname === "/support" && <LazySupportPopup />}
         </Suspense>
       )}
 
