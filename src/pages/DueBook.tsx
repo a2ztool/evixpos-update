@@ -333,6 +333,8 @@ const DueBook = () => {
   const rangeEnd = Math.min(currentPage * DUE_PAGE_SIZE, filtered.length);
   useEffect(() => {
     if (loading || !isExternalActionActive()) return;
+    const savedY = Number(window.sessionStorage.getItem(DUE_SCROLL_KEY) || 0);
+    if (savedY > 0) return;
     const targetId = window.sessionStorage.getItem(DUE_LAST_REMINDER_KEY);
     if (!targetId) return;
     requestAnimationFrame(() => {

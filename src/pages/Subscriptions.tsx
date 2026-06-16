@@ -363,6 +363,8 @@ const Subscriptions = () => {
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
   useEffect(() => {
     if (loading || !isExternalActionActive()) return;
+    const savedY = Number(window.sessionStorage.getItem(SUBS_SCROLL_KEY) || 0);
+    if (savedY > 0) return;
     const targetId = window.sessionStorage.getItem(SUBS_LAST_REMINDER_KEY);
     if (!targetId) return;
     requestAnimationFrame(() => {
