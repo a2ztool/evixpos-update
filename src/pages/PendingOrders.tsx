@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 interface OrderItem {
   id: string;
@@ -188,6 +190,12 @@ const PendingOrders = () => {
     }
     return list;
   }, [orders, paymentFilter, sourceFilter, search, sortKey]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:pending-orders:${activeStore?.id ?? "_"}`,
+    filterSignature: JSON.stringify({ paymentFilter, sourceFilter, search, sortKey }),
+  });
+  const pagedOrders = paginate(filtered, pagination.page, pagination.pageSize);
 
   // Stats
   const stats = useMemo(() => {
@@ -392,7 +400,7 @@ const PendingOrders = () => {
         <>
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map((o) => {
+            {pagedOrders.map((o) => {
               const elapsed = getElapsed(o.created_at);
               const checked = selectedIds.has(o.id);
               return (
@@ -466,7 +474,7 @@ const PendingOrders = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((o) => {
+                {pagedOrders.map((o) => {
                   const elapsed = getElapsed(o.created_at);
                   const checked = selectedIds.has(o.id);
                   return (
@@ -524,6 +532,16 @@ const PendingOrders = () => {
               <strong className="text-foreground">Pro tip:</strong> Process urgent orders (red badges) first to keep customers happy and improve fulfillment time.
             </span>
           </div>
+
+          <DataPagination
+            className="mt-4"
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="pending orders"
+          />
         </>
       )}
 
