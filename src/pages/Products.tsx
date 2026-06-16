@@ -36,6 +36,8 @@ import {
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import ProductImageField from "@/components/ProductImageField";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 interface Product {
   id: string;
@@ -367,6 +369,12 @@ const Products = () => {
     });
     return sorted;
   }, [products, typeFilter, statusFilter, categoryFilter, stockFilter, search, sortBy]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:products:${activeStore?.id ?? "_"}`,
+    filterSignature: JSON.stringify({ typeFilter, statusFilter, categoryFilter, stockFilter, search, sortBy }),
+  });
+  const pagedProducts = paginate(filtered, pagination.page, pagination.pageSize);
 
   const stats = useMemo(() => {
     const total = products.length;
