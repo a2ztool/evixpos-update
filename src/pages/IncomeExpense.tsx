@@ -574,36 +574,36 @@ const IncomeExpense = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5">
-        {/* Premium Hero Header */}
-        <Card className="rounded-2xl border-border/50 overflow-hidden relative bg-gradient-to-br from-primary/5 via-background to-background">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-0" />
-          <CardContent className="!p-5 sm:!p-6 relative">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shrink-0">
-                  <Wallet className="h-6 w-6 text-primary-foreground" />
+      <div className="space-y-3">
+        {/* Compact Premium Hero Header */}
+        <Card className="rounded-2xl border-border/50 overflow-hidden relative bg-gradient-to-br from-primary/[0.04] via-background to-background">
+          <div className="absolute top-0 right-0 w-56 h-56 bg-primary/5 rounded-full blur-3xl -z-0" />
+          <CardContent className="!p-4 sm:!p-5 relative">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shrink-0">
+                  <Wallet className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Income & Expense</h1>
-                    <Badge variant="secondary" className="gap-1 text-[10px] font-semibold">
-                      <Sparkles className="h-3 w-3" /> PREMIUM
+                  <div className="flex items-center gap-1.5">
+                    <h1 className="text-base sm:text-lg font-bold tracking-tight leading-none">Income & Expense</h1>
+                    <Badge variant="secondary" className="gap-1 text-[9px] font-semibold h-4 px-1.5">
+                      <Sparkles className="h-2.5 w-2.5" /> PRO
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Track cashflow, savings rate, category breakdown & financial health
+                  <p className="text-[11px] text-muted-foreground mt-1 hidden sm:block">
+                    Cashflow · savings · category breakdown · financial health
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => setGuideOpen(!guideOpen)} className="gap-1.5 rounded-xl">
-                  <Lightbulb className="h-4 w-4" /> Guide
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button variant="ghost" size="sm" onClick={() => setGuideOpen(!guideOpen)} className="h-8 gap-1.5 rounded-lg px-2 text-xs">
+                  <Lightbulb className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Guide</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 rounded-xl">
-                      <Download className="h-4 w-4" /> Export
+                    <Button variant="ghost" size="sm" className="h-8 gap-1.5 rounded-lg px-2 text-xs">
+                      <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -612,46 +612,45 @@ const IncomeExpense = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" size="sm" onClick={() => openAdd("expense")} className="gap-1.5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
-                  <TrendingDown className="h-4 w-4" /> Expense
+                <div className="h-5 w-px bg-border/60 mx-0.5 hidden sm:block" />
+                <Button variant="outline" size="sm" onClick={() => openAdd("expense")} className="h-8 gap-1.5 rounded-lg px-2.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
+                  <TrendingDown className="h-3.5 w-3.5" /> Expense
                 </Button>
-                <Button variant="outline" size="sm" onClick={openTransfer} className="gap-1.5 rounded-xl border-primary/40 text-primary hover:bg-primary/10" disabled={accounts.length < 2}>
-                  <ArrowLeftRight className="h-4 w-4" /> Transfer
+                <Button variant="outline" size="sm" onClick={openTransfer} className="h-8 gap-1.5 rounded-lg px-2.5 text-xs border-primary/40 text-primary hover:bg-primary/10" disabled={accounts.length < 2}>
+                  <ArrowLeftRight className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Transfer</span>
                 </Button>
-                <Button size="sm" onClick={() => openAdd("income")} className="gap-1.5 rounded-xl shadow-md bg-green-600 hover:bg-green-700 text-white">
-                  <TrendingUp className="h-4 w-4" /> Income
+                <Button size="sm" onClick={() => openAdd("income")} className="h-8 gap-1.5 rounded-lg px-2.5 text-xs shadow-sm bg-green-600 hover:bg-green-700 text-white">
+                  <TrendingUp className="h-3.5 w-3.5" /> Income
                 </Button>
               </div>
             </div>
 
-            {/* Today's snapshot strip */}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-border/40">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                  <ArrowUpRight className="h-3.5 w-3.5 text-green-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">Today In</p>
-                  <p className="text-sm font-bold text-green-600 tabular-nums truncate">{formatCurrency(todayStats.income, 0)}</p>
-                </div>
+            {/* Today's snapshot — inline pill row */}
+            <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-2 sm:gap-4 overflow-x-auto scrollbar-none">
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground shrink-0">Today</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <ArrowUpRight className="h-3.5 w-3.5 text-green-600" />
+                <span className="text-xs font-bold text-green-600 tabular-nums">{formatCurrency(todayStats.income, 0)}</span>
+                <span className="text-[10px] text-muted-foreground">in</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                  <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">Today Out</p>
-                  <p className="text-sm font-bold text-destructive tabular-nums truncate">{formatCurrency(todayStats.expense, 0)}</p>
-                </div>
+              <div className="h-3 w-px bg-border/60" />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <ArrowDownRight className="h-3.5 w-3.5 text-destructive" />
+                <span className="text-xs font-bold text-destructive tabular-nums">{formatCurrency(todayStats.expense, 0)}</span>
+                <span className="text-[10px] text-muted-foreground">out</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Activity className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground">Today Txns</p>
-                  <p className="text-sm font-bold tabular-nums">{todayStats.count}</p>
-                </div>
+              <div className="h-3 w-px bg-border/60" />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Activity className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-bold tabular-nums">{todayStats.count}</span>
+                <span className="text-[10px] text-muted-foreground">txns</span>
+              </div>
+              <div className="flex-1" />
+              <div className="hidden sm:flex items-center gap-1.5 shrink-0 text-[10px] text-muted-foreground">
+                <span>Net today</span>
+                <span className={`font-bold tabular-nums ${todayStats.income - todayStats.expense >= 0 ? "text-green-600" : "text-destructive"}`}>
+                  {todayStats.income - todayStats.expense >= 0 ? "+" : "-"}{formatCurrency(Math.abs(todayStats.income - todayStats.expense), 0)}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -699,7 +698,7 @@ const IncomeExpense = () => {
         </Collapsible>
 
         {/* Compact Premium KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
           {[
             {
               label: "Total Income", value: formatCurrency(stats.income, 0),
@@ -726,125 +725,122 @@ const IncomeExpense = () => {
               trendColor: "text-muted-foreground",
             },
           ].map((s, i) => (
-            <Card key={i} className={`rounded-2xl border-l-4 ${s.border} hover:shadow-md transition-all`}>
-              <CardContent className="!p-3.5 sm:!p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 shrink-0 rounded-xl ${s.bg} flex items-center justify-center`}>
-                    <s.icon className={`h-4 w-4 ${s.color}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
-                    {loading ? <Skeleton className="h-6 w-20 mt-1" /> : (
-                      <p className={`text-lg sm:text-xl font-bold tabular-nums ${s.color} mt-0.5 truncate`}>{s.value}</p>
-                    )}
-                    <p className={`text-[10px] truncate mt-0.5 ${s.trendColor}`}>{s.sub}</p>
+            <Card key={i} className="rounded-xl border-border/60 hover:border-primary/40 hover:shadow-sm transition-all group">
+              <CardContent className="!p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
+                  <div className={`h-6 w-6 shrink-0 rounded-lg ${s.bg} flex items-center justify-center`}>
+                    <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
                   </div>
                 </div>
+                {loading ? <Skeleton className="h-6 w-20" /> : (
+                  <p className={`text-lg sm:text-xl font-bold tabular-nums ${s.color} leading-tight truncate`}>{s.value}</p>
+                )}
+                <p className={`text-[10px] truncate mt-1 ${s.trendColor}`}>{s.sub}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Health Bar — Savings vs Burn */}
-        <Card className="rounded-2xl">
-          <CardContent className="!p-4 sm:!p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold">Financial Health</p>
-              </div>
-              <Badge variant={stats.savingsRate >= 20 ? "default" : stats.savingsRate >= 0 ? "secondary" : "destructive"} className="text-[10px]">
-                {stats.savingsRate >= 50 ? "Excellent" : stats.savingsRate >= 20 ? "Healthy" : stats.savingsRate >= 0 ? "Caution" : "At Risk"}
-              </Badge>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-muted-foreground">Savings Rate</span>
-                  <span className="font-semibold text-green-600 tabular-nums">{stats.savingsRate.toFixed(1)}%</span>
+        {/* Combined Health + Accounts panel */}
+        <Card className="rounded-2xl overflow-hidden">
+          <CardContent className="!p-0">
+            <div className="grid grid-cols-1 lg:grid-cols-5">
+              {/* Financial Health — left */}
+              <div className="lg:col-span-2 p-4 sm:p-5 lg:border-r border-border/60 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-3.5 w-3.5 text-primary" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Financial Health</p>
+                  </div>
+                  <Badge variant={stats.savingsRate >= 20 ? "default" : stats.savingsRate >= 0 ? "secondary" : "destructive"} className="text-[10px] h-5 px-2">
+                    {stats.savingsRate >= 50 ? "Excellent" : stats.savingsRate >= 20 ? "Healthy" : stats.savingsRate >= 0 ? "Caution" : "At Risk"}
+                  </Badge>
                 </div>
-                <Progress value={Math.max(0, Math.min(100, stats.savingsRate))} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-muted-foreground">Burn Rate (Expense / Income)</span>
-                  <span className="font-semibold text-destructive tabular-nums">{Math.min(999, stats.burnRate).toFixed(1)}%</span>
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Savings Rate</span>
+                      <span className="font-bold text-green-600 tabular-nums">{stats.savingsRate.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={Math.max(0, Math.min(100, stats.savingsRate))} className="h-1.5" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-muted-foreground">Burn Rate</span>
+                      <span className="font-bold text-destructive tabular-nums">{Math.min(999, stats.burnRate).toFixed(1)}%</span>
+                    </div>
+                    <Progress value={Math.max(0, Math.min(100, stats.burnRate))} className="h-1.5" />
+                  </div>
                 </div>
-                <Progress value={Math.max(0, Math.min(100, stats.burnRate))} className="h-2" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Per-Account Balances */}
-        <Card className="rounded-2xl">
-          <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Landmark className="h-4 w-4 text-primary" /> Account Balances
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px] gap-1">
-                  <Wallet className="h-3 w-3" /> Total:
-                  <span className={`tabular-nums font-bold ${totalBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
-                    {totalBalance >= 0 ? "+" : "-"}{formatCurrency(Math.abs(totalBalance), 0)}
-                  </span>
-                </Badge>
+              {/* Account Balances — right */}
+              <div className="lg:col-span-3 p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Landmark className="h-3.5 w-3.5 text-primary" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Accounts</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className={`tabular-nums font-bold text-sm ${totalBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
+                      {totalBalance >= 0 ? "+" : "-"}{formatCurrency(Math.abs(totalBalance), 0)}
+                    </span>
+                  </div>
+                </div>
+                {accounts.length === 0 ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-3">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-amber-800 dark:text-amber-300">
+                      <p className="font-semibold">No payment accounts configured</p>
+                      <p>Add accounts in <strong>Settings → Payment Methods</strong> before recording transactions.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-none">
+                    {accounts.map((a) => {
+                      const b = accountBalances[a.id] || { income: 0, expense: 0, count: 0 };
+                      const bal = b.income - b.expense;
+                      const active = accountFilter === a.id;
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => setAccountFilter(active ? "all" : a.id)}
+                          className={`shrink-0 snap-start text-left rounded-xl border px-3 py-2.5 min-w-[140px] transition-all hover:border-primary/50 ${
+                            active ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border/60 bg-card"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <div className="h-5 w-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                              <Landmark className="h-3 w-3 text-primary" />
+                            </div>
+                            <p className="text-[11px] font-semibold truncate flex-1">{a.name}</p>
+                            <span className="text-[9px] text-muted-foreground">{b.count}</span>
+                          </div>
+                          <p className={`text-sm font-bold tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
+                            {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[9px] tabular-nums">
+                            <span className="text-green-600">↑{formatCurrency(b.income, 0)}</span>
+                            <span className="text-destructive">↓{formatCurrency(b.expense, 0)}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {accountFilter !== "all" && (
+                  <div className="mt-2 flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-2.5 py-1.5">
+                    <p className="text-[11px] text-muted-foreground">
+                      Filter: <span className="font-semibold text-foreground">{accounts.find(a => a.id === accountFilter)?.name || accountFilter}</span>
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={() => setAccountFilter("all")} className="h-6 text-[11px] px-2">Clear</Button>
+                  </div>
+                )}
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
-            {accounts.length === 0 ? (
-              <div className="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10 p-4">
-                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="text-xs sm:text-sm text-amber-800 dark:text-amber-300">
-                  <p className="font-semibold mb-0.5">No payment accounts configured</p>
-                  <p>Add accounts (Cash, bKash, Bank, etc.) in <strong>Settings → Payment Methods</strong> before recording transactions. Every income/expense must be linked to an account.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {accounts.map((a) => {
-                  const b = accountBalances[a.id] || { income: 0, expense: 0, count: 0 };
-                  const bal = b.income - b.expense;
-                  return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => setAccountFilter(accountFilter === a.id ? "all" : a.id)}
-                      className={`text-left rounded-xl border p-3 transition-all hover:shadow-md ${
-                        accountFilter === a.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border/60 bg-card"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Landmark className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate">{a.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{b.count} txns</p>
-                        </div>
-                      </div>
-                      <p className={`text-base font-bold tabular-nums ${bal >= 0 ? "text-green-600" : "text-destructive"}`}>
-                        {bal >= 0 ? "+" : "-"}{formatCurrency(Math.abs(bal), 0)}
-                      </p>
-                      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground tabular-nums">
-                        <span className="text-green-600">↑ {formatCurrency(b.income, 0)}</span>
-                        <span className="text-destructive">↓ {formatCurrency(b.expense, 0)}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {accountFilter !== "all" && (
-              <div className="mt-3 flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-                <p className="text-xs text-muted-foreground">
-                  Filtering by: <span className="font-semibold text-foreground">{accounts.find(a => a.id === accountFilter)?.name || accountFilter}</span>
-                </p>
-                <Button variant="ghost" size="sm" onClick={() => setAccountFilter("all")} className="h-7 text-xs">Clear</Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
