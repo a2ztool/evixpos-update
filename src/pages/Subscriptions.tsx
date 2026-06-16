@@ -126,6 +126,8 @@ const Subscriptions = () => {
   const [search, setSearch] = usePersistedState<string>("subs:search", "");
   const [statusFilter, setStatusFilter] = usePersistedState<string>("subs:statusFilter", "all");
   const [activeTab, setActiveTab] = usePersistedState<string>("subs:activeTab", "subscriptions");
+  const [currentPage, setCurrentPage] = usePersistedState<number>("subs:page", 1);
+  const PAGE_SIZE = 10;
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -324,6 +326,22 @@ const Subscriptions = () => {
       return true;
     });
   }, [subs, search, statusFilter]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [totalPages, currentPage, setCurrentPage]);
+  useEffect(() => {
+    setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter]);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
 
   // Handlers
   const openAdd = () => { setEditId(null); setForm(emptyForm); formValidation.clearErrors(); setSheetOpen(true); };
@@ -790,7 +808,11 @@ const Subscriptions = () => {
             </div>
 
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+              <p className="text-sm text-muted-foreground">
+                {filtered.length === 0
+                  ? "0 subscriptions found"
+                  : `Showing ${rangeStart}–${rangeEnd} of ${filtered.length} subscriptions`}
+              </p>
               {filtered.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -836,7 +858,7 @@ const Subscriptions = () => {
               <>
                 {/* Mobile Cards */}
                 <div className="md:hidden space-y-3 pb-safe">
-                  {filtered.map((s) => {
+                  {paginated.map((s) => {
                     const daysLeft = getDaysLeft(s.end_date);
                     const isExpired = daysLeft < 0;
                     return (
@@ -906,7 +928,7 @@ const Subscriptions = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filtered.map((s) => {
+                        {paginated.map((s) => {
                           const daysLeft = getDaysLeft(s.end_date);
                           const isExpired = daysLeft < 0;
                           return (
@@ -960,6 +982,33 @@ const Subscriptions = () => {
                     </Table>
                   </Card>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </TabsContent>
