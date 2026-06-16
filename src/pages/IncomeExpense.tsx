@@ -125,6 +125,7 @@ const IncomeExpense = () => {
   const [savingEditCat, setSavingEditCat] = useState(false);
   const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
   const [deletingCat, setDeletingCat] = useState(false);
+  const [catFilter, setCatFilter] = useState<"all" | "income" | "expense">("all");
 
   // Fund transfer sheet
   const [transferOpen, setTransferOpen] = useState(false);
@@ -1266,6 +1267,132 @@ const IncomeExpense = () => {
               </Card>
             </div>
 
+            {/* Category Management */}
+            <Card className="rounded-2xl">
+              <CardHeader className="!p-5 pb-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" /> Manage Categories
+                  </CardTitle>
+                  <div className="flex items-center gap-1 rounded-lg border border-border/60 p-0.5">
+                    {(["all", "income", "expense"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setCatFilter(t)}
+                        className={`px-2.5 py-1 text-xs rounded-md capitalize transition ${
+                          catFilter === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="!p-5 pt-0 space-y-4">
+                {/* Add new */}
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add New Category</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
+                    <Input
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="e.g. Facebook Ads, Salary..."
+                      className="rounded-xl"
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateCategory(); } }}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button type="button" size="sm" variant={newCatType === "income" ? "default" : "outline"}
+                        className={`rounded-xl ${newCatType === "income" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        onClick={() => setNewCatType("income")}>
+                        <TrendingUp className="h-3.5 w-3.5 mr-1" /> Income
+                      </Button>
+                      <Button type="button" size="sm" variant={newCatType === "expense" ? "default" : "outline"}
+                        className={`rounded-xl ${newCatType === "expense" ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                        onClick={() => setNewCatType("expense")}>
+                        <TrendingDown className="h-3.5 w-3.5 mr-1" /> Expense
+                      </Button>
+                    </div>
+                    <Button onClick={handleCreateCategory} disabled={creatingCat} size="sm" className="rounded-xl">
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      {creatingCat ? "Saving..." : "Add"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Your Categories ({customCategories.filter(c => catFilter === "all" || c.type === catFilter).length})
+                  </p>
+                  {customCategories.filter(c => catFilter === "all" || c.type === catFilter).length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      No categories yet. Create one above to use it in Income & Expense forms.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {customCategories
+                        .filter(c => catFilter === "all" || c.type === catFilter)
+                        .map((cat) => (
+                          <div key={cat.id} className="rounded-xl border border-border/60 p-2.5">
+                            {editingCatId === cat.id ? (
+                              <div className="space-y-2">
+                                <Input
+                                  value={editingCatName}
+                                  onChange={(e) => setEditingCatName(e.target.value)}
+                                  className="rounded-lg h-9"
+                                  autoFocus
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button type="button" size="sm" variant={editingCatType === "income" ? "default" : "outline"}
+                                    className={`rounded-lg h-8 ${editingCatType === "income" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                                    onClick={() => setEditingCatType("income")}>
+                                    <TrendingUp className="h-3.5 w-3.5 mr-1" /> Income
+                                  </Button>
+                                  <Button type="button" size="sm" variant={editingCatType === "expense" ? "default" : "outline"}
+                                    className={`rounded-lg h-8 ${editingCatType === "expense" ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                                    onClick={() => setEditingCatType("expense")}>
+                                    <TrendingDown className="h-3.5 w-3.5 mr-1" /> Expense
+                                  </Button>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={handleSaveEditCategory} disabled={savingEditCat} className="flex-1 rounded-lg h-8">
+                                    {savingEditCat ? "Saving..." : "Save"}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={cancelEditCategory} className="rounded-lg h-8">
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Badge variant="outline" className={`shrink-0 ${cat.type === "income" ? "border-green-600/40 text-green-700 dark:text-green-400" : "border-destructive/40 text-destructive"}`}>
+                                    {cat.type === "income" ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                                    {cat.type}
+                                  </Badge>
+                                  <span className="text-sm font-medium truncate">{cat.name}</span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEditCategory(cat)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => setDeleteCatId(cat.id)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 flex gap-2">
               <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
@@ -1357,31 +1484,12 @@ const IncomeExpense = () => {
                 <Select
                   value={form.category}
                   onValueChange={(v) => {
-                    if (v === "__create__") {
-                      setNewCatType(form.type);
-                      setNewCatName("");
-                      setCatDialogOpen(true);
-                      return;
-                    }
-                    if (v === "__manage__") {
-                      setNewCatType(form.type);
-                      setNewCatName("");
-                      cancelEditCategory();
-                      setCatDialogOpen(true);
-                      return;
-                    }
                     setForm({ ...form, category: v });
                     formValidation.clearField("category");
                   }}
                 >
                   <SelectTrigger className={`rounded-xl ${formValidation.getError("category") ? "border-destructive" : ""}`}><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__create__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Create Category</span>
-                    </SelectItem>
-                    <SelectItem value="__manage__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> Manage Categories</span>
-                    </SelectItem>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
