@@ -26,7 +26,7 @@ import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
-import { isExternalActionActive, openExternalUrlPreservingState, preservePageStateForExternalAction } from "@/lib/pageState";
+import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -626,13 +626,14 @@ const DueBook = () => {
     }
   };
 
-  const sendWhatsApp = (phone: string, message: string) => {
+  const sendWhatsApp = (phone: string, message: string, targetId?: string) => {
     const cleanPhone = phone.replace(/[\s\-()+]/g, "");
     if (!cleanPhone) {
       toast.error("Please enter a phone number");
       return;
     }
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    preserveDueListState(targetId);
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success("Opening WhatsApp...");
   };
@@ -647,7 +648,7 @@ const DueBook = () => {
       return;
     }
     targets.slice(0, 5).forEach(({ d, contact }, i) => {
-      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name)), i * 400);
+      setTimeout(() => sendWhatsApp(contact.phone, buildReminderMessage(d, contact.name), d.id), i * 400);
     });
     toast.success(`Opening ${Math.min(targets.length, 5)} WhatsApp chats...`);
   };
