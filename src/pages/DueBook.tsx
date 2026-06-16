@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
+import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -104,11 +105,11 @@ const DueBook = () => {
     due_date: "",
   });
   const formValidation = useFormValidation(dueSchema);
-  const [statusFilter, setStatusFilter] = useState("unpaid");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [datePreset, setDatePreset] = useState("all");
-  const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("overview");
+  const [statusFilter, setStatusFilter] = usePersistedState<string>("due:statusFilter", "unpaid");
+  const [typeFilter, setTypeFilter] = usePersistedState<string>("due:typeFilter", "all");
+  const [datePreset, setDatePreset] = usePersistedState<string>("due:datePreset", "all");
+  const [search, setSearch] = usePersistedState<string>("due:search", "");
+  const [activeTab, setActiveTab] = usePersistedState<string>("due:activeTab", "overview");
   const [guideOpen, setGuideOpen] = useState(false);
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
@@ -219,6 +220,9 @@ const DueBook = () => {
   }, [orderCustomerMap]);
 
   useEffect(() => { fetchDues(); }, [fetchDues]);
+
+  // Preserve scroll position across tab-switches / SW reloads
+  useScrollRestoration("due:scrollY", !loading);
 
   // Load store-configured payment methods (from Settings → Payment Methods)
   useEffect(() => {
