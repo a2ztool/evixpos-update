@@ -633,7 +633,7 @@ const Products = () => {
           {/* GRID VIEW (desktop optional) */}
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-              {filtered.map((p) => {
+              {pagedProducts.map((p) => {
                 const isSel = selectedIds.has(p.id);
                 return (
                   <div
@@ -686,7 +686,7 @@ const Products = () => {
             <>
               {/* Mobile Card View (list mode) */}
               <div className="md:hidden space-y-3">
-                {filtered.map((p) => {
+                {pagedProducts.map((p) => {
                   const isSel = selectedIds.has(p.id);
                   return (
                     <div key={p.id} className={`mobile-card transition-all ${isSel ? "ring-2 ring-primary" : ""}`}>
@@ -763,7 +763,7 @@ const Products = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((p) => {
+                    {pagedProducts.map((p) => {
                       const isSel = selectedIds.has(p.id);
                       return (
                         <TableRow key={p.id} className={`transition-colors ${isSel ? "bg-primary/5" : "hover:bg-muted/40"}`}>
@@ -832,6 +832,18 @@ const Products = () => {
             </>
           )}
         </>
+      )}
+
+      {filtered.length > 0 && (
+        <DataPagination
+          className="mt-4"
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="products"
+        />
       )}
 
 
