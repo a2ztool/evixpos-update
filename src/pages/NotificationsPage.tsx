@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { TYPE_EMOJI, TYPE_LABEL, SOUND_CATEGORY } from "@/lib/notificationTriggers";
