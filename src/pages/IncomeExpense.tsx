@@ -1372,6 +1372,9 @@ const IncomeExpense = () => {
                     <SelectItem value="__create__" className="text-primary font-medium">
                       <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Create Category</span>
                     </SelectItem>
+                    <SelectItem value="__manage__" className="text-primary font-medium">
+                      <span className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> Manage Categories</span>
+                    </SelectItem>
                     {currentCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
