@@ -27,6 +27,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
 import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
+import { DataPagination } from "@/components/ui/data-pagination";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -70,7 +71,6 @@ const DATE_PRESETS = [
   { label: "Last 30 Days", value: "30d" },
   { label: "Last 90 Days", value: "90d" },
 ];
-const DUE_PAGE_SIZE = 10;
 const DUE_SCROLL_KEY = "due:scrollY";
 const DUE_LAST_REMINDER_KEY = "due:lastReminderId";
 
