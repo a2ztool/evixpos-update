@@ -67,8 +67,7 @@ const STEPS = [
   { id: 1, label: "Customer", icon: User },
   { id: 2, label: "Product", icon: Package },
   { id: 3, label: "Payment", icon: Wallet },
-  { id: 4, label: "Details", icon: CreditCard },
-  { id: 5, label: "Review", icon: Receipt },
+  { id: 4, label: "Review", icon: Receipt },
 ];
 
 export default function SubscriptionRenewalWizard({ open, onOpenChange, subscription, onRenewed }: Props) {
@@ -245,7 +244,7 @@ export default function SubscriptionRenewalWizard({ open, onOpenChange, subscrip
       if (variations.length > 0 && !variationId) return false;
       if (finalTotal <= 0) return false;
     }
-    if (step === 4) {
+    if (step === 3) {
       if (payType === "partial" && (paid <= 0 || paid >= finalTotal)) return false;
       if (!paymentMethod) return false;
     }
