@@ -38,6 +38,7 @@ import {
 import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
+import SubscriptionRenewalWizard, { type SubscriptionRenewalSubject } from "@/components/SubscriptionRenewalWizard";
 
 interface Subscription {
   id: string;
@@ -137,6 +138,10 @@ const Subscriptions = () => {
   });
   const [templateDraft, setTemplateDraft] = useState(waTemplate);
   const formValidation = useFormValidation(subscriptionSchema);
+
+  // Renewal wizard state
+  const [renewOpen, setRenewOpen] = useState(false);
+  const [renewSubject, setRenewSubject] = useState<SubscriptionRenewalSubject | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -389,14 +394,20 @@ const Subscriptions = () => {
     fetchAll();
   };
 
-  const handleRenew = async (s: Subscription) => {
-    const newStart = s.end_date || fnsFormat(new Date(), "yyyy-MM-dd");
-    const newEnd = getEndDate(newStart, s.variation);
-    const { error } = await supabase.from("subscriptions").update({
-      start_date: newStart, end_date: newEnd,
-      renewals: (s.renewals || 0) + 1, status: "active",
-    }).eq("id", s.id);
-    if (error) toast.error(error.message); else toast.success("Renewed successfully! 🔄");
+  const handleRenew = (s: Subscription) => {
+    setRenewSubject({
+      id: s.id,
+      customer_id: s.customer_id,
+      product_name: s.product_name,
+      variation: s.variation,
+      start_date: s.start_date,
+      end_date: s.end_date,
+      price: s.price,
+      cost_price: s.cost_price,
+      renewals: s.renewals,
+      customers: s.customers ?? null,
+    });
+    setRenewOpen(true);
   };
 
   const buildReminderMessage = (s: Subscription, customerName: string) => {
@@ -1366,6 +1377,12 @@ const Subscriptions = () => {
           </DialogContent>
         </Dialog>
       </div>
+      <SubscriptionRenewalWizard
+        open={renewOpen}
+        onOpenChange={setRenewOpen}
+        subscription={renewSubject}
+        onRenewed={() => { fetchAll(); }}
+      />
     </DashboardLayout>
   );
 };
