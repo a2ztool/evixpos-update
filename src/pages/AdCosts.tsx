@@ -858,6 +858,17 @@ const AdCosts = () => {
           );
         })}
       </div>
+      {filtered.length > 0 && (
+        <DataPagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="campaigns"
+          className="md:hidden mt-2"
+        />
+      )}
 
       {/* Desktop Table */}
       <div className="hidden md:block">
@@ -949,6 +960,17 @@ const AdCosts = () => {
             </Table>
           </CardContent>
         </Card>
+        {filtered.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="campaigns"
+            className="mt-3"
+          />
+        )}
       </div>
 
       {/* Add/Edit Sheet */}
