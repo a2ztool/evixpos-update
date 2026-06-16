@@ -10,6 +10,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import { toast } from "sonner";
+import { isExternalActionActive } from "@/lib/pageState";
 
 // Vite injects a fresh hash on every build → great as a build id
 declare const __BUILD_TIME__: string;
@@ -29,6 +30,7 @@ const isPreviewHost =
 
 function activateUpdate(reg: ServiceWorkerRegistration) {
   if (updateToastShown) return;
+  if (isExternalActionActive()) return;
   updateToastShown = true;
 
   const waiting = reg.waiting;
@@ -99,7 +101,10 @@ export function initPwaUpdate() {
       });
 
       // Poll for updates periodically + on focus/online
-      const triggerCheck = () => reg.update().catch(() => {});
+      const triggerCheck = () => {
+        if (isExternalActionActive()) return;
+        reg.update().catch(() => {});
+      };
       setInterval(triggerCheck, UPDATE_POLL_MS);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") triggerCheck();
@@ -110,6 +115,7 @@ export function initPwaUpdate() {
       let reloading = false;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (reloading) return;
+        if (isExternalActionActive()) return;
         reloading = true;
         window.location.reload();
       });

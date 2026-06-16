@@ -65,14 +65,17 @@ export function useScrollRestoration(key: string, ready: boolean = true) {
       });
     };
     const onHide = () => save();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") save();
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pagehide", onHide);
-    document.addEventListener("visibilitychange", onHide);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       save();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("pagehide", onHide);
-      document.removeEventListener("visibilitychange", onHide);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [key]);
 
@@ -84,9 +87,11 @@ export function useScrollRestoration(key: string, ready: boolean = true) {
       if (raw !== null) {
         const y = Number(raw);
         if (!Number.isNaN(y) && y > 0) {
-          // Wait a frame so the DOM has its final height.
+          const restore = () => window.scrollTo({ top: y, behavior: "auto" });
           requestAnimationFrame(() => {
-            window.scrollTo({ top: y, behavior: "auto" });
+            restore();
+            setTimeout(restore, 80);
+            setTimeout(restore, 250);
           });
         }
       }
