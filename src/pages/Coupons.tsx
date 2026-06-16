@@ -195,6 +195,12 @@ const Coupons = () => {
     return list;
   }, [coupons, statusFilter, typeFilter, search, sortBy]);
 
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:coupons:${activeStore?.id ?? "_"}`,
+    filterSignature: JSON.stringify({ search, statusFilter, typeFilter, sortBy }),
+  });
+  const paged = paginate(filtered, pagination.page, pagination.pageSize);
+
   return (
     <DashboardLayout>
       {/* Premium Header */}
