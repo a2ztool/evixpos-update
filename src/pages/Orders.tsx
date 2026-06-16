@@ -135,6 +135,20 @@ const Orders = () => {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
 
+  // Pagination (persisted per-store so it survives edit/view/renew navigation)
+  const ORDERS_PAGE_SIZE = 10;
+  const pageStorageKey = activeStore ? `orders-page-${activeStore.id}` : "orders-page";
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const stored = sessionStorage.getItem(`orders-page-${activeStore?.id ?? "default"}`);
+    return stored ? Math.max(1, parseInt(stored, 10) || 1) : 1;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(pageStorageKey, String(currentPage));
+    }
+  }, [currentPage, pageStorageKey]);
+
   // Create order sheet
   const [createOpen, setCreateOpen] = useState(false);
   const [formCustomerId, setFormCustomerId] = useState("");
