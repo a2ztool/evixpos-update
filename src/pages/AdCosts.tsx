@@ -786,7 +786,7 @@ const AdCosts = () => {
               <p className="text-muted-foreground/60 text-xs mt-1">Add your first campaign</p>
             </CardContent>
           </Card>
-        ) : filtered.map((a) => {
+        ) : pagedFiltered.map((a) => {
           const profit = Number(a.revenue) - Number(a.amount);
           const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
           return (
@@ -894,7 +894,7 @@ const AdCosts = () => {
                       <p className="text-muted-foreground text-sm">No ad costs found</p>
                     </TableCell>
                   </TableRow>
-                ) : filtered.map((a) => {
+                ) : pagedFiltered.map((a) => {
                   const profit = Number(a.revenue) - Number(a.amount);
                   const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
                   return (
