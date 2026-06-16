@@ -1111,6 +1111,16 @@ const IncomeExpense = () => {
                   </CardContent>
                 </Card>
               ))}
+              {filtered.length > 0 && (
+                <DataPagination
+                  page={pagination.page}
+                  pageSize={pagination.pageSize}
+                  total={filtered.length}
+                  onPageChange={pagination.setPage}
+                  onPageSizeChange={pagination.setPageSize}
+                  itemLabel="transactions"
+                />
+              )}
             </div>
 
             {/* Desktop table */}
