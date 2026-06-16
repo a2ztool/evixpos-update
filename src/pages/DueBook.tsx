@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -26,6 +26,7 @@ import { dueSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
+import { isExternalActionActive, openExternalUrlPreservingState, preservePageStateForExternalAction } from "@/lib/pageState";
 import {
   Plus, Trash2, Pencil, CheckCircle, Search, BookOpen, AlertTriangle,
   TrendingUp, Clock, DollarSign, Users, Calendar,
@@ -69,6 +70,9 @@ const DATE_PRESETS = [
   { label: "Last 30 Days", value: "30d" },
   { label: "Last 90 Days", value: "90d" },
 ];
+const DUE_PAGE_SIZE = 10;
+const DUE_SCROLL_KEY = "due:scrollY";
+const DUE_LAST_REMINDER_KEY = "due:lastReminderId";
 
 // Phone helpers — phone is embedded in note as "📱+880xxx | actual note"
 const PHONE_RE = /📱\s*([+\d][\d\s\-()]{6,20})/;
@@ -110,6 +114,7 @@ const DueBook = () => {
   const [datePreset, setDatePreset] = usePersistedState<string>("due:datePreset", "all");
   const [search, setSearch] = usePersistedState<string>("due:search", "");
   const [activeTab, setActiveTab] = usePersistedState<string>("due:activeTab", "overview");
+  const [currentPage, setCurrentPage] = usePersistedState<number>("due:page", 1);
   const [guideOpen, setGuideOpen] = useState(false);
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
@@ -133,6 +138,16 @@ const DueBook = () => {
   const [paymentsByTxn, setPaymentsByTxn] = useState<Record<string, DuePayment[]>>({});
   // Map: order-id-prefix -> { name, phone } resolved from POS-linked orders (legacy fallback for old dues)
   const [orderCustomerMap, setOrderCustomerMap] = useState<Record<string, { name: string; phone: string }>>({});
+  const preserveDueListState = useCallback((targetId?: string) => {
+    preservePageStateForExternalAction({
+      "due:statusFilter": statusFilter,
+      "due:typeFilter": typeFilter,
+      "due:datePreset": datePreset,
+      "due:search": search,
+      "due:activeTab": activeTab,
+      "due:page": currentPage,
+    }, DUE_SCROLL_KEY, DUE_LAST_REMINDER_KEY, targetId);
+  }, [statusFilter, typeFilter, datePreset, search, activeTab, currentPage]);
 
   const fetchDues = useCallback(async () => {
     if (!activeStore || !user) return;
@@ -222,7 +237,7 @@ const DueBook = () => {
   useEffect(() => { fetchDues(); }, [fetchDues]);
 
   // Preserve scroll position across tab-switches / SW reloads
-  useScrollRestoration("due:scrollY", !loading);
+  useScrollRestoration(DUE_SCROLL_KEY, !loading);
 
   // Load store-configured payment methods (from Settings → Payment Methods)
   useEffect(() => {
