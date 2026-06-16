@@ -1377,6 +1377,12 @@ const Subscriptions = () => {
           </DialogContent>
         </Dialog>
       </div>
+      <SubscriptionRenewalWizard
+        open={renewOpen}
+        onOpenChange={setRenewOpen}
+        subscription={renewSubject}
+        onRenewed={() => { fetchAll(); }}
+      />
     </DashboardLayout>
   );
 };
