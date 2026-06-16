@@ -119,6 +119,12 @@ const IncomeExpense = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newCatType, setNewCatType] = useState<"income" | "expense">("income");
   const [creatingCat, setCreatingCat] = useState(false);
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatName, setEditingCatName] = useState("");
+  const [editingCatType, setEditingCatType] = useState<"income" | "expense">("income");
+  const [savingEditCat, setSavingEditCat] = useState(false);
+  const [deleteCatId, setDeleteCatId] = useState<string | null>(null);
+  const [deletingCat, setDeletingCat] = useState(false);
 
   // Fund transfer sheet
   const [transferOpen, setTransferOpen] = useState(false);
