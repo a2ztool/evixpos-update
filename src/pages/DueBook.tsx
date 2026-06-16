@@ -267,11 +267,11 @@ const DueBook = () => {
       .channel(`duebook-${activeStore.id}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "transactions", filter: `store_id=eq.${activeStore.id}` },
-        () => { if (!isExternalActionActive()) fetchDues(); }
+        () => fetchDues()
       )
       .on("postgres_changes",
         { event: "*", schema: "public", table: "due_payments", filter: `store_id=eq.${activeStore.id}` },
-        () => { if (!isExternalActionActive()) fetchDues(); }
+        () => fetchDues()
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };

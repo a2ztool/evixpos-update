@@ -178,9 +178,7 @@ const Subscriptions = () => {
     if (!activeStore) return;
     const channel = supabase
       .channel(`subs-${activeStore.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => {
-        if (!isExternalActionActive()) fetchAll();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions", filter: `store_id=eq.${activeStore.id}` }, () => fetchAll())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeStore, fetchAll]);
