@@ -462,7 +462,13 @@ const Subscriptions = () => {
     const customer = customers.find((c) => c.id === s.customer_id);
     if (!customer?.phone) { toast.error("Customer has no phone number"); return; }
     const message = buildReminderMessage(s, customer.name);
-    window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+    const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+    openExternalUrlPreservingState(url, {
+      "subs:search": search,
+      "subs:statusFilter": statusFilter,
+      "subs:activeTab": activeTab,
+      "subs:page": currentPage,
+    }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, s.id);
     toast.success("WhatsApp opened");
   };
 
@@ -505,7 +511,13 @@ const Subscriptions = () => {
       const customer = customers.find((c) => c.id === s.customer_id);
       if (!customer?.phone) { skipped++; continue; }
       const message = buildReminderMessage(s, customer.name);
-      window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
+      const url = `https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`;
+      openExternalUrlPreservingState(url, {
+        "subs:search": search,
+        "subs:statusFilter": statusFilter,
+        "subs:activeTab": activeTab,
+        "subs:page": currentPage,
+      }, SUBS_SCROLL_KEY, SUBS_LAST_REMINDER_KEY, s.id);
       opened++;
       // small delay so the browser doesn't block multi-window opens
       await new Promise(r => setTimeout(r, 250));
