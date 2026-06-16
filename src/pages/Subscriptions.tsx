@@ -982,6 +982,33 @@ const Subscriptions = () => {
                     </Table>
                   </Card>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </TabsContent>
