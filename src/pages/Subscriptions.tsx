@@ -344,13 +344,15 @@ const Subscriptions = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const filterResetRef = useRef(true);
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
-  }, [totalPages, currentPage, setCurrentPage]);
+    if (loading) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [loading, totalPages, currentPage, setCurrentPage]);
   useEffect(() => {
     if (filterResetRef.current) {
       filterResetRef.current = false;
       return;
     }
+    if (isExternalActionActive()) return;
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
   const paginated = useMemo(
