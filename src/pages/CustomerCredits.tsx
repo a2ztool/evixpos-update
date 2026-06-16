@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { creditPaymentSchema, creditLimitSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { format as formatDate, differenceInDays } from "date-fns";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type RiskFilter = "all" | "overdue" | "over_limit" | "paid";
 type SortKey = "due_desc" | "due_asc" | "name" | "recent";
@@ -225,6 +227,12 @@ const CustomerCredits = () => {
 
     return list;
   }, [credits, search, riskFilter, sortKey]);
+
+  const pagination = usePagination(processed.length, {
+    storageKey: `pg:customer-credits:${storeId ?? "_"}`,
+    filterSignature: JSON.stringify({ search, riskFilter, sortKey }),
+  });
+  const pagedRecords = paginate(processed as any[], pagination.page, pagination.pageSize);
 
   const getRiskBadge = (c: any) => {
     const due = Number(c.total_due);
@@ -488,7 +496,7 @@ const CustomerCredits = () => {
                   <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">No credit records found</p>
                 </div>
-              ) : processed.map((c: any) => {
+              ) : pagedRecords.map((c: any) => {
                 const due = Number(c.total_due);
                 const limit = Number(c.credit_limit);
                 const usagePct = limit > 0 ? Math.min(100, (due / limit) * 100) : 0;
@@ -558,7 +566,7 @@ const CustomerCredits = () => {
                       <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
                       <p className="text-sm text-muted-foreground">No credit records found</p>
                     </TableCell></TableRow>
-                  ) : processed.map((c: any) => {
+                  ) : pagedRecords.map((c: any) => {
                     const due = Number(c.total_due);
                     const limit = Number(c.credit_limit);
                     const usagePct = limit > 0 ? Math.min(100, (due / limit) * 100) : 0;
@@ -621,6 +629,17 @@ const CustomerCredits = () => {
             </div>
           </CardContent>
         </Card>
+
+        {processed.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={processed.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="credit records"
+          />
+        )}
 
         {/* ===== Recent Payments ===== */}
         {payments.length > 0 && (

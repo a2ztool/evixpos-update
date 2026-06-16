@@ -38,6 +38,8 @@ import {
 } from "lucide-react";
 import UsageWarningBanner from "@/components/UsageWarningBanner";
 import CustomerDNAProfile from "@/components/CustomerDNAProfile";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface Customer {
@@ -266,6 +268,12 @@ const Customers = () => {
     });
     return list;
   }, [customers, search, segment, sortBy, segmentOf]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:customers:${activeStore?.id ?? "_"}`,
+    filterSignature: JSON.stringify({ search, segment, sortBy }),
+  });
+  const pagedCustomers = paginate(filtered, pagination.page, pagination.pageSize);
 
   // ===== Selection =====
   const toggleSelect = (id: string) => {
@@ -720,7 +728,7 @@ const Customers = () => {
         <>
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {filtered.map((c) => (
+            {pagedCustomers.map((c) => (
               <div key={c.id} className="rounded-xl border bg-card p-3 hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-2">
                   <Checkbox
@@ -782,7 +790,7 @@ const Customers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => (
+                {pagedCustomers.map((c) => (
                   <TableRow key={c.id} className={selectedIds.has(c.id) ? "bg-primary/5" : ""}>
                     <TableCell>
                       <Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} />
@@ -836,6 +844,18 @@ const Customers = () => {
             </Table>
           </div>
         </>
+      )}
+
+      {filtered.length > 0 && (
+        <DataPagination
+          className="mt-4"
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="customers"
+        />
       )}
 
       {/* Delete Confirm */}
