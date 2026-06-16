@@ -331,6 +331,14 @@ const DueBook = () => {
   );
   const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * DUE_PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * DUE_PAGE_SIZE, filtered.length);
+  useEffect(() => {
+    if (loading || !isExternalActionActive()) return;
+    const targetId = window.sessionStorage.getItem(DUE_LAST_REMINDER_KEY);
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-due-row="${targetId}"]`)?.scrollIntoView({ block: "center", behavior: "auto" });
+    });
+  }, [loading, paginated]);
 
   const stats = useMemo(() => {
     const unpaid = dues.filter((d) => !d.is_paid);
@@ -961,7 +969,7 @@ const DueBook = () => {
                   const phone = extractPhone(d.note);
                   const cleanNote = stripPhone(d.note);
                   return (
-                    <Card key={d.id} className={`rounded-2xl overflow-hidden transition-all hover:shadow-md ${info.isOverdue ? "border-destructive/40" : ""}`}>
+                    <Card key={d.id} data-due-row={d.id} className={`rounded-2xl overflow-hidden transition-all hover:shadow-md ${info.isOverdue ? "border-destructive/40" : ""}`}>
                       <CardContent className="!p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1040,7 +1048,7 @@ const DueBook = () => {
                       const phone = contact.phone;
                       const cleanNote = stripPhone(d.note);
                       return (
-                        <TableRow key={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
+                        <TableRow key={d.id} data-due-row={d.id} className={`group transition-colors ${info.isOverdue ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/50"}`}>
                           <TableCell>
                             <Badge className={d.type === "income"
                               ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
