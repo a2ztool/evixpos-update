@@ -566,7 +566,7 @@ const Suppliers = () => {
                   <Truck className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="text-muted-foreground text-sm">No suppliers match your filters</p>
                 </div>
-              ) : filtered.map((s: any) => {
+              ) : paged.map((s: any) => {
                 const due = Number(s.balance_due || 0);
                 const pct = stats.totalDue > 0 ? (due / stats.totalDue) * 100 : 0;
                 return (
@@ -636,7 +636,7 @@ const Suppliers = () => {
                       <Truck className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No suppliers match your filters</p>
                     </TableCell></TableRow>
-                  ) : filtered.map((s: any) => {
+                  ) : paged.map((s: any) => {
                     const due = Number(s.balance_due || 0);
                     const pct = stats.totalDue > 0 ? (due / stats.totalDue) * 100 : 0;
                     return (
@@ -695,6 +695,17 @@ const Suppliers = () => {
             </div>
           </CardContent>
         </Card>
+
+        {!isLoading && filtered.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="suppliers"
+          />
+        )}
 
         {/* Mobile bulk actions bar */}
         {stats.withDue > 0 && (
