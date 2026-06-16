@@ -1206,6 +1206,18 @@ const IncomeExpense = () => {
                   </Table>
                 </CardContent>
               </Card>
+              {filtered.length > 0 && (
+                <div className="mt-3">
+                  <DataPagination
+                    page={pagination.page}
+                    pageSize={pagination.pageSize}
+                    total={filtered.length}
+                    onPageChange={pagination.setPage}
+                    onPageSizeChange={pagination.setPageSize}
+                    itemLabel="transactions"
+                  />
+                </div>
+              )}
             </div>
           </TabsContent>
 
