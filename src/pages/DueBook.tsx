@@ -1252,7 +1252,7 @@ const DueBook = () => {
               <Button variant="outline" onClick={copyReminder} className="gap-1.5 rounded-xl">
                 <Copy className="h-4 w-4" /> Copy
               </Button>
-              <Button onClick={() => { sendWhatsApp(reminderPhone, reminderText); setReminderModal(null); }} className="gap-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white">
+              <Button onClick={() => { sendWhatsApp(reminderPhone, reminderText, reminderModal?.id); setReminderModal(null); }} className="gap-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white">
                 <Send className="h-4 w-4" /> Send via WhatsApp
               </Button>
             </DialogFooter>
