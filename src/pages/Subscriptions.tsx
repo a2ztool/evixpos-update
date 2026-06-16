@@ -582,13 +582,13 @@ const Subscriptions = () => {
                 </div>
                 <span className={`text-[10px] font-semibold ${healthColor}`}>{healthLabel}</span>
               </div>
-              <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="h-8 gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="h-9 gap-1.5">
                 <MessageSquareText className="h-3.5 w-3.5" /> <span className="hidden md:inline">Template</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 gap-1.5">
+              <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 gap-1.5">
                 <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Export</span>
               </Button>
-              <Button size="sm" onClick={openAdd} className="h-8 gap-1.5 shadow-sm">
+              <Button size="sm" onClick={openAdd} className="h-9 gap-1.5 shadow-sm">
                 <Plus className="h-3.5 w-3.5" /> Add
               </Button>
             </div>
@@ -619,7 +619,7 @@ const Subscriptions = () => {
         <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors rounded-lg">
+              <div className="flex items-center justify-between px-3 py-2.5 min-h-[40px] hover:bg-muted/30 transition-colors rounded-lg">
                 <div className="flex items-center gap-2 min-w-0">
                   <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" />
                   <p className="text-xs font-semibold">Quick Guide & Best Practices</p>
@@ -711,10 +711,10 @@ const Subscriptions = () => {
                             <p className="text-xs font-semibold truncate leading-tight">{s.customers?.name || "—"}</p>
                             <p className="text-[10px] text-muted-foreground truncate leading-tight">{s.product_name}</p>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <Badge className={`h-5 px-1.5 text-[10px] ${d <= 3 ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"}`}>{d}d</Badge>
-                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => sendWhatsAppReminder(s)}>
-                              <MessageCircle className="h-3.5 w-3.5" />
+                            <Button size="icon" variant="ghost" className="h-9 w-9 text-green-600 hover:bg-green-500/10" aria-label="Send WhatsApp reminder" onClick={() => sendWhatsAppReminder(s)}>
+                              <MessageCircle className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
