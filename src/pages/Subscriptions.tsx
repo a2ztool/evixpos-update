@@ -39,6 +39,7 @@ import { subscriptionSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { usePersistedState, useScrollRestoration } from "@/hooks/usePersistedState";
 import { isExternalActionActive, preservePageStateForExternalAction } from "@/lib/pageState";
+import { DataPagination } from "@/components/ui/data-pagination";
 import SubscriptionRenewalWizard, { type SubscriptionRenewalSubject } from "@/components/SubscriptionRenewalWizard";
 
 interface Subscription {
@@ -130,7 +131,7 @@ const Subscriptions = () => {
   const [statusFilter, setStatusFilter] = usePersistedState<string>("subs:statusFilter", "all");
   const [activeTab, setActiveTab] = usePersistedState<string>("subs:activeTab", "subscriptions");
   const [currentPage, setCurrentPage] = usePersistedState<number>("subs:page", 1);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = usePersistedState<number>("subs:pageSize", 10);
   const [calcOpen, setCalcOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -345,7 +346,7 @@ const Subscriptions = () => {
   }, [subs, search, statusFilter]);
 
   // Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const filterResetRef = useRef(true);
   useEffect(() => {
     if (loading) return;
@@ -360,11 +361,11 @@ const Subscriptions = () => {
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
   const paginated = useMemo(
-    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filtered, currentPage]
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
   );
-  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(currentPage * pageSize, filtered.length);
   useEffect(() => {
     if (loading || !isExternalActionActive()) return;
     const savedY = Number(window.sessionStorage.getItem(SUBS_SCROLL_KEY) || 0);
@@ -1021,31 +1022,14 @@ const Subscriptions = () => {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between gap-2 flex-wrap pt-2">
-                    <p className="text-xs text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={currentPage <= 1}
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <DataPagination
+                  page={currentPage}
+                  pageSize={pageSize}
+                  total={filtered.length}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+                  itemLabel="subscriptions"
+                />
               </>
             )}
           </TabsContent>

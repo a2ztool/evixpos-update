@@ -27,6 +27,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useRef, useCallback } from "react";
 import { addDays, format } from "date-fns";
 import { normalizePaymentMethods, type NormalizedPaymentMethod } from "@/lib/paymentMethods";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 interface OrderItem {
   id: string;
@@ -136,18 +137,29 @@ const Orders = () => {
   const [timeFilter, setTimeFilter] = useState("all");
 
   // Pagination (persisted per-store so it survives edit/view/renew navigation)
-  const ORDERS_PAGE_SIZE = 10;
   const pageStorageKey = activeStore ? `orders-page-${activeStore.id}` : "orders-page";
+  const pageSizeStorageKey = activeStore ? `orders-pagesize-${activeStore.id}` : "orders-pagesize";
   const [currentPage, setCurrentPage] = useState<number>(() => {
     if (typeof window === "undefined") return 1;
     const stored = sessionStorage.getItem(`orders-page-${activeStore?.id ?? "default"}`);
     return stored ? Math.max(1, parseInt(stored, 10) || 1) : 1;
+  });
+  const [ordersPageSize, setOrdersPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return 10;
+    const stored = sessionStorage.getItem(`orders-pagesize-${activeStore?.id ?? "default"}`);
+    const n = stored ? parseInt(stored, 10) : 10;
+    return Number.isFinite(n) && n > 0 ? n : 10;
   });
   useEffect(() => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem(pageStorageKey, String(currentPage));
     }
   }, [currentPage, pageStorageKey]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(pageSizeStorageKey, String(ordersPageSize));
+    }
+  }, [ordersPageSize, pageSizeStorageKey]);
 
   // Create order sheet
   const [createOpen, setCreateOpen] = useState(false);
@@ -704,12 +716,12 @@ const fetchProducts = async () => {
   }, [orders, statusFilter, paymentFilter, search, timeFilter]);
 
   // Pagination math
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ORDERS_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ordersPageSize));
   const safePage = Math.min(currentPage, totalPages);
   const paginated = useMemo(() => {
-    const start = (safePage - 1) * ORDERS_PAGE_SIZE;
-    return filtered.slice(start, start + ORDERS_PAGE_SIZE);
-  }, [filtered, safePage]);
+    const start = (safePage - 1) * ordersPageSize;
+    return filtered.slice(start, start + ordersPageSize);
+  }, [filtered, safePage, ordersPageSize]);
 
   // Clamp page if it overflows current filtered length
   useEffect(() => {
@@ -1007,66 +1019,15 @@ const fetchProducts = async () => {
           </div>
 
           {/* Pagination controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Showing {(safePage - 1) * ORDERS_PAGE_SIZE + 1}
-              –{Math.min(safePage * ORDERS_PAGE_SIZE, filtered.length)} of {filtered.length} orders
-              {totalPages > 1 && <> · Page {safePage} of {totalPages}</>}
-            </p>
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-xs"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                >
-                  Previous
-                </Button>
-                {(() => {
-                  const pages: (number | "…")[] = [];
-                  const add = (n: number) => { if (!pages.includes(n)) pages.push(n); };
-                  add(1);
-                  for (let i = safePage - 1; i <= safePage + 1; i++) {
-                    if (i > 1 && i < totalPages) add(i);
-                  }
-                  if (totalPages > 1) add(totalPages);
-                  const withEllipses: (number | "…")[] = [];
-                  pages.forEach((p, i) => {
-                    if (i > 0 && typeof p === "number" && typeof pages[i - 1] === "number" && p - (pages[i - 1] as number) > 1) {
-                      withEllipses.push("…");
-                    }
-                    withEllipses.push(p);
-                  });
-                  return withEllipses.map((p, i) =>
-                    p === "…" ? (
-                      <span key={`e-${i}`} className="px-2 text-xs text-muted-foreground">…</span>
-                    ) : (
-                      <Button
-                        key={p}
-                        variant={p === safePage ? "default" : "outline"}
-                        size="sm"
-                        className="h-8 min-w-8 px-2 text-xs"
-                        onClick={() => setCurrentPage(p as number)}
-                      >
-                        {p}
-                      </Button>
-                    )
-                  );
-                })()}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-xs"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </div>
+          <DataPagination
+            page={safePage}
+            pageSize={ordersPageSize}
+            total={filtered.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(s) => { setOrdersPageSize(s); setCurrentPage(1); }}
+            itemLabel="orders"
+            className="mt-4"
+          />
         </>
       )}
 
