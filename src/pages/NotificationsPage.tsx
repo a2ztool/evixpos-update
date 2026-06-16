@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { TYPE_EMOJI, TYPE_LABEL, SOUND_CATEGORY } from "@/lib/notificationTriggers";
@@ -549,6 +551,15 @@ const NotificationCenterTab = () => {
     });
   }, [notifications, search, typeFilter, statusFilter, dateFilter]);
 
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:notif-center`,
+    filterSignature: JSON.stringify({ search, typeFilter, statusFilter, dateFilter }),
+  });
+  const pagedFiltered = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
+
   const toggleSelect = (id: string) => {
     setSelected((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
   };
@@ -660,7 +671,7 @@ const NotificationCenterTab = () => {
                 <p className="text-muted-foreground text-sm">No notifications</p>
               </div>
             ) : (
-              filtered.map((n, i) => {
+              pagedFiltered.map((n, i) => {
                 const c = cfg(n.type);
                 return (
                   <motion.div
@@ -703,6 +714,16 @@ const NotificationCenterTab = () => {
           </ScrollArea>
         </CardContent>
       </Card>
+      {filtered.length > 0 && (
+        <DataPagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="notifications"
+        />
+      )}
     </div>
   );
 };
@@ -736,6 +757,15 @@ const NotificationLogsTab = () => {
       return true;
     });
   }, [logs, search, channelFilter, dateFilter]);
+
+  const logsPagination = usePagination(filtered.length, {
+    storageKey: `pg:notif-logs`,
+    filterSignature: JSON.stringify({ search, channelFilter, dateFilter }),
+  });
+  const pagedLogs = useMemo(
+    () => paginate(filtered, logsPagination.page, logsPagination.pageSize),
+    [filtered, logsPagination.page, logsPagination.pageSize],
+  );
 
   const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     sent: "default", delivered: "default", failed: "destructive", pending: "secondary", bounced: "destructive",
@@ -798,7 +828,7 @@ const NotificationLogsTab = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.slice(0, 100).map((log) => (
+                  {pagedLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-sm whitespace-nowrap">{format(new Date(log.created_at), "MMM dd, HH:mm")}</TableCell>
                       <TableCell><Badge variant="outline">{log.channel}</Badge></TableCell>
@@ -810,9 +840,16 @@ const NotificationLogsTab = () => {
                   ))}
                 </TableBody>
               </Table>
-              {filtered.length > 100 && (
-                <p className="text-xs text-muted-foreground text-center py-2">Showing 100 of {filtered.length}</p>
-              )}
+              <div className="p-2">
+                <DataPagination
+                  page={logsPagination.page}
+                  pageSize={logsPagination.pageSize}
+                  total={filtered.length}
+                  onPageChange={logsPagination.setPage}
+                  onPageSizeChange={logsPagination.setPageSize}
+                  itemLabel="logs"
+                />
+              </div>
             </div>
           )}
         </CardContent>

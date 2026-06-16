@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -249,6 +251,15 @@ const OrderForms = () => {
     });
   }, [forms, search, statusFilter]);
 
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:order-forms:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ search, statusFilter }),
+  });
+  const pagedForms = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
+
   const stats = useMemo(() => ({
     total: forms.length,
     active: forms.filter((f) => f.status === "active").length,
@@ -381,8 +392,9 @@ const OrderForms = () => {
         </div>
       ) : viewMode === "grid" ? (
         // GRID
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((f) => (
+          {pagedForms.map((f) => (
             <div key={f.id} className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-4 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
               <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-primary/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative">
@@ -420,11 +432,23 @@ const OrderForms = () => {
             </div>
           ))}
         </div>
+        {filtered.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="forms"
+            className="mt-3"
+          />
+        )}
+        </>
       ) : (
         <>
           {/* Mobile card list */}
           <div className="md:hidden space-y-2.5">
-            {filtered.map((f) => (
+            {pagedForms.map((f) => (
               <div key={f.id} className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-3 space-y-2.5 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -472,7 +496,7 @@ const OrderForms = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((f) => (
+                {pagedForms.map((f) => (
                   <TableRow key={f.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">{f.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -512,6 +536,17 @@ const OrderForms = () => {
               </TableBody>
             </Table>
           </div>
+          {filtered.length > 0 && (
+            <DataPagination
+              page={pagination.page}
+              pageSize={pagination.pageSize}
+              total={filtered.length}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+              itemLabel="forms"
+              className="mt-3"
+            />
+          )}
         </>
       )}
 

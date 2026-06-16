@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -143,6 +145,15 @@ const AdCosts = () => {
       return true;
     });
   }, [ads, platformFilter, search, getDateRange]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:ad-costs:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ search, platformFilter, datePreset, customDateFrom, customDateTo }),
+  });
+  const pagedFiltered = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
 
   const stats = useMemo(() => {
     const totalSpend = filtered.reduce((s, a) => s + Number(a.amount), 0);
@@ -775,7 +786,7 @@ const AdCosts = () => {
               <p className="text-muted-foreground/60 text-xs mt-1">Add your first campaign</p>
             </CardContent>
           </Card>
-        ) : filtered.map((a) => {
+        ) : pagedFiltered.map((a) => {
           const profit = Number(a.revenue) - Number(a.amount);
           const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
           return (
@@ -847,6 +858,17 @@ const AdCosts = () => {
           );
         })}
       </div>
+      {filtered.length > 0 && (
+        <DataPagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filtered.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
+          itemLabel="campaigns"
+          className="md:hidden mt-2"
+        />
+      )}
 
       {/* Desktop Table */}
       <div className="hidden md:block">
@@ -883,7 +905,7 @@ const AdCosts = () => {
                       <p className="text-muted-foreground text-sm">No ad costs found</p>
                     </TableCell>
                   </TableRow>
-                ) : filtered.map((a) => {
+                ) : pagedFiltered.map((a) => {
                   const profit = Number(a.revenue) - Number(a.amount);
                   const roas = Number(a.amount) > 0 ? (Number(a.revenue) / Number(a.amount)) : 0;
                   return (
@@ -938,6 +960,17 @@ const AdCosts = () => {
             </Table>
           </CardContent>
         </Card>
+        {filtered.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="campaigns"
+            className="mt-3"
+          />
+        )}
       </div>
 
       {/* Add/Edit Sheet */}

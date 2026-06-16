@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { format as formatDate, subDays, startOfMonth } from "date-fns";
 import { normalizePaymentMethods } from "@/lib/paymentMethods";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RTooltip, CartesianGrid } from "recharts";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 type StatusFilter = "all" | "paid" | "partial" | "unpaid";
 type SortBy = "recent" | "amount_high" | "due_high";
@@ -309,6 +311,15 @@ const Purchases = () => {
     );
     return arr;
   }, [purchases, search, statusFilter, sortBy]);
+
+  const pagination = usePagination(filteredPurchases.length, {
+    storageKey: `pg:purchases:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search, statusFilter, sortBy }),
+  });
+  const pagedPurchases = useMemo(
+    () => paginate(filteredPurchases, pagination.page, pagination.pageSize),
+    [filteredPurchases, pagination.page, pagination.pageSize],
+  );
 
   const statusTabs: { id: StatusFilter; label: string; count: number }[] = [
     { id: "all", label: "All", count: purchases.length },
@@ -704,7 +715,7 @@ const Purchases = () => {
                   <ShoppingBag className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="text-muted-foreground text-sm">No purchases match your filters</p>
                 </div>
-              ) : filteredPurchases.map((p: any) => {
+              ) : pagedPurchases.map((p: any) => {
                 const due = Math.max(0, Number(p.total_amount) - Number(p.paid_amount));
                 const paidPct = Number(p.total_amount) > 0 ? (Number(p.paid_amount) / Number(p.total_amount)) * 100 : 0;
                 return (
@@ -765,7 +776,7 @@ const Purchases = () => {
                       <ShoppingBag className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No purchases match your filters</p>
                     </TableCell></TableRow>
-                  ) : filteredPurchases.map((p: any) => {
+                  ) : pagedPurchases.map((p: any) => {
                     const due = Math.max(0, Number(p.total_amount) - Number(p.paid_amount));
                     const paidPct = Number(p.total_amount) > 0 ? (Number(p.paid_amount) / Number(p.total_amount)) * 100 : 0;
                     return (
@@ -815,6 +826,16 @@ const Purchases = () => {
             </div>
           </CardContent>
         </Card>
+        {filteredPurchases.length > 0 && (
+          <DataPagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={filteredPurchases.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+            itemLabel="purchases"
+          />
+        )}
 
         {stats.unpaidCount > 0 && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex items-center gap-2.5">

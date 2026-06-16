@@ -22,6 +22,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreQuery } from "@/hooks/useStoreQuery";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
@@ -306,6 +308,23 @@ const OnlineSuppliersPurchases = () => {
       p.notes?.toLowerCase().includes(search.toLowerCase())
     ), [purchases, search]);
 
+  const suppliersPagination = usePagination(filteredSuppliers.length, {
+    storageKey: `pg:online-suppliers:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search, tab: "suppliers" }),
+  });
+  const pagedSuppliers = useMemo(
+    () => paginate(filteredSuppliers, suppliersPagination.page, suppliersPagination.pageSize),
+    [filteredSuppliers, suppliersPagination.page, suppliersPagination.pageSize],
+  );
+  const purchasesPagination = usePagination(filteredPurchases.length, {
+    storageKey: `pg:online-purchases:${storeId ?? "none"}`,
+    filterSignature: JSON.stringify({ search, tab: "purchases" }),
+  });
+  const pagedPurchases = useMemo(
+    () => paginate(filteredPurchases, purchasesPagination.page, purchasesPagination.pageSize),
+    [filteredPurchases, purchasesPagination.page, purchasesPagination.pageSize],
+  );
+
   const openSupplierEdit = (s: any) => {
     setSupForm({ name: s.name, phone: s.phone || "", email: s.email || "", address: s.address || "", notes: s.notes || "" });
     setSupEditId(s.id);
@@ -488,7 +507,7 @@ const OnlineSuppliersPurchases = () => {
               <>
                 {/* Mobile cards */}
                 <div className="space-y-2 md:hidden">
-                  {filteredSuppliers.map((s: any) => (
+                  {pagedSuppliers.map((s: any) => (
                     <Card key={s.id}><CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -517,7 +536,7 @@ const OnlineSuppliersPurchases = () => {
                       <TableHead className="text-right">Balance Due</TableHead><TableHead className="text-right">Actions</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {filteredSuppliers.map((s: any) => (
+                      {pagedSuppliers.map((s: any) => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
@@ -538,6 +557,15 @@ const OnlineSuppliersPurchases = () => {
                     </TableBody>
                   </Table>
                 </CardContent></Card>
+                <DataPagination
+                  page={suppliersPagination.page}
+                  pageSize={suppliersPagination.pageSize}
+                  total={filteredSuppliers.length}
+                  onPageChange={suppliersPagination.setPage}
+                  onPageSizeChange={suppliersPagination.setPageSize}
+                  itemLabel="suppliers"
+                  className="mt-3"
+                />
               </>
             )}
           </TabsContent>
@@ -553,7 +581,7 @@ const OnlineSuppliersPurchases = () => {
               <>
                 {/* Mobile cards */}
                 <div className="space-y-2 md:hidden">
-                  {filteredPurchases.map((p: any) => (
+                  {pagedPurchases.map((p: any) => (
                     <Card key={p.id}><CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -586,7 +614,7 @@ const OnlineSuppliersPurchases = () => {
                       <TableHead></TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {filteredPurchases.map((p: any) => (
+                      {pagedPurchases.map((p: any) => (
                         <TableRow key={p.id}>
                           <TableCell className="text-sm">{formatDate(new Date(p.purchase_date), "dd MMM yyyy")}</TableCell>
                           <TableCell className="font-medium">{p.suppliers?.name || "Walk-in"}</TableCell>
@@ -607,6 +635,15 @@ const OnlineSuppliersPurchases = () => {
                     </TableBody>
                   </Table>
                 </CardContent></Card>
+                <DataPagination
+                  page={purchasesPagination.page}
+                  pageSize={purchasesPagination.pageSize}
+                  total={filteredPurchases.length}
+                  onPageChange={purchasesPagination.setPage}
+                  onPageSizeChange={purchasesPagination.setPageSize}
+                  itemLabel="purchases"
+                  className="mt-3"
+                />
               </>
             )}
           </TabsContent>

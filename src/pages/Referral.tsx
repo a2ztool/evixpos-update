@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
+import { useMemo } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -171,6 +174,15 @@ const Referral = () => {
   const premiumUsers = referrals.filter((r) => r.plan !== "free").length;
 
   const filteredReferrals = filter === "all" ? referrals : referrals.filter((r) => r.status === filter);
+
+  const refPagination = usePagination(filteredReferrals.length, {
+    storageKey: `pg:referrals:${user?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ filter }),
+  });
+  const pagedReferrals = useMemo(
+    () => paginate(filteredReferrals, refPagination.page, refPagination.pageSize),
+    [filteredReferrals, refPagination.page, refPagination.pageSize],
+  );
 
   const statusIcon = (status: string) => {
     if (status === "active") return <CheckCircle className="h-3.5 w-3.5 text-green-500" />;
@@ -498,7 +510,7 @@ const Referral = () => {
             <>
               {/* Mobile cards */}
               <div className="md:hidden space-y-3">
-                {filteredReferrals.map((r) => (
+                {pagedReferrals.map((r) => (
                   <div key={r.id} className="border rounded-2xl bg-card p-3 space-y-2">
                     <div className="flex justify-between items-start">
                       <div>
@@ -535,7 +547,7 @@ const Referral = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReferrals.map((r) => (
+                    {pagedReferrals.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="text-sm">{format(new Date(r.created_at), "MMM dd, yyyy")}</TableCell>
                         <TableCell className="text-sm">{r.referred_email}</TableCell>
@@ -555,6 +567,17 @@ const Referral = () => {
                   </TableBody>
                 </Table>
               </div>
+              {filteredReferrals.length > 0 && (
+                <DataPagination
+                  page={refPagination.page}
+                  pageSize={refPagination.pageSize}
+                  total={filteredReferrals.length}
+                  onPageChange={refPagination.setPage}
+                  onPageSizeChange={refPagination.setPageSize}
+                  itemLabel="referrals"
+                  className="mt-3"
+                />
+              )}
             </>
           )}
         </CardContent>
