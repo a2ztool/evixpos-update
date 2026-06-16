@@ -267,11 +267,11 @@ const DueBook = () => {
       .channel(`duebook-${activeStore.id}`)
       .on("postgres_changes",
         { event: "*", schema: "public", table: "transactions", filter: `store_id=eq.${activeStore.id}` },
-        () => fetchDues()
+        () => { if (!isExternalActionActive()) fetchDues(); }
       )
       .on("postgres_changes",
         { event: "*", schema: "public", table: "due_payments", filter: `store_id=eq.${activeStore.id}` },
-        () => fetchDues()
+        () => { if (!isExternalActionActive()) fetchDues(); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -310,6 +310,27 @@ const DueBook = () => {
     }
     return result;
   }, [dues, statusFilter, typeFilter, datePreset, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DUE_PAGE_SIZE));
+  const filterResetRef = useRef(true);
+  useEffect(() => {
+    if (loading) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [loading, currentPage, totalPages, setCurrentPage]);
+  useEffect(() => {
+    if (filterResetRef.current) {
+      filterResetRef.current = false;
+      return;
+    }
+    if (isExternalActionActive()) return;
+    setCurrentPage(1);
+  }, [search, statusFilter, typeFilter, datePreset, setCurrentPage]);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * DUE_PAGE_SIZE, currentPage * DUE_PAGE_SIZE),
+    [filtered, currentPage]
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * DUE_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * DUE_PAGE_SIZE, filtered.length);
 
   const stats = useMemo(() => {
     const unpaid = dues.filter((d) => !d.is_paid);
