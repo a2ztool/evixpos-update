@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
@@ -143,6 +145,15 @@ const AdCosts = () => {
       return true;
     });
   }, [ads, platformFilter, search, getDateRange]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:ad-costs:${activeStore?.id ?? "none"}`,
+    filterSignature: JSON.stringify({ search, platformFilter, datePreset, customDateFrom, customDateTo }),
+  });
+  const pagedFiltered = useMemo(
+    () => paginate(filtered, pagination.page, pagination.pageSize),
+    [filtered, pagination.page, pagination.pageSize],
+  );
 
   const stats = useMemo(() => {
     const totalSpend = filtered.reduce((s, a) => s + Number(a.amount), 0);
