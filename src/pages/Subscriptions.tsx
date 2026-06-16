@@ -808,7 +808,11 @@ const Subscriptions = () => {
             </div>
 
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <p className="text-sm text-muted-foreground">{filtered.length} subscriptions found</p>
+              <p className="text-sm text-muted-foreground">
+                {filtered.length === 0
+                  ? "0 subscriptions found"
+                  : `Showing ${rangeStart}–${rangeEnd} of ${filtered.length} subscriptions`}
+              </p>
               {filtered.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Checkbox
