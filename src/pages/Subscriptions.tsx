@@ -552,74 +552,80 @@ const Subscriptions = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Premium Hero */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 sm:p-7">
-          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-              <div className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20 shrink-0">
-                <Repeat className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+      <div className="space-y-3">
+        {/* Compact premium header */}
+        <div className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-primary/8 via-background to-background p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm shrink-0">
+                <Repeat className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">Subscriptions</h1>
-                  <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs">
-                    <Sparkles className="h-3 w-3" /> Premium
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight leading-tight">Subscriptions</h1>
+                  <Badge variant="outline" className="gap-1 h-5 px-1.5 text-[10px]">
+                    <Sparkles className="h-2.5 w-2.5" /> Premium
                   </Badge>
                 </div>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Track recurring revenue, renewals & churn intelligently
+                <p className="text-[11px] text-muted-foreground leading-tight hidden sm:block">
+                  Recurring revenue, renewals & churn at a glance
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 sm:gap-5">
-              <div className="flex-1 lg:flex-none lg:w-64 rounded-xl bg-background/60 backdrop-blur border p-3 sm:p-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase text-muted-foreground tracking-wide flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Sub Health
-                  </p>
-                  <span className={`text-[10px] sm:text-xs font-bold ${healthColor}`}>{healthLabel}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Health pill */}
+              <div className="flex items-center gap-2 rounded-lg border bg-background px-2.5 py-1.5">
+                <Activity className={`h-3.5 w-3.5 ${healthColor}`} />
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-sm font-bold leading-none ${healthColor}`}>{healthScore}</span>
+                  <span className="text-[10px] text-muted-foreground">/100</span>
                 </div>
-                <div className="flex items-end gap-2">
-                  <span className={`text-2xl sm:text-3xl font-bold ${healthColor}`}>{healthScore}</span>
-                  <span className="text-xs text-muted-foreground mb-1">/100</span>
-                </div>
-                <Progress value={healthScore} className="h-1.5 mt-2" />
+                <span className={`text-[10px] font-semibold ${healthColor}`}>{healthLabel}</span>
               </div>
-              <div className="flex flex-col gap-2 shrink-0">
-                <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="gap-1.5 w-full justify-center">
-                  <MessageSquareText className="h-4 w-4" /> <span className="hidden sm:inline">Template</span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 w-full justify-center">
-                  <Download className="h-4 w-4" /> <span className="hidden sm:inline">Export</span>
-                </Button>
-                <Button size="sm" onClick={openAdd} className="gap-1.5 w-full justify-center shadow-sm">
-                  <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add</span>
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" onClick={() => { setTemplateDraft(waTemplate); setTemplateOpen(true); }} className="h-8 gap-1.5">
+                <MessageSquareText className="h-3.5 w-3.5" /> <span className="hidden md:inline">Template</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 gap-1.5">
+                <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Export</span>
+              </Button>
+              <Button size="sm" onClick={openAdd} className="h-8 gap-1.5 shadow-sm">
+                <Plus className="h-3.5 w-3.5" /> Add
+              </Button>
             </div>
           </div>
+          {/* Insights inline as compact chips */}
+          {insights.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+              {insights.map((ins, i) => {
+                const styles = {
+                  success: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+                  warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+                  danger: "bg-destructive/10 text-destructive border-destructive/20",
+                  info: "bg-primary/10 text-primary border-primary/20",
+                }[ins.type];
+                const Icon = ins.icon;
+                return (
+                  <div key={i} className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${styles}`}>
+                    <Icon className="h-3 w-3 shrink-0" />
+                    <span className="truncate max-w-[28rem]">{ins.text}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Quick Guide */}
+        {/* Quick Guide — compact collapsible */}
         <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors rounded-lg">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                    <HelpCircle className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <p className="text-sm font-semibold">Quick Guide & Best Practices</p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      Learn how to grow MRR, reduce churn & automate renewals
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors rounded-lg">
+                <div className="flex items-center gap-2 min-w-0">
+                  <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <p className="text-xs font-semibold">Quick Guide & Best Practices</p>
+                  <p className="text-[11px] text-muted-foreground line-clamp-1 hidden sm:block">— Grow MRR, reduce churn & automate renewals</p>
                 </div>
-                {guideOpen ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                {guideOpen ? <ChevronUp className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />}
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -646,149 +652,112 @@ const Subscriptions = () => {
           </Card>
         </Collapsible>
 
-        {/* Smart Insights */}
-        {insights.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {insights.map((ins, i) => {
-              const styles = {
-                success: "border-l-green-500 bg-green-500/5",
-                warning: "border-l-amber-500 bg-amber-500/5",
-                danger: "border-l-destructive bg-destructive/5",
-                info: "border-l-primary bg-primary/5",
-              }[ins.type];
-              const iconColor = {
-                success: "text-green-600",
-                warning: "text-amber-600",
-                danger: "text-destructive",
-                info: "text-primary",
-              }[ins.type];
-              const Icon = ins.icon;
-              return (
-                <div key={i} className={`flex items-start gap-3 rounded-lg border-l-4 border border-border/50 p-3 ${styles}`}>
-                  <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${iconColor}`} />
-                  <p className="text-xs sm:text-sm leading-relaxed">{ins.text}</p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* KPI Cards — Premium */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Unified KPI grid — 8 metrics, compact fintech tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {[
-            { label: "Active", value: stats.activeCount, sub: `MRR ${formatCurrency(stats.mrr, 0)}`, icon: CheckCircle2, accent: "border-l-green-500", iconBg: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-600", valueColor: "text-green-600" },
-            { label: "Expiring Soon", value: stats.expiringWeek, sub: `${stats.expiringToday} today`, icon: AlertTriangle, accent: "border-l-amber-500", iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600", valueColor: "text-amber-600" },
-            { label: "Expired", value: stats.expiredCount, sub: `Churn ${stats.churnRate.toFixed(0)}%`, icon: XCircle, accent: "border-l-red-500", iconBg: "bg-red-100 dark:bg-red-900/30", iconColor: "text-red-600", valueColor: "text-destructive" },
-            { label: "Total Revenue", value: formatCurrency(stats.totalRevenue, 0), sub: `Profit ${formatCurrency(stats.profit, 0)}`, icon: DollarSign, accent: "border-l-primary", iconBg: "bg-primary/10", iconColor: "text-primary", valueColor: "" },
+            { label: "Active", value: stats.activeCount, sub: `MRR ${formatCurrency(stats.mrr, 0)}`, icon: CheckCircle2, tone: "green", valueColor: "text-green-600", primary: true },
+            { label: "Expiring", value: stats.expiringWeek, sub: `${stats.expiringToday} today`, icon: AlertTriangle, tone: "amber", valueColor: "text-amber-600", primary: true },
+            { label: "Expired", value: stats.expiredCount, sub: `Churn ${stats.churnRate.toFixed(0)}%`, icon: XCircle, tone: "red", valueColor: "text-destructive", primary: true },
+            { label: "Revenue", value: formatCurrency(stats.totalRevenue, 0), sub: `Profit ${formatCurrency(stats.profit, 0)}`, icon: DollarSign, tone: "primary", valueColor: "", primary: true },
+            { label: "Renewals", value: stats.totalRenewals, sub: "Total", icon: RotateCcw, tone: "primary", valueColor: "" },
+            { label: "Renewal %", value: `${stats.renewalRate.toFixed(0)}%`, sub: "Rate", icon: TrendingUp, tone: "green", valueColor: "" },
+            { label: "30-Day", value: stats.expiring30, sub: "Expiring", icon: Timer, tone: "amber", valueColor: "" },
+            { label: "Lifetime", value: stats.avgLifetime.toFixed(1), sub: "Avg yrs", icon: Crown, tone: "purple", valueColor: "" },
           ].map((k, i) => {
             const KIcon = k.icon;
+            const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
+              green:   { bg: "bg-green-500/10", text: "text-green-600", ring: "ring-green-500/20" },
+              amber:   { bg: "bg-amber-500/10", text: "text-amber-600", ring: "ring-amber-500/20" },
+              red:     { bg: "bg-red-500/10",   text: "text-red-600",   ring: "ring-red-500/20" },
+              primary: { bg: "bg-primary/10",   text: "text-primary",   ring: "ring-primary/20" },
+              purple:  { bg: "bg-purple-500/10",text: "text-purple-600",ring: "ring-purple-500/20" },
+            };
+            const t = toneMap[k.tone];
             return (
-              <Card key={i} className={`hover:shadow-md transition-all border-l-4 ${k.accent}`}>
-                <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase text-muted-foreground tracking-wide">{k.label}</p>
-                    <div className={`p-1.5 rounded-lg ${k.iconBg} shrink-0`}>
-                      <KIcon className={`h-3.5 w-3.5 ${k.iconColor}`} />
+              <Card key={i} className={`hover:shadow-sm transition-all ${k.primary ? "ring-1 " + t.ring : ""}`}>
+                <CardContent className="p-2.5 sm:p-3">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide truncate">{k.label}</p>
+                    <div className={`p-1 rounded ${t.bg} shrink-0`}>
+                      <KIcon className={`h-3 w-3 ${t.text}`} />
                     </div>
                   </div>
-                  <p className={`text-xl sm:text-2xl lg:text-3xl font-bold truncate ${k.valueColor}`}>{k.value}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 truncate">{k.sub}</p>
+                  <p className={`text-lg sm:text-xl font-bold leading-tight truncate ${k.valueColor}`}>{k.value}</p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">{k.sub}</p>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* Secondary metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: "Total Renewals", value: stats.totalRenewals, icon: RotateCcw, iconBg: "bg-primary/10", iconColor: "text-primary" },
-            { label: "Renewal Rate", value: `${stats.renewalRate.toFixed(0)}%`, icon: TrendingUp, iconBg: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-600" },
-            { label: "30-Day Expiry", value: stats.expiring30, icon: Timer, iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600" },
-            { label: "Avg Lifetime", value: stats.avgLifetime.toFixed(1), icon: Crown, iconBg: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-600" },
-          ].map((m, i) => {
-            const MIcon = m.icon;
-            return (
-              <Card key={i} className="hover:shadow-sm transition-all">
-                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${m.iconBg} shrink-0`}>
-                    <MIcon className={`h-4 w-4 ${m.iconColor}`} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{m.label}</p>
-                    <p className="text-base sm:text-lg font-bold truncate">{m.value}</p>
+        {/* At-Risk + Top Customers — side by side */}
+        {(atRiskSubs.length > 0 || topCustomers.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {atRiskSubs.length > 0 && (
+              <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+                <CardHeader className="py-2.5 px-3">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" /> At-Risk (next 14 days)
+                    <Badge variant="outline" className="ml-auto h-5 px-1.5 text-[10px]">{atRiskSubs.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-3 pb-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-60 overflow-y-auto pr-1">
+                    {atRiskSubs.map(s => {
+                      const d = getDaysLeft(s.end_date);
+                      return (
+                        <div key={s.id} className="flex items-center justify-between gap-2 rounded-md border bg-background px-2.5 py-1.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold truncate leading-tight">{s.customers?.name || "—"}</p>
+                            <p className="text-[10px] text-muted-foreground truncate leading-tight">{s.product_name}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge className={`h-5 px-1.5 text-[10px] ${d <= 3 ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"}`}>{d}d</Badge>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => sendWhatsAppReminder(s)}>
+                              <MessageCircle className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+            )}
 
-        {/* At-Risk panel */}
-        {atRiskSubs.length > 0 && (
-          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600" /> At-Risk Subscriptions (next 14 days)
-                <Badge variant="outline" className="ml-auto text-[10px]">{atRiskSubs.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {atRiskSubs.map(s => {
-                  const d = getDaysLeft(s.end_date);
-                  return (
-                    <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg border bg-background p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold truncate">{s.customers?.name || "—"}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{s.product_name}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <Badge className={d <= 3 ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-[10px]" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]"}>{d}d</Badge>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600" onClick={() => sendWhatsAppReminder(s)}>
-                          <MessageCircle className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Top Customers */}
-        {topCustomers.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Crown className="h-4 w-4 text-amber-500" /> Top Customers by Revenue
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2.5">
-                {topCustomers.map((c, i) => {
-                  const medal = ["🥇", "🥈", "🥉"][i] || `#${i + 1}`;
-                  const max = topCustomers[0].revenue || 1;
-                  return (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="text-base sm:text-lg w-8 text-center shrink-0">{medal}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="text-xs sm:text-sm font-medium truncate">{c.name}</p>
-                          <p className="text-xs sm:text-sm font-bold shrink-0">{formatCurrency(c.revenue, 0)}</p>
+            {topCustomers.length > 0 && (
+              <Card>
+                <CardHeader className="py-2.5 px-3">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-2">
+                    <Crown className="h-3.5 w-3.5 text-amber-500" /> Top Customers by Revenue
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-3 pb-3">
+                  <div className="space-y-2">
+                    {topCustomers.map((c, i) => {
+                      const medal = ["🥇", "🥈", "🥉"][i] || `#${i + 1}`;
+                      const max = topCustomers[0].revenue || 1;
+                      return (
+                        <div key={i} className="flex items-center gap-2.5">
+                          <div className="text-sm w-6 text-center shrink-0">{medal}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <p className="text-xs font-medium truncate">{c.name}</p>
+                              <p className="text-xs font-bold shrink-0">{formatCurrency(c.revenue, 0)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Progress value={(c.revenue / max) * 100} className="h-1 flex-1" />
+                              <span className="text-[10px] text-muted-foreground shrink-0">{c.count} sub{c.count > 1 ? "s" : ""}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={(c.revenue / max) * 100} className="h-1.5 flex-1" />
-                          <span className="text-[10px] text-muted-foreground shrink-0">{c.count} sub{c.count > 1 ? "s" : ""}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
         {/* Tabs */}
