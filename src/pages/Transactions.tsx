@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { Plus, Trash2, CalendarIcon, TrendingUp, TrendingDown, DollarSign, AlertCircle, CheckCircle } from "lucide-react";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { usePagination, paginate } from "@/hooks/usePagination";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 interface Transaction {
   id: string;
@@ -110,6 +112,12 @@ const Transactions = () => {
       return true;
     });
   }, [transactions, filterType, filterCategory, dateFrom, dateTo]);
+
+  const pagination = usePagination(filtered.length, {
+    storageKey: `pg:transactions:${activeStore?.id ?? "_"}`,
+    filterSignature: JSON.stringify({ filterType, filterCategory, dateFrom: dateFrom?.toISOString() ?? "", dateTo: dateTo?.toISOString() ?? "" }),
+  });
+  const pagedTx = paginate(filtered, pagination.page, pagination.pageSize);
 
   // Calculations
   const totalIncome = filtered.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
@@ -304,7 +312,7 @@ const Transactions = () => {
             {filtered.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No transactions found</p>
             ) : (
-              filtered.map((t) => {
+              pagedTx.map((t) => {
                 const isOverdue = !t.is_paid && t.due_date && new Date(t.due_date) < new Date();
                 return (
                   <div key={t.id} className={`mobile-card ${isOverdue ? "border-destructive/30" : ""}`}>
@@ -342,7 +350,7 @@ const Transactions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((t) => {
+                {pagedTx.map((t) => {
                   const isOverdue = !t.is_paid && t.due_date && new Date(t.due_date) < new Date();
                   return (
                     <TableRow key={t.id} className={isOverdue ? "bg-destructive/5" : ""}>
@@ -373,6 +381,16 @@ const Transactions = () => {
               </TableBody>
             </Table>
           </div>
+          {filtered.length > 0 && (
+            <DataPagination
+              page={pagination.page}
+              pageSize={pagination.pageSize}
+              total={filtered.length}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+              itemLabel="transactions"
+            />
+          )}
         </TabsContent>
 
         {/* DUES TAB */}
