@@ -703,6 +703,29 @@ const fetchProducts = async () => {
     });
   }, [orders, statusFilter, paymentFilter, search, timeFilter]);
 
+  // Pagination math
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ORDERS_PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * ORDERS_PAGE_SIZE;
+    return filtered.slice(start, start + ORDERS_PAGE_SIZE);
+  }, [filtered, safePage]);
+
+  // Clamp page if it overflows current filtered length
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
+  // Reset to page 1 when filters/search change (skip initial mount so persisted page is preserved)
+  const filterResetRef = useRef(true);
+  useEffect(() => {
+    if (filterResetRef.current) {
+      filterResetRef.current = false;
+      return;
+    }
+    setCurrentPage(1);
+  }, [search, statusFilter, paymentFilter, timeFilter]);
+
   // Quick stats for premium header
   const stats = useMemo(() => {
     const total = orders.length;
