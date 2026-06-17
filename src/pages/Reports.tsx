@@ -275,23 +275,35 @@ const Reports = () => {
     );
   };
 
-  const StatCard = ({ label, value, icon: Icon, sub, delta, color, accent }: any) => (
-    <Card className={`group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-border/50 border-l-2 ${accent}`}>
-      <CardContent className="p-3 !pt-3">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">{label}</p>
-          <div className={`p-1 rounded-md ${color} shrink-0`}>
-            <Icon className="h-3 w-3 text-white" />
+  const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
+    // tint: tailwind color name e.g. "emerald", "blue", "purple"
+    const t = tint || "primary";
+    const iconWrap =
+      t === "primary"
+        ? "bg-primary/10 text-primary"
+        : `bg-${t}-500/10 text-${t}-600 dark:text-${t}-400`;
+    return (
+      <Card className="group relative overflow-hidden rounded-xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
+        <CardContent className="p-3.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-muted-foreground font-medium truncate">{label}</p>
+              <p className="mt-1.5 text-lg sm:text-xl font-bold leading-none tracking-tight truncate">{value}</p>
+            </div>
+            <div className={`shrink-0 h-9 w-9 rounded-xl flex items-center justify-center ${iconWrap}`}>
+              <Icon className="h-4 w-4" />
+            </div>
           </div>
-        </div>
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <p className="text-base sm:text-lg font-bold leading-none tracking-tight">{value}</p>
-          {delta !== undefined && <DeltaChip value={delta} />}
-        </div>
-        {sub && <p className="text-[10px] text-muted-foreground mt-1.5 truncate">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            {sub ? (
+              <p className="text-[11px] text-muted-foreground truncate">{sub}</p>
+            ) : <span />}
+            {delta !== undefined && <DeltaChip value={delta} />}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
