@@ -308,6 +308,142 @@ const Inventory = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const createReturn = useMutation({
+    mutationFn: async () => {
+      if (!returnDialog) throw new Error("No purchase selected");
+      const items = returnItems.filter(i => i.product_name && Number(i.quantity) > 0);
+      if (items.length === 0) throw new Error("Add at least one item to return");
+      const total = items.reduce((s, i) => s + Number(i.quantity) * Number(i.unit_cost || 0), 0);
+      const refund = Number(returnForm.refund_amount) || 0;
+
+      const { data: ins, error } = await supabase.from("purchase_returns").insert({
+        store_id: storeId!, user_id: userId!,
+        supplier_id: returnDialog.supplier_id || null,
+        purchase_id: returnDialog.id,
+        total_amount: total,
+        refund_amount: refund,
+        payment_method: returnForm.payment_method,
+        notes: returnForm.notes || null,
+        items: items.map(i => ({ product_name: i.product_name, quantity: Number(i.quantity), unit_cost: Number(i.unit_cost || 0) })),
+      }).select().single();
+      if (error) throw error;
+
+      // Reduce stock and log movements
+      for (const it of items) {
+        const matched = products.find((p: any) => p.name.toLowerCase() === it.product_name.toLowerCase());
+        if (matched) {
+          const newQty = Math.max(0, Number(matched.stock || 0) - Number(it.quantity));
+          await supabase.from("products").update({ stock: newQty }).eq("id", matched.id);
+        }
+        await supabase.from("stock_movements").insert({
+          store_id: storeId!, user_id: userId!,
+          product_id: matched?.id || null,
+          product_name: it.product_name,
+          type: "return",
+          quantity: Number(it.quantity),
+          unit_cost: Number(it.unit_cost || 0),
+          reference_type: "return",
+          reference_id: ins?.id || null,
+          notes: returnForm.notes || null,
+        });
+      }
+
+      // Reduce supplier balance by refund (money coming back)
+      if (returnDialog.supplier_id && refund > 0) {
+        const { data: sup } = await supabase.from("suppliers").select("balance_due").eq("id", returnDialog.supplier_id).single();
+        if (sup) {
+          await supabase.from("suppliers").update({ balance_due: Math.max(0, Number(sup.balance_due) - refund) }).eq("id", returnDialog.supplier_id);
+        }
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["purchase-returns"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      qc.invalidateQueries({ queryKey: ["products-list"] });
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      setReturnDialog(null);
+      setReturnItems([]);
+      setReturnForm({ refund_amount: "", payment_method: "cash", notes: "" });
+      toast.success("Return recorded & stock adjusted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const bulkImport = useMutation({
+    mutationFn: async () => {
+      if (!importDialog || importRows.length === 0) throw new Error("Nothing to import");
+      setImportBusy(true);
+      if (importDialog === "suppliers") {
+        const rows = importRows
+          .filter(r => r.name)
+          .map(r => ({
+            store_id: storeId!, user_id: userId!,
+            name: String(r.name), phone: r.phone || null, email: r.email || null,
+            address: r.address || null, notes: r.notes || null,
+          }));
+        const { error } = await supabase.from("suppliers").insert(rows);
+        if (error) throw error;
+        return rows.length;
+      } else {
+        // group purchase rows by supplier_name + date to one purchase
+        const groups: Record<string, any[]> = {};
+        importRows.forEach(r => {
+          const key = `${r.supplier_name || "__"}|${r.date || ""}|${r.total_amount || ""}`;
+          (groups[key] ||= []).push(r);
+        });
+        let count = 0;
+        for (const group of Object.values(groups)) {
+          const first = group[0];
+          const supplier = suppliers.find((s: any) => s.name.toLowerCase() === String(first.supplier_name || "").toLowerCase());
+          const itemsTotalC = group.reduce((s, r) => s + Number(r.quantity || 0) * Number(r.unit_cost || 0), 0);
+          const total = Number(first.total_amount) || itemsTotalC;
+          const paid = Number(first.paid_amount) || 0;
+          const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
+          const { data: pIns } = await supabase.from("purchases").insert({
+            store_id: storeId!, user_id: userId!,
+            supplier_id: supplier?.id || null,
+            total_amount: total, paid_amount: paid,
+            payment_status: status,
+            payment_method: first.payment_method || "cash",
+            notes: first.notes || group.map(r => `${r.product_name} x${r.quantity}`).join(", "),
+          }).select().single();
+          for (const r of group) {
+            if (!r.product_name) continue;
+            const matched = products.find((p: any) => p.name.toLowerCase() === String(r.product_name).toLowerCase());
+            if (matched) {
+              const newQty = Number(matched.stock || 0) + Number(r.quantity || 0);
+              await supabase.from("products").update({ stock: newQty }).eq("id", matched.id);
+            }
+            await supabase.from("stock_movements").insert({
+              store_id: storeId!, user_id: userId!,
+              product_id: matched?.id || null,
+              product_name: String(r.product_name),
+              type: "in",
+              quantity: Number(r.quantity || 0),
+              unit_cost: Number(r.unit_cost || 0),
+              reference_type: "purchase",
+              reference_id: pIns?.id || null,
+              notes: "Bulk import",
+            });
+          }
+          count++;
+        }
+        return count;
+      }
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["purchases"] });
+      qc.invalidateQueries({ queryKey: ["products-list"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      setImportDialog(null);
+      setImportRows([]);
+      toast.success(`Imported ${n} record(s)`);
+    },
+    onError: (e: any) => toast.error(e.message),
+    onSettled: () => setImportBusy(false),
+  });
+
   // --- Helpers ---
   const resetSupplierForm = () => { setSForm({ name: "", phone: "", email: "", address: "", notes: "" }); setEditSupplierId(null); };
   const resetPurchaseForm = () => {
