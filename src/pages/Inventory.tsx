@@ -688,6 +688,28 @@ const Inventory = () => {
             <Button variant="outline" size="sm" onClick={exportCSV} className="flex-1 sm:flex-initial h-9">
               <FileDown className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-initial h-9">
+                  <Upload className="h-3.5 w-3.5 mr-1" /> Import <ChevronDown className="h-3 w-3 ml-0.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => { setImportDialog("suppliers"); setImportRows([]); }}>
+                  <Users className="h-3.5 w-3.5 mr-2" /> Suppliers (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setImportDialog("purchases"); setImportRows([]); }}>
+                  <ShoppingBag className="h-3.5 w-3.5 mr-2" /> Purchases (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => downloadTemplate("suppliers")}>
+                  <FileDown className="h-3.5 w-3.5 mr-2" /> Suppliers template
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadTemplate("purchases")}>
+                  <FileDown className="h-3.5 w-3.5 mr-2" /> Purchases template
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button size="sm" variant="outline" onClick={() => { resetSupplierForm(); setSupplierDialog(true); }} className="flex-1 sm:flex-initial h-9">
               <Plus className="h-3.5 w-3.5 mr-1" /> Supplier
             </Button>
