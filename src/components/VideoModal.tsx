@@ -136,7 +136,7 @@ const VideoModal = ({ open, onOpenChange, videoUrl, videoType, thumbnail, title 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl w-[95vw] p-0 bg-[#0a0a0a] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.8)] gap-0 [&>button]:hidden backdrop-blur-xl">
+      <DialogContent className="max-w-[1400px] w-[95vw] sm:w-[92vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] p-0 bg-[#0a0a0a] border border-white/[0.08] sm:rounded-2xl overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.8)] gap-0 [&>button]:hidden">
         {/* Close button */}
         <button
           onClick={() => onOpenChange(false)}
