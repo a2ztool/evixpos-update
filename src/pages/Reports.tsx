@@ -613,7 +613,7 @@ const Reports = () => {
                         <ShoppingCart className="h-4 w-4 text-primary" /> Order Status
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 flex items-center justify-center">
+                    <CardContent className="p-3 pt-0 flex items-center justify-center">
                       {orderStatusData.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-10">No orders</div>
                       ) : (
