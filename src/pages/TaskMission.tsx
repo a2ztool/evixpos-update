@@ -576,7 +576,7 @@ const TaskMission = () => {
         </Card>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 auto-rows-fr">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 auto-rows-fr">
           {[
             { label: "Completion", value: `${stats.completionRate.toFixed(0)}%`, sub: `${stats.done}/${stats.total} tasks`, Icon: TrendingUp, color: "primary", accent: "border-l-primary", iconBg: "bg-primary/10", iconColor: "text-primary", valueColor: "text-foreground", showProgress: true },
             { label: "To Do", value: stats.todo, sub: `${stats.dueSoon} due soon`, Icon: CircleDot, color: "blue", accent: "border-l-blue-500", iconBg: "bg-blue-500/10", iconColor: "text-blue-500", valueColor: "text-blue-600 dark:text-blue-400" },
@@ -587,7 +587,7 @@ const TaskMission = () => {
             const KIcon = k.Icon;
             return (
               <Card key={i} className="rounded-xl border border-border/60 hover:shadow-sm hover:border-border transition-all duration-200 h-full">
-                <CardContent className="p-3 h-full flex flex-col justify-between gap-2">
+                <CardContent className="p-4 sm:p-5 h-full flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-[10.5px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight truncate flex-1">{k.label}</p>
                     <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${k.iconBg}`}>
@@ -598,8 +598,8 @@ const TaskMission = () => {
                     {k.value}
                     {k.suffix && <span className="text-[11px] font-medium ml-1 text-muted-foreground">{k.suffix}</span>}
                   </p>
-                  {k.showProgress && <Progress value={stats.completionRate} className="h-1" />}
-                  <p className={`text-[10.5px] truncate ${k.subColor || "text-muted-foreground"}`}>{k.sub}</p>
+                  {k.showProgress && <Progress value={stats.completionRate} className="h-1.5" />}
+                  <p className={`text-[10.5px] truncate mt-auto ${k.subColor || "text-muted-foreground"}`}>{k.sub}</p>
                 </CardContent>
               </Card>
             );
