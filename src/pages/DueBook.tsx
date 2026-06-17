@@ -737,8 +737,8 @@ const DueBook = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => setGuideOpen(!guideOpen)} className="gap-1.5 rounded-xl">
-                  <Lightbulb className="h-4 w-4" /> Guide
+                <Button variant="outline" size="sm" onClick={() => setHelpSheetOpen(true)} className="gap-1.5 rounded-xl">
+                  <HelpCircle className="h-4 w-4" /> Guide
                 </Button>
                 <Button variant="outline" size="sm" onClick={sendBulkReminders} className="gap-1.5 rounded-xl border-green-500/40 text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 dark:text-green-400">
                   <Send className="h-4 w-4" /> Bulk Remind
@@ -754,46 +754,39 @@ const DueBook = () => {
           </CardContent>
         </Card>
 
-        {/* Guide Section */}
-        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
-          <CollapsibleContent>
-            <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-              <CardContent className="!p-5 sm:!p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold">Due Book Quick Guide</h3>
+        {/* Guide Sheet */}
+        <Sheet open={helpSheetOpen} onOpenChange={setHelpSheetOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                Due Book Quick Guide
+              </SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4 mt-6">
+              {[
+                { icon: Plus, title: "1. Add Due", desc: "Click 'Add Due' to record receivables (others owe you) or payables (you owe others). Add phone for reminders.", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
+                { icon: MessageCircle, title: "2. WhatsApp Reminder", desc: "Click the green WhatsApp icon next to any due to send a polite payment reminder instantly.", color: "text-green-600 bg-green-100 dark:bg-green-900/30" },
+                { icon: CheckCircle, title: "3. Mark Paid", desc: "When payment is received, click the check mark to settle. Linked POS orders update automatically.", color: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" },
+                { icon: BarChart3, title: "4. Analyze", desc: "Use Analytics tab for cashflow timeline, category breakdown, and People tab for customer-wise summary.", color: "text-purple-600 bg-purple-100 dark:bg-purple-900/30" },
+              ].map((step, i) => (
+                <div key={i} className="rounded-xl border border-border/50 bg-card p-4 space-y-2">
+                  <div className={`h-9 w-9 rounded-xl ${step.color} flex items-center justify-center`}>
+                    <step.icon className="h-4 w-4" />
                   </div>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm">Close</Button>
-                  </CollapsibleTrigger>
+                  <p className="font-semibold text-sm">{step.title}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    { icon: Plus, title: "1. Add Due", desc: "Click 'Add Due' to record receivables (others owe you) or payables (you owe others). Add phone for reminders.", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
-                    { icon: MessageCircle, title: "2. WhatsApp Reminder", desc: "Click the green WhatsApp icon next to any due to send a polite payment reminder instantly.", color: "text-green-600 bg-green-100 dark:bg-green-900/30" },
-                    { icon: CheckCircle, title: "3. Mark Paid", desc: "When payment is received, click the check mark to settle. Linked POS orders update automatically.", color: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" },
-                    { icon: BarChart3, title: "4. Analyze", desc: "Use Analytics tab for cashflow timeline, category breakdown, and People tab for customer-wise summary.", color: "text-purple-600 bg-purple-100 dark:bg-purple-900/30" },
-                  ].map((step, i) => (
-                    <div key={i} className="rounded-xl border border-border/50 bg-card p-4 space-y-2">
-                      <div className={`h-9 w-9 rounded-xl ${step.color} flex items-center justify-center`}>
-                        <step.icon className="h-4 w-4" />
-                      </div>
-                      <p className="font-semibold text-sm">{step.title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-3 flex gap-2">
-                  <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-800 dark:text-amber-300">
-                    <strong>Pro tip:</strong> Add a phone number while creating dues to enable one-click WhatsApp reminders. Use "Bulk Remind" to message up to 5 overdue customers at once.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+              ))}
+              <div className="rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-3 flex gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  <strong>Pro tip:</strong> Add a phone number while creating dues to enable one-click WhatsApp reminders. Use "Bulk Remind" to message up to 5 overdue customers at once.
+                </p>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Compact Premium KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
