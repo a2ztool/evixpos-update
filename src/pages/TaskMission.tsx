@@ -377,7 +377,6 @@ const TaskMission = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-      </div>
         {/* Premium Hero */}
         <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-4 sm:p-6">
           <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
