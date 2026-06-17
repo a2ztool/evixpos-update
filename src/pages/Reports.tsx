@@ -417,7 +417,7 @@ const Reports = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="border-border/50">
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="animate-pulse space-y-2">
                     <div className="h-3 bg-muted rounded w-20" />
                     <div className="h-6 bg-muted rounded w-16" />
