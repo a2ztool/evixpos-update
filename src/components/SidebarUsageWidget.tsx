@@ -54,7 +54,6 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
         </div>
         <div>
           <p className="text-xs font-semibold text-foreground leading-none">Plan Usage</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{plan} plan</p>
         </div>
       </div>
 
