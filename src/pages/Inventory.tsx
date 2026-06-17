@@ -1055,6 +1055,181 @@ const Inventory = () => {
                 </CardContent>
               </Card>
             )}
+            </>)}
+
+            {/* ─── Stock Movements tab ─── */}
+            {mainTab === "movements" && (
+              <Card className="border-border/60">
+                <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between gap-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <ArrowDownUp className="h-4 w-4 text-primary" /> Stock Movements
+                    <Badge variant="secondary" className="text-[10px] ml-1">{filteredMovements.length}</Badge>
+                  </CardTitle>
+                  <div className="flex items-center gap-1.5">
+                    <Select value={movementFilter} onValueChange={(v: any) => setMovementFilter(v)}>
+                      <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="in">Stock In</SelectItem>
+                        <SelectItem value="out">Stock Out</SelectItem>
+                        <SelectItem value="return">Return</SelectItem>
+                        <SelectItem value="adjust">Adjust</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={exportMovementsCSV}>
+                      <FileDown className="h-3 w-3 mr-1" /> Export
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {filteredMovements.length === 0 ? (
+                    <p className="text-center py-8 text-xs text-muted-foreground">No stock movements yet. Create a purchase to log entries.</p>
+                  ) : (
+                    <>
+                      <div className="md:hidden space-y-2 p-3">
+                        {filteredMovements.slice(0, 50).map((m: any) => (
+                          <div key={m.id} className="border border-border/60 rounded-lg p-2.5 bg-card">
+                            <div className="flex justify-between items-start mb-1">
+                              <div>
+                                <p className="text-xs font-medium truncate">{m.product_name}</p>
+                                <p className="text-[10px] text-muted-foreground">{formatDate(new Date(m.created_at), "dd MMM yyyy HH:mm")}</p>
+                              </div>
+                              <Badge variant={m.type === "in" ? "default" : m.type === "return" || m.type === "out" ? "destructive" : "secondary"} className="text-[10px] uppercase">{m.type}</Badge>
+                            </div>
+                            <div className="flex justify-between text-[10px]">
+                              <span>Qty: <strong>{m.quantity}</strong></span>
+                              <span>Unit: {format(Number(m.unit_cost))}</span>
+                              <span>Value: <strong>{format(Number(m.quantity) * Number(m.unit_cost))}</strong></span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="hidden md:block">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Date</TableHead>
+                              <TableHead className="text-xs">Product</TableHead>
+                              <TableHead className="text-xs">Type</TableHead>
+                              <TableHead className="text-xs text-right">Qty</TableHead>
+                              <TableHead className="text-xs text-right">Unit Cost</TableHead>
+                              <TableHead className="text-xs text-right">Value</TableHead>
+                              <TableHead className="text-xs">Reference</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredMovements.slice(0, 100).map((m: any) => (
+                              <TableRow key={m.id}>
+                                <TableCell className="text-xs">{formatDate(new Date(m.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                                <TableCell className="text-xs font-medium">{m.product_name}</TableCell>
+                                <TableCell>
+                                  <Badge variant={m.type === "in" ? "default" : m.type === "return" || m.type === "out" ? "destructive" : "secondary"} className="text-[10px] uppercase">{m.type}</Badge>
+                                </TableCell>
+                                <TableCell className="text-xs text-right">{m.quantity}</TableCell>
+                                <TableCell className="text-xs text-right">{format(Number(m.unit_cost))}</TableCell>
+                                <TableCell className="text-xs text-right font-medium">{format(Number(m.quantity) * Number(m.unit_cost))}</TableCell>
+                                <TableCell className="text-[10px] text-muted-foreground capitalize">{m.reference_type || "—"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ─── Reorder tab ─── */}
+            {mainTab === "reorder" && (
+              <Card className="border-border/60">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <Zap className="h-4 w-4 text-amber-500" /> Smart Reorder Suggestions
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Based on 30-day sales velocity & current stock. Low/out-of-stock products only.</p>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  {reorderSuggestions.length === 0 ? (
+                    <p className="text-center py-6 text-xs text-muted-foreground">All products are well-stocked. Nothing to reorder. 🎉</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reorderSuggestions.map((s) => {
+                        const out = Number(s.product.stock || 0) <= 0;
+                        return (
+                          <div key={s.product.id} className={`rounded-lg border p-2.5 flex items-center gap-2 ${out ? "border-destructive/30 bg-destructive/5" : "border-amber-500/30 bg-amber-500/5"}`}>
+                            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${out ? "bg-destructive/10" : "bg-amber-500/15"}`}>
+                              <Package className={`h-4 w-4 ${out ? "text-destructive" : "text-amber-600"}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold truncate">{s.product.name}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                <span>Stock: <strong className={out ? "text-destructive" : ""}>{s.product.stock || 0}</strong></span>
+                                <span>•</span>
+                                <span>30d sold: <strong>{s.velocity30d}</strong></span>
+                                {s.lastSupplier && <><span>•</span><span className="truncate">Last: {s.lastSupplier.name}</span></>}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-muted-foreground">Suggested</p>
+                              <p className="text-sm font-bold">{s.suggestedQty}</p>
+                            </div>
+                            <Button size="sm" className="h-8 text-xs shrink-0" onClick={() => startReorderPurchase(s)}>
+                              <Plus className="h-3 w-3 mr-1" /> Order
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ─── Returns tab ─── */}
+            {mainTab === "returns" && (
+              <Card className="border-border/60">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <RotateCcw className="h-4 w-4 text-primary" /> Purchase Returns
+                    <Badge variant="secondary" className="text-[10px] ml-1">{purchaseReturns.length}</Badge>
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Return items back to supplier. Use "Return" on any purchase row to record.</p>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {purchaseReturns.length === 0 ? (
+                    <p className="text-center py-8 text-xs text-muted-foreground">No returns recorded yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Date</TableHead>
+                          <TableHead className="text-xs">Supplier</TableHead>
+                          <TableHead className="text-xs">Items</TableHead>
+                          <TableHead className="text-xs text-right">Total</TableHead>
+                          <TableHead className="text-xs text-right">Refund</TableHead>
+                          <TableHead className="text-xs">Method</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {purchaseReturns.map((r: any) => (
+                          <TableRow key={r.id}>
+                            <TableCell className="text-xs">{formatDate(new Date(r.created_at), "dd MMM yyyy")}</TableCell>
+                            <TableCell className="text-xs font-medium">{r.suppliers?.name || "—"}</TableCell>
+                            <TableCell className="text-[10px] text-muted-foreground">
+                              {Array.isArray(r.items) ? r.items.map((it: any) => `${it.product_name} ×${it.quantity}`).join(", ") : "—"}
+                            </TableCell>
+                            <TableCell className="text-xs text-right">{format(Number(r.total_amount))}</TableCell>
+                            <TableCell className="text-xs text-right text-green-600">{format(Number(r.refund_amount))}</TableCell>
+                            <TableCell className="text-xs capitalize">{r.payment_method}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
