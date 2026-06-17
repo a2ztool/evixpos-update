@@ -33,7 +33,7 @@ import {
   TrendingUp, Clock, DollarSign, Users, Calendar,
   Download, ArrowUpRight, ArrowDownRight, Bell,
   BarChart3, PieChart, MessageCircle, Lightbulb, ChevronDown,
-  Phone, Copy, Send, Sparkles, ShieldCheck, Zap, FileText
+  Phone, Copy, Send, Sparkles, ShieldCheck, Zap, FileText, HelpCircle
 } from "lucide-react";
 import { differenceInDays, format as fnsFormat, subDays, startOfMonth } from "date-fns";
 import { AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -116,7 +116,7 @@ const DueBook = () => {
   const [activeTab, setActiveTab] = usePersistedState<string>("due:activeTab", "overview");
   const [currentPage, setCurrentPage] = usePersistedState<number>("due:page", 1);
   const [pageSize, setPageSize] = usePersistedState<number>("due:pageSize", 10);
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [helpSheetOpen, setHelpSheetOpen] = useState(false);
   const [reminderModal, setReminderModal] = useState<Due | null>(null);
   const [reminderText, setReminderText] = useState("");
   const [reminderPhone, setReminderPhone] = useState("");
@@ -714,7 +714,7 @@ const DueBook = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5">
+      <div className="space-y-3 sm:space-y-4">
         {/* Premium Hero Header */}
         <Card className="rounded-2xl border-border/50 overflow-hidden relative bg-gradient-to-br from-primary/5 via-background to-background">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-0" />
