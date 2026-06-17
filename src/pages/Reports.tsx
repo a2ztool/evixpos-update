@@ -289,8 +289,8 @@ const Reports = () => {
   const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
     const iconWrap = TINTS[tint || "primary"] || TINTS.primary;
     return (
-      <Card className="group relative overflow-hidden rounded-xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
-        <CardContent className="p-3.5">
+      <Card className="group relative overflow-hidden rounded-2xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
+        <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] text-muted-foreground font-medium truncate">{label}</p>
