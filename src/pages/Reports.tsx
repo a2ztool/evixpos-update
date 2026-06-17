@@ -466,14 +466,14 @@ const Reports = () => {
 
             {/* Compact KPI grid — Revenue / Profit / Orders / Customers / Products / Ads */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
-              <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} color="bg-primary" accent="border-l-primary" />
-              <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} color="bg-emerald-500" accent="border-l-emerald-500" />
-              <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} color="bg-blue-500" accent="border-l-blue-500" />
-              <StatCard label="Avg Order" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} color="bg-purple-500" accent="border-l-purple-500" />
-              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} color="bg-pink-500" accent="border-l-pink-500" />
-              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} color="bg-orange-500" accent="border-l-orange-500" />
-              <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} color="bg-rose-500" accent="border-l-rose-500" />
-              <StatCard label="Ad Revenue" value={formatPrice(stats.totalAdRevenue)} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} color="bg-teal-500" accent="border-l-teal-500" />
+              <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} tint="primary" />
+              <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} tint="emerald" />
+              <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} tint="blue" />
+              <StatCard label="Avg Order" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} tint="purple" />
+              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} tint="pink" />
+              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} tint="orange" />
+              <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} tint="rose" />
+              <StatCard label="Ad Revenue" value={formatPrice(stats.totalAdRevenue)} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} tint="teal" />
             </div>
 
             {/* Smart Insights */}
