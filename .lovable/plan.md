@@ -1,85 +1,53 @@
-## Goal
-Apply consistent pagination across every list/table in the EvixPOS dashboard. Default 10 per page with a user-selectable size (10/25/50/100). Hybrid strategy: server-side `.range()` queries on heavy modules, shared client-side hook on the rest. Preserve page/filters/scroll across edits, renews, WhatsApp reminders, etc.
+# Inventory Module — Advanced Features & UI Polish
 
-## Shared infrastructure (built once, reused everywhere)
-1. `src/hooks/usePagination.ts` — pure client-side hook
-   - State: `page`, `pageSize`
-   - Inputs: `total`, `storageKey` (per-store, per-page)
-   - Persists `{page, pageSize}` in `sessionStorage`
-   - Returns helpers: `setPage`, `setPageSize`, `pageStart`, `pageEnd`, `totalPages`, `safePage`
-   - Auto-resets page to 1 only when filter signature changes (not on remount, not when external-action flag is active — reuses existing `pageState.ts`).
+## 1. UI spacing fixes (Inventory.tsx)
+- Tighten outer page padding/margin (`space-y` rhythm, consistent `p-4 md:p-6`).
+- Suppliers card: remove forced min-height — collapse empty bottom space.
+- Fix selected-supplier highlight border being clipped (add ring offset / overflow-visible).
+- Align KPI strip, search row, and section cards to same horizontal padding.
+- Mobile-first compact gaps.
 
-2. `src/hooks/useServerPagination.ts` — for Supabase `.range()` flows
-   - Same surface as `usePagination` plus a `range` tuple `[from, to]` consumers pass to the query.
-   - Caller is responsible for setting `total` from `count: 'exact'` head response.
+## 2. New DB tables (single migration)
+**`stock_movements`** — every in/out/adjustment entry  
+fields: store_id, user_id, product_id, product_name, type (`in`/`out`/`adjust`/`return`), quantity, unit_cost, reference_type (`purchase`/`return`/`manual`/`sale`), reference_id, notes  
+RLS: store-isolated, owner + staff of same store.
 
-3. `src/components/ui/data-pagination.tsx` — single `<DataPagination />`
-   - Props: `page`, `pageSize`, `total`, `onPageChange`, `onPageSizeChange`, `loading?`
-   - Renders Previous / numbered pages (with ellipses) / Next, a "Showing X–Y of Z" caption, and a page-size `<Select>` (10/25/50/100).
-   - Mobile: collapses to "Prev · Page N of T · Next" + size selector.
-   - Uses existing shadcn `Pagination` primitives for styling consistency.
+**`purchase_returns`** — returns to suppliers  
+fields: store_id, user_id, supplier_id, purchase_id (nullable), total_amount, refund_amount, payment_method, notes, items (jsonb: name, qty, unit_cost)  
+RLS: store-isolated.
 
-## Rollout — Hybrid
+Both with `GRANT` for `authenticated` + `service_role`, RLS policies, `updated_at` trigger.
 
-### Server-side `.range()` (heavy / high-volume)
-Rewrite the Supabase fetch to two calls when filters/search/sort change:
-- `select('*', { count: 'exact', head: true })` → total
-- `select('...').range(from, to).order(...)` → page rows
-Realtime channels invalidate and refetch the current page silently.
+## 3. Features
 
-- `Orders.tsx` — already client-paginated; convert to server-side.
-- `Customers.tsx`
-- `Transactions.tsx`
-- `Subscriptions.tsx` — already client-paginated; convert.
-- `DueBook.tsx` — already client-paginated; convert.
-- `Products.tsx`
-- `Inventory.tsx`
-- `DueCustomers.tsx`
+### A. Stock Movement Tracking
+- Auto-log a `stock_movements` row on every purchase create (type `in`).
+- New "Stock Movements" tab inside Inventory page — table with date, product, type badge, qty, value, reference.
+- Filter by product + type + date range; CSV export.
 
-### Client-side hook (lower volume / heavily filtered in memory)
-Keep current fetch, just slice with `usePagination` + render `<DataPagination />`.
+### B. Purchase Return / Refund to Supplier
+- "Return" action on each purchase row → dialog (pick items + qty + refund amount + method).
+- On submit: insert `purchase_returns` row, log `stock_movements` (type `out`), reduce supplier balance, decrement product stock.
+- Show return badge in purchase history.
 
-- `Suppliers.tsx`
-- `Purchases.tsx`
-- `OnlineSuppliersPurchases.tsx`
-- `Coupons.tsx`
-- `StockAlerts.tsx`
-- `LoyaltyPoints.tsx`
-- `CustomerCredits.tsx`
-- `AccountBook.tsx`
-- `IncomeExpense.tsx`
-- `PendingOrders.tsx`
-- `OrderForms.tsx`
-- `AdCosts.tsx`
-- `Referral.tsx` (withdrawals/refs tables)
-- `NotificationsPage.tsx` / `NotificationCenter.tsx`
-- `Reports.tsx` (per-table sections)
+### C. Bulk Import (CSV)
+- New "Import" split button (Suppliers CSV / Purchases CSV).
+- Client-side CSV parse, preview table, validate, batch insert.
+- Templates downloadable. Schema:
+  - Suppliers: `name, phone, email, address, notes`
+  - Purchases: `supplier_name, date, total_amount, paid_amount, payment_method, product_name, quantity, unit_cost, notes`
 
-### Skipped (intentionally)
-- `Dashboard.tsx`, `POS.tsx`, `CashRegister.tsx` — not tabular list pages.
-- `SalesProfit.tsx`, `DailySalesReport.tsx`, `StaffPerformance.tsx`, `OfflineProfitLoss.tsx` — aggregated/charted reports; paginating breaks totals. Will only paginate sub-tables that show raw rows.
-- Settings, Onboarding, Auth, Landing, Public pages.
+### D. Low / Out-of-stock Reorder Suggestions
+- New "Reorder Suggestions" collapsible panel above Top Suppliers.
+- Algorithm: for each low/out product, compute 30-day sales velocity from `order_items`, suggest `qty = max(min_stock*2, ceil(velocity*14)) - current_stock`.
+- Show product, current stock, suggested qty, last supplier (from most recent purchase), one-click "Create Purchase" prefilling dialog.
 
-## State preservation
-- `storageKey` pattern: `pg:<page-id>:<store-id>` for page number, `pg-size:<page-id>` for size (size shared across stores).
-- Hook skips reset-to-page-1 when `isExternalActionActive()` is true (existing helper) — covers WhatsApp/edit/renew round-trips.
-- Filter-change reset uses a stable signature string (`JSON.stringify({search, status, ...})`) compared against a ref so initial mount/hydration doesn't reset.
-- Realtime callbacks refetch the **same** page silently (no `setLoading`), consistent with the existing pattern in `Subscriptions.tsx`.
+## 4. Files touched
+- New: `supabase/migrations/<timestamp>_inventory_advanced.sql`
+- Edited: `src/pages/Inventory.tsx` (UI + tabs + dialogs + logic)
+- New small components inside Inventory page (kept colocated to avoid sprawl).
 
-## Page-size selector behaviour
-- Default 10. Options 10/25/50/100.
-- Changing size resets to page 1 and persists choice.
-- Caption: "Showing 11–25 of 312 · Page 2 of 13".
-
-## Out of scope for this pass
-- Admin-panel tables (you selected user dashboard only).
-- Server-side sorting changes — sort UI stays as-is, just passed into `.order()` on server-paginated pages.
-- Export buttons keep exporting the full filtered dataset (separate query), not just the current page.
-
-## Delivery order
-1. Build shared hook + component (no UI change yet).
-2. Convert Orders, Customers, Subscriptions, DueBook, Transactions, Products to server-side.
-3. Wire client-side hook + `<DataPagination />` into all remaining pages from the list above.
-4. Smoke-check: filter → page persists, WhatsApp round-trip → page restored, realtime insert → current page refreshes without jump.
-
-Reply "go" to execute, or tell me anything to adjust (page-size options, modules to drop/add, etc.).
+## 5. Notes
+- All queries store-scoped (`store_id`), staff uses owner `user_id` per project core rule.
+- No business logic changes to existing suppliers/purchases data.
+- Reorder suggestions are read-only computed — no new persisted table needed.
