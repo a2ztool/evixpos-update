@@ -140,7 +140,7 @@ const VideoModal = ({ open, onOpenChange, videoUrl, videoType, thumbnail, title 
         {/* Close button */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute -top-12 right-0 sm:top-3 sm:right-3 z-50 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/80 hover:text-white rounded-full p-2.5 transition-all duration-300 hover:scale-110"
+          className="absolute top-4 right-4 sm:top-3 sm:right-3 z-50 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/80 hover:text-white rounded-full p-3 sm:p-2.5 transition-all duration-300 hover:scale-110"
         >
           <X className="h-4 w-4" />
         </button>
