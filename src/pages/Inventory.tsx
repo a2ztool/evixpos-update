@@ -228,6 +228,7 @@ const Inventory = () => {
         notes: pForm.notes || itemsWithCalc.map(i => `${i.product_name} x${i.quantity}`).join(", "),
       }).select().single();
       if (error) throw error;
+      const insertedPurchase = (await supabase.from("purchases").select("id").eq("store_id", storeId!).order("created_at", { ascending: false }).limit(1).single()).data;
 
       if (pForm.supplier_id && total > paid) {
         const due = total - paid;
@@ -243,12 +244,25 @@ const Inventory = () => {
           const newQty = Number(matchedProduct.stock || 0) + Number(item.quantity);
           await supabase.from("products").update({ stock: newQty }).eq("id", matchedProduct.id);
         }
+        // Log stock movement (always — even when product isn't matched, for audit trail)
+        await supabase.from("stock_movements").insert({
+          store_id: storeId!, user_id: userId!,
+          product_id: matchedProduct?.id || null,
+          product_name: item.product_name,
+          type: "in",
+          quantity: Number(item.quantity),
+          unit_cost: Number(item.unit_cost),
+          reference_type: "purchase",
+          reference_id: insertedPurchase?.id || null,
+          notes: pForm.notes || null,
+        });
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["purchases"] });
       qc.invalidateQueries({ queryKey: ["suppliers"] });
       qc.invalidateQueries({ queryKey: ["products-list"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
       setPurchaseDialog(false);
       resetPurchaseForm();
       toast.success("Purchase recorded & stock updated");
