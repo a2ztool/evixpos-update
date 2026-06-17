@@ -1395,6 +1395,136 @@ const Inventory = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ─── Return Dialog ─── */}
+      <Dialog open={!!returnDialog} onOpenChange={v => { if (!v) { setReturnDialog(null); setReturnItems([]); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Return to Supplier — {returnDialog?.suppliers?.name || "Unknown"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto overflow-x-hidden px-1 py-1">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Items being returned</Label>
+                <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setReturnItems(prev => [...prev, { product_name: "", quantity: "1", unit_cost: "" }])}>
+                  <Plus className="h-3 w-3 mr-0.5" /> Add Item
+                </Button>
+              </div>
+              {returnItems.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-1.5 items-end">
+                  <div className="col-span-6">
+                    {idx === 0 && <Label className="text-[10px]">Product</Label>}
+                    <Input value={item.product_name} list="product-suggestions" placeholder="Product name" className="h-8 text-xs"
+                      onChange={e => setReturnItems(prev => prev.map((it, i) => i === idx ? { ...it, product_name: e.target.value } : it))} />
+                  </div>
+                  <div className="col-span-2">
+                    {idx === 0 && <Label className="text-[10px]">Qty</Label>}
+                    <Input type="number" value={item.quantity} className="h-8 text-xs"
+                      onChange={e => setReturnItems(prev => prev.map((it, i) => i === idx ? { ...it, quantity: e.target.value } : it))} />
+                  </div>
+                  <div className="col-span-3">
+                    {idx === 0 && <Label className="text-[10px]">Unit Cost</Label>}
+                    <Input type="number" value={item.unit_cost} placeholder="Cost" className="h-8 text-xs"
+                      onChange={e => setReturnItems(prev => prev.map((it, i) => i === idx ? { ...it, unit_cost: e.target.value } : it))} />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    {returnItems.length > 1 && (
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setReturnItems(prev => prev.filter((_, i) => i !== idx))}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg bg-muted/50 p-2 text-xs flex justify-between">
+              <span>Return total</span>
+              <span className="font-bold">{format(returnItems.reduce((s, i) => s + Number(i.quantity || 0) * Number(i.unit_cost || 0), 0))}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Refund Amount</Label>
+                <Input type="number" value={returnForm.refund_amount} placeholder="Cash back from supplier" className="h-9 text-sm"
+                  onChange={e => setReturnForm(f => ({ ...f, refund_amount: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs">Method</Label>
+                <Select value={returnForm.payment_method} onValueChange={v => setReturnForm(f => ({ ...f, payment_method: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
+                    <SelectItem value="bkash">bKash</SelectItem>
+                    <SelectItem value="nagad">Nagad</SelectItem>
+                    <SelectItem value="adjust">Adjust against due</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Input value={returnForm.notes} placeholder="Reason for return" className="h-9 text-sm"
+                onChange={e => setReturnForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <Button onClick={() => createReturn.mutate()} disabled={createReturn.isPending} className="w-full h-9 text-sm">
+              {createReturn.isPending ? "Recording..." : "Record Return"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Bulk Import Dialog ─── */}
+      <Dialog open={!!importDialog} onOpenChange={v => { if (!v) { setImportDialog(null); setImportRows([]); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-4 w-4" /> Bulk Import — {importDialog === "suppliers" ? "Suppliers" : "Purchases"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg bg-muted/50 p-3 text-xs">
+              <p className="font-medium mb-1">CSV Format</p>
+              {importDialog === "suppliers" ? (
+                <code className="text-[10px] block">name, phone, email, address, notes</code>
+              ) : (
+                <code className="text-[10px] block">supplier_name, date, total_amount, paid_amount, payment_method, product_name, quantity, unit_cost, notes</code>
+              )}
+              <Button size="sm" variant="link" className="h-6 px-0 text-xs" onClick={() => downloadTemplate(importDialog!)}>
+                <FileDown className="h-3 w-3 mr-1" /> Download template
+              </Button>
+            </div>
+            <div>
+              <Label className="text-xs">Choose CSV file</Label>
+              <Input type="file" accept=".csv,text/csv" className="h-9 text-xs"
+                onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); }} />
+            </div>
+            {importRows.length > 0 && (
+              <div className="border border-border/60 rounded-lg overflow-hidden">
+                <div className="bg-muted/40 px-3 py-1.5 text-xs font-medium flex justify-between">
+                  <span>Preview — {importRows.length} row(s)</span>
+                </div>
+                <div className="max-h-[260px] overflow-auto">
+                  <table className="w-full text-[10px]">
+                    <thead className="bg-muted/30 sticky top-0">
+                      <tr>{Object.keys(importRows[0]).map(k => <th key={k} className="px-2 py-1.5 text-left font-medium">{k}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {importRows.slice(0, 20).map((r, i) => (
+                        <tr key={i} className="border-t border-border/40">
+                          {Object.keys(importRows[0]).map(k => <td key={k} className="px-2 py-1 truncate max-w-[120px]">{String(r[k] || "")}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            <Button onClick={() => bulkImport.mutate()} disabled={importRows.length === 0 || importBusy} className="w-full h-9 text-sm">
+              {importBusy ? "Importing..." : `Import ${importRows.length} record(s)`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
