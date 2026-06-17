@@ -527,6 +527,100 @@ const Inventory = () => {
     URL.revokeObjectURL(url);
   };
 
+  // ---- CSV import helpers ----
+  const parseCSV = (text: string): any[] => {
+    const lines = text.replace(/\r/g, "").split("\n").filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const split = (line: string) => {
+      const out: string[] = []; let cur = ""; let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { q = !q; continue; }
+        if (c === "," && !q) { out.push(cur); cur = ""; continue; }
+        cur += c;
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    };
+    const headers = split(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, "_"));
+    return lines.slice(1).map(line => {
+      const cells = split(line);
+      const obj: any = {};
+      headers.forEach((h, i) => (obj[h] = cells[i] ?? ""));
+      return obj;
+    });
+  };
+
+  const downloadTemplate = (kind: "suppliers" | "purchases") => {
+    const content = kind === "suppliers"
+      ? "name,phone,email,address,notes\nABC Trading,01700000000,info@abc.com,Dhaka,Trusted vendor\n"
+      : "supplier_name,date,total_amount,paid_amount,payment_method,product_name,quantity,unit_cost,notes\nABC Trading,2026-06-17,1000,500,cash,Rice 5kg,10,100,Monthly stock\n";
+    const blob = new Blob([content], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${kind}-template.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onImportFile = async (f: File) => {
+    const text = await f.text();
+    setImportRows(parseCSV(text));
+  };
+
+  // ---- Reorder suggestions ----
+  type ReorderSuggestion = { product: any; velocity30d: number; suggestedQty: number; lastSupplier?: any; lastUnitCost?: number };
+  const reorderSuggestions: ReorderSuggestion[] = useMemo(() => {
+    const lowOrOut = (products as any[]).filter(p => Number(p.stock || 0) <= 5);
+    return lowOrOut.map(p => {
+      const v = Number((salesVelocity as any)[p.id] || 0);
+      const dailyVelocity = v / 30;
+      const target = Math.max(10, Math.ceil(dailyVelocity * 14));
+      const suggestedQty = Math.max(1, target - Number(p.stock || 0));
+      // find last supplier from purchases via stock_movements
+      const lastMv = (stockMovements as any[]).find(m => m.product_id === p.id && m.type === "in");
+      const lastSupplier = lastMv
+        ? suppliers.find((s: any) => purchases.some((pu: any) => pu.id === lastMv.reference_id && pu.supplier_id === s.id))
+        : null;
+      return { product: p, velocity30d: v, suggestedQty, lastSupplier, lastUnitCost: lastMv ? Number(lastMv.unit_cost) : undefined };
+    }).sort((a, b) => b.velocity30d - a.velocity30d);
+  }, [products, salesVelocity, stockMovements, suppliers, purchases]);
+
+  const startReorderPurchase = (s: ReorderSuggestion) => {
+    resetPurchaseForm();
+    setPForm(p => ({
+      ...p,
+      supplier_id: s.lastSupplier?.id || "",
+    }));
+    setPurchaseItems([{
+      product_name: s.product.name,
+      quantity: String(s.suggestedQty),
+      unit_cost: s.lastUnitCost ? String(s.lastUnitCost) : "",
+    }]);
+    setPurchaseDialog(true);
+  };
+
+  const openReturnDialog = (p: any) => {
+    setReturnDialog(p);
+    setReturnItems([{ product_name: "", quantity: "1", unit_cost: "" }]);
+    setReturnForm({ refund_amount: "", payment_method: p.payment_method || "cash", notes: "" });
+  };
+
+  // movement filter
+  const filteredMovements = useMemo(() => {
+    if (movementFilter === "all") return stockMovements as any[];
+    return (stockMovements as any[]).filter(m => m.type === movementFilter);
+  }, [stockMovements, movementFilter]);
+
+  const exportMovementsCSV = () => {
+    const header = "Date,Product,Type,Quantity,Unit Cost,Value,Reference,Notes\n";
+    const rows = filteredMovements.map(m =>
+      `"${formatDate(new Date(m.created_at), "dd MMM yyyy HH:mm")}","${m.product_name}","${m.type}",${m.quantity},${m.unit_cost},${Number(m.quantity) * Number(m.unit_cost)},"${m.reference_type || ""}","${m.notes || ""}"`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "stock-movements.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Stat card — Precision Aviator glass style
   const StatCard = ({ icon: Icon, label, value, tint = "primary", subtle }: any) => (
     <div className="relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/40 backdrop-blur-sm p-2.5 sm:p-3.5 shadow-sm hover:shadow-md transition-all">
