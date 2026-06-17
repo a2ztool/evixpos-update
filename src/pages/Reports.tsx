@@ -275,13 +275,18 @@ const Reports = () => {
     );
   };
 
+  const TINTS: Record<string, string> = {
+    primary: "bg-primary/10 text-primary",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    purple: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    pink: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
+    orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    teal: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  };
   const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
-    // tint: tailwind color name e.g. "emerald", "blue", "purple"
-    const t = tint || "primary";
-    const iconWrap =
-      t === "primary"
-        ? "bg-primary/10 text-primary"
-        : `bg-${t}-500/10 text-${t}-600 dark:text-${t}-400`;
+    const iconWrap = TINTS[tint || "primary"] || TINTS.primary;
     return (
       <Card className="group relative overflow-hidden rounded-xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
         <CardContent className="p-3.5">
