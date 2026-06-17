@@ -482,66 +482,70 @@ const Customers = () => {
     <DashboardLayout>
       <UsageWarningBanner type="customers" />
 
-      {/* ===== Premium Hero Header ===== */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-primary/5 to-background p-4 sm:p-6 mb-4 sm:mb-6">
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className="bg-primary/15 text-primary border-primary/30 gap-1">
-                <Sparkles className="h-3 w-3" /> Premium CRM
-              </Badge>
-              <Badge variant="outline" className="gap-1">
-                <Activity className="h-3 w-3" /> Live
-              </Badge>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Customer Intelligence</h1>
-            <p className="text-sm text-muted-foreground mt-1">Segment, engage and retain your customers — built for SaaS-scale growth.</p>
-          </div>
-
-          {/* Health Score */}
-          <div className="flex items-center gap-4 rounded-xl border bg-card/60 backdrop-blur p-3 sm:p-4 min-w-[230px]">
-            <div className="relative h-16 w-16 shrink-0">
-              <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
-                <circle
-                  cx="32" cy="32" r="28" fill="none" strokeWidth="6" strokeLinecap="round"
-                  stroke="currentColor"
-                  className={healthColor}
-                  strokeDasharray={2 * Math.PI * 28}
-                  strokeDashoffset={2 * Math.PI * 28 * (1 - healthScore / 100)}
-                />
-              </svg>
-              <div className={`absolute inset-0 flex items-center justify-center text-lg font-bold ${healthColor}`}>{healthScore}</div>
+      {/* ===== Compact Hero Header ===== */}
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-background px-4 py-3 sm:px-5 sm:py-4 mb-3">
+        <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-wrap items-center gap-3">
+          {/* Title block */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
+              <Users className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Customer Health</p>
-              <p className={`font-semibold ${healthColor}`}>{healthLabel}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Repeat {stats.repeatRate.toFixed(0)}% • Conv {stats.conversionRate.toFixed(0)}%</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight leading-none">Customers</h1>
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] gap-0.5 font-medium">
+                  <Sparkles className="h-2.5 w-2.5" /> CRM
+                </Badge>
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] gap-0.5 text-emerald-600 border-emerald-500/30">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block">Segment, engage and retain — SaaS-scale growth.</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setGuideOpen(o => !o)} className="gap-1.5">
-              <BookOpen className="h-4 w-4" /> Guide
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${guideOpen ? "rotate-180" : ""}`} />
+          {/* Inline Health Score */}
+          <div className="flex items-center gap-2.5 rounded-lg border bg-card/70 backdrop-blur px-2.5 py-1.5">
+            <div className="relative h-9 w-9 shrink-0">
+              <svg className="h-9 w-9 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                <circle
+                  cx="18" cy="18" r="15" fill="none" strokeWidth="3" strokeLinecap="round"
+                  stroke="currentColor"
+                  className={healthColor}
+                  strokeDasharray={2 * Math.PI * 15}
+                  strokeDashoffset={2 * Math.PI * 15 * (1 - healthScore / 100)}
+                />
+              </svg>
+              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${healthColor}`}>{healthScore}</div>
+            </div>
+            <div className="leading-tight">
+              <p className={`text-xs font-semibold ${healthColor}`}>{healthLabel}</p>
+              <p className="text-[10px] text-muted-foreground">R {stats.repeatRate.toFixed(0)}% · C {stats.conversionRate.toFixed(0)}%</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(o => !o)} className="h-8 w-8" title="Guide">
+              <BookOpen className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-              <FileDown className="h-4 w-4" /> Export
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 h-8 px-2.5">
+              <FileDown className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => { setImportRows([]); setImportOpen(true); }} className="gap-1.5">
-              <Upload className="h-4 w-4" /> Import
+            <Button variant="outline" size="sm" onClick={() => { setImportRows([]); setImportOpen(true); }} className="gap-1.5 h-8 px-2.5">
+              <Upload className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button size="sm" onClick={openAdd} className="gap-1.5">
-              <Plus className="h-4 w-4" /> Add Customer
+            <Button size="sm" onClick={openAdd} className="gap-1.5 h-8 px-3">
+              <Plus className="h-3.5 w-3.5" /> Add
             </Button>
           </div>
         </div>
 
         {/* Quick Guide */}
         {guideOpen && (
-          <div className="relative mt-4 rounded-xl border bg-card/80 backdrop-blur p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="relative mt-3 rounded-lg border bg-card/80 backdrop-blur p-3 animate-in fade-in slide-in-from-top-2">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
               <div className="rounded-lg border p-3">
                 <p className="font-semibold flex items-center gap-1.5 mb-1"><Crown className="h-3.5 w-3.5 text-amber-500" /> VIP</p>
@@ -572,109 +576,146 @@ const Customers = () => {
         )}
       </div>
 
-      {/* ===== KPI Cards ===== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <div className="rounded-xl border bg-card p-3 sm:p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Customers</span>
-            <Users className="h-4 w-4 text-primary" />
+      {/* ===== Compact KPI Strip ===== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+        {[
+          { label: "Customers", value: stats.total, sub: `${stats.buyers} buyers`, Icon: Users, accent: "text-primary", bg: "bg-primary/10" },
+          { label: "Total Spent", value: format(stats.totalSpent), sub: `AOV ${format(stats.aov)}`, Icon: ShoppingBag, accent: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { label: "Total Due", value: format(stats.totalDue), sub: `${stats.dueCount} customers`, Icon: CreditCard, accent: "text-rose-500", bg: "bg-rose-500/10", valueClass: "text-rose-500" },
+          { label: "Avg LTV", value: format(stats.ltv), sub: `${stats.totalPoints} pts`, Icon: Star, accent: "text-amber-500", bg: "bg-amber-500/10" },
+        ].map((k, i) => (
+          <div key={i} className="group relative rounded-lg border bg-card px-3 py-2.5 hover:border-primary/40 hover:shadow-sm transition-all overflow-hidden">
+            <div className="flex items-center gap-2.5">
+              <div className={`h-8 w-8 rounded-md ${k.bg} ${k.accent} flex items-center justify-center shrink-0`}>
+                <k.Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">{k.label}</p>
+                <p className={`text-base sm:text-lg font-bold leading-tight truncate ${k.valueClass || ""}`}>{k.value}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{k.sub}</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-bold mt-1">{stats.total}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{stats.buyers} buyers</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 sm:p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Total Spent</span>
-            <ShoppingBag className="h-4 w-4 text-emerald-500" />
-          </div>
-          <p className="text-xl sm:text-2xl font-bold mt-1 truncate">{format(stats.totalSpent)}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">AOV {format(stats.aov)}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 sm:p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Total Due</span>
-            <CreditCard className="h-4 w-4 text-rose-500" />
-          </div>
-          <p className="text-xl sm:text-2xl font-bold mt-1 text-rose-500 truncate">{format(stats.totalDue)}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{stats.dueCount} customers</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 sm:p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Avg LTV</span>
-            <Star className="h-4 w-4 text-amber-500" />
-          </div>
-          <p className="text-xl sm:text-2xl font-bold mt-1 truncate">{format(stats.ltv)}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{stats.totalPoints} pts total</p>
-        </div>
+        ))}
       </div>
 
       {/* ===== Insights + Top Customers ===== */}
-      <div className="grid lg:grid-cols-3 gap-4 mb-4">
-        <div className="lg:col-span-2 rounded-xl border bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="font-semibold text-sm">Smart Insights</h2>
-          </div>
-          <div className="space-y-2">
-            {insights.map((ins, i) => {
-              const Icon = ins.icon;
-              const tone = {
-                success: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
-                warning: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300",
-                danger: "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300",
-                info: "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300",
-              }[ins.tone];
-              return (
-                <div key={i} className={`flex items-start gap-2 rounded-lg border p-2.5 text-xs ${tone}`}>
-                  <Icon className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{ins.text}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Crown className="h-4 w-4 text-amber-500" />
-            <h2 className="font-semibold text-sm">Top Customers</h2>
-          </div>
-          {topCustomers.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">No data yet</p>
-          ) : (
-            <div className="space-y-2.5">
-              {topCustomers.map((c, i) => {
-                const max = topCustomers[0].total_spent || 1;
-                const pct = (c.total_spent / max) * 100;
-                const medal = ["🥇", "🥈", "🥉"][i] || `#${i + 1}`;
+      <div className="grid lg:grid-cols-5 gap-3 mb-3">
+        {/* Smart Insights */}
+        <div className="lg:col-span-3 rounded-lg border bg-card overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setInsightsOpen(o => !o)}
+            className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <h2 className="font-semibold text-xs">Smart Insights</h2>
+              <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{insights.length}</Badge>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${insightsOpen ? "rotate-180" : ""}`} />
+          </button>
+          {insightsOpen && (
+            <div className="px-3 pb-3 space-y-1.5 animate-in fade-in slide-in-from-top-1">
+              {insights.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-3">All clear — no insights right now.</p>
+              ) : insights.map((ins, i) => {
+                const Icon = ins.icon;
+                const tone = {
+                  success: "bg-emerald-500/8 border-l-emerald-500 text-emerald-700 dark:text-emerald-300",
+                  warning: "bg-amber-500/8 border-l-amber-500 text-amber-700 dark:text-amber-300",
+                  danger: "bg-rose-500/8 border-l-rose-500 text-rose-700 dark:text-rose-300",
+                  info: "bg-blue-500/8 border-l-blue-500 text-blue-700 dark:text-blue-300",
+                }[ins.tone];
                 return (
-                  <div key={c.id}>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="truncate flex items-center gap-1.5">
-                        <span className="w-5 text-center">{medal}</span>
-                        <span className="font-medium truncate">{c.name}</span>
-                      </span>
-                      <span className="text-muted-foreground shrink-0 ml-2">{format(c.total_spent)}</span>
-                    </div>
-                    <Progress value={pct} className="h-1.5" />
+                  <div key={i} className={`flex items-start gap-2 rounded-md border border-l-2 px-2.5 py-1.5 text-[11px] ${tone}`}>
+                    <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{ins.text}</span>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
+        {/* Top Customers */}
+        <div className="lg:col-span-2 rounded-lg border bg-card overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setTopOpen(o => !o)}
+            className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Crown className="h-3.5 w-3.5 text-amber-500" />
+              <h2 className="font-semibold text-xs">Top Customers</h2>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${topOpen ? "rotate-180" : ""}`} />
+          </button>
+          {topOpen && (
+            <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-1">
+              {topCustomers.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-3">No data yet</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {topCustomers.map((c, i) => {
+                    const max = topCustomers[0].total_spent || 1;
+                    const pct = (c.total_spent / max) * 100;
+                    const initials = c.name.split(" ").map(s => s[0]).join("").slice(0, 2).toUpperCase();
+                    const rankClr = i === 0 ? "bg-amber-500/15 text-amber-600" : i === 1 ? "bg-slate-400/20 text-slate-600 dark:text-slate-300" : i === 2 ? "bg-orange-500/15 text-orange-600" : "bg-muted text-muted-foreground";
+                    return (
+                      <div key={c.id} className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/40 transition-colors">
+                        <span className={`h-6 w-6 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${rankClr}`}>{i + 1}</span>
+                        <span className="h-6 w-6 rounded-full bg-primary/15 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0">{initials || "?"}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="font-medium truncate">{c.name}</span>
+                            <span className="text-muted-foreground shrink-0">{format(c.total_spent)}</span>
+                          </div>
+                          <Progress value={pct} className="h-1 mt-0.5" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ===== Segment Tabs ===== */}
-      <Tabs value={segment} onValueChange={(v) => setSegment(v as Segment)} className="mb-4">
-        <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap">
-          <TabsTrigger value="all" className="gap-1.5"><Users className="h-3.5 w-3.5" />All <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.total}</Badge></TabsTrigger>
-          <TabsTrigger value="vip" className="gap-1.5"><Crown className="h-3.5 w-3.5 text-amber-500" />VIP <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.vip}</Badge></TabsTrigger>
-          <TabsTrigger value="loyal" className="gap-1.5"><Heart className="h-3.5 w-3.5 text-pink-500" />Loyal <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.loyal}</Badge></TabsTrigger>
-          <TabsTrigger value="new" className="gap-1.5"><UserPlus className="h-3.5 w-3.5 text-blue-500" />New <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.newCust}</Badge></TabsTrigger>
-          <TabsTrigger value="at-risk" className="gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-orange-500" />At-Risk <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.atRisk}</Badge></TabsTrigger>
-          <TabsTrigger value="due" className="gap-1.5"><CreditCard className="h-3.5 w-3.5 text-rose-500" />Due <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{stats.dueCount}</Badge></TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* ===== Segment Chips ===== */}
+      <div className="mb-3 -mx-1 px-1 overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-max">
+          {[
+            { v: "all", label: "All", count: stats.total, Icon: Users, color: "text-foreground", active: "bg-foreground text-background" },
+            { v: "vip", label: "VIP", count: stats.vip, Icon: Crown, color: "text-amber-500", active: "bg-amber-500/15 text-amber-600 border-amber-500/40" },
+            { v: "loyal", label: "Loyal", count: stats.loyal, Icon: Heart, color: "text-pink-500", active: "bg-pink-500/15 text-pink-600 border-pink-500/40" },
+            { v: "new", label: "New", count: stats.newCust, Icon: UserPlus, color: "text-blue-500", active: "bg-blue-500/15 text-blue-600 border-blue-500/40" },
+            { v: "at-risk", label: "At-Risk", count: stats.atRisk, Icon: AlertTriangle, color: "text-orange-500", active: "bg-orange-500/15 text-orange-600 border-orange-500/40" },
+            { v: "due", label: "Due", count: stats.dueCount, Icon: CreditCard, color: "text-rose-500", active: "bg-rose-500/15 text-rose-600 border-rose-500/40" },
+          ].map(s => {
+            const isActive = segment === s.v;
+            return (
+              <button
+                key={s.v}
+                type="button"
+                onClick={() => setSegment(s.v as Segment)}
+                className={`group inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-medium transition-all whitespace-nowrap ${
+                  isActive
+                    ? `${s.active} shadow-sm`
+                    : "bg-card hover:bg-muted/60 border-border text-muted-foreground"
+                }`}
+              >
+                <s.Icon className={`h-3.5 w-3.5 ${isActive ? "" : s.color}`} />
+                {s.label}
+                <span className={`ml-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-[10px] font-semibold ${
+                  isActive ? "bg-background/30" : "bg-muted text-foreground"
+                }`}>{s.count}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* ===== Search + Sort ===== */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
