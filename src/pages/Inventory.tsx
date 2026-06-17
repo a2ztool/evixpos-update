@@ -718,7 +718,7 @@ const Inventory = () => {
       <Dialog open={purchaseDialog} onOpenChange={(v) => { setPurchaseDialog(v); if (!v) resetPurchaseForm(); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>New Purchase Order</DialogTitle></DialogHeader>
-          <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto overflow-x-hidden px-1 py-1">
             <div>
               <Label className="text-xs">Supplier</Label>
               <Select value={pForm.supplier_id} onValueChange={v => setPForm(p => ({ ...p, supplier_id: v }))}>
