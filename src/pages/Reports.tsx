@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import {
   BarChart3, TrendingUp, Users, Package, DollarSign, ShoppingCart,
   Download, FileText, Calendar, ArrowUpRight, ArrowDownRight, Percent,
@@ -289,20 +289,18 @@ const Reports = () => {
   const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
     const iconWrap = TINTS[tint || "primary"] || TINTS.primary;
     return (
-      <Card className="group relative overflow-hidden rounded-2xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
-        <CardContent className="p-3">
+      <Card className="group relative overflow-hidden rounded-xl border border-border/60 bg-card hover:shadow-sm hover:border-border transition-all duration-200 h-full">
+        <CardContent className="p-3 sm:p-3.5 h-full flex flex-col justify-between gap-2.5">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-muted-foreground font-medium truncate">{label}</p>
-              <p className="mt-1.5 text-lg sm:text-xl font-bold leading-none tracking-tight truncate">{value}</p>
-            </div>
-            <div className={`shrink-0 h-9 w-9 rounded-xl flex items-center justify-center ${iconWrap}`}>
-              <Icon className="h-4 w-4" />
+            <p className="text-[11px] font-medium text-muted-foreground truncate flex-1 leading-tight">{label}</p>
+            <div className={`shrink-0 h-7 w-7 rounded-lg flex items-center justify-center ${iconWrap}`}>
+              <Icon className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2.5 flex items-center justify-between gap-2">
+          <p className="text-lg sm:text-xl font-bold leading-none tracking-tight truncate">{value}</p>
+          <div className="flex items-center justify-between gap-2">
             {sub ? (
-              <p className="text-[11px] text-muted-foreground truncate">{sub}</p>
+              <p className="text-[10.5px] text-muted-foreground truncate">{sub}</p>
             ) : <span />}
             {delta !== undefined && <DeltaChip value={delta} />}
           </div>
@@ -349,6 +347,42 @@ const Reports = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0 bg-background" aria-label="Open guide">
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/15">
+                        <HelpCircle className="h-4 w-4 text-primary" />
+                      </div>
+                      Quick Guide
+                    </SheetTitle>
+                    <SheetDescription>How to read your business reports</SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-5 space-y-2.5">
+                    {[
+                      { icon: Gauge, title: "Health Score", desc: "0–100 score from margin, completion, ROAS & growth. Aim for 80+." },
+                      { icon: TrendingUp, title: "Period Deltas", desc: "Each KPI compares to the previous equal period. Green = growing." },
+                      { icon: Lightbulb, title: "Smart Insights", desc: "Auto-generated alerts on margins, ROAS, stock & cancellations." },
+                      { icon: Download, title: "Export CSV", desc: "Download all orders for the selected period for accounting." },
+                    ].map((g, i) => (
+                      <div key={i} className="flex gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
+                        <div className="p-2 rounded-lg bg-primary/10 h-fit shrink-0">
+                          <g.icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{g.title}</p>
+                          <p className="text-xs text-muted-foreground leading-snug mt-1">{g.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
               <Select value={period} onValueChange={setPeriod}>
                 <SelectTrigger className="w-[130px] sm:w-[140px] h-8 text-xs bg-background">
                   <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -370,48 +404,6 @@ const Reports = () => {
             </div>
           </div>
         </div>
-
-        {/* Quick Guide */}
-        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent rounded-xl">
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between p-2.5 hover:bg-primary/5 rounded-xl transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1 rounded-md bg-primary/15">
-                    <HelpCircle className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-semibold leading-tight">Quick Guide</p>
-                    <p className="text-[10px] text-muted-foreground leading-tight">How to read your business reports</p>
-                  </div>
-                </div>
-                {guideOpen ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="px-4 pb-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {[
-                    { icon: Gauge, title: "Health Score", desc: "0–100 score from margin, completion, ROAS & growth. Aim for 80+." },
-                    { icon: TrendingUp, title: "Period Deltas", desc: "Each KPI compares to the previous equal period. Green = growing." },
-                    { icon: Lightbulb, title: "Smart Insights", desc: "Auto-generated alerts on margins, ROAS, stock & cancellations." },
-                    { icon: Download, title: "Export CSV", desc: "Download all orders for the selected period for accounting." },
-                  ].map((g, i) => (
-                    <div key={i} className="flex gap-2.5 p-3 rounded-xl bg-card border border-border/40">
-                      <div className="p-1.5 rounded-lg bg-primary/10 h-fit shrink-0">
-                        <g.icon className="h-3.5 w-3.5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold">{g.title}</p>
-                        <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{g.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -466,7 +458,7 @@ const Reports = () => {
             </Card>
 
             {/* Compact KPI grid — Revenue / Profit / Orders / Customers / Products / Ads */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 auto-rows-fr">
               <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} tint="primary" />
               <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} tint="emerald" />
               <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} tint="blue" />
@@ -509,11 +501,11 @@ const Reports = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full grid grid-cols-4 h-9">
-                <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.overview}</span></TabsTrigger>
-                <TabsTrigger value="orders" className="text-xs gap-1.5"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.orders}</span></TabsTrigger>
-                <TabsTrigger value="products" className="text-xs gap-1.5"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.products}</span></TabsTrigger>
-                <TabsTrigger value="finance" className="text-xs gap-1.5"><DollarSign className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.finance}</span></TabsTrigger>
+              <TabsList className="w-full grid grid-cols-4 h-10 p-1 bg-muted/60 border border-border/60 rounded-xl gap-1">
+                <TabsTrigger value="overview" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.overview}</span></TabsTrigger>
+                <TabsTrigger value="orders" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.orders}</span></TabsTrigger>
+                <TabsTrigger value="products" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.products}</span></TabsTrigger>
+                <TabsTrigger value="finance" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all"><DollarSign className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.finance}</span></TabsTrigger>
               </TabsList>
 
               {/* OVERVIEW TAB */}
