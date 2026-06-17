@@ -111,6 +111,48 @@ const Inventory = () => {
     },
   });
 
+  const { data: stockMovements = [] } = useQuery({
+    queryKey: ["stock-movements", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stock_movements")
+        .select("*").eq("store_id", storeId!).order("created_at", { ascending: false }).limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: purchaseReturns = [] } = useQuery({
+    queryKey: ["purchase-returns", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("purchase_returns")
+        .select("*, suppliers(name)").eq("store_id", storeId!).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // 30-day sales velocity (per product_id)
+  const { data: salesVelocity = {} } = useQuery({
+    queryKey: ["sales-velocity", storeId],
+    enabled: ready,
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 86400000).toISOString();
+      const { data: ordersData } = await supabase.from("orders")
+        .select("id").eq("store_id", storeId!).gte("created_at", since);
+      const ids = (ordersData || []).map((o: any) => o.id);
+      if (ids.length === 0) return {} as Record<string, number>;
+      const { data: items } = await supabase.from("order_items")
+        .select("product_id, quantity").in("order_id", ids);
+      const map: Record<string, number> = {};
+      (items || []).forEach((it: any) => {
+        if (it.product_id) map[it.product_id] = (map[it.product_id] || 0) + Number(it.quantity || 0);
+      });
+      return map;
+    },
+  });
+
   // Realtime
   useEffect(() => {
     if (!storeId) return;
