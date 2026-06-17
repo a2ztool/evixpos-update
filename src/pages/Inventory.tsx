@@ -847,6 +847,37 @@ const Inventory = () => {
               </Card>
             )}
 
+            {/* Main feature tabs */}
+            <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
+              {[
+                { id: "purchases", label: "Purchases", icon: ShoppingBag, count: purchases.length },
+                { id: "movements", label: "Stock Movements", icon: ArrowDownUp, count: stockMovements.length },
+                { id: "reorder", label: "Reorder", icon: Zap, count: reorderSuggestions.length, accent: reorderSuggestions.length > 0 },
+                { id: "returns", label: "Returns", icon: RotateCcw, count: purchaseReturns.length },
+              ].map((t: any) => {
+                const Icon = t.icon;
+                const active = mainTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setMainTab(t.id)}
+                    className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : t.accent
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
+                          : "border-border/60 bg-card hover:border-primary/40 hover:bg-accent"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t.label}
+                    <span className={`ml-0.5 rounded-full px-1.5 text-[10px] ${active ? "bg-primary-foreground/20" : "bg-muted"}`}>{t.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {mainTab === "purchases" && (<>
             {/* Filters — horizontal scroll on mobile */}
             <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-1 px-1">
               <div className="relative flex-1 min-w-[140px]">
