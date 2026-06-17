@@ -136,11 +136,11 @@ const VideoModal = ({ open, onOpenChange, videoUrl, videoType, thumbnail, title 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl w-[95vw] p-0 bg-[#0a0a0a] border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.8)] gap-0 [&>button]:hidden backdrop-blur-xl">
+      <DialogContent className="max-w-[1400px] w-[95vw] sm:w-[92vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] p-0 bg-[#0a0a0a] border border-white/[0.08] sm:rounded-2xl overflow-hidden shadow-[0_25px_80px_-12px_rgba(0,0,0,0.8)] gap-0 [&>button]:hidden">
         {/* Close button */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute -top-12 right-0 sm:top-3 sm:right-3 z-50 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/80 hover:text-white rounded-full p-2.5 transition-all duration-300 hover:scale-110"
+          className="absolute top-4 right-4 sm:top-3 sm:right-3 z-50 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/80 hover:text-white rounded-full p-3 sm:p-2.5 transition-all duration-300 hover:scale-110"
         >
           <X className="h-4 w-4" />
         </button>
