@@ -585,7 +585,7 @@ const Reports = () => {
                         <PieChartIcon className="h-4 w-4 text-primary" /> Order Sources
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 flex items-center justify-center">
+                    <CardContent className="p-3 pt-0 flex items-center justify-center">
                       {orderSources.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-12">No data</div>
                       ) : (
