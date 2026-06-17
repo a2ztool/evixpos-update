@@ -480,7 +480,7 @@ const Reports = () => {
             {/* Smart Insights */}
             {insights.length > 0 && (
               <Card className="border-border/40">
-                <CardHeader className="p-4 pb-2">
+                <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-amber-500/10">
                       <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
@@ -488,7 +488,7 @@ const Reports = () => {
                     Smart Insights
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-2">
+                <CardContent className="p-3 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {insights.map((ins, i) => {
                       const Icon = ins.type === "good" ? CheckCircle2 : ins.type === "warn" ? AlertCircle : Activity;
