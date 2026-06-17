@@ -276,19 +276,19 @@ const Reports = () => {
   };
 
   const StatCard = ({ label, value, icon: Icon, sub, delta, color, accent }: any) => (
-    <Card className={`hover:shadow-md transition-all duration-300 border-l-4 ${accent}`}>
-      <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight">{label}</p>
-          <div className={`p-1.5 rounded-lg ${color} shrink-0`}>
-            <Icon className="h-3.5 w-3.5 text-white" />
+    <Card className={`group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-border/50 border-l-2 ${accent}`}>
+      <CardContent className="p-3 !pt-3">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">{label}</p>
+          <div className={`p-1 rounded-md ${color} shrink-0`}>
+            <Icon className="h-3 w-3 text-white" />
           </div>
         </div>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <p className="text-xl sm:text-2xl font-bold leading-none">{value}</p>
+        <div className="flex items-baseline gap-1.5 flex-wrap">
+          <p className="text-base sm:text-lg font-bold leading-none tracking-tight">{value}</p>
           {delta !== undefined && <DeltaChip value={delta} />}
         </div>
-        {sub && <p className="text-[11px] text-muted-foreground mt-2">{sub}</p>}
+        {sub && <p className="text-[10px] text-muted-foreground mt-1.5 truncate">{sub}</p>}
       </CardContent>
     </Card>
   );
@@ -309,28 +309,30 @@ const Reports = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-3 sm:space-y-4">
         {/* Premium Hero Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 sm:p-6">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-3 sm:p-4">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
           <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="p-2 rounded-xl bg-primary/15">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{t.reportsAnalytics}</h1>
-                <Badge className="bg-gradient-to-r from-primary to-primary/70 text-primary-foreground border-0 text-[10px] px-2 py-0.5">
-                  <Sparkles className="h-2.5 w-2.5 mr-1" /> PRO
-                </Badge>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg bg-primary/15 shrink-0">
+                <BarChart3 className="h-4 w-4 text-primary" />
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight leading-tight">{t.reportsAnalytics}</h1>
+                  <Badge className="bg-gradient-to-r from-primary to-primary/70 text-primary-foreground border-0 text-[9px] px-1.5 py-0 h-4">
+                    <Sparkles className="h-2 w-2 mr-0.5" /> PRO
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
                 Business insights for <span className="font-semibold text-foreground">{activeStore?.name || "your store"}</span> · Last {period} days
-              </p>
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger className="w-[130px] sm:w-[150px] h-9 bg-background">
+                <SelectTrigger className="w-[130px] sm:w-[140px] h-8 text-xs bg-background">
                   <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
@@ -341,10 +343,10 @@ const Reports = () => {
                   <SelectItem value="365">Last Year</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" onClick={fetchData} className="h-9 bg-background">
+              <Button variant="outline" size="sm" onClick={fetchData} className="h-8 bg-background">
                 <RefreshCw className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="outline" size="sm" onClick={exportCSV} className="h-9 bg-background">
+              <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 text-xs bg-background">
                 <Download className="h-3.5 w-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Export</span>
               </Button>
             </div>
@@ -353,19 +355,19 @@ const Reports = () => {
 
         {/* Quick Guide */}
         <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent rounded-xl">
             <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between p-4 hover:bg-primary/5 rounded-2xl transition-colors">
+              <button className="w-full flex items-center justify-between p-2.5 hover:bg-primary/5 rounded-xl transition-colors">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-primary/15">
-                    <HelpCircle className="h-4 w-4 text-primary" />
+                  <div className="p-1 rounded-md bg-primary/15">
+                    <HelpCircle className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold">Quick Guide</p>
-                    <p className="text-[11px] text-muted-foreground">How to read your business reports</p>
+                    <p className="text-xs font-semibold leading-tight">Quick Guide</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">How to read your business reports</p>
                   </div>
                 </div>
-                {guideOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                {guideOpen ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -409,56 +411,48 @@ const Reports = () => {
           </div>
         ) : (
           <>
-            {/* Business Health Score */}
-            <Card className="border-border/40 overflow-hidden">
-              <CardContent className="p-4 sm:p-5">
-                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-                  <div className="flex items-center gap-4 md:flex-1">
-                    <div className={`relative shrink-0 ${healthLabel.bg} p-3 rounded-2xl`}>
-                      <Gauge className={`h-7 w-7 ${healthLabel.color}`} />
+            {/* Compact Business Health + Sub-metrics strip */}
+            <Card className="border-border/40 overflow-hidden rounded-xl">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+                  <div className="flex items-center gap-3 sm:flex-1 min-w-0">
+                    <div className={`relative shrink-0 ${healthLabel.bg} p-2 rounded-xl`}>
+                      <Gauge className={`h-5 w-5 ${healthLabel.color}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Business Health Score</p>
-                        <Badge className={`${healthLabel.bg} ${healthLabel.color} border-0 text-[10px]`}>{healthLabel.text}</Badge>
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Health Score</p>
+                        <Badge className={`${healthLabel.bg} ${healthLabel.color} border-0 text-[9px] px-1.5 py-0 h-4`}>{healthLabel.text}</Badge>
                       </div>
-                      <div className="flex items-baseline gap-1 mt-1">
-                        <p className="text-3xl sm:text-4xl font-bold">{healthScore}</p>
-                        <span className="text-sm text-muted-foreground">/ 100</span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <p className="text-2xl font-bold tracking-tight leading-none">{healthScore}</p>
+                        <span className="text-[11px] text-muted-foreground">/ 100</span>
                       </div>
-                      <Progress value={healthScore} className="h-2 mt-2.5" />
+                      <Progress value={healthScore} className="h-1.5 mt-2" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 md:gap-4 md:flex-1 md:border-l md:border-border/40 md:pl-6">
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Margin</p>
-                      <p className="text-base sm:text-lg font-bold mt-1">{stats.profitMargin.toFixed(0)}%</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">ROAS</p>
-                      <p className="text-base sm:text-lg font-bold mt-1">{stats.roas.toFixed(1)}x</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Growth</p>
-                      <p className={`text-base sm:text-lg font-bold mt-1 ${deltas.revenue >= 0 ? "text-green-600" : "text-destructive"}`}>
-                        {deltas.revenue >= 0 ? "+" : ""}{deltas.revenue.toFixed(0)}%
-                      </p>
-                    </div>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:flex-1 sm:border-l sm:border-border/40 sm:pl-5">
+                    {[
+                      { label: "Margin", value: `${stats.profitMargin.toFixed(0)}%`, cls: "" },
+                      { label: "ROAS", value: `${stats.roas.toFixed(1)}x`, cls: "" },
+                      { label: "Growth", value: `${deltas.revenue >= 0 ? "+" : ""}${deltas.revenue.toFixed(0)}%`, cls: deltas.revenue >= 0 ? "text-green-600" : "text-destructive" },
+                    ].map((m) => (
+                      <div key={m.label} className="text-center px-1 py-1.5 rounded-lg bg-muted/30">
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">{m.label}</p>
+                        <p className={`text-sm sm:text-base font-bold mt-0.5 ${m.cls}`}>{m.value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Primary KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              <StatCard label="Total Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} color="bg-primary" accent="border-l-primary" />
+            {/* Compact KPI grid — Revenue / Profit / Orders / Customers / Products / Ads */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
+              <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} color="bg-primary" accent="border-l-primary" />
               <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} color="bg-emerald-500" accent="border-l-emerald-500" />
-              <StatCard label="Total Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} color="bg-blue-500" accent="border-l-blue-500" />
-              <StatCard label="Avg Order Value" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} color="bg-purple-500" accent="border-l-purple-500" />
-            </div>
-
-            {/* Secondary KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} color="bg-blue-500" accent="border-l-blue-500" />
+              <StatCard label="Avg Order" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} color="bg-purple-500" accent="border-l-purple-500" />
               <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} color="bg-pink-500" accent="border-l-pink-500" />
               <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} color="bg-orange-500" accent="border-l-orange-500" />
               <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} color="bg-rose-500" accent="border-l-rose-500" />
@@ -497,7 +491,7 @@ const Reports = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full grid grid-cols-4 h-10">
+              <TabsList className="w-full grid grid-cols-4 h-9">
                 <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.overview}</span></TabsTrigger>
                 <TabsTrigger value="orders" className="text-xs gap-1.5"><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.orders}</span></TabsTrigger>
                 <TabsTrigger value="products" className="text-xs gap-1.5"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">{t.products}</span></TabsTrigger>
@@ -505,7 +499,7 @@ const Reports = () => {
               </TabsList>
 
               {/* OVERVIEW TAB */}
-              <TabsContent value="overview" className="space-y-4 mt-4">
+              <TabsContent value="overview" className="space-y-3 mt-3">
                 <Card className="border-border/40 shadow-sm">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
