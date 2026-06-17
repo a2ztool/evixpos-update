@@ -3,7 +3,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { type VolumeStep } from "@/lib/planConfig";
 import { Button } from "@/components/ui/button";
-import { Zap, ExternalLink, Store } from "lucide-react";
+import { ExternalLink, Store } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
