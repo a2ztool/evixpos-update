@@ -13,9 +13,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus, Search, Truck, Phone, Mail, Edit2, Trash2, FileDown, MessageCircle,
   Receipt, Eye, DollarSign, Users, ShoppingBag, TrendingUp, Package, HelpCircle,
-  ChevronRight, BarChart3, AlertTriangle, Sparkles, Boxes,
+  ChevronRight, BarChart3, AlertTriangle, Sparkles, Boxes, Upload, ArrowDownUp,
+  RotateCcw, Zap, ChevronDown,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
