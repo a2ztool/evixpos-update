@@ -68,6 +68,16 @@ const Inventory = () => {
   // Detail dialog
   const [detailDialog, setDetailDialog] = useState<any>(null);
 
+  // Advanced feature state
+  const [mainTab, setMainTab] = useState<"purchases" | "movements" | "reorder" | "returns">("purchases");
+  const [importDialog, setImportDialog] = useState<null | "suppliers" | "purchases">(null);
+  const [importRows, setImportRows] = useState<any[]>([]);
+  const [importBusy, setImportBusy] = useState(false);
+  const [returnDialog, setReturnDialog] = useState<any>(null);
+  const [returnForm, setReturnForm] = useState({ refund_amount: "", payment_method: "cash", notes: "" });
+  const [returnItems, setReturnItems] = useState<{ product_name: string; quantity: string; unit_cost: string }[]>([]);
+  const [movementFilter, setMovementFilter] = useState<"all" | "in" | "out" | "adjust" | "return">("all");
+
   // --- Queries ---
   const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
     queryKey: ["suppliers", storeId],
