@@ -31,17 +31,17 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
 
   const UsageBar = ({ label, count, max, pct }: { label: string; count: number; max: number; pct: number }) => (
     <div>
-      <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] font-semibold leading-none">{label}</span>
-        <span className="text-[9px] font-bold text-primary tabular-nums leading-none">{isFinite(max) ? `${pct}%` : "∞"}</span>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[11px] font-medium text-foreground leading-none">{label}</span>
+        <span className="text-[11px] font-semibold text-primary tabular-nums leading-none">{isFinite(max) ? `${pct}%` : "∞"}</span>
       </div>
-      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${pct >= 90 ? "bg-destructive" : "bg-gradient-to-r from-primary to-primary/70"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{count}/{fmt(max)}</p>
+      <p className="text-[11px] text-muted-foreground mt-1 leading-tight">{count} / {fmt(max)}</p>
     </div>
   );
 
