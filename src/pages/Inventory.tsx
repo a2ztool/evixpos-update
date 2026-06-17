@@ -1006,6 +1006,9 @@ const Inventory = () => {
                                   <Receipt className="h-3 w-3 mr-1" /> Pay
                                 </Button>
                               )}
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => openReturnDialog(p)} title="Return items">
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="h-7" onClick={() => setDetailDialog(p)}><Eye className="h-3 w-3" /></Button>
                             </TableCell>
                           </TableRow>
