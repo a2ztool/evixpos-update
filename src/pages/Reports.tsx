@@ -275,23 +275,40 @@ const Reports = () => {
     );
   };
 
-  const StatCard = ({ label, value, icon: Icon, sub, delta, color, accent }: any) => (
-    <Card className={`group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-border/50 border-l-2 ${accent}`}>
-      <CardContent className="p-3 !pt-3">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate">{label}</p>
-          <div className={`p-1 rounded-md ${color} shrink-0`}>
-            <Icon className="h-3 w-3 text-white" />
+  const TINTS: Record<string, string> = {
+    primary: "bg-primary/10 text-primary",
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    purple: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    pink: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
+    orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+    teal: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  };
+  const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
+    const iconWrap = TINTS[tint || "primary"] || TINTS.primary;
+    return (
+      <Card className="group relative overflow-hidden rounded-xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
+        <CardContent className="p-3.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-muted-foreground font-medium truncate">{label}</p>
+              <p className="mt-1.5 text-lg sm:text-xl font-bold leading-none tracking-tight truncate">{value}</p>
+            </div>
+            <div className={`shrink-0 h-9 w-9 rounded-xl flex items-center justify-center ${iconWrap}`}>
+              <Icon className="h-4 w-4" />
+            </div>
           </div>
-        </div>
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <p className="text-base sm:text-lg font-bold leading-none tracking-tight">{value}</p>
-          {delta !== undefined && <DeltaChip value={delta} />}
-        </div>
-        {sub && <p className="text-[10px] text-muted-foreground mt-1.5 truncate">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            {sub ? (
+              <p className="text-[11px] text-muted-foreground truncate">{sub}</p>
+            ) : <span />}
+            {delta !== undefined && <DeltaChip value={delta} />}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -449,14 +466,14 @@ const Reports = () => {
 
             {/* Compact KPI grid — Revenue / Profit / Orders / Customers / Products / Ads */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5">
-              <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} color="bg-primary" accent="border-l-primary" />
-              <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} color="bg-emerald-500" accent="border-l-emerald-500" />
-              <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} color="bg-blue-500" accent="border-l-blue-500" />
-              <StatCard label="Avg Order" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} color="bg-purple-500" accent="border-l-purple-500" />
-              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} color="bg-pink-500" accent="border-l-pink-500" />
-              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} color="bg-orange-500" accent="border-l-orange-500" />
-              <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} color="bg-rose-500" accent="border-l-rose-500" />
-              <StatCard label="Ad Revenue" value={formatPrice(stats.totalAdRevenue)} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} color="bg-teal-500" accent="border-l-teal-500" />
+              <StatCard label="Revenue" value={formatPrice(stats.totalRevenue)} icon={DollarSign} sub={`${stats.completedOrders} completed`} delta={deltas.revenue} tint="primary" />
+              <StatCard label="Net Profit" value={formatPrice(stats.totalProfit)} icon={TrendingUp} sub={`${stats.profitMargin.toFixed(1)}% margin`} delta={deltas.profit} tint="emerald" />
+              <StatCard label="Orders" value={stats.totalOrders} icon={ShoppingCart} sub={`${stats.pendingOrders} pending`} delta={deltas.orders} tint="blue" />
+              <StatCard label="Avg Order" value={formatPrice(Math.round(stats.avgOrderValue))} icon={Target} sub={`${stats.totalCustomers} customers`} delta={deltas.avg} tint="purple" />
+              <StatCard label="New Customers" value={stats.newCustomers} icon={Users} sub={`of ${stats.totalCustomers} total`} tint="pink" />
+              <StatCard label="Products" value={stats.totalProducts} icon={Package} sub={`${products.filter(p => p.stock <= 0).length} out of stock`} tint="orange" />
+              <StatCard label="Ad Spend" value={formatPrice(stats.totalAdSpend)} icon={Percent} sub={`ROAS: ${stats.roas.toFixed(1)}x`} tint="rose" />
+              <StatCard label="Ad Revenue" value={formatPrice(stats.totalAdRevenue)} icon={ArrowUpRight} sub={`from ${adCosts.length} campaigns`} tint="teal" />
             </div>
 
             {/* Smart Insights */}
