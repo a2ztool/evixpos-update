@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -788,45 +788,31 @@ const DueBook = () => {
           </SheetContent>
         </Sheet>
 
-        {/* Compact Premium KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 auto-rows-fr">
           {[
-            { label: "Receivable", value: formatCurrency(stats.receivable, 0), sub: `Collected ${formatCurrency(stats.totalCollected, 0)}`, icon: ArrowUpRight, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", border: "border-l-green-500" },
-            { label: "Payable", value: formatCurrency(stats.payable, 0), sub: `Paid out ${formatCurrency(stats.totalPaidOut, 0)}`, icon: ArrowDownRight, color: "text-destructive", bg: "bg-red-100 dark:bg-red-900/30", border: "border-l-red-500" },
-            { label: "Overdue", value: String(stats.overdueCount), sub: `${formatCurrency(stats.overdueAmount, 0)} pending`, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-l-amber-500" },
-            { label: "Net Balance", value: `${stats.netDue >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.netDue), 0)}`, sub: `${stats.collectionRate.toFixed(0)}% collection rate`, icon: DollarSign, color: stats.netDue >= 0 ? "text-green-600" : "text-destructive", bg: "bg-primary/10", border: "border-l-primary" },
+            { label: "Receivable", value: formatCurrency(stats.receivable, 0), sub: `Collected ${formatCurrency(stats.totalCollected, 0)}`, icon: ArrowUpRight, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+            { label: "Payable", value: formatCurrency(stats.payable, 0), sub: `Paid out ${formatCurrency(stats.totalPaidOut, 0)}`, icon: ArrowDownRight, color: "text-destructive", bg: "bg-red-100 dark:bg-red-900/30" },
+            { label: "Overdue", value: String(stats.overdueCount), sub: `${formatCurrency(stats.overdueAmount, 0)} pending`, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
+            { label: "Net Balance", value: `${stats.netDue >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.netDue), 0)}`, sub: `${stats.collectionRate.toFixed(0)}% collection rate`, icon: DollarSign, color: stats.netDue >= 0 ? "text-green-600" : "text-destructive", bg: "bg-primary/10" },
+            { label: "Due Soon (7d)", value: stats.dueSoonCount, sub: stats.dueSoonCount > 0 ? "Within a week" : null, icon: Clock, color: "text-primary", bg: "bg-primary/10" },
+            { label: "Settled", value: stats.paidCount, sub: null, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
+            { label: "Active Dues", value: stats.totalDues, sub: null, icon: BarChart3, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
+            { label: "Reachable", value: stats.reachable, sub: null, icon: Phone, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
           ].map((s, i) => (
-            <Card key={i} className={`rounded-2xl border-l-4 ${s.border} hover:shadow-md transition-all`}>
-              <CardContent className="!p-3.5 sm:!p-4 flex items-center gap-3">
-                <div className={`h-9 w-9 shrink-0 rounded-xl ${s.bg} flex items-center justify-center`}>
+            <Card key={i} className="rounded-xl hover:shadow-md transition-all h-full">
+              <CardContent className="!p-3.5 sm:!p-4 flex flex-col h-full gap-2">
+                <div className={`h-8 w-8 shrink-0 rounded-lg ${s.bg} flex items-center justify-center`}>
                   <s.icon className={`h-4 w-4 ${s.color}`} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
-                  <p className={`text-lg sm:text-xl font-bold tabular-nums ${s.color} mt-0.5 truncate`}>{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">{s.sub}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Mini stats — compact horizontal */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Due Soon (7d)", value: stats.dueSoonCount, icon: Clock, color: "text-primary", bg: "bg-primary/10" },
-            { label: "Settled", value: stats.paidCount, icon: CheckCircle, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
-            { label: "Active Dues", value: stats.totalDues, icon: BarChart3, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/30" },
-            { label: "Reachable", value: stats.reachable, icon: Phone, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-          ].map((s, i) => (
-            <Card key={i} className="rounded-2xl">
-              <CardContent className="!p-3.5 sm:!p-4 flex items-center gap-3">
-                <div className={`h-9 w-9 shrink-0 rounded-xl ${s.bg} flex items-center justify-center`}>
-                  <s.icon className={`h-4 w-4 ${s.color}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
-                  <p className="text-xl font-bold tabular-nums mt-0.5">{s.value}</p>
+                <div className="min-w-0 flex-1 flex flex-col">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.label}</p>
+                  <p className={`text-base sm:text-lg font-bold tabular-nums ${s.color} mt-0.5`}>{s.value}</p>
+                  {s.sub ? (
+                    <p className="text-[10px] text-muted-foreground mt-auto pt-1 truncate">{s.sub}</p>
+                  ) : (
+                    <div className="mt-auto" />
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -834,15 +820,15 @@ const DueBook = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 rounded-2xl h-11 p-1">
-            <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm rounded-xl">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+          <TabsList className="grid w-full grid-cols-3 p-1 bg-muted/60 border border-border/60 rounded-xl h-auto">
+            <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <BarChart3 className="h-3.5 w-3.5" /> Analytics
             </TabsTrigger>
-            <TabsTrigger value="dues" className="gap-1.5 text-xs sm:text-sm rounded-xl">
+            <TabsTrigger value="dues" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <BookOpen className="h-3.5 w-3.5" /> Due List
             </TabsTrigger>
-            <TabsTrigger value="persons" className="gap-1.5 text-xs sm:text-sm rounded-xl">
+            <TabsTrigger value="persons" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <Users className="h-3.5 w-3.5" /> People
             </TabsTrigger>
           </TabsList>
