@@ -732,7 +732,7 @@ const Inventory = () => {
         {/* Main Split Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
           {/* Left: Suppliers */}
-          <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/60">
+          <Card className="lg:col-span-4 border-border/60 bg-gradient-to-br from-card to-card/60 self-start">
             <CardHeader className="p-3 pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -746,8 +746,8 @@ const Inventory = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[320px] sm:h-[calc(100vh-420px)] sm:min-h-[320px]">
-                <div className="space-y-0.5 p-2">
+              <ScrollArea className="max-h-[60vh]">
+                <div className="space-y-1 p-2 pr-2.5">
                   <button
                     onClick={() => setSelectedSupplier(null)}
                     className={`w-full text-left rounded-lg p-2.5 transition-all text-xs ${!selectedSupplier ? "bg-primary/10 border border-primary/20" : "hover:bg-accent border border-transparent"}`}
@@ -766,8 +766,10 @@ const Inventory = () => {
                     <button
                       key={s.id}
                       onClick={() => setSelectedSupplier(s)}
-                      className={`w-full text-left rounded-lg p-2.5 transition-all group ${
-                        selectedSupplier?.id === s.id ? "bg-primary/10 border border-primary/20" : "hover:bg-accent border border-transparent"
+                      className={`w-full text-left rounded-lg p-2.5 transition-all group border ${
+                        selectedSupplier?.id === s.id
+                          ? "bg-primary/10 border-primary/30 shadow-sm"
+                          : "border-transparent hover:bg-accent hover:border-border/60"
                       }`}
                     >
                       <div className="flex items-center gap-2">
