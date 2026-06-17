@@ -275,7 +275,7 @@ const Reports = () => {
     );
   };
 
-  const TINTS: Record<string, string> = {
+    const TINTS: Record<string, string> = {
     primary: "bg-primary/10 text-primary",
     emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
@@ -284,12 +284,13 @@ const Reports = () => {
     orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
     rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
     teal: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
   const StatCard = ({ label, value, icon: Icon, sub, delta, tint }: any) => {
     const iconWrap = TINTS[tint || "primary"] || TINTS.primary;
     return (
-      <Card className="group relative overflow-hidden rounded-xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
-        <CardContent className="p-3.5">
+      <Card className="group relative overflow-hidden rounded-2xl border-border/60 bg-card hover:shadow-md hover:border-border transition-all duration-200">
+        <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] text-muted-foreground font-medium truncate">{label}</p>
@@ -326,7 +327,7 @@ const Reports = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-2.5 sm:space-y-3">
         {/* Premium Hero Header */}
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-3 sm:p-4">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
@@ -416,7 +417,7 @@ const Reports = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="border-border/50">
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="animate-pulse space-y-2">
                     <div className="h-3 bg-muted rounded w-20" />
                     <div className="h-6 bg-muted rounded w-16" />
@@ -479,7 +480,7 @@ const Reports = () => {
             {/* Smart Insights */}
             {insights.length > 0 && (
               <Card className="border-border/40">
-                <CardHeader className="p-4 pb-2">
+                <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-amber-500/10">
                       <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
@@ -487,7 +488,7 @@ const Reports = () => {
                     Smart Insights
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-2">
+                <CardContent className="p-3 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {insights.map((ins, i) => {
                       const Icon = ins.type === "good" ? CheckCircle2 : ins.type === "warn" ? AlertCircle : Activity;
@@ -516,14 +517,14 @@ const Reports = () => {
               </TabsList>
 
               {/* OVERVIEW TAB */}
-              <TabsContent value="overview" className="space-y-3 mt-3">
-                <Card className="border-border/40 shadow-sm">
-                  <CardHeader className="p-4 pb-2">
+              <TabsContent value="overview" className="space-y-2.5 mt-2.5">
+                <Card className="border-border/40 shadow-sm rounded-2xl">
+                  <CardHeader className="p-3 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Revenue & Profit Trend
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 pt-0">
+                  <CardContent className="p-3 pt-0">
                     {revenueTrend.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data for this period</div>
                     ) : (
@@ -552,14 +553,14 @@ const Reports = () => {
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-primary" /> Income vs Expense
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent className="p-3 pt-0">
                       {incomeExpense.every(d => d.value === 0) ? (
                         <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No transaction data</div>
                       ) : (
@@ -578,13 +579,13 @@ const Reports = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <PieChartIcon className="h-4 w-4 text-primary" /> Order Sources
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 flex items-center justify-center">
+                    <CardContent className="p-3 pt-0 flex items-center justify-center">
                       {orderSources.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-12">No data</div>
                       ) : (
@@ -604,15 +605,15 @@ const Reports = () => {
               </TabsContent>
 
               {/* ORDERS TAB */}
-              <TabsContent value="orders" className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+              <TabsContent value="orders" className="space-y-2.5 mt-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <ShoppingCart className="h-4 w-4 text-primary" /> Order Status
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 flex items-center justify-center">
+                    <CardContent className="p-3 pt-0 flex items-center justify-center">
                       {orderStatusData.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-10">No orders</div>
                       ) : (
@@ -629,13 +630,13 @@ const Reports = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" /> Payment Methods
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2">
+                    <CardContent className="p-3 pt-2">
                       {paymentMethods.length === 0 ? (
                         <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data</div>
                       ) : (
@@ -661,13 +662,13 @@ const Reports = () => {
                   </Card>
                 </div>
 
-                <Card className="border-border/40 shadow-sm">
-                  <CardHeader className="p-4 pb-2">
+                <Card className="border-border/40 shadow-sm rounded-2xl">
+                  <CardHeader className="p-3 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" /> Orders per Day
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 pt-0">
+                  <CardContent className="p-3 pt-0">
                     {revenueTrend.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data</div>
                     ) : (
@@ -686,15 +687,15 @@ const Reports = () => {
               </TabsContent>
 
               {/* PRODUCTS TAB */}
-              <TabsContent value="products" className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+              <TabsContent value="products" className="space-y-2.5 mt-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Package className="h-4 w-4 text-primary" /> Top Products
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2">
+                    <CardContent className="p-3 pt-2">
                       {topProducts.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-10">No products</div>
                       ) : (
@@ -727,13 +728,13 @@ const Reports = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/40 shadow-sm">
-                    <CardHeader className="p-4 pb-2">
+                  <Card className="border-border/40 shadow-sm rounded-2xl">
+                    <CardHeader className="p-3 pb-2">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <Crown className="h-4 w-4 text-primary" /> Top Customers
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2">
+                    <CardContent className="p-3 pt-2">
                       {topCustomers.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-10">No customer data</div>
                       ) : (
@@ -764,14 +765,14 @@ const Reports = () => {
               </TabsContent>
 
               {/* FINANCE TAB */}
-              <TabsContent value="finance" className="space-y-4 mt-4">
-                <Card className="border-border/40 shadow-sm">
-                  <CardHeader className="p-4 pb-2">
+              <TabsContent value="finance" className="space-y-2.5 mt-2.5">
+                <Card className="border-border/40 shadow-sm rounded-2xl">
+                  <CardHeader className="p-3 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-primary" /> Revenue vs Ad Spend
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 pt-0">
+                  <CardContent className="p-3 pt-0">
                     {adCosts.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No ad data</div>
                     ) : (
@@ -796,9 +797,9 @@ const Reports = () => {
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Card className="border-l-4 border-l-emerald-500">
-                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">Profit Margin</p>
                         <Trophy className="h-4 w-4 text-emerald-500" />
@@ -809,7 +810,7 @@ const Reports = () => {
                     </CardContent>
                   </Card>
                   <Card className="border-l-4 border-l-blue-500">
-                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">Completion Rate</p>
                         <CheckCircle2 className="h-4 w-4 text-blue-500" />
@@ -820,7 +821,7 @@ const Reports = () => {
                     </CardContent>
                   </Card>
                   <Card className="border-l-4 border-l-amber-500">
-                    <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground">ROAS</p>
                         <Zap className="h-4 w-4 text-amber-500" />
