@@ -233,7 +233,7 @@ const App = () => {
               <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
               <Route path="/notification-center" element={<P><NotificationCenter /></P>} />
               <Route path="/inventory" element={<P perm="products.view"><Inventory /></P>} />
-              <Route path="/online/suppliers-purchases" element={<P perm="products.edit"><OnlineSuppliersPurchases /></P>} />
+              <Route path="/online/suppliers-purchases" element={<Navigate to="/inventory" replace />} />
               <Route path="/offline/suppliers" element={<P perm="products.view"><Suppliers /></P>} />
               <Route path="/offline/purchases" element={<P perm="products.edit"><Purchases /></P>} />
               <Route path="/offline/cash-register" element={<P perm="pos.access"><CashRegister /></P>} />
