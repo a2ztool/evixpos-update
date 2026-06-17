@@ -517,14 +517,14 @@ const Reports = () => {
               </TabsList>
 
               {/* OVERVIEW TAB */}
-              <TabsContent value="overview" className="space-y-3 mt-3">
-                <Card className="border-border/40 shadow-sm">
-                  <CardHeader className="p-4 pb-2">
+              <TabsContent value="overview" className="space-y-2.5 mt-2.5">
+                <Card className="border-border/40 shadow-sm rounded-2xl">
+                  <CardHeader className="p-3 pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-primary" /> Revenue & Profit Trend
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 pt-0">
+                  <CardContent className="p-3 pt-0">
                     {revenueTrend.length === 0 ? (
                       <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">No data for this period</div>
                     ) : (
