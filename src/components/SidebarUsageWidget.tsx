@@ -3,7 +3,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { type VolumeStep } from "@/lib/planConfig";
 import { Button } from "@/components/ui/button";
-import { Zap, ExternalLink, Store } from "lucide-react";
+import { ExternalLink, Store } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -47,16 +47,6 @@ const SidebarUsageWidget = ({ navigate, plan, volume }: Props) => {
 
   return (
     <div className="rounded-xl bg-card border border-border/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 space-y-3">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Zap className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-foreground leading-none">Plan Usage</p>
-        </div>
-      </div>
-
       <UsageBar label="Products" count={usage.totalProducts} max={usage.maxProducts} pct={productPct} />
       <UsageBar label="Customers" count={usage.totalCustomers} max={usage.maxCustomers} pct={customerPct} />
 
