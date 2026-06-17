@@ -220,7 +220,7 @@ const Inventory = () => {
       const paid = Number(pForm.paid_amount) || 0;
       const status = paid >= total ? "paid" : paid > 0 ? "partial" : "unpaid";
 
-      const { error } = await supabase.from("purchases").insert({
+      const { data: insertedPurchase, error } = await supabase.from("purchases").insert({
         store_id: storeId!, user_id: userId!,
         supplier_id: pForm.supplier_id || null,
         total_amount: total, paid_amount: paid,
@@ -228,7 +228,6 @@ const Inventory = () => {
         notes: pForm.notes || itemsWithCalc.map(i => `${i.product_name} x${i.quantity}`).join(", "),
       }).select().single();
       if (error) throw error;
-      const insertedPurchase = (await supabase.from("purchases").select("id").eq("store_id", storeId!).order("created_at", { ascending: false }).limit(1).single()).data;
 
       if (pForm.supplier_id && total > paid) {
         const due = total - paid;
