@@ -107,6 +107,8 @@ const Customers = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(true);
+  const [topOpen, setTopOpen] = useState(true);
 
   const fetchCustomers = async () => {
     if (!activeStore) return;
