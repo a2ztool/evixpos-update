@@ -751,26 +751,34 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="text-center max-w-4xl mx-auto mb-6"
+            className="text-center max-w-5xl mx-auto mb-6"
           >
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[5.5rem] font-black tracking-tighter leading-[1.02] mb-6">
               <motion.span
-                initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                initial={{ opacity: 0, y: 40, filter: "blur(14px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 1, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
                 className="inline-block"
               >
-                {get("hero_title_line1", "Platform.")}
+                {get("hero_title_line1", "One Platform.")}
               </motion.span>
               <br />
-              <motion.span
-                initial={{ opacity: 0, y: 20, filter: "blur(8px)", scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer-gradient_3s_ease-in-out_infinite]"
-              >
-                {get("hero_title_line2", "Online + Offline.")}
-              </motion.span>
+              <span className="relative inline-block">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 text-primary/25 blur-2xl select-none pointer-events-none"
+                >
+                  {get("hero_title_line2", "Online + Offline.")}
+                </span>
+                <motion.span
+                  initial={{ opacity: 0, y: 40, filter: "blur(14px)", scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+                  transition={{ duration: 1, delay: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative inline-block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer-gradient_3s_ease-in-out_infinite]"
+                >
+                  {get("hero_title_line2", "Online + Offline.")}
+                </motion.span>
+              </span>
             </h1>
             <motion.p
               initial={{ opacity: 0, y: 16 }}
