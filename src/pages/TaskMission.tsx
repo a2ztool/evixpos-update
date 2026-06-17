@@ -376,7 +376,7 @@ const TaskMission = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-4">
         {/* Premium Hero */}
         <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-4 sm:p-6">
           <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -409,9 +409,8 @@ const TaskMission = () => {
               >
                 <Brain className="h-4 w-4" /> {focusMode ? "Focus On" : "Focus Mode"}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setGuideOpen(!guideOpen)} className="gap-1.5">
-                <HelpCircle className="h-4 w-4" /> Guide
-                {guideOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              <Button variant="outline" size="icon" onClick={() => setGuideOpen(true)} className="h-9 w-9" aria-label="Open guide">
+                <HelpCircle className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
                 <Download className="h-4 w-4" /> Export
@@ -452,71 +451,68 @@ const TaskMission = () => {
           </div>
         </div>
 
-        {/* Quick Guide */}
-        <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
-          <CollapsibleContent>
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-4 sm:p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" /> Quick Guide — Master Your Productivity
-                  </h3>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setGuideOpen(false)}>
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
+        {/* Quick Guide — slide-out drawer */}
+        <Sheet open={guideOpen} onOpenChange={setGuideOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/15">
+                  <Sparkles className="h-4 w-4 text-primary" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    { icon: Plus, title: "1. Create Tasks", desc: "Click 'New Task' — set title, priority (High/Med/Low), and due date." },
-                    { icon: ListTodo, title: "2. Use the Board", desc: "Switch tabs across Board, List, Missions & Analytics. Tick to complete." },
-                    { icon: Brain, title: "3. Focus Mode", desc: "Hides completed & low-priority tasks so you only see what matters today." },
-                    { icon: Trophy, title: "4. Earn Missions", desc: "Complete streaks & milestones to unlock achievements and grow your score." },
-                  ].map((s, i) => (
-                    <div key={i} className="flex gap-2.5 p-3 rounded-lg bg-card border border-border/40">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <s.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-xs">{s.title}</p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{s.desc}</p>
-                      </div>
+                Quick Guide
+              </SheetTitle>
+              <SheetDescription>Master your productivity workflow</SheetDescription>
+            </SheetHeader>
+            <div className="mt-5 space-y-2.5">
+              {[
+                { icon: Plus, title: "1. Create Tasks", desc: "Click 'New Task' — set title, priority (High/Med/Low), and due date." },
+                { icon: ListTodo, title: "2. Use the Board", desc: "Switch tabs across Board, List, Missions & Analytics. Tick to complete." },
+                { icon: Brain, title: "3. Focus Mode", desc: "Hides completed & low-priority tasks so you only see what matters today." },
+                { icon: Trophy, title: "4. Earn Missions", desc: "Complete streaks & milestones to unlock achievements and grow your score." },
+              ].map((s, i) => (
+                <div key={i} className="flex gap-3 p-3 rounded-xl bg-muted/40 border border-border/40">
+                  <div className="flex-shrink-0 h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <s.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm">{s.title}</p>
+                    <p className="text-xs text-muted-foreground leading-snug mt-1">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="text-xs text-muted-foreground bg-primary/5 rounded-lg p-3 border border-primary/20 mt-3">
+                💡 <strong className="text-foreground">Productivity Score</strong> = completion rate + streak bonus − overdue penalty. Aim for 80+!
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Smart Insights — compact */}
+        {insights.length > 0 && (
+          <Card className="border-border/40 rounded-xl">
+            <CardContent className="p-2.5 sm:p-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-border/40">
+                  <Activity className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold">Insights</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+                  {insights.map((ins, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] border ${
+                        ins.type === "good"
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-900/10 dark:border-emerald-900/30 dark:text-emerald-300"
+                          : ins.type === "warn"
+                          ? "bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-900/10 dark:border-amber-900/30 dark:text-amber-300"
+                          : "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300"
+                      }`}
+                    >
+                      <span>{ins.type === "good" ? "✨" : ins.type === "warn" ? "⚠️" : "ℹ️"}</span>
+                      <span className="leading-tight">{ins.text}</span>
                     </div>
                   ))}
                 </div>
-                <div className="text-[11px] text-muted-foreground bg-background/60 rounded-lg p-2.5 border border-border/40">
-                  💡 <strong>Productivity Score</strong> = completion rate + streak bonus − overdue penalty. Aim for 80+!
-                </div>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Smart Insights */}
-        {insights.length > 0 && (
-          <Card className="border-border/40">
-            <CardContent className="p-3.5 sm:p-4">
-              <div className="flex items-center gap-2 mb-2.5">
-                <Activity className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">Smart Insights</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {insights.map((ins, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-start gap-2 p-2.5 rounded-lg text-xs border ${
-                      ins.type === "good"
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-900/10 dark:border-emerald-900/30 dark:text-emerald-300"
-                        : ins.type === "warn"
-                        ? "bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-900/10 dark:border-amber-900/30 dark:text-amber-300"
-                        : "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300"
-                    }`}
-                  >
-                    <span className="mt-0.5">
-                      {ins.type === "good" ? "✨" : ins.type === "warn" ? "⚠️" : "ℹ️"}
-                    </span>
-                    <span className="leading-relaxed">{ins.text}</span>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>
@@ -543,40 +539,44 @@ const TaskMission = () => {
           </Card>
         )}
 
-        {/* Productivity Score Card */}
-        <Card className="overflow-hidden">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Rocket className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">Productivity Score</h3>
+        {/* Productivity Score — compact */}
+        <Card className="overflow-hidden rounded-xl border-border/60">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5">
+              <div className="flex items-center gap-3 lg:flex-1 min-w-0">
+                <div className={`shrink-0 ${scoreLabel.bg} p-2 rounded-xl`}>
+                  <Rocket className={`h-5 w-5 ${scoreLabel.color}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Productivity Score</p>
+                    <Badge className={`${scoreLabel.bg} ${scoreLabel.color} border-0 text-[9px] px-1.5 py-0 h-4`}>{scoreLabel.text}</Badge>
+                  </div>
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <p className="text-2xl font-bold tracking-tight leading-none">{productivityScore}</p>
+                    <span className="text-[11px] text-muted-foreground">/ 100</span>
+                  </div>
+                  <Progress value={productivityScore} className="h-1.5 mt-2" />
+                </div>
               </div>
-              <Badge className={`${scoreLabel.bg} ${scoreLabel.color} border-0`}>{scoreLabel.text}</Badge>
-            </div>
-            <div className="flex items-end gap-3 mb-2">
-              <p className="text-3xl sm:text-4xl font-bold">{productivityScore}</p>
-              <p className="text-sm text-muted-foreground mb-1">/ 100</p>
-            </div>
-            <Progress value={productivityScore} className="h-2" />
-            <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-              <div className="p-2 rounded-lg bg-muted/40">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Completion</p>
-                <p className="text-sm font-bold mt-0.5">{stats.completionRate.toFixed(0)}%</p>
-              </div>
-              <div className="p-2 rounded-lg bg-muted/40">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Streak Bonus</p>
-                <p className="text-sm font-bold mt-0.5">+{Math.min(stats.streak * 2, 30)}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-muted/40">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overdue Penalty</p>
-                <p className="text-sm font-bold mt-0.5 text-destructive">−{Math.min(stats.overdue * 5, 20)}</p>
+              <div className="grid grid-cols-3 gap-2 lg:flex-1 lg:border-l lg:border-border/40 lg:pl-5">
+                {[
+                  { label: "Completion", value: `${stats.completionRate.toFixed(0)}%`, cls: "" },
+                  { label: "Streak Bonus", value: `+${Math.min(stats.streak * 2, 30)}`, cls: "text-emerald-600" },
+                  { label: "Overdue Penalty", value: `−${Math.min(stats.overdue * 5, 20)}`, cls: "text-destructive" },
+                ].map((m) => (
+                  <div key={m.label} className="text-center px-1 py-1.5 rounded-lg bg-muted/40">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold leading-tight">{m.label}</p>
+                    <p className={`text-sm sm:text-base font-bold mt-0.5 ${m.cls}`}>{m.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 auto-rows-fr">
           {[
             { label: "Completion", value: `${stats.completionRate.toFixed(0)}%`, sub: `${stats.done}/${stats.total} tasks`, Icon: TrendingUp, color: "primary", accent: "border-l-primary", iconBg: "bg-primary/10", iconColor: "text-primary", valueColor: "text-foreground", showProgress: true },
             { label: "To Do", value: stats.todo, sub: `${stats.dueSoon} due soon`, Icon: CircleDot, color: "blue", accent: "border-l-blue-500", iconBg: "bg-blue-500/10", iconColor: "text-blue-500", valueColor: "text-blue-600 dark:text-blue-400" },
@@ -586,20 +586,20 @@ const TaskMission = () => {
           ].map((k, i) => {
             const KIcon = k.Icon;
             return (
-              <Card key={i} className={`hover:shadow-md transition-all duration-300 border-l-4 ${k.accent}`}>
-                <CardContent className="p-4 sm:p-5 !pt-4 sm:!pt-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight">{k.label}</p>
-                    <div className={`p-1.5 rounded-lg ${k.iconBg} shrink-0`}>
+              <Card key={i} className="rounded-xl border border-border/60 hover:shadow-sm hover:border-border transition-all duration-200 h-full">
+                <CardContent className="p-3 h-full flex flex-col justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[10.5px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight truncate flex-1">{k.label}</p>
+                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${k.iconBg}`}>
                       <KIcon className={`h-3.5 w-3.5 ${k.iconColor}`} />
                     </div>
                   </div>
-                  <p className={`text-2xl sm:text-3xl font-bold leading-none ${k.valueColor}`}>
+                  <p className={`text-xl sm:text-2xl font-bold leading-none tracking-tight truncate ${k.valueColor}`}>
                     {k.value}
-                    {k.suffix && <span className="text-xs font-medium ml-1 text-muted-foreground">{k.suffix}</span>}
+                    {k.suffix && <span className="text-[11px] font-medium ml-1 text-muted-foreground">{k.suffix}</span>}
                   </p>
-                  {k.showProgress && <Progress value={stats.completionRate} className="h-1.5 mt-3" />}
-                  <p className={`text-[11px] mt-2 ${k.subColor || "text-muted-foreground"}`}>{k.sub}</p>
+                  {k.showProgress && <Progress value={stats.completionRate} className="h-1" />}
+                  <p className={`text-[10.5px] truncate ${k.subColor || "text-muted-foreground"}`}>{k.sub}</p>
                 </CardContent>
               </Card>
             );
@@ -607,18 +607,18 @@ const TaskMission = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="board" className="gap-1.5 text-xs sm:text-sm">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
+          <TabsList className="grid w-full grid-cols-4 h-10 p-1 bg-muted/60 border border-border/60 rounded-xl gap-1">
+            <TabsTrigger value="board" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <ListTodo className="h-3.5 w-3.5" /> Board
             </TabsTrigger>
-            <TabsTrigger value="list" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="list" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <BarChart3 className="h-3.5 w-3.5" /> List
             </TabsTrigger>
-            <TabsTrigger value="missions" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="missions" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <Trophy className="h-3.5 w-3.5" /> Missions
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="analytics" className="gap-1.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/60 hover:text-foreground transition-all">
               <TrendingUp className="h-3.5 w-3.5" /> Analytics
             </TabsTrigger>
           </TabsList>
