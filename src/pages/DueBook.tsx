@@ -834,17 +834,17 @@ const DueBook = () => {
           </TabsList>
 
           {/* Analytics Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="rounded-2xl">
-                <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
+          <TabsContent value="overview" className="space-y-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <Card className="rounded-xl">
+                <CardHeader className="!p-4 sm:!p-5 pb-2 sm:pb-2">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" /> Due Timeline
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
+                <CardContent className="!p-4 sm:!p-5 pt-2 sm:pt-2">
                   {timeline.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
+                    <ResponsiveContainer width="100%" height={220}>
                       <AreaChart data={timeline}>
                         <defs>
                           <linearGradient id="dueGreen" x1="0" y1="0" x2="0" y2="1">
@@ -866,21 +866,21 @@ const DueBook = () => {
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">No data to display</div>
+                    <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">No data to display</div>
                   )}
                 </CardContent>
               </Card>
 
-              <div className="space-y-4">
-                <Card className="rounded-2xl">
-                  <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
+              <div className="space-y-3">
+                <Card className="rounded-xl">
+                  <CardHeader className="!p-4 sm:!p-5 pb-2 sm:pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <PieChart className="h-4 w-4 text-primary" /> Due Distribution
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
+                  <CardContent className="!p-4 sm:!p-5 pt-2 sm:pt-2">
                     {pieData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={160}>
+                      <ResponsiveContainer width="100%" height={140}>
                         <RePieChart>
                           <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
                             {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -890,18 +890,18 @@ const DueBook = () => {
                         </RePieChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-[160px] flex items-center justify-center text-muted-foreground text-sm">No dues yet</div>
+                      <div className="h-[140px] flex items-center justify-center text-muted-foreground text-sm">No dues yet</div>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl">
-                  <CardHeader className="!p-5 sm:!p-6 pb-2 sm:pb-2">
+                <Card className="rounded-xl">
+                  <CardHeader className="!p-4 sm:!p-5 pb-2 sm:pb-2">
                     <CardTitle className="text-sm font-semibold">Category Breakdown</CardTitle>
                   </CardHeader>
-                  <CardContent className="!p-5 sm:!p-6 pt-2 sm:pt-2">
+                  <CardContent className="!p-4 sm:!p-5 pt-2 sm:pt-2">
                     {categoryBreakdown.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={160}>
+                      <ResponsiveContainer width="100%" height={140}>
                         <BarChart data={categoryBreakdown} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} />
@@ -912,7 +912,7 @@ const DueBook = () => {
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-[160px] flex items-center justify-center text-muted-foreground text-sm">No categories</div>
+                      <div className="h-[140px] flex items-center justify-center text-muted-foreground text-sm">No categories</div>
                     )}
                   </CardContent>
                 </Card>
