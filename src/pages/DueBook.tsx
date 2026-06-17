@@ -921,7 +921,7 @@ const DueBook = () => {
           </TabsContent>
 
           {/* Due List Tab */}
-          <TabsContent value="dues" className="space-y-4">
+          <TabsContent value="dues" className="space-y-3">
             <Card className="rounded-2xl">
               <CardContent className="!p-4 sm:!p-5">
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -1141,7 +1141,7 @@ const DueBook = () => {
           </TabsContent>
 
           {/* People Tab */}
-          <TabsContent value="persons" className="space-y-4">
+          <TabsContent value="persons" className="space-y-3">
             {topPersons.length === 0 ? (
               <Card className="rounded-2xl flex flex-col items-center justify-center py-16">
                 <Users className="h-10 w-10 text-muted-foreground/20 mb-3" />
