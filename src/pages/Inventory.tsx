@@ -164,6 +164,12 @@ const Inventory = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "purchases", filter: `store_id=eq.${storeId}` }, () => {
         qc.invalidateQueries({ queryKey: ["purchases", storeId] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements", filter: `store_id=eq.${storeId}` }, () => {
+        qc.invalidateQueries({ queryKey: ["stock-movements", storeId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "purchase_returns", filter: `store_id=eq.${storeId}` }, () => {
+        qc.invalidateQueries({ queryKey: ["purchase-returns", storeId] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [storeId, qc]);
