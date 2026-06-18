@@ -1946,17 +1946,28 @@ const LandingPage = () => {
                 { name: "Tanvir Hasan", role: "Electronics Store, Chittagong", text: "Due book and customer credits feature is exactly what we needed. We recovered lakhs in old dues just by sending automated reminders." },
                 { name: "Aarav Mehta", role: "Pharmacy Owner, Delhi", text: "Barcode scanning, batch tracking, expiry alerts — it has everything a pharmacy needs. Cleanest UI I've used in any business app." },
               ];
-              const reviews = defaults.map((d, idx) => {
-                const i = idx + 1;
-                return {
-                  name: get(`testimonial_${i}_name`, d.name),
-                  role: get(`testimonial_${i}_role`, d.role),
-                  text: get(`testimonial_${i}_text`, d.text),
-                  image: get(`testimonial_${i}_image`),
-                };
+              // Find all configured testimonial indices from admin (testimonial_<n>_name / _text)
+              const indexSet = new Set<number>();
+              Object.keys(content || {}).forEach((k) => {
+                const m = k.match(/^testimonial_(\d+)_(name|text|role|image)$/);
+                if (m) indexSet.add(parseInt(m[1], 10));
               });
-              const row1 = reviews.slice(0, 10);
-              const row2 = reviews.slice(0, 10);
+              // Always include defaults as a baseline so the section never looks empty
+              defaults.forEach((_, idx) => indexSet.add(idx + 1));
+              const indices = Array.from(indexSet).sort((a, b) => a - b);
+              const reviews = indices
+                .map((i) => {
+                  const d = defaults[i - 1];
+                  const name = get(`testimonial_${i}_name`, d?.name || "");
+                  const text = get(`testimonial_${i}_text`, d?.text || "");
+                  const role = get(`testimonial_${i}_role`, d?.role || "");
+                  const image = get(`testimonial_${i}_image`, "");
+                  return { name, role, text, image };
+                })
+                .filter((r) => r.name.trim() && r.text.trim());
+              const half = Math.ceil(reviews.length / 2);
+              const row1 = reviews.length >= 4 ? reviews.slice(0, half) : reviews;
+              const row2 = reviews.length >= 4 ? reviews.slice(half) : reviews;
               const Card1 = ({ r }: { r: typeof reviews[number] }) => (
                 <div className="shrink-0 w-[300px] sm:w-[360px] mx-3">
                   <div className="h-full rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)] hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/30 transition-all duration-300 p-6">
