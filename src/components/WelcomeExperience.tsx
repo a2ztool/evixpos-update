@@ -1,9 +1,16 @@
-import { Volume2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import confetti from "canvas-confetti";
 
-const STORAGE_KEY = "evixpos_welcome_voice_played_at_v2";
-const REPLAY_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CONFETTI_KEY = "evixpos_welcome_confetti_at_v1";
+const VOICE_KEY = "evixpos_welcome_voice_at_v1";
+const REPLAY_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+const CTA_LABELS = [
+  "get started free",
+  "start free today",
+  "start free",
+  "see how it works",
+];
 
 const fireConfetti = () => {
   const duration = 2500;
@@ -36,7 +43,6 @@ const fireConfetti = () => {
     }
   })();
 
-  // Final celebratory burst from center
   window.setTimeout(() => {
     confetti({
       particleCount: 80,
@@ -47,161 +53,80 @@ const fireConfetti = () => {
   }, 400);
 };
 
-type SpeakWelcomeOptions = {
-  onStarted?: () => void;
-  onBlocked?: (retry: () => void) => void;
-};
-
-const speakWelcome = ({ onStarted, onBlocked }: SpeakWelcomeOptions = {}) => {
+const speakWelcomeNow = () => {
   try {
     const synth = window.speechSynthesis;
-    if (!synth) {
-      onBlocked?.(() => undefined);
-      return () => undefined;
-    }
-
-    const buildUtterance = () => {
-      const utter = new SpeechSynthesisUtterance(
-        "Welcome to EvixPOS, your all-in-one business management platform."
-      );
-      utter.rate = 0.95;
-      utter.pitch = 1.1;
-      utter.volume = 0.7;
-      utter.lang = "en-US";
-
-      const voices = synth.getVoices();
-      const female =
-        voices.find((v) =>
-          /female|samantha|victoria|karen|zira|google us english|jenny|aria/i.test(v.name)
-        ) || voices.find((v) => v.lang?.startsWith("en"));
-      if (female) utter.voice = female;
-      return utter;
-    };
-
-    let spoken = false;
-    let blockedNotified = false;
-    const gestureEvents = ["pointerdown", "keydown", "touchstart"] as const;
-
-    const cleanupGesture = () => {
-      gestureEvents.forEach((ev) =>
-        window.removeEventListener(ev, onGesture, { capture: true } as EventListenerOptions)
-      );
-    };
-
-    function onGesture() {
-      if (spoken) return;
-      const utter = buildUtterance();
-      utter.onstart = () => {
-        spoken = true;
-        onStarted?.();
-        cleanupGesture();
-      };
-      synth.cancel();
-      synth.speak(utter);
-    }
-
-    const trySpeakNow = () => {
-      const utter = buildUtterance();
-      // If the browser actually starts speaking, mark spoken and remove fallbacks.
-      utter.onstart = () => {
-        spoken = true;
-        onStarted?.();
-        cleanupGesture();
-      };
-      synth.cancel();
-      synth.speak(utter);
-
-      // Autoplay policy check: if nothing started quickly, wait for a user gesture.
-      window.setTimeout(() => {
-        if (!spoken) {
-          synth.cancel();
-          if (!blockedNotified) {
-            blockedNotified = true;
-            onBlocked?.(onGesture);
-          }
-          gestureEvents.forEach((ev) =>
-            window.addEventListener(ev, onGesture, { once: false, passive: true, capture: true })
-          );
-        }
-      }, 120);
-    };
-
-    if (synth.getVoices().length > 0) {
-      trySpeakNow();
-    } else {
-      synth.onvoiceschanged = () => {
-        trySpeakNow();
-        synth.onvoiceschanged = null;
-      };
-      // Safety: some browsers never fire voiceschanged — try anyway after 300ms.
-      window.setTimeout(() => {
-        if (!spoken) trySpeakNow();
-      }, 300);
-    }
-    return cleanupGesture;
+    if (!synth) return;
+    const utter = new SpeechSynthesisUtterance(
+      "Welcome to EvixPOS, your all-in-one business management platform."
+    );
+    utter.rate = 0.95;
+    utter.pitch = 1.1;
+    utter.volume = 0.7;
+    utter.lang = "en-US";
+    const voices = synth.getVoices();
+    const female =
+      voices.find((v) =>
+        /female|samantha|victoria|karen|zira|google us english|jenny|aria/i.test(v.name)
+      ) || voices.find((v) => v.lang?.startsWith("en"));
+    if (female) utter.voice = female;
+    synth.cancel();
+    synth.speak(utter);
   } catch {
-    return () => undefined;
+    // Silently skip if blocked or unsupported.
+  }
+};
+
+const within24h = (key: string) => {
+  try {
+    const last = localStorage.getItem(key);
+    if (!last) return false;
+    return Date.now() - Number(last) < REPLAY_INTERVAL_MS;
+  } catch {
+    return false;
+  }
+};
+
+const stamp = (key: string) => {
+  try {
+    localStorage.setItem(key, String(Date.now()));
+  } catch {
+    /* ignore */
   }
 };
 
 const WelcomeExperience = () => {
-  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
-  const retrySpeakRef = useRef<(() => void) | null>(null);
-
   useEffect(() => {
-    try {
-      const last = localStorage.getItem(STORAGE_KEY);
-      const now = Date.now();
-      if (last && now - Number(last) < REPLAY_INTERVAL_MS) return;
-
+    if (!within24h(CONFETTI_KEY)) {
       fireConfetti();
-      const cleanup = speakWelcome({
-        onStarted: () => {
-          localStorage.setItem(STORAGE_KEY, String(Date.now()));
-          setShowSoundPrompt(false);
-        },
-        onBlocked: (retry) => {
-          retrySpeakRef.current = retry;
-          setShowSoundPrompt(true);
-        },
-      });
-      return cleanup;
-    } catch {
-      // localStorage unavailable — skip
+      stamp(CONFETTI_KEY);
     }
+
+    if (within24h(VOICE_KEY)) return;
+
+    let played = false;
+    const handleClick = (e: MouseEvent) => {
+      if (played) return;
+      const target = (e.target as HTMLElement | null)?.closest(
+        "button, a, [role='button']"
+      ) as HTMLElement | null;
+      if (!target) return;
+      const label = (target.textContent || "").trim().toLowerCase();
+      if (!label) return;
+      if (!CTA_LABELS.some((l) => label.includes(l))) return;
+      played = true;
+      speakWelcomeNow();
+      stamp(VOICE_KEY);
+      document.removeEventListener("click", handleClick, true);
+    };
+
+    document.addEventListener("click", handleClick, true);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+    };
   }, []);
 
-  if (!showSoundPrompt) return null;
-
-  return (
-    <div className="fixed bottom-5 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border border-border bg-background/95 p-3 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:bottom-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          aria-label="Play EvixPOS welcome voice"
-          onClick={() => retrySpeakRef.current?.()}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:opacity-90"
-        >
-          <Volume2 className="h-5 w-5" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">Play welcome voice</p>
-          <p className="text-xs text-muted-foreground">Browser needs one tap to enable sound.</p>
-        </div>
-        <button
-          type="button"
-          aria-label="Dismiss welcome voice"
-          onClick={() => {
-            localStorage.setItem(STORAGE_KEY, String(Date.now()));
-            setShowSoundPrompt(false);
-          }}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export default WelcomeExperience;
