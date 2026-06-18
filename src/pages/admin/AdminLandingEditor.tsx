@@ -1119,7 +1119,7 @@ const TestimonialsManager: React.FC<TMProps> = ({ items, edited, handleChange, s
     const a = grouped[i];
     const b = grouped[j];
     const fields = ["name", "role", "text", "image", "rating"];
-    const updates: Promise<unknown>[] = [];
+    const updates: PromiseLike<unknown>[] = [];
     const localPatch: { id: string; value: string }[] = [];
     fields.forEach(f => {
       const ai = a[f]; const bi = b[f];
