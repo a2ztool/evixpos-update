@@ -91,13 +91,9 @@ const WelcomeExperience = () => {
       const now = Date.now();
       if (last && now - Number(last) < REPLAY_INTERVAL_MS) return;
 
-      const timer = window.setTimeout(() => {
-        fireConfetti();
-        speakWelcome();
-        localStorage.setItem(STORAGE_KEY, String(now));
-      }, 600);
-
-      return () => window.clearTimeout(timer);
+      fireConfetti();
+      speakWelcome();
+      localStorage.setItem(STORAGE_KEY, String(now));
     } catch {
       // localStorage unavailable — skip
     }
