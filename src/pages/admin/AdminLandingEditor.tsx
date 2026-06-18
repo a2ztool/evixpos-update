@@ -911,7 +911,16 @@ const AdminLandingEditor = () => {
 
           {/* Fields */}
           <div className="flex-1 overflow-visible md:overflow-y-auto px-5 py-4 space-y-3">
-            {activeSectionItems.map((item, idx) => {
+            {activeSection === "testimonials" ? (
+              <TestimonialsManager
+                items={(sections.testimonials || []).filter(i => !Object.values(VISIBILITY_KEY_MAP).includes(i.key))}
+                edited={edited}
+                handleChange={handleChange}
+                setItems={setItems}
+                openTestimonials={openTestimonials}
+                setOpenTestimonials={setOpenTestimonials}
+              />
+            ) : activeSectionItems.map((item, idx) => {
               const current = edited[item.id] !== undefined ? edited[item.id] : item.value;
               const isModified = edited[item.id] !== undefined;
               const isLong = current.length > 80 || item.key.includes("subtitle") || item.key.includes("tagline") || item.key.includes("_text") || item.key.includes("_a") || item.key.includes("_desc") || item.key.includes("features") || item.key.includes("_body") || item.key.includes("policy") || item.key.includes("comparison") || item.key.includes("who_list");
