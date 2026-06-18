@@ -2,7 +2,7 @@ import { Volume2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 
-const STORAGE_KEY = "evixpos_welcome_shown_at";
+const STORAGE_KEY = "evixpos_welcome_voice_played_at_v2";
 const REPLAY_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const fireConfetti = () => {
@@ -55,7 +55,10 @@ type SpeakWelcomeOptions = {
 const speakWelcome = ({ onStarted, onBlocked }: SpeakWelcomeOptions = {}) => {
   try {
     const synth = window.speechSynthesis;
-    if (!synth) return () => undefined;
+    if (!synth) {
+      onBlocked?.(() => undefined);
+      return () => undefined;
+    }
 
     const buildUtterance = () => {
       const utter = new SpeechSynthesisUtterance(
@@ -108,7 +111,7 @@ const speakWelcome = ({ onStarted, onBlocked }: SpeakWelcomeOptions = {}) => {
       synth.cancel();
       synth.speak(utter);
 
-      // Autoplay policy check: if nothing started within 400ms, wait for a user gesture.
+      // Autoplay policy check: if nothing started quickly, wait for a user gesture.
       window.setTimeout(() => {
         if (!spoken) {
           synth.cancel();
@@ -120,7 +123,7 @@ const speakWelcome = ({ onStarted, onBlocked }: SpeakWelcomeOptions = {}) => {
             window.addEventListener(ev, onGesture, { once: false, passive: true, capture: true })
           );
         }
-      }, 400);
+      }, 120);
     };
 
     if (synth.getVoices().length > 0) {
