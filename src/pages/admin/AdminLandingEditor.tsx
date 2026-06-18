@@ -397,14 +397,14 @@ const ALL_LANDING_KEYS: Record<string, { key: string; type: "text" | "image"; de
     { key: "testimonials_badge", type: "text", defaultValue: "Testimonials" },
     { key: "testimonials_title", type: "text", defaultValue: "Loved by Online & Offline Business Owners" },
     { key: "testimonials_subtitle", type: "text", defaultValue: "See how businesses are unifying their online and offline operations." },
-    ...([1,2,3].flatMap(i => [
+    ...(Array.from({ length: 20 }, (_, idx) => idx + 1).flatMap(i => [
       { key: `testimonial_${i}_text`, type: "text" as const, defaultValue: [
         "I used to run my online store on WooCommerce and my physical shop on a separate POS. EvixPOS unified everything — now I see all sales in one dashboard!",
         "The offline POS is a game-changer. Walk-in billing with barcode scanning, plus my online orders sync automatically. Best decision for my business.",
         "Managing 3 stores — 2 offline and 1 online — was a nightmare. EvixPOS made it seamless. One login, all stores, complete visibility."
-      ][i-1] || "Great platform!" },
-      { key: `testimonial_${i}_name`, type: "text" as const, defaultValue: ["Rahim Ahmed", "Priya Sharma", "Kamal Hossain"][i-1] || "User" },
-      { key: `testimonial_${i}_role`, type: "text" as const, defaultValue: ["Hybrid Store Owner", "Retail + E-commerce", "Multi-Store Manager"][i-1] || "Business Owner" },
+      ][i-1] || "" },
+      { key: `testimonial_${i}_name`, type: "text" as const, defaultValue: ["Rahim Ahmed", "Priya Sharma", "Kamal Hossain"][i-1] || "" },
+      { key: `testimonial_${i}_role`, type: "text" as const, defaultValue: ["Hybrid Store Owner", "Retail + E-commerce", "Multi-Store Manager"][i-1] || "" },
       { key: `testimonial_${i}_image`, type: "image" as const, defaultValue: "" },
     ])),
     { key: "testimonial_fallback_text", type: "text" as const, defaultValue: "Great platform!" },
