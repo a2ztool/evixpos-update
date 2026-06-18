@@ -1955,8 +1955,8 @@ const LandingPage = () => {
                   image: get(`testimonial_${i}_image`),
                 };
               });
-              const row1 = reviews.slice(0, 5);
-              const row2 = reviews.slice(5, 10);
+              const row1 = reviews.slice(0, 10);
+              const row2 = reviews.slice(0, 10);
               const Card1 = ({ r }: { r: typeof reviews[number] }) => (
                 <div className="shrink-0 w-[300px] sm:w-[360px] mx-3">
                   <div className="h-full rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)] hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/30 transition-all duration-300 p-6">
