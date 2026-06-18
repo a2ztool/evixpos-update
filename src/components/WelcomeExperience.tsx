@@ -51,7 +51,7 @@ const speakWelcome = () => {
     const synth = window.speechSynthesis;
     if (!synth) return;
 
-    const speak = () => {
+    const buildUtterance = () => {
       const utter = new SpeechSynthesisUtterance(
         "Welcome to EvixPOS, your all-in-one business management platform."
       );
@@ -66,18 +66,61 @@ const speakWelcome = () => {
           /female|samantha|victoria|karen|zira|google us english|jenny|aria/i.test(v.name)
         ) || voices.find((v) => v.lang?.startsWith("en"));
       if (female) utter.voice = female;
+      return utter;
+    };
 
+    let spoken = false;
+    const gestureEvents = ["pointerdown", "keydown", "touchstart", "scroll"] as const;
+
+    const cleanupGesture = () => {
+      gestureEvents.forEach((ev) =>
+        window.removeEventListener(ev, onGesture, { capture: true } as EventListenerOptions)
+      );
+    };
+
+    function onGesture() {
+      if (spoken) return;
+      const utter = buildUtterance();
+      utter.onstart = () => {
+        spoken = true;
+        cleanupGesture();
+      };
       synth.cancel();
       synth.speak(utter);
+    }
+
+    const trySpeakNow = () => {
+      const utter = buildUtterance();
+      // If the browser actually starts speaking, mark spoken and remove fallbacks.
+      utter.onstart = () => {
+        spoken = true;
+        cleanupGesture();
+      };
+      synth.cancel();
+      synth.speak(utter);
+
+      // Autoplay policy check: if nothing started within 400ms, wait for a user gesture.
+      window.setTimeout(() => {
+        if (!spoken) {
+          synth.cancel();
+          gestureEvents.forEach((ev) =>
+            window.addEventListener(ev, onGesture, { once: false, passive: true, capture: true })
+          );
+        }
+      }, 400);
     };
 
     if (synth.getVoices().length > 0) {
-      speak();
+      trySpeakNow();
     } else {
       synth.onvoiceschanged = () => {
-        speak();
+        trySpeakNow();
         synth.onvoiceschanged = null;
       };
+      // Safety: some browsers never fire voiceschanged — try anyway after 300ms.
+      window.setTimeout(() => {
+        if (!spoken) trySpeakNow();
+      }, 300);
     }
   } catch {
     // Silently ignore browsers that block autoplay
