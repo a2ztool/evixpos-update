@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Eye, Loader2, Image, Type, Search, X, Plus, Trash2, RefreshCw, EyeOff, GripVertical, Sparkles, ChevronUp, ChevronDown, Copy } from "lucide-react";
+import { Save, Eye, Loader2, Image, Type, Search, X, Plus, Trash2, RefreshCw, EyeOff, GripVertical, Sparkles, ChevronUp, ChevronDown, Copy, ChevronRight, Star, User as UserIcon, MessageSquare } from "lucide-react";
 
 interface ContentItem {
   id: string;
@@ -533,6 +533,7 @@ const AdminLandingEditor = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [newFieldKey, setNewFieldKey] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "image">("text");
+  const [openTestimonials, setOpenTestimonials] = useState<Record<number, boolean>>({ 1: true });
 
   useEffect(() => {
     supabase
@@ -910,7 +911,16 @@ const AdminLandingEditor = () => {
 
           {/* Fields */}
           <div className="flex-1 overflow-visible md:overflow-y-auto px-5 py-4 space-y-3">
-            {activeSectionItems.map((item, idx) => {
+            {activeSection === "testimonials" ? (
+              <TestimonialsManager
+                items={(sections.testimonials || []).filter(i => !Object.values(VISIBILITY_KEY_MAP).includes(i.key))}
+                edited={edited}
+                handleChange={handleChange}
+                setItems={setItems}
+                openTestimonials={openTestimonials}
+                setOpenTestimonials={setOpenTestimonials}
+              />
+            ) : activeSectionItems.map((item, idx) => {
               const current = edited[item.id] !== undefined ? edited[item.id] : item.value;
               const isModified = edited[item.id] !== undefined;
               const isLong = current.length > 80 || item.key.includes("subtitle") || item.key.includes("tagline") || item.key.includes("_text") || item.key.includes("_a") || item.key.includes("_desc") || item.key.includes("features") || item.key.includes("_body") || item.key.includes("policy") || item.key.includes("comparison") || item.key.includes("who_list");
@@ -1036,3 +1046,246 @@ const AdminLandingEditor = () => {
 };
 
 export default AdminLandingEditor;
+
+/* ============================================================
+ * Grouped Testimonials Manager — collapsible per-testimonial cards
+ * Reuses existing landing_content rows: testimonial_<n>_(name|role|text|image|rating)
+ * ============================================================ */
+interface TMProps {
+  items: ContentItem[];
+  edited: Record<string, string>;
+  handleChange: (id: string, value: string) => void;
+  setItems: React.Dispatch<React.SetStateAction<ContentItem[]>>;
+  openTestimonials: Record<number, boolean>;
+  setOpenTestimonials: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+}
+
+const TESTIMONIAL_FIELD_RE = /^testimonial_(\d+)_(name|role|text|image|rating)$/;
+
+const TestimonialsManager: React.FC<TMProps> = ({ items, edited, handleChange, setItems, openTestimonials, setOpenTestimonials }) => {
+  // Header fields (badge, title, subtitle, fallback) shown at the top
+  const headerKeys = ["testimonials_badge", "testimonials_title", "testimonials_subtitle", "testimonial_fallback_text"];
+  const headerItems = headerKeys
+    .map(k => items.find(i => i.key === k))
+    .filter(Boolean) as ContentItem[];
+
+  // Group testimonial_<n>_* fields by index
+  const grouped: Record<number, Record<string, ContentItem>> = {};
+  items.forEach(it => {
+    const m = it.key.match(TESTIMONIAL_FIELD_RE);
+    if (!m) return;
+    const idx = parseInt(m[1], 10);
+    const field = m[2];
+    grouped[idx] = grouped[idx] || {};
+    grouped[idx][field] = it;
+  });
+  const indices = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+  const nextIndex = (indices[indices.length - 1] || 0) + 1;
+
+  const valOf = (it?: ContentItem) => it ? (edited[it.id] !== undefined ? edited[it.id] : it.value) : "";
+
+  const handleAddTestimonial = async () => {
+    const i = nextIndex;
+    const rows = [
+      { key: `testimonial_${i}_name`, value: "", section: "testimonials", content_type: "text", sort_order: 100 + i * 10 + 1 },
+      { key: `testimonial_${i}_role`, value: "", section: "testimonials", content_type: "text", sort_order: 100 + i * 10 + 2 },
+      { key: `testimonial_${i}_text`, value: "", section: "testimonials", content_type: "text", sort_order: 100 + i * 10 + 3 },
+      { key: `testimonial_${i}_image`, value: "", section: "testimonials", content_type: "image", sort_order: 100 + i * 10 + 4 },
+    ];
+    const { data, error } = await supabase.from("landing_content").insert(rows).select();
+    if (error) { toast.error("Failed to add testimonial"); return; }
+    if (data) {
+      setItems(prev => [...prev, ...(data as ContentItem[])]);
+      setOpenTestimonials(prev => ({ ...prev, [i]: true }));
+      toast.success(`Added Testimonial ${i}`);
+    }
+  };
+
+  const handleDeleteTestimonial = async (i: number) => {
+    if (!confirm(`Delete Testimonial ${i}? This removes all its fields.`)) return;
+    const ids = Object.values(grouped[i] || {}).map(it => it.id);
+    const { error } = await supabase.from("landing_content").delete().in("id", ids);
+    if (error) { toast.error("Failed to delete"); return; }
+    setItems(prev => prev.filter(it => !ids.includes(it.id)));
+    toast.success(`Deleted Testimonial ${i}`);
+  };
+
+  // Reorder by swapping field VALUES between two indices (keeps keys stable so frontend mapping is preserved)
+  const handleReorder = async (i: number, direction: "up" | "down") => {
+    const pos = indices.indexOf(i);
+    const swapPos = direction === "up" ? pos - 1 : pos + 1;
+    if (swapPos < 0 || swapPos >= indices.length) return;
+    const j = indices[swapPos];
+    const a = grouped[i];
+    const b = grouped[j];
+    const fields = ["name", "role", "text", "image", "rating"];
+    const updates: PromiseLike<unknown>[] = [];
+    const localPatch: { id: string; value: string }[] = [];
+    fields.forEach(f => {
+      const ai = a[f]; const bi = b[f];
+      const aVal = valOf(ai); const bVal = valOf(bi);
+      if (ai) { updates.push(supabase.from("landing_content").update({ value: bVal }).eq("id", ai.id)); localPatch.push({ id: ai.id, value: bVal }); }
+      if (bi) { updates.push(supabase.from("landing_content").update({ value: aVal }).eq("id", bi.id)); localPatch.push({ id: bi.id, value: aVal }); }
+    });
+    await Promise.all(updates);
+    setItems(prev => prev.map(it => {
+      const p = localPatch.find(x => x.id === it.id);
+      return p ? { ...it, value: p.value } : it;
+    }));
+    toast.success(`Reordered Testimonial ${i}`);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Section header fields */}
+      {headerItems.length > 0 && (
+        <div className="rounded-lg border border-slate-700/40 bg-slate-900/30 p-3 space-y-3">
+          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Section Header</div>
+          {headerItems.map(it => (
+            <div key={it.id}>
+              <label className="text-[10px] uppercase tracking-wider text-slate-400 block mb-1">{it.key.replace(/_/g, " ")}</label>
+              <Input
+                value={valOf(it)}
+                onChange={(e) => handleChange(it.id, e.target.value)}
+                className="bg-slate-900/60 border-slate-600/50 text-white text-sm"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Testimonial cards */}
+      {indices.map((i, pos) => {
+        const g = grouped[i];
+        const name = valOf(g.name);
+        const role = valOf(g.role);
+        const text = valOf(g.text);
+        const image = valOf(g.image);
+        const rating = valOf(g.rating) || "5";
+        const isOpen = openTestimonials[i] ?? false;
+        const isAnyEdited = Object.values(g).some(it => edited[it.id] !== undefined);
+
+        return (
+          <div key={i} className={`rounded-xl border ${isAnyEdited ? "border-amber-500/30 bg-amber-500/5" : "border-slate-700/50 bg-slate-900/40"} overflow-hidden transition-colors`}>
+            <button
+              onClick={() => setOpenTestimonials(prev => ({ ...prev, [i]: !isOpen }))}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800/40 transition-colors text-left"
+            >
+              <ChevronRight className={`h-4 w-4 text-slate-500 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+              <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 overflow-hidden">
+                {image ? (
+                  <img src={image} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <span className="text-emerald-400 text-xs font-bold">{(name || `T${i}`).charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm font-semibold truncate">📌 Testimonial {i}</span>
+                  {isAnyEdited && <span className="text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Modified</span>}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate">
+                  {name ? `${name}${role ? ` — ${role}` : ""}` : <span className="italic">Empty testimonial</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => handleReorder(i, "up")} disabled={pos === 0} className="text-slate-500 hover:text-white p-1 disabled:opacity-30" title="Move up">
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => handleReorder(i, "down")} disabled={pos === indices.length - 1} className="text-slate-500 hover:text-white p-1 disabled:opacity-30" title="Move down">
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => handleDeleteTestimonial(i)} className="text-slate-500 hover:text-red-400 p-1" title="Delete testimonial">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </button>
+
+            {isOpen && (
+              <div className="px-4 pb-4 pt-1 space-y-3 border-t border-slate-700/40">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1">
+                      <UserIcon className="h-3 w-3" /> Customer Name
+                    </label>
+                    {g.name ? (
+                      <Input value={name} onChange={(e) => handleChange(g.name.id, e.target.value)} className="bg-slate-900/60 border-slate-600/50 text-white text-sm" placeholder="e.g. Rahim Ahmed" />
+                    ) : <MissingFieldHint />}
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1">
+                      <Type className="h-3 w-3" /> Role / Business
+                    </label>
+                    {g.role ? (
+                      <Input value={role} onChange={(e) => handleChange(g.role.id, e.target.value)} className="bg-slate-900/60 border-slate-600/50 text-white text-sm" placeholder="e.g. Boutique Owner, Mumbai" />
+                    ) : <MissingFieldHint />}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1">
+                    <Image className="h-3 w-3 text-blue-400" /> Customer Image URL
+                  </label>
+                  {g.image ? (
+                    <>
+                      <Input value={image} onChange={(e) => handleChange(g.image.id, e.target.value)} className="bg-slate-900/60 border-slate-600/50 text-white text-sm" placeholder="https://example.com/avatar.jpg" />
+                      {image && (
+                        <div className="mt-2 rounded-lg overflow-hidden border border-slate-700 w-16 h-16">
+                          <img src={image} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        </div>
+                      )}
+                    </>
+                  ) : <MissingFieldHint />}
+                </div>
+
+                {g.rating && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1">
+                      <Star className="h-3 w-3 text-amber-400" /> Rating (1–5)
+                    </label>
+                    <Input value={rating} onChange={(e) => handleChange(g.rating.id, e.target.value)} className="bg-slate-900/60 border-slate-600/50 text-white text-sm w-24" placeholder="5" />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-1">
+                    <MessageSquare className="h-3 w-3" /> Review Text
+                  </label>
+                  {g.text ? (
+                    <Textarea
+                      value={text}
+                      onChange={(e) => handleChange(g.text.id, e.target.value)}
+                      rows={4}
+                      className="bg-slate-900/60 border-slate-600/50 text-white text-sm resize-none"
+                      placeholder="What did the customer say?"
+                    />
+                  ) : <MissingFieldHint />}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Add new testimonial */}
+      <button
+        onClick={handleAddTestimonial}
+        className="w-full rounded-xl border-2 border-dashed border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-slate-400 hover:text-emerald-400 py-4 flex items-center justify-center gap-2 transition-colors"
+      >
+        <Plus className="h-4 w-4" /> <span className="text-sm font-medium">Add New Testimonial</span>
+      </button>
+
+      {indices.length === 0 && (
+        <div className="text-center py-8 text-slate-500 text-sm">
+          No testimonials yet. Click "Add New Testimonial" to create the first one.
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MissingFieldHint = () => (
+  <div className="text-[11px] text-slate-500 italic bg-slate-900/40 border border-dashed border-slate-700 rounded px-2 py-1.5">
+    Field missing — click "Seed All Keys" at the top to create it.
+  </div>
+);
