@@ -77,6 +77,7 @@ import VideoModal from "@/components/VideoModal";
 import LandingChatbot from "@/components/LandingChatbot";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import InstallAppButton from "@/components/InstallAppButton";
+import WelcomeExperience from "@/components/WelcomeExperience";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import { VOLUME_STEPS, formatVolume, PLAN_FEATURES_LIST, type VolumeStep } from "@/lib/planConfig";
@@ -2489,6 +2490,7 @@ const LandingPage = () => {
         />
       )}
       <LandingChatbot />
+      <WelcomeExperience />
       <ScrollToTopButton />
     </div>
   );
