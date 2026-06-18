@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, Eye, Loader2, Image, Type, Search, X, Plus, Trash2, RefreshCw, EyeOff, GripVertical, Sparkles, ChevronUp, ChevronDown, Copy } from "lucide-react";
+import { Save, Eye, Loader2, Image, Type, Search, X, Plus, Trash2, RefreshCw, EyeOff, GripVertical, Sparkles, ChevronUp, ChevronDown, Copy, ChevronRight, Star, User as UserIcon, MessageSquare } from "lucide-react";
 
 interface ContentItem {
   id: string;
@@ -533,6 +533,7 @@ const AdminLandingEditor = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [newFieldKey, setNewFieldKey] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "image">("text");
+  const [openTestimonials, setOpenTestimonials] = useState<Record<number, boolean>>({ 1: true });
 
   useEffect(() => {
     supabase
