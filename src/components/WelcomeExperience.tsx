@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { Volume2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 
 const STORAGE_KEY = "evixpos_welcome_shown_at";
@@ -46,10 +47,15 @@ const fireConfetti = () => {
   }, 400);
 };
 
-const speakWelcome = () => {
+type SpeakWelcomeOptions = {
+  onStarted?: () => void;
+  onBlocked?: (retry: () => void) => void;
+};
+
+const speakWelcome = ({ onStarted, onBlocked }: SpeakWelcomeOptions = {}) => {
   try {
     const synth = window.speechSynthesis;
-    if (!synth) return;
+    if (!synth) return () => undefined;
 
     const buildUtterance = () => {
       const utter = new SpeechSynthesisUtterance(
@@ -70,7 +76,8 @@ const speakWelcome = () => {
     };
 
     let spoken = false;
-    const gestureEvents = ["pointerdown", "keydown", "touchstart", "scroll"] as const;
+    let blockedNotified = false;
+    const gestureEvents = ["pointerdown", "keydown", "touchstart"] as const;
 
     const cleanupGesture = () => {
       gestureEvents.forEach((ev) =>
@@ -83,6 +90,7 @@ const speakWelcome = () => {
       const utter = buildUtterance();
       utter.onstart = () => {
         spoken = true;
+        onStarted?.();
         cleanupGesture();
       };
       synth.cancel();
@@ -94,6 +102,7 @@ const speakWelcome = () => {
       // If the browser actually starts speaking, mark spoken and remove fallbacks.
       utter.onstart = () => {
         spoken = true;
+        onStarted?.();
         cleanupGesture();
       };
       synth.cancel();
@@ -103,6 +112,10 @@ const speakWelcome = () => {
       window.setTimeout(() => {
         if (!spoken) {
           synth.cancel();
+          if (!blockedNotified) {
+            blockedNotified = true;
+            onBlocked?.(onGesture);
+          }
           gestureEvents.forEach((ev) =>
             window.addEventListener(ev, onGesture, { once: false, passive: true, capture: true })
           );
@@ -122,12 +135,16 @@ const speakWelcome = () => {
         if (!spoken) trySpeakNow();
       }, 300);
     }
+    return cleanupGesture;
   } catch {
-    // Silently ignore browsers that block autoplay
+    return () => undefined;
   }
 };
 
 const WelcomeExperience = () => {
+  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
+  const retrySpeakRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     try {
       const last = localStorage.getItem(STORAGE_KEY);
@@ -135,14 +152,53 @@ const WelcomeExperience = () => {
       if (last && now - Number(last) < REPLAY_INTERVAL_MS) return;
 
       fireConfetti();
-      speakWelcome();
-      localStorage.setItem(STORAGE_KEY, String(now));
+      const cleanup = speakWelcome({
+        onStarted: () => {
+          localStorage.setItem(STORAGE_KEY, String(Date.now()));
+          setShowSoundPrompt(false);
+        },
+        onBlocked: (retry) => {
+          retrySpeakRef.current = retry;
+          setShowSoundPrompt(true);
+        },
+      });
+      return cleanup;
     } catch {
       // localStorage unavailable — skip
     }
   }, []);
 
-  return null;
+  if (!showSoundPrompt) return null;
+
+  return (
+    <div className="fixed bottom-5 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-lg border border-border bg-background/95 p-3 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:bottom-6">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="Play EvixPOS welcome voice"
+          onClick={() => retrySpeakRef.current?.()}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:opacity-90"
+        >
+          <Volume2 className="h-5 w-5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">Play welcome voice</p>
+          <p className="text-xs text-muted-foreground">Browser needs one tap to enable sound.</p>
+        </div>
+        <button
+          type="button"
+          aria-label="Dismiss welcome voice"
+          onClick={() => {
+            localStorage.setItem(STORAGE_KEY, String(Date.now()));
+            setShowSoundPrompt(false);
+          }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default WelcomeExperience;
