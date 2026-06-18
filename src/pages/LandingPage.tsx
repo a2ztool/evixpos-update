@@ -344,7 +344,7 @@ const FeatureShowcase = ({
 const LandingPage = () => {
   const navigate = useNavigate();
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
-  const { get, loading } = useLandingContent();
+  const { get, content, loading } = useLandingContent();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [currency, setCurrency] = useState<Currency>("BDT");
   const [activeScreenshot, setActiveScreenshot] = useState(0);
