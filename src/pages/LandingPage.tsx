@@ -1933,50 +1933,75 @@ const LandingPage = () => {
                 {get("testimonials_subtitle", "See how businesses just like yours are leveling up.")}
               </p>
             </AnimSection>
-            <div className="grid md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => {
-                const imgUrl = get(`testimonial_${i}_image`);
-                return (
-                  <AnimItem key={i} delay={(i - 1) * 0.12}>
-                    <Card className="border-border/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 bg-card/80 backdrop-blur-sm relative overflow-hidden group h-full">
-                      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <CardContent className="p-6">
-                        <Quote className="h-7 w-7 text-primary/20 mb-3" />
-                        <div className="flex gap-1 mb-3">
-                          {Array.from({ length: 5 }).map((_, j) => (
-                            <Star key={j} className="h-4 w-4 fill-primary text-primary" />
-                          ))}
+            {(() => {
+              const defaults = [
+                { name: "Rahim Ahmed", role: "E-commerce Owner, Dhaka", text: "This platform completely transformed how I manage my online store. Orders, customers, payments — everything in one place. I saved 20+ hours per week." },
+                { name: "Priya Sharma", role: "Boutique Owner, Mumbai", text: "The multi-store feature is a game changer. I manage 3 shops from my phone while traveling. The analytics help me make smarter decisions every day." },
+                { name: "David Chen", role: "Wholesale Distributor, Singapore", text: "We switched from spreadsheets and saved 15+ hours per week. The reports alone are worth the subscription. Best business decision we made this year." },
+                { name: "Amina Khan", role: "Fashion Retailer, Karachi", text: "Inventory tracking is flawless. Low-stock alerts saved us from running out during our biggest sale of the year. Customer support is incredibly responsive." },
+                { name: "James Carter", role: "Cafe Owner, London", text: "Set up took 10 minutes and my staff picked it up immediately. The POS is faster than anything we used before. Highly recommend to any small business." },
+                { name: "Fatima Noor", role: "Salon Owner, Dubai", text: "Loyalty points and customer profiles helped us bring back 40% more repeat customers. The WhatsApp integration is pure magic for reminders." },
+                { name: "Carlos Rivera", role: "Grocery Chain, Madrid", text: "Managing 5 locations used to be chaos. Now I see live sales, stock, and staff performance from one dashboard. Worth every cent." },
+                { name: "Sofia Reyes", role: "Online Seller, Manila", text: "Integrated WooCommerce sync just works. Orders flow in automatically and my profit reports are accurate to the cent. I finally trust my numbers." },
+                { name: "Tanvir Hasan", role: "Electronics Store, Chittagong", text: "Due book and customer credits feature is exactly what we needed. We recovered lakhs in old dues just by sending automated reminders." },
+                { name: "Aarav Mehta", role: "Pharmacy Owner, Delhi", text: "Barcode scanning, batch tracking, expiry alerts — it has everything a pharmacy needs. Cleanest UI I've used in any business app." },
+              ];
+              const reviews = defaults.map((d, idx) => {
+                const i = idx + 1;
+                return {
+                  name: get(`testimonial_${i}_name`, d.name),
+                  role: get(`testimonial_${i}_role`, d.role),
+                  text: get(`testimonial_${i}_text`, d.text),
+                  image: get(`testimonial_${i}_image`),
+                };
+              });
+              const row1 = reviews.slice(0, 5);
+              const row2 = reviews.slice(5, 10);
+              const Card1 = ({ r }: { r: typeof reviews[number] }) => (
+                <div className="shrink-0 w-[300px] sm:w-[360px] mx-3">
+                  <div className="h-full rounded-2xl border border-border/50 bg-card/70 backdrop-blur-md shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)] hover:shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.25)] hover:border-primary/30 transition-all duration-300 p-6">
+                    <div className="flex gap-1 mb-3">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star key={j} className="h-4 w-4 fill-primary text-primary" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-foreground/80 leading-relaxed mb-5 line-clamp-5">
+                      "{r.text}"
+                    </p>
+                    <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                      {r.image ? (
+                        <img src={r.image} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-primary/20" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 flex items-center justify-center border-2 border-primary/20">
+                          <span className="text-sm font-bold text-primary">{r.name.charAt(0)}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                          "{get(`testimonial_${i}_text`, get("testimonial_fallback_text", "Great platform!"))}"
-                        </p>
-                        <div className="flex items-center gap-3">
-                          {imgUrl ? (
-                            <img
-                              src={imgUrl}
-                              alt=""
-                              className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/20">
-                              <span className="text-sm font-bold text-primary">
-                                {get(`testimonial_${i}_name`, "U").charAt(0)}
-                              </span>
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-semibold text-sm">{get(`testimonial_${i}_name`, "User")}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {get(`testimonial_${i}_role`, "Business Owner")}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </AnimItem>
-                );
-              })}
-            </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm truncate">{r.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{r.role}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+              const Row = ({ items, direction }: { items: typeof reviews; direction: "left" | "right" }) => (
+                <div className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+                  <div
+                    className={`flex w-max ${direction === "left" ? "animate-marquee-left" : "animate-marquee-right"} group-hover:[animation-play-state:paused] motion-reduce:animate-none`}
+                  >
+                    {[...items, ...items].map((r, idx) => (
+                      <Card1 key={`${direction}-${idx}`} r={r} />
+                    ))}
+                  </div>
+                </div>
+              );
+              return (
+                <div className="space-y-5">
+                  <Row items={row1} direction="left" />
+                  <Row items={row2} direction="right" />
+                </div>
+              );
+            })()}
           </div>
         </section>
       )}
