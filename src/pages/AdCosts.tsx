@@ -23,8 +23,7 @@ import {
   Plus, Trash2, Pencil, Search, Megaphone, MousePointerClick, DollarSign,
   TrendingUp, TrendingDown, Target, Eye, BarChart3, Download, FileText,
   Calendar, Zap, ArrowUpRight, ArrowDownRight, Sparkles, BookOpen,
-  ChevronUp, ChevronDown, Lightbulb, Activity, Award, AlertTriangle,
-  CheckCircle2, Info, LineChart as LineChartIcon, Flame
+  ChevronUp, ChevronDown, Lightbulb, Activity, Award, LineChart as LineChartIcon, Flame
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
