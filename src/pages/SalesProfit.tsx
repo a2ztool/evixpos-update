@@ -374,6 +374,53 @@ const SalesProfit = () => {
     return { best: sorted[0], worst: sorted[sorted.length - 1] };
   }, [dailyTrend]);
 
+  // Weekday performance (Mon..Sun)
+  const weekdayPerformance = useMemo(() => {
+    const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const map = WD.map((d) => ({ day: d, revenue: 0, orders: 0 }));
+    completedOrders.forEach((o) => {
+      const idx = new Date(o.created_at).getDay();
+      map[idx].revenue += Number(o.total_amount);
+      map[idx].orders += 1;
+    });
+    // Reorder to Mon-first
+    const ordered = [...map.slice(1), map[0]];
+    const max = Math.max(1, ...ordered.map((d) => d.revenue));
+    const top = [...ordered].sort((a, b) => b.revenue - a.revenue)[0];
+    return { rows: ordered, max, top };
+  }, [completedOrders]);
+
+  // Peak hours (0..23) -> top 3 hour buckets
+  const peakHours = useMemo(() => {
+    const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, revenue: 0, orders: 0 }));
+    completedOrders.forEach((o) => {
+      const h = new Date(o.created_at).getHours();
+      buckets[h].revenue += Number(o.total_amount);
+      buckets[h].orders += 1;
+    });
+    const max = Math.max(1, ...buckets.map((b) => b.revenue));
+    const top = [...buckets].sort((a, b) => b.revenue - a.revenue).slice(0, 3);
+    const fmt = (h: number) => {
+      const ampm = h >= 12 ? "PM" : "AM";
+      const hh = h % 12 === 0 ? 12 : h % 12;
+      return `${hh} ${ampm}`;
+    };
+    return { buckets, max, top, fmt };
+  }, [completedOrders]);
+
+  // 7-day revenue forecast (simple weighted avg + trend)
+  const forecast = useMemo(() => {
+    if (dailyTrend.length < 2) return null;
+    const recent = dailyTrend.slice(-7);
+    const avg = recent.reduce((s, d) => s + d.revenue, 0) / recent.length;
+    const first = recent[0].revenue || 1;
+    const last = recent[recent.length - 1].revenue || 0;
+    const velocity = ((last - first) / first) * 100; // %
+    const projected7d = avg * 7 * (1 + Math.max(-0.5, Math.min(0.5, velocity / 100)) * 0.25);
+    return { avg, velocity, projected7d };
+  }, [dailyTrend]);
+
+
   const exportCSV = () => {
     const headers = ["Date", "Revenue", "Cost", "Profit", "Discount", "Payment Method", "Source", "Status"];
     const rows = completedOrders.map((o) => [
@@ -810,27 +857,157 @@ const SalesProfit = () => {
             </Card>
           </div>
 
-          {/* Best & Worst Day */}
-          {bestWorstDay && bestWorstDay.best.revenue > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="rounded-2xl border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Award className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Best Day</span>
+          {/* Advanced Insights: Weekday Performance + Peak Hours + Forecast */}
+          {completedOrders.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Weekday Performance */}
+              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Calendar className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-bold">Weekday Performance</CardTitle>
+                        <p className="text-[10px] text-muted-foreground">Revenue by day of week</p>
+                      </div>
+                    </div>
+                    {weekdayPerformance.top.revenue > 0 && (
+                      <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-0 font-semibold">
+                        Top: {weekdayPerformance.top.day}
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-2xl font-bold tabular-nums">৳{bestWorstDay.best.revenue.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{bestWorstDay.best.day} • {bestWorstDay.best.orders} orders</p>
+                </CardHeader>
+                <CardContent className="pt-2 space-y-2">
+                  {weekdayPerformance.rows.map((d) => {
+                    const pct = (d.revenue / weekdayPerformance.max) * 100;
+                    const isTop = d.day === weekdayPerformance.top.day && d.revenue > 0;
+                    return (
+                      <div key={d.day} className="flex items-center gap-2.5">
+                        <span className={`text-[11px] w-8 font-semibold ${isTop ? "text-primary" : "text-muted-foreground"}`}>{d.day}</span>
+                        <div className="flex-1 h-5 bg-muted/40 rounded-md overflow-hidden relative">
+                          <div
+                            className={`h-full rounded-md transition-all ${isTop ? "bg-gradient-to-r from-primary to-primary/70" : "bg-primary/30"}`}
+                            style={{ width: `${Math.max(pct, 2)}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center px-2 text-[10px] font-semibold tabular-nums text-foreground/80">
+                            ৳{d.revenue.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingDown className="h-4 w-4 text-amber-600" />
-                    <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Slowest Day</span>
+
+              {/* Peak Hours Heatmap */}
+              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Activity className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-bold">Peak Hours</CardTitle>
+                        <p className="text-[10px] text-muted-foreground">When customers buy most</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold tabular-nums">৳{bestWorstDay.worst.revenue.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{bestWorstDay.worst.day} • {bestWorstDay.worst.orders} orders</p>
+                </CardHeader>
+                <CardContent className="pt-2 space-y-3">
+                  {/* 24h heatmap */}
+                  <div className="grid grid-cols-12 gap-1">
+                    {peakHours.buckets.map((b) => {
+                      const intensity = b.revenue / peakHours.max;
+                      return (
+                        <div
+                          key={b.hour}
+                          title={`${peakHours.fmt(b.hour)} — ৳${b.revenue.toLocaleString()} • ${b.orders} orders`}
+                          className="aspect-square rounded-[5px] border border-primary/10"
+                          style={{ backgroundColor: `hsl(var(--primary) / ${0.08 + intensity * 0.85})` }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                    <span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span>
+                  </div>
+                  {/* Top 3 hours */}
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    {peakHours.top.map((b, i) => (
+                      <div key={b.hour} className="rounded-xl bg-primary/5 border border-primary/10 p-2 text-center">
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">#{i + 1} Peak</p>
+                        <p className="text-sm font-bold text-primary mt-0.5">{peakHours.fmt(b.hour)}</p>
+                        <p className="text-[9px] text-muted-foreground tabular-nums">{b.orders} orders</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Smart Forecast */}
+              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background lg:col-span-1 relative overflow-hidden">
+                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+                <CardHeader className="pb-2 relative">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow">
+                        <Sparkles className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-bold">Smart Forecast</CardTitle>
+                        <p className="text-[10px] text-muted-foreground">AI-powered 7-day projection</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2 space-y-3 relative">
+                  {forecast ? (
+                    <>
+                      <div className="rounded-xl bg-background/60 backdrop-blur border border-primary/15 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Projected next 7 days</p>
+                        <p className="text-2xl font-bold text-primary tabular-nums mt-1">৳{Math.round(forecast.projected7d).toLocaleString()}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {forecast.velocity >= 0 ? (
+                            <ArrowUpRight className="h-3 w-3 text-emerald-600" />
+                          ) : (
+                            <ArrowDownRight className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className={`text-[10px] font-semibold ${forecast.velocity >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {forecast.velocity >= 0 ? "+" : ""}{forecast.velocity.toFixed(1)}% velocity
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-background/60 border border-primary/10 p-2.5">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Daily Avg</p>
+                          <p className="text-sm font-bold tabular-nums mt-0.5">৳{Math.round(forecast.avg).toLocaleString()}</p>
+                        </div>
+                        {bestWorstDay && bestWorstDay.best.revenue > 0 && (
+                          <div className="rounded-xl bg-background/60 border border-primary/10 p-2.5">
+                            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Best Day</p>
+                            <p className="text-sm font-bold tabular-nums mt-0.5">৳{bestWorstDay.best.revenue.toLocaleString()}</p>
+                            <p className="text-[9px] text-muted-foreground">{bestWorstDay.best.day}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-start gap-2 rounded-xl bg-primary/10 border border-primary/20 p-2.5">
+                        <Lightbulb className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                        <p className="text-[10px] text-foreground/80 leading-relaxed">
+                          {forecast.velocity >= 5
+                            ? `Sales trending up. Stock more of your top sellers on ${weekdayPerformance.top.day}.`
+                            : forecast.velocity <= -5
+                            ? `Sales slowing. Consider a promo or campaign during peak hours (${peakHours.top[0] ? peakHours.fmt(peakHours.top[0].hour) : "evening"}).`
+                            : `Sales steady. Maintain stock & double down on ${weekdayPerformance.top.day} performance.`}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-8">Not enough data for forecast</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
