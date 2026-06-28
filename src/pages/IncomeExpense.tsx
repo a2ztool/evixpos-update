@@ -167,20 +167,13 @@ const IncomeExpense = () => {
   // Fetch payment accounts (configured in Settings → Payment Methods)
   const fetchAccounts = useCallback(async () => {
     if (!activeStore || !effectiveUserId) return;
-    let { data } = await supabase
+    // Strictly per-store: do NOT fall back to any other store's settings
+    const { data } = await supabase
       .from("business_settings")
       .select("payment_methods")
       .eq("user_id", effectiveUserId)
       .eq("store_id", activeStore.id)
       .maybeSingle();
-    if (!data) {
-      const fb = await supabase
-        .from("business_settings")
-        .select("payment_methods")
-        .eq("user_id", effectiveUserId)
-        .maybeSingle();
-      data = fb.data as any;
-    }
     const list = (data?.payment_methods as any[] | null) || [];
     setAccounts(
       list
