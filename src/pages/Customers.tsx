@@ -482,15 +482,15 @@ const Customers = () => {
       <UsageWarningBanner type="customers" />
 
       {/* ===== Compact Hero Header ===== */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-background px-4 py-3 sm:px-5 sm:py-4 mb-3">
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/[0.08] via-primary/[0.03] to-background px-3 py-3 sm:px-5 sm:py-4 mb-3">
         <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-wrap items-center gap-3">
-          {/* Title block */}
+        <div className="relative flex flex-col lg:flex-row lg:items-center gap-3">
+          {/* Title + Health row */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
               <Users className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h1 className="text-base sm:text-lg font-bold tracking-tight leading-none">Customers</h1>
                 <Badge variant="outline" className="h-4 px-1.5 text-[9px] gap-0.5 font-medium">
@@ -502,41 +502,41 @@ const Customers = () => {
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block">Segment, engage and retain — SaaS-scale growth.</p>
             </div>
+
+            {/* Inline Health Score (compact on mobile) */}
+            <div className="flex items-center gap-2 rounded-lg border bg-card/70 backdrop-blur px-2 py-1 shrink-0">
+              <div className="relative h-8 w-8 sm:h-9 sm:w-9 shrink-0">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                  <circle
+                    cx="18" cy="18" r="15" fill="none" strokeWidth="3" strokeLinecap="round"
+                    stroke="currentColor"
+                    className={healthColor}
+                    strokeDasharray={2 * Math.PI * 15}
+                    strokeDashoffset={2 * Math.PI * 15 * (1 - healthScore / 100)}
+                  />
+                </svg>
+                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${healthColor}`}>{healthScore}</div>
+              </div>
+              <div className="leading-tight hidden sm:block">
+                <p className={`text-xs font-semibold ${healthColor}`}>{healthLabel}</p>
+                <p className="text-[10px] text-muted-foreground">R {stats.repeatRate.toFixed(0)}% · C {stats.conversionRate.toFixed(0)}%</p>
+              </div>
+            </div>
           </div>
 
-          {/* Inline Health Score */}
-          <div className="flex items-center gap-2.5 rounded-lg border bg-card/70 backdrop-blur px-2.5 py-1.5">
-            <div className="relative h-9 w-9 shrink-0">
-              <svg className="h-9 w-9 -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-                <circle
-                  cx="18" cy="18" r="15" fill="none" strokeWidth="3" strokeLinecap="round"
-                  stroke="currentColor"
-                  className={healthColor}
-                  strokeDasharray={2 * Math.PI * 15}
-                  strokeDashoffset={2 * Math.PI * 15 * (1 - healthScore / 100)}
-                />
-              </svg>
-              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${healthColor}`}>{healthScore}</div>
-            </div>
-            <div className="leading-tight">
-              <p className={`text-xs font-semibold ${healthColor}`}>{healthLabel}</p>
-              <p className="text-[10px] text-muted-foreground">R {stats.repeatRate.toFixed(0)}% · C {stats.conversionRate.toFixed(0)}%</p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(o => !o)} className="h-8 w-8" title="Guide">
+          {/* Actions row */}
+          <div className="flex items-center gap-1.5 w-full lg:w-auto lg:ml-auto">
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(o => !o)} className="h-8 w-8 shrink-0" title="Guide">
               <BookOpen className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 h-8 px-2.5">
-              <FileDown className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Export</span>
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 h-8 px-2.5 flex-1 lg:flex-none">
+              <FileDown className="h-3.5 w-3.5" /> <span>Export</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => { setImportRows([]); setImportOpen(true); }} className="gap-1.5 h-8 px-2.5">
-              <Upload className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Import</span>
+            <Button variant="outline" size="sm" onClick={() => { setImportRows([]); setImportOpen(true); }} className="gap-1.5 h-8 px-2.5 flex-1 lg:flex-none">
+              <Upload className="h-3.5 w-3.5" /> <span>Import</span>
             </Button>
-            <Button size="sm" onClick={openAdd} className="gap-1.5 h-8 px-3">
+            <Button size="sm" onClick={openAdd} className="gap-1.5 h-8 px-3 flex-1 lg:flex-none">
               <Plus className="h-3.5 w-3.5" /> Add
             </Button>
           </div>
