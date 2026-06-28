@@ -522,6 +522,9 @@ const SettingsPage = () => {
     }
     setStaffCreating(true);
     try {
+      const selectedStoreIds = newStaff.store_ids.length > 0
+        ? newStaff.store_ids
+        : (activeStore ? [activeStore.id] : []);
       const { data, error } = await supabase.functions.invoke("create-staff-user", {
         body: {
           name: newStaff.name,
@@ -530,14 +533,15 @@ const SettingsPage = () => {
           phone: newStaff.phone,
           role: newStaff.role,
           permissions: newStaff.permissions,
-          store_id: activeStore?.id ?? null,
+          store_id: selectedStoreIds[0] ?? null,
+          store_ids: selectedStoreIds,
         },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       if (data?.staff) {
         setStaff(prev => [...prev, { ...data.staff, permissions: (data.staff.permissions as string[]) ?? [] }]);
-        setNewStaff({ name: "", email: "", phone: "", password: "", role: "staff", permissions: ROLE_PRESETS["staff"] });
+        setNewStaff({ name: "", email: "", phone: "", password: "", role: "staff", permissions: ROLE_PRESETS["staff"], store_ids: [] });
         setStaffDialog(false);
         toast.success(lang === "bn" ? "স্টাফ যোগ হয়েছে! তারা এখন লগইন করতে পারবে।" : "Staff added! They can now login with their email & password.");
       }
@@ -556,9 +560,15 @@ const SettingsPage = () => {
     }
     setStaffCreating(true);
     try {
+      const editIds = (editingStaff as any).store_ids as string[] | undefined;
+      const finalIds = Array.isArray(editIds) && editIds.length > 0
+        ? editIds
+        : ((editingStaff as any).store_id ? [(editingStaff as any).store_id as string] : []);
       const { error: updErr } = await supabase.from("staff_members").update({
         name: editingStaff.name, email: editingStaff.email, phone: editingStaff.phone,
         role: editingStaff.role, permissions: editingStaff.permissions as any,
+        store_id: finalIds[0] ?? null,
+        store_ids: finalIds as any,
       }).eq("id", editingStaff.id);
       if (updErr) throw new Error(updErr.message);
 
