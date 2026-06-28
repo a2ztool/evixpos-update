@@ -504,7 +504,13 @@ const SettingsPage = () => {
   });
 
   // ─── Staff ───
-  const storeFilteredStaff = staff.filter(s => !activeStore || (s as any).store_id === activeStore.id || !(s as any).store_id);
+  const storeFilteredStaff = staff.filter(s => {
+    if (!activeStore) return true;
+    const ids = ((s as any).store_ids as string[] | null) ?? [];
+    if (ids.includes(activeStore.id)) return true;
+    const single = (s as any).store_id as string | null | undefined;
+    return !single || single === activeStore.id;
+  });
   const PLAN_STAFF_LIMITS: Record<string, number> = { free: 1, pro: 3, business: 10 };
   const staffLimit = PLAN_STAFF_LIMITS[plan] ?? 1;
   const activeStaffCount = staff.filter(s => s.is_active).length;
