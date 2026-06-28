@@ -350,20 +350,20 @@ const Referral = () => {
             { label: "Premium", value: premiumUsers, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", trend: `${premiumConversion}%` },
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
-            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-xl h-full">
-              <CardContent className="p-3.5 h-full">
+            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-2xl h-full">
+              <CardContent className="p-4 h-full">
                 <div className="flex items-center gap-3 h-full">
                   <div className={`h-10 w-10 shrink-0 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
                     <stat.icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight truncate">{stat.label}</p>
                       {stat.trend && (
-                        <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold shrink-0 border-border/60">{stat.trend}</Badge>
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-semibold shrink-0 border-border/60">{stat.trend}</Badge>
                       )}
                     </div>
-                    <p className="text-base font-bold tabular-nums leading-tight truncate mt-1">{stat.value}</p>
+                    <p className="text-base sm:text-lg font-bold tabular-nums leading-tight truncate mt-0.5">{stat.value}</p>
                   </div>
                 </div>
               </CardContent>
