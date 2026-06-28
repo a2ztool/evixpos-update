@@ -374,6 +374,53 @@ const SalesProfit = () => {
     return { best: sorted[0], worst: sorted[sorted.length - 1] };
   }, [dailyTrend]);
 
+  // Weekday performance (Mon..Sun)
+  const weekdayPerformance = useMemo(() => {
+    const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const map = WD.map((d) => ({ day: d, revenue: 0, orders: 0 }));
+    completedOrders.forEach((o) => {
+      const idx = new Date(o.created_at).getDay();
+      map[idx].revenue += Number(o.total_amount);
+      map[idx].orders += 1;
+    });
+    // Reorder to Mon-first
+    const ordered = [...map.slice(1), map[0]];
+    const max = Math.max(1, ...ordered.map((d) => d.revenue));
+    const top = [...ordered].sort((a, b) => b.revenue - a.revenue)[0];
+    return { rows: ordered, max, top };
+  }, [completedOrders]);
+
+  // Peak hours (0..23) -> top 3 hour buckets
+  const peakHours = useMemo(() => {
+    const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, revenue: 0, orders: 0 }));
+    completedOrders.forEach((o) => {
+      const h = new Date(o.created_at).getHours();
+      buckets[h].revenue += Number(o.total_amount);
+      buckets[h].orders += 1;
+    });
+    const max = Math.max(1, ...buckets.map((b) => b.revenue));
+    const top = [...buckets].sort((a, b) => b.revenue - a.revenue).slice(0, 3);
+    const fmt = (h: number) => {
+      const ampm = h >= 12 ? "PM" : "AM";
+      const hh = h % 12 === 0 ? 12 : h % 12;
+      return `${hh} ${ampm}`;
+    };
+    return { buckets, max, top, fmt };
+  }, [completedOrders]);
+
+  // 7-day revenue forecast (simple weighted avg + trend)
+  const forecast = useMemo(() => {
+    if (dailyTrend.length < 2) return null;
+    const recent = dailyTrend.slice(-7);
+    const avg = recent.reduce((s, d) => s + d.revenue, 0) / recent.length;
+    const first = recent[0].revenue || 1;
+    const last = recent[recent.length - 1].revenue || 0;
+    const velocity = ((last - first) / first) * 100; // %
+    const projected7d = avg * 7 * (1 + Math.max(-0.5, Math.min(0.5, velocity / 100)) * 0.25);
+    return { avg, velocity, projected7d };
+  }, [dailyTrend]);
+
+
   const exportCSV = () => {
     const headers = ["Date", "Revenue", "Cost", "Profit", "Discount", "Payment Method", "Source", "Status"];
     const rows = completedOrders.map((o) => [
