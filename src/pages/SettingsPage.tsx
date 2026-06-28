@@ -1182,7 +1182,22 @@ const SettingsPage = () => {
     );
   };
 
-  const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[] }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => (
+  const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[]; store_ids?: string[]; store_id?: string | null }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => {
+    const selectedStoreIds: string[] = Array.isArray(data.store_ids) && data.store_ids.length > 0
+      ? data.store_ids
+      : (data.store_id ? [data.store_id] : (isNew && activeStore ? [activeStore.id] : []));
+    const toggleStore = (id: string, checked: boolean) => {
+      setter((p: any) => {
+        const current: string[] = Array.isArray(p.store_ids) && p.store_ids.length > 0
+          ? p.store_ids
+          : (p.store_id ? [p.store_id] : (isNew && activeStore ? [activeStore.id] : []));
+        const next = checked
+          ? Array.from(new Set([...current, id]))
+          : current.filter(s => s !== id);
+        return { ...p, store_ids: next, store_id: next[0] ?? null };
+      });
+    };
+    return (
     <div className="space-y-4 mt-2">
       <div className="space-y-1.5"><Label>{t.name}</Label>
         <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
@@ -1245,11 +1260,64 @@ const SettingsPage = () => {
           </SelectContent>
         </Select>
       </div>
-      {activeStore && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-          <Store className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{lang === "bn" ? "এই স্টাফ যুক্ত হবে:" : "Assigned to:"}</span>
-          <Badge variant="outline" className="text-xs">{activeStore.name}</Badge>
+      {stores.length > 0 && (
+        <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Store className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-medium">
+                {lang === "bn" ? "স্টোর অ্যাক্সেস" : "Store Access"}
+              </span>
+              <Badge variant="outline" className="text-[10px]">{selectedStoreIds.length}/{stores.length}</Badge>
+            </div>
+            <button
+              type="button"
+              className="text-[11px] text-primary hover:underline"
+              onClick={() => {
+                const all = stores.map(s => s.id);
+                const allSelected = selectedStoreIds.length === all.length;
+                setter((p: any) => ({
+                  ...p,
+                  store_ids: allSelected ? [] : all,
+                  store_id: allSelected ? null : all[0],
+                }));
+              }}
+            >
+              {selectedStoreIds.length === stores.length
+                ? (lang === "bn" ? "সব বাদ দিন" : "Clear all")
+                : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {lang === "bn"
+              ? "এই স্টাফ যেসব স্টোরে অ্যাক্সেস পাবে নির্বাচন করুন। প্রতিটি স্টোর সম্পূর্ণ আলাদা থাকবে।"
+              : "Select every store this staff should access. Each store stays fully isolated."}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto">
+            {stores.map(s => {
+              const checked = selectedStoreIds.includes(s.id);
+              return (
+                <label
+                  key={s.id}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors text-xs ${
+                    checked ? "bg-primary/10 border-primary/40" : "bg-background border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => toggleStore(s.id, !!v)}
+                  />
+                  <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{s.name}</span>
+                </label>
+              );
+            })}
+          </div>
+          {selectedStoreIds.length === 0 && (
+            <p className="text-[11px] text-destructive">
+              {lang === "bn" ? "কমপক্ষে একটি স্টোর নির্বাচন করুন" : "Select at least one store"}
+            </p>
+          )}
         </div>
       )}
       <div className="space-y-1.5">
@@ -1258,11 +1326,12 @@ const SettingsPage = () => {
           {renderPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
         </div>
       </div>
-      <Button onClick={onSubmit} className="w-full" disabled={staffCreating}>
+      <Button onClick={onSubmit} className="w-full" disabled={staffCreating || selectedStoreIds.length === 0}>
         {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
       </Button>
     </div>
-  );
+    );
+  };
 
   const renderStaff = () => (
     <div className="space-y-6">
