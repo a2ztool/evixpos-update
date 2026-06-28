@@ -335,7 +335,6 @@ const SettingsPage = () => {
       const { data: s } = await supabase
         .from("business_settings")
         .select("*")
-        .eq("user_id", uid)
         .eq("store_id", activeStore.id)
         .maybeSingle();
       if (s) {
@@ -417,7 +416,6 @@ const SettingsPage = () => {
       const { data: storeExisting } = await supabase
         .from("business_settings")
         .select("id")
-        .eq("user_id", uid)
         .eq("store_id", activeStore.id)
         .maybeSingle();
       if (storeExisting) {
