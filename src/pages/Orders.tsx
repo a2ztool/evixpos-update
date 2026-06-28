@@ -319,12 +319,10 @@ const fetchProducts = async () => {
   // Fetch dynamic store settings (payment methods + currency)
   useEffect(() => {
     if (!user || !activeStore) { setSettingsLoading(false); return; }
-    const ownerId = effectiveUserId || user.id;
     setSettingsLoading(true);
     supabase
       .from("business_settings")
       .select("payment_methods, default_currency")
-      .eq("user_id", ownerId)
       .eq("store_id", activeStore.id)
       .maybeSingle()
       .then(({ data }) => {
