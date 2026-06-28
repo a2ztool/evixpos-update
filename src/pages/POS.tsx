@@ -220,7 +220,6 @@ const POS = () => {
 
   useEffect(() => {
     if (!user || !activeStore) return;
-    const ownerId = effectiveUserId || user.id;
     fetchProductsAndVariations();
     refetchAfterSyncRef.current = () => { fetchProductsAndVariations(); };
     if (navigator.onLine) {

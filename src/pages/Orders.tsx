@@ -319,7 +319,6 @@ const fetchProducts = async () => {
   // Fetch dynamic store settings (payment methods + currency)
   useEffect(() => {
     if (!user || !activeStore) { setSettingsLoading(false); return; }
-    const ownerId = effectiveUserId || user.id;
     setSettingsLoading(true);
     supabase
       .from("business_settings")
