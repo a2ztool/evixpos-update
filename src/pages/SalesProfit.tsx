@@ -28,7 +28,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, differenceInDays } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, isWithinInterval, differenceInDays, min as minDate } from "date-fns";
 
 interface Order {
   id: string;
@@ -119,19 +119,36 @@ const SalesProfit = () => {
 
   const getDateRange = useCallback((): { from: Date; to: Date } | null => {
     const now = new Date();
+    // Normalize every preset to [startOfDay(from) .. endOfDay(to)] in the user's
+    // local time zone, and never extend `to` past the current moment so future
+    // hours within "today" / current week / current month don't get counted as
+    // empty range padding. This is the single source of truth for every KPI,
+    // chart, top-products list and the per-product report.
+    const clampTo = (d: Date) => minDate([endOfDay(d), now]);
     switch (datePreset) {
-      case "today": return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate()), to: now };
-      case "week": return { from: startOfWeek(now), to: endOfWeek(now) };
-      case "month": return { from: startOfMonth(now), to: endOfMonth(now) };
-      case "last7": return { from: subDays(now, 7), to: now };
-      case "last30": return { from: subDays(now, 30), to: now };
-      case "last90": return { from: subDays(now, 90), to: now };
-      case "year": return { from: new Date(now.getFullYear(), 0, 1), to: now };
+      case "today":
+        return { from: startOfDay(now), to: clampTo(now) };
+      case "week":
+        return { from: startOfDay(startOfWeek(now)), to: clampTo(endOfWeek(now)) };
+      case "month":
+        return { from: startOfDay(startOfMonth(now)), to: clampTo(endOfMonth(now)) };
+      case "last7":
+        return { from: startOfDay(subDays(now, 6)), to: clampTo(now) };
+      case "last30":
+        return { from: startOfDay(subDays(now, 29)), to: clampTo(now) };
+      case "last90":
+        return { from: startOfDay(subDays(now, 89)), to: clampTo(now) };
+      case "year":
+        return { from: startOfDay(new Date(now.getFullYear(), 0, 1)), to: clampTo(now) };
       case "custom":
-        if (customDateFrom && customDateTo) return { from: customDateFrom, to: customDateTo };
+        if (customDateFrom && customDateTo) {
+          return { from: startOfDay(customDateFrom), to: clampTo(customDateTo) };
+        }
         return null;
-      case "all": return null;
-      default: return null;
+      case "all":
+        return null;
+      default:
+        return null;
     }
   }, [datePreset, customDateFrom, customDateTo]);
 
