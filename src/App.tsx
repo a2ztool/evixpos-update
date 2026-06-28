@@ -75,6 +75,9 @@ const OfflineProfitLoss = lazyPage(() => import("./pages/OfflineProfitLoss"));
 const StaffPerformance = lazyPage(() => import("./pages/StaffPerformance"));
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
 const ResetPassword = lazyPage(() => import("./pages/ResetPassword"));
+const VerifyOtp = lazyPage(() => import("./pages/VerifyOtp"));
+const ForgotPassword = lazyPage(() => import("./pages/ForgotPassword"));
+const ResetPasswordNew = lazyPage(() => import("./pages/ResetPasswordNew"));
 const PublicOrderForm = lazyPage(() => import("./pages/PublicOrderForm"));
 const PublicInvoice = lazyPage(() => import("./pages/PublicInvoice"));
 const FacebookCallback = lazyPage(() => import("./pages/FacebookCallback"));
@@ -193,6 +196,9 @@ const App = () => {
             <Route path="/app" element={<AppEntry />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/verify-otp" element={<VerifyOtp />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password-new" element={<ResetPasswordNew />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/f/:slug" element={<PublicOrderForm />} />
             <Route path="/i/:id" element={<PublicInvoice />} />

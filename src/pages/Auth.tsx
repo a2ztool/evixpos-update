@@ -173,60 +173,53 @@ const Auth = () => {
     setTermsError(false);
     setLoading(true);
 
-    let referrerId: string | null = null;
+    // Validate referral code (if provided) BEFORE sending OTP
     if (referralCode.trim()) {
       const { data: refSettings } = await supabase
         .from("referral_settings")
-        .select("user_id, id")
+        .select("id")
         .eq("referral_code", referralCode.trim().toUpperCase())
         .maybeSingle();
-
       if (!refSettings) {
+        signupForm.setFieldError("referralCode", "Invalid referral code");
         toast.error("Invalid referral code.");
         setLoading(false);
         return;
       }
-      referrerId = refSettings.user_id;
-      await supabase.rpc("has_role" as any).then(() => {});
-      await supabase
-        .from("referral_settings")
-        .update({ total_clicks: (refSettings as any).total_clicks + 1 })
-        .eq("id", refSettings.id);
     }
 
-    const { data: signupData, error } = await supabase.auth.signUp({
+    // Send a 6-digit OTP to the email. Account creation happens after verification.
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
       options: {
+        shouldCreateUser: true,
         data: { name, referral_code: referralCode.trim().toUpperCase() || null },
-        emailRedirectTo: window.location.origin,
       },
     });
 
     if (error) {
-      if (error.message?.includes("already registered")) {
+      if (error.status === 429) toast.error("Too many attempts. Please wait a moment.");
+      else if (error.message?.toLowerCase().includes("already")) {
         signupForm.setFieldError("email", "Email already registered. Please sign in.");
         toast.error("Email already registered. Please sign in.");
-      } else if (error.status === 429) toast.error("Too many attempts. Please wait.");
-      else toast.error(error.message || "Signup failed.");
+      } else {
+        toast.error(error.message || "Could not send verification code.");
+      }
       setLoading(false);
       return;
     }
 
-    if (referrerId && signupData.user) {
-      await supabase.from("referrals").insert({
-        referrer_id: referrerId,
-        referred_email: email,
-        referred_user_id: signupData.user.id,
-        status: "pending",
-        plan: "free",
-        commission_amount: 0,
-        is_paid: false,
-      });
-    }
-
-    toast.success("Account created! Check your email to confirm.");
+    toast.success("Verification code sent to your email.");
     setLoading(false);
+    navigate("/auth/verify-otp", {
+      state: {
+        email,
+        mode: "signup",
+        password,
+        name,
+        referralCode: referralCode.trim().toUpperCase() || undefined,
+      },
+    });
   };
 
   const handleGoogleLogin = async () => {
@@ -241,17 +234,8 @@ const Auth = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      loginForm.setFieldError("email", "Please enter your email first");
-      toast.error("Please enter your email first.");
-      return;
-    }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent!");
+  const handleForgotPassword = () => {
+    navigate("/auth/forgot-password", { state: { email } });
   };
 
   const Highlight = highlights[highlightIdx].icon;
