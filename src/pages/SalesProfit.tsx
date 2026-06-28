@@ -859,37 +859,37 @@ const SalesProfit = () => {
 
           {/* Advanced Insights: Weekday Performance + Peak Hours + Forecast */}
           {completedOrders.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* Weekday Performance */}
-              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
-                <CardHeader className="pb-2">
+              <Card className="rounded-xl border-primary/15 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
+                <CardHeader className="p-3 pb-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Calendar className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-bold">Weekday Performance</CardTitle>
-                        <p className="text-[10px] text-muted-foreground">Revenue by day of week</p>
+                        <CardTitle className="text-xs font-semibold">Weekday Performance</CardTitle>
+                        <p className="text-[9px] text-muted-foreground">Revenue by day</p>
                       </div>
                     </div>
                     {weekdayPerformance.top.revenue > 0 && (
-                      <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-0 font-semibold">
+                      <Badge variant="secondary" className="text-[9px] bg-primary/10 text-primary border-0 font-medium px-1.5 py-0">
                         Top: {weekdayPerformance.top.day}
                       </Badge>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="pt-2 space-y-2">
+                <CardContent className="p-3 pt-1 space-y-1.5">
                   {weekdayPerformance.rows.map((d) => {
                     const pct = (d.revenue / weekdayPerformance.max) * 100;
                     const isTop = d.day === weekdayPerformance.top.day && d.revenue > 0;
                     return (
-                      <div key={d.day} className="flex items-center gap-2.5">
-                        <span className={`text-[11px] w-8 font-semibold ${isTop ? "text-primary" : "text-muted-foreground"}`}>{d.day}</span>
-                        <div className="flex-1 h-5 bg-muted/40 rounded-md overflow-hidden relative">
+                      <div key={d.day} className="flex items-center gap-2">
+                        <span className={`text-[10px] w-6 font-semibold ${isTop ? "text-primary" : "text-muted-foreground"}`}>{d.day}</span>
+                        <div className="flex-1 h-4 bg-muted/50 rounded-md overflow-hidden relative">
                           <div
-                            className={`h-full rounded-md transition-all ${isTop ? "bg-gradient-to-r from-primary to-primary/70" : "bg-primary/30"}`}
+                            className={`h-full rounded-md transition-all ${isTop ? "bg-gradient-to-r from-primary to-primary/70" : "bg-primary/25"}`}
                             style={{ width: `${Math.max(pct, 2)}%` }}
                           />
                           <span className="absolute inset-0 flex items-center px-2 text-[10px] font-semibold tabular-nums text-foreground/80">
@@ -903,45 +903,45 @@ const SalesProfit = () => {
               </Card>
 
               {/* Peak Hours Heatmap */}
-              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
-                <CardHeader className="pb-2">
+              <Card className="rounded-xl border-primary/15 bg-gradient-to-br from-primary/5 via-background to-background lg:col-span-1">
+                <CardHeader className="p-3 pb-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Activity className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Activity className="h-3.5 w-3.5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-bold">Peak Hours</CardTitle>
-                        <p className="text-[10px] text-muted-foreground">When customers buy most</p>
+                        <CardTitle className="text-xs font-semibold">Peak Hours</CardTitle>
+                        <p className="text-[9px] text-muted-foreground">When customers buy most</p>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-2 space-y-3">
+                <CardContent className="p-3 pt-1 space-y-2">
                   {/* 24h heatmap */}
-                  <div className="grid grid-cols-12 gap-1">
+                  <div className="grid grid-cols-12 gap-0.5">
                     {peakHours.buckets.map((b) => {
                       const intensity = b.revenue / peakHours.max;
                       return (
                         <div
                           key={b.hour}
                           title={`${peakHours.fmt(b.hour)} — ৳${b.revenue.toLocaleString()} • ${b.orders} orders`}
-                          className="aspect-square rounded-[5px] border border-primary/10"
-                          style={{ backgroundColor: `hsl(var(--primary) / ${0.08 + intensity * 0.85})` }}
+                          className="aspect-square rounded-[3px] border border-primary/10"
+                          style={{ backgroundColor: `hsl(var(--primary) / ${0.06 + intensity * 0.8})` }}
                         />
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                  <div className="flex items-center justify-between text-[8px] text-muted-foreground">
                     <span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span>
                   </div>
                   {/* Top 3 hours */}
-                  <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                     {peakHours.top.map((b, i) => (
-                      <div key={b.hour} className="rounded-xl bg-primary/5 border border-primary/10 p-2 text-center">
-                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">#{i + 1} Peak</p>
-                        <p className="text-sm font-bold text-primary mt-0.5">{peakHours.fmt(b.hour)}</p>
-                        <p className="text-[9px] text-muted-foreground tabular-nums">{b.orders} orders</p>
+                      <div key={b.hour} className="rounded-lg bg-primary/5 border border-primary/10 px-1.5 py-1.5 text-center">
+                        <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold">#{i + 1} Peak</p>
+                        <p className="text-xs font-bold text-primary mt-0.5">{peakHours.fmt(b.hour)}</p>
+                        <p className="text-[8px] text-muted-foreground tabular-nums">{b.orders} orders</p>
                       </div>
                     ))}
                   </div>
@@ -949,54 +949,54 @@ const SalesProfit = () => {
               </Card>
 
               {/* Smart Forecast */}
-              <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background lg:col-span-1 relative overflow-hidden">
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
-                <CardHeader className="pb-2 relative">
+              <Card className="rounded-xl border-primary/15 bg-gradient-to-br from-primary/10 via-primary/5 to-background lg:col-span-1 relative overflow-hidden">
+                <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
+                <CardHeader className="p-3 pb-1.5 relative">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow">
-                        <Sparkles className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-sm">
+                        <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-bold">Smart Forecast</CardTitle>
-                        <p className="text-[10px] text-muted-foreground">AI-powered 7-day projection</p>
+                        <CardTitle className="text-xs font-semibold">Smart Forecast</CardTitle>
+                        <p className="text-[9px] text-muted-foreground">AI-powered 7-day projection</p>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-2 space-y-3 relative">
+                <CardContent className="p-3 pt-1 space-y-2 relative">
                   {forecast ? (
                     <>
-                      <div className="rounded-xl bg-background/60 backdrop-blur border border-primary/15 p-3">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Projected next 7 days</p>
-                        <p className="text-2xl font-bold text-primary tabular-nums mt-1">৳{Math.round(forecast.projected7d).toLocaleString()}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
+                      <div className="rounded-lg bg-background/60 backdrop-blur border border-primary/15 p-2">
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Projected next 7 days</p>
+                        <p className="text-xl font-bold text-primary tabular-nums mt-0.5">৳{Math.round(forecast.projected7d).toLocaleString()}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
                           {forecast.velocity >= 0 ? (
                             <ArrowUpRight className="h-3 w-3 text-emerald-600" />
                           ) : (
                             <ArrowDownRight className="h-3 w-3 text-red-500" />
                           )}
-                          <span className={`text-[10px] font-semibold ${forecast.velocity >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                          <span className={`text-[9px] font-semibold ${forecast.velocity >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                             {forecast.velocity >= 0 ? "+" : ""}{forecast.velocity.toFixed(1)}% velocity
                           </span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-xl bg-background/60 border border-primary/10 p-2.5">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Daily Avg</p>
-                          <p className="text-sm font-bold tabular-nums mt-0.5">৳{Math.round(forecast.avg).toLocaleString()}</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="rounded-lg bg-background/60 border border-primary/10 p-2">
+                          <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold">Daily Avg</p>
+                          <p className="text-xs font-bold tabular-nums mt-0.5">৳{Math.round(forecast.avg).toLocaleString()}</p>
                         </div>
                         {bestWorstDay && bestWorstDay.best.revenue > 0 && (
-                          <div className="rounded-xl bg-background/60 border border-primary/10 p-2.5">
-                            <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Best Day</p>
-                            <p className="text-sm font-bold tabular-nums mt-0.5">৳{bestWorstDay.best.revenue.toLocaleString()}</p>
-                            <p className="text-[9px] text-muted-foreground">{bestWorstDay.best.day}</p>
+                          <div className="rounded-lg bg-background/60 border border-primary/10 p-2">
+                            <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold">Best Day</p>
+                            <p className="text-xs font-bold tabular-nums mt-0.5">৳{bestWorstDay.best.revenue.toLocaleString()}</p>
+                            <p className="text-[8px] text-muted-foreground">{bestWorstDay.best.day}</p>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-start gap-2 rounded-xl bg-primary/10 border border-primary/20 p-2.5">
-                        <Lightbulb className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                        <p className="text-[10px] text-foreground/80 leading-relaxed">
+                      <div className="flex items-start gap-1.5 rounded-lg bg-primary/10 border border-primary/20 p-2">
+                        <Lightbulb className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                        <p className="text-[9px] text-foreground/80 leading-relaxed">
                           {forecast.velocity >= 5
                             ? `Sales trending up. Stock more of your top sellers on ${weekdayPerformance.top.day}.`
                             : forecast.velocity <= -5
@@ -1006,7 +1006,7 @@ const SalesProfit = () => {
                       </div>
                     </>
                   ) : (
-                    <p className="text-xs text-muted-foreground text-center py-8">Not enough data for forecast</p>
+                    <p className="text-xs text-muted-foreground text-center py-6">Not enough data for forecast</p>
                   )}
                 </CardContent>
               </Card>
