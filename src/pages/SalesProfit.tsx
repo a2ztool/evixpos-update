@@ -12,13 +12,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, DollarSign, ShoppingCart, BarChart3,
   Download, FileText, Calendar, Percent, Package, ArrowUpRight,
   ArrowDownRight, Target, Zap, PiggyBank, Sparkles, BookOpen,
-  ChevronDown, ChevronUp, Lightbulb, Activity, Award, AlertTriangle,
-  CheckCircle2, Info, Wallet, LineChart as LineChartIcon
+  ChevronDown, ChevronUp, Lightbulb, Activity, Award,
+  Wallet, LineChart as LineChartIcon, Search, X, Boxes
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -30,6 +31,7 @@ import {
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, differenceInDays } from "date-fns";
 
 interface Order {
+  id: string;
   total_amount: number;
   cost_price: number;
   discount: number;
@@ -70,18 +72,35 @@ const SalesProfit = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [showGuide, setShowGuide] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
     setLoading(true);
-    const [ordersRes, productsRes, itemsRes] = await Promise.all([
-      supabase.from("orders").select("total_amount, cost_price, discount, status, created_at, payment_method, source").eq("store_id", activeStore.id),
+    const [ordersRes, productsRes] = await Promise.all([
+      supabase.from("orders").select("id, total_amount, cost_price, discount, status, created_at, payment_method, source").eq("store_id", activeStore.id),
       supabase.from("products").select("id, name, price, stock, base_cost").eq("store_id", activeStore.id),
-      supabase.from("order_items").select("product_id, quantity, price, order_id")
     ]);
-    if (ordersRes.data) setOrders(ordersRes.data as Order[]);
+    const ordersData = (ordersRes.data ?? []) as Order[];
+    setOrders(ordersData);
     if (productsRes.data) setProducts(productsRes.data as Product[]);
-    if (itemsRes.data) setOrderItems(itemsRes.data as OrderItem[]);
+
+    // Scope order_items to this store by joining against fetched order ids (in chunks to stay within URL limits)
+    const orderIds = ordersData.map((o) => o.id);
+    if (orderIds.length === 0) {
+      setOrderItems([]);
+    } else {
+      const CHUNK = 200;
+      const chunks: string[][] = [];
+      for (let i = 0; i < orderIds.length; i += CHUNK) chunks.push(orderIds.slice(i, i + CHUNK));
+      const results = await Promise.all(
+        chunks.map((c) => supabase.from("order_items").select("product_id, quantity, price, order_id").in("order_id", c))
+      );
+      const items: OrderItem[] = [];
+      results.forEach((r) => { if (r.data) items.push(...(r.data as OrderItem[])); });
+      setOrderItems(items);
+    }
     setLoading(false);
   }, [activeStore]);
 
@@ -230,10 +249,24 @@ const SalesProfit = () => {
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [completedOrders]);
 
+  // Build a lookup of orders that are completed AND inside the active date range
+  const completedOrderMap = useMemo(() => {
+    const m = new Map<string, Order>();
+    completedOrders.forEach((o) => m.set(o.id, o));
+    return m;
+  }, [completedOrders]);
+
+  const filteredOrderMap = useMemo(() => {
+    const m = new Map<string, Order>();
+    allFilteredOrders.forEach((o) => m.set(o.id, o));
+    return m;
+  }, [allFilteredOrders]);
+
   const topProducts = useMemo(() => {
     const productSales: Record<string, { name: string; qty: number; revenue: number; profit: number }> = {};
     orderItems.forEach((item) => {
       if (!item.product_id) return;
+      if (!completedOrderMap.has(item.order_id)) return;
       const product = products.find((p) => p.id === item.product_id);
       if (!product) return;
       if (!productSales[item.product_id]) {
@@ -244,7 +277,78 @@ const SalesProfit = () => {
       productSales[item.product_id].profit += (Number(item.price) - product.base_cost) * item.quantity;
     });
     return Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  }, [orderItems, products]);
+  }, [orderItems, products, completedOrderMap]);
+
+  // ---------- Selected product report ----------
+  const filteredProductSearch = useMemo(() => {
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return [] as Product[];
+    return products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [productSearch, products]);
+
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === selectedProductId) || null,
+    [selectedProductId, products]
+  );
+
+  const productReport = useMemo(() => {
+    if (!selectedProduct) return null;
+    const pid = selectedProduct.id;
+    const cost = Number(selectedProduct.base_cost) || 0;
+    let qty = 0, revenue = 0, discount = 0;
+    let returnedQty = 0;
+    const orderIdsHit = new Set<string>();
+    const cancelledOrderIds = new Set<string>();
+    const daily: Record<string, { day: string; qty: number; revenue: number; profit: number }> = {};
+
+    orderItems.forEach((item) => {
+      if (item.product_id !== pid) return;
+      const order = filteredOrderMap.get(item.order_id);
+      if (!order) return;
+      const lineRevenue = Number(item.price) * item.quantity;
+
+      if (order.status === "completed") {
+        qty += item.quantity;
+        revenue += lineRevenue;
+        orderIdsHit.add(order.id);
+        const dayKey = format(new Date(order.created_at), "dd MMM");
+        if (!daily[dayKey]) daily[dayKey] = { day: dayKey, qty: 0, revenue: 0, profit: 0 };
+        daily[dayKey].qty += item.quantity;
+        daily[dayKey].revenue += lineRevenue;
+        daily[dayKey].profit += (Number(item.price) - cost) * item.quantity;
+      } else if (order.status === "cancelled") {
+        cancelledOrderIds.add(order.id);
+      } else if (order.status === "refunded" || order.status === "returned") {
+        returnedQty += item.quantity;
+      }
+    });
+
+    const totalCost = cost * qty;
+    const profit = revenue - totalCost;
+    const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+    const avgPrice = qty > 0 ? revenue / qty : 0;
+    // Discount allocation: portion of order discount weighted by this product's revenue share
+    orderIdsHit.forEach((oid) => {
+      const order = filteredOrderMap.get(oid);
+      if (!order || !order.total_amount) return;
+      const orderTotal = Number(order.total_amount);
+      const productInOrderRev = orderItems
+        .filter((i) => i.order_id === oid && i.product_id === pid)
+        .reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+      const share = orderTotal > 0 ? productInOrderRev / orderTotal : 0;
+      discount += Number(order.discount || 0) * share;
+    });
+    const trend = Object.values(daily).reverse().slice(-30);
+    const bestDay = trend.length ? [...trend].sort((a, b) => b.revenue - a.revenue)[0] : null;
+    return {
+      qty, revenue, profit, totalCost, avgPrice, margin, discount,
+      orderCount: orderIdsHit.size,
+      returnedQty, cancelledOrders: cancelledOrderIds.size,
+      bestDay, trend,
+      stock: selectedProduct.stock,
+      inventoryValue: cost * Number(selectedProduct.stock || 0),
+    };
+  }, [selectedProduct, orderItems, filteredOrderMap]);
 
   // Best/worst day
   const bestWorstDay = useMemo(() => {
@@ -252,29 +356,6 @@ const SalesProfit = () => {
     const sorted = [...dailyTrend].sort((a, b) => b.revenue - a.revenue);
     return { best: sorted[0], worst: sorted[sorted.length - 1] };
   }, [dailyTrend]);
-
-  // Insights
-  const insights = useMemo(() => {
-    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
-    if (stats.margin >= 30) list.push({ type: "good", text: `Excellent profit margin of ${stats.margin.toFixed(1)}% — well above industry avg.` });
-    else if (stats.margin >= 15) list.push({ type: "info", text: `Healthy ${stats.margin.toFixed(1)}% margin. Try upselling to push past 30%.` });
-    else if (stats.revenue > 0) list.push({ type: "warn", text: `Low margin (${stats.margin.toFixed(1)}%). Review pricing or supplier costs.` });
-
-    if (deltas && deltas.revenue > 10) list.push({ type: "good", text: `Revenue up ${deltas.revenue.toFixed(0)}% vs previous period 🎉` });
-    else if (deltas && deltas.revenue < -10) list.push({ type: "warn", text: `Revenue dropped ${Math.abs(deltas.revenue).toFixed(0)}%. Check campaigns or stock.` });
-
-    if (stats.cancelledCount > stats.completedCount * 0.1 && stats.totalOrders > 5) {
-      list.push({ type: "warn", text: `${stats.cancelledCount} cancellations — investigate fulfilment or stock issues.` });
-    }
-    if (stats.discount > stats.revenue * 0.15 && stats.revenue > 0) {
-      list.push({ type: "info", text: `Discounts are ${((stats.discount / stats.revenue) * 100).toFixed(0)}% of revenue. Consider tightening promo rules.` });
-    }
-    if (bestWorstDay && bestWorstDay.best.revenue > 0) {
-      list.push({ type: "info", text: `Best day: ${bestWorstDay.best.day} (৳${bestWorstDay.best.revenue.toLocaleString()}). Replicate the strategy!` });
-    }
-    if (list.length === 0) list.push({ type: "info", text: "Start logging orders to unlock smart insights." });
-    return list.slice(0, 4);
-  }, [stats, deltas, bestWorstDay]);
 
   const exportCSV = () => {
     const headers = ["Date", "Revenue", "Cost", "Profit", "Discount", "Payment Method", "Source", "Status"];
@@ -483,45 +564,52 @@ const SalesProfit = () => {
         ))}
       </div>
 
-      {/* Smart Insights */}
-      {!loading && (
-        <Card className="mb-5 rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-card to-violet-500/5">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-sm font-bold">Smart Insights</h3>
-              <Badge variant="outline" className="text-[10px] ml-auto">AI Powered</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {insights.map((ins, i) => {
-                const cfg = ins.type === "good"
-                  ? { Icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10" }
-                  : ins.type === "warn"
-                  ? { Icon: AlertTriangle, cls: "text-amber-500 bg-amber-500/10" }
-                  : { Icon: Info, cls: "text-blue-500 bg-blue-500/10" };
-                return (
-                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-card border border-border/40">
-                    <div className={`h-7 w-7 rounded-lg ${cfg.cls} flex items-center justify-center shrink-0`}>
-                      <cfg.Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <p className="text-xs leading-relaxed">{ins.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex rounded-xl">
-          <TabsTrigger value="overview" className="gap-1.5 rounded-lg"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
-          <TabsTrigger value="trends" className="gap-1.5 rounded-lg"><LineChartIcon className="h-3.5 w-3.5" /><span className="hidden sm:inline">Trends</span></TabsTrigger>
-          <TabsTrigger value="products" className="gap-1.5 rounded-lg"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex rounded-xl">
+            <TabsTrigger value="overview" className="gap-1.5 rounded-lg"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
+            <TabsTrigger value="trends" className="gap-1.5 rounded-lg"><LineChartIcon className="h-3.5 w-3.5" /><span className="hidden sm:inline">Trends</span></TabsTrigger>
+            <TabsTrigger value="products" className="gap-1.5 rounded-lg"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
+          </TabsList>
+          {activeTab === "products" && (
+            <div className="relative flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={productSearch}
+                onChange={(e) => { setProductSearch(e.target.value); setSelectedProductId(null); }}
+                placeholder="Search products in this store..."
+                className="pl-9 pr-9 h-9 rounded-xl"
+              />
+              {productSearch && (
+                <button
+                  type="button"
+                  onClick={() => { setProductSearch(""); setSelectedProductId(null); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md hover:bg-muted flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
+              {productSearch && !selectedProductId && (
+                <div className="absolute z-30 mt-1 w-full max-h-72 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
+                  {filteredProductSearch.length === 0 ? (
+                    <div className="p-3 text-xs text-muted-foreground text-center">No matching products</div>
+                  ) : filteredProductSearch.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => { setSelectedProductId(p.id); setProductSearch(p.name); }}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b border-border/40 last:border-0"
+                    >
+                      <p className="text-xs font-medium truncate">{p.name}</p>
+                      <p className="text-[10px] text-muted-foreground tabular-nums">৳{Number(p.price).toLocaleString()} • Stock: {p.stock}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
           {/* Main Charts */}
@@ -733,6 +821,121 @@ const SalesProfit = () => {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-5 mt-0">
+          {selectedProduct && productReport && (
+            <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow">
+                      <Boxes className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">{selectedProduct.name}</CardTitle>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Real-time product report for selected date range</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => { setSelectedProductId(null); setProductSearch(""); }} className="gap-1.5 rounded-xl">
+                    <X className="h-3.5 w-3.5" /> Clear
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* KPI grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                  {[
+                    { label: "Qty Sold", value: productReport.qty.toLocaleString(), cls: "text-blue-600" },
+                    { label: "Revenue", value: `৳${productReport.revenue.toLocaleString()}`, cls: "" },
+                    { label: "Profit", value: `৳${productReport.profit.toLocaleString()}`, cls: productReport.profit >= 0 ? "text-emerald-600" : "text-destructive" },
+                    { label: "Total Cost", value: `৳${productReport.totalCost.toLocaleString()}`, cls: "text-red-500" },
+                    { label: "Avg Price", value: `৳${productReport.avgPrice.toFixed(0)}`, cls: "" },
+                    { label: "Orders", value: productReport.orderCount.toLocaleString(), cls: "" },
+                    { label: "Returned Qty", value: productReport.returnedQty.toLocaleString(), cls: "text-amber-600" },
+                    { label: "Cancelled", value: productReport.cancelledOrders.toLocaleString(), cls: "text-red-500" },
+                    { label: "Discount Given", value: `৳${productReport.discount.toFixed(0)}`, cls: "text-violet-500" },
+                    { label: "Margin", value: `${productReport.margin.toFixed(1)}%`, cls: productReport.margin >= 20 ? "text-emerald-600" : "text-amber-500" },
+                    { label: "Current Stock", value: productReport.stock.toLocaleString(), cls: "" },
+                    { label: "Inventory Value", value: `৳${productReport.inventoryValue.toLocaleString()}`, cls: "" },
+                  ].map((k) => (
+                    <div key={k.label} className="p-2.5 rounded-xl bg-card border border-border/40">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">{k.label}</p>
+                      <p className={`text-sm font-bold tabular-nums mt-0.5 truncate ${k.cls}`}>{k.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {productReport.bestDay && (
+                  <div className="flex items-center gap-2 text-xs p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <Award className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span><b>Best Selling Day:</b> {productReport.bestDay.day} — ৳{productReport.bestDay.revenue.toLocaleString()} ({productReport.bestDay.qty} units)</span>
+                  </div>
+                )}
+
+                {/* Trend charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border/40 p-3">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5"><LineChartIcon className="h-3.5 w-3.5 text-primary" /> Sales (Quantity) Trend</p>
+                    {productReport.trend.length === 0 ? (
+                      <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">No sales in range</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={productReport.trend}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                          <XAxis dataKey="day" fontSize={10} tickLine={false} />
+                          <YAxis fontSize={10} tickLine={false} />
+                          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
+                          <Line type="monotone" dataKey="qty" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="Units" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-border/40 p-3">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5 text-primary" /> Revenue Trend</p>
+                    {productReport.trend.length === 0 ? (
+                      <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">No revenue in range</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <AreaChart data={productReport.trend}>
+                          <defs>
+                            <linearGradient id="prodRevGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                          <XAxis dataKey="day" fontSize={10} tickLine={false} />
+                          <YAxis fontSize={10} tickLine={false} />
+                          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} formatter={(v: number) => [`৳${v.toLocaleString()}`, "Revenue"]} />
+                          <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#prodRevGrad)" strokeWidth={2} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Daily / Weekly / Monthly comparison */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {(() => {
+                    const len = productReport.trend.length || 1;
+                    const totalRev = productReport.trend.reduce((s, t) => s + t.revenue, 0);
+                    const avgDaily = totalRev / len;
+                    const avgWeekly = avgDaily * 7;
+                    const avgMonthly = avgDaily * 30;
+                    return [
+                      { label: "Avg / Day", value: avgDaily },
+                      { label: "Avg / Week", value: avgWeekly },
+                      { label: "Avg / Month", value: avgMonthly },
+                    ].map((x) => (
+                      <div key={x.label} className="p-3 rounded-xl bg-muted/40 border border-border/40 text-center">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{x.label}</p>
+                        <p className="text-base font-bold tabular-nums">৳{x.value.toFixed(0)}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="rounded-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
