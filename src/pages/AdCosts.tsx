@@ -23,8 +23,7 @@ import {
   Plus, Trash2, Pencil, Search, Megaphone, MousePointerClick, DollarSign,
   TrendingUp, TrendingDown, Target, Eye, BarChart3, Download, FileText,
   Calendar, Zap, ArrowUpRight, ArrowDownRight, Sparkles, BookOpen,
-  ChevronUp, ChevronDown, Lightbulb, Activity, Award, AlertTriangle,
-  CheckCircle2, Info, LineChart as LineChartIcon, Flame
+  ChevronUp, ChevronDown, Lightbulb, Activity, Award, LineChart as LineChartIcon, Flame
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -198,25 +197,6 @@ const AdCosts = () => {
     };
   }, [stats, prevPeriodStats]);
 
-  // Smart insights
-  const insights = useMemo(() => {
-    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
-    if (stats.roas >= 3) list.push({ type: "good", text: `Outstanding ROAS of ${stats.roas.toFixed(2)}x — scale these campaigns!` });
-    else if (stats.roas >= 1.5) list.push({ type: "info", text: `Healthy ROAS (${stats.roas.toFixed(2)}x). Optimize creatives to push above 3x.` });
-    else if (stats.totalSpend > 0) list.push({ type: "warn", text: `Low ROAS (${stats.roas.toFixed(2)}x). Pause underperformers & test new audiences.` });
-
-    if (deltas && deltas.revenue > 15) list.push({ type: "good", text: `Revenue up ${deltas.revenue.toFixed(0)}% vs previous period 🚀` });
-    else if (deltas && deltas.revenue < -15) list.push({ type: "warn", text: `Revenue dropped ${Math.abs(deltas.revenue).toFixed(0)}%. Check ad fatigue.` });
-
-    if (stats.ctr > 0 && stats.ctr < 1) list.push({ type: "warn", text: `CTR ${stats.ctr.toFixed(2)}% is low — refresh ad creative & copy.` });
-    else if (stats.ctr >= 2) list.push({ type: "good", text: `Strong CTR of ${stats.ctr.toFixed(2)}% — great audience-creative fit.` });
-
-    if (stats.totalConversions > 0 && stats.cpa > 0 && stats.cpa > stats.totalRevenue / Math.max(1, stats.totalConversions)) {
-      list.push({ type: "warn", text: `CPA (৳${stats.cpa.toFixed(0)}) is higher than avg order value — unprofitable.` });
-    }
-    if (list.length === 0) list.push({ type: "info", text: "Add ad campaigns to unlock smart insights & ROI tracking." });
-    return list.slice(0, 4);
-  }, [stats, deltas]);
 
 
   const platformChart = useMemo(() => {
@@ -342,13 +322,13 @@ const AdCosts = () => {
         <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center shadow-lg shrink-0">
-              <Megaphone className="h-5 w-5 text-white" />
+            <div className="h-11 w-11 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25 shrink-0">
+              <Megaphone className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Ad Cost Manager</h1>
-                <Badge className="bg-gradient-to-r from-orange-500 to-violet-500 text-white border-0 text-[10px] gap-1">
+                <Badge className="bg-primary text-primary-foreground border-0 text-[10px] gap-1 hover:bg-primary">
                   <Sparkles className="h-2.5 w-2.5" /> PRO
                 </Badge>
               </div>
@@ -373,7 +353,7 @@ const AdCosts = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" onClick={openAdd} className="gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-violet-500 hover:opacity-90 text-white border-0">
+            <Button size="sm" onClick={openAdd} className="gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-0">
               <Plus className="h-4 w-4" /> Add Ad
             </Button>
           </div>
@@ -468,37 +448,6 @@ const AdCosts = () => {
         ))}
       </div>
 
-      {/* Smart Insights */}
-      {!loading && (
-        <Card className="mb-5 rounded-2xl border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-card to-violet-500/5">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-sm font-bold">Smart Insights</h3>
-              <Badge variant="outline" className="text-[10px] ml-auto">AI Powered</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {insights.map((ins, i) => {
-                const cfg = ins.type === "good"
-                  ? { Icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10" }
-                  : ins.type === "warn"
-                  ? { Icon: AlertTriangle, cls: "text-amber-500 bg-amber-500/10" }
-                  : { Icon: Info, cls: "text-blue-500 bg-blue-500/10" };
-                return (
-                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-card border border-border/40">
-                    <div className={`h-7 w-7 rounded-lg ${cfg.cls} flex items-center justify-center shrink-0`}>
-                      <cfg.Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <p className="text-xs leading-relaxed">{ins.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 mb-5">
