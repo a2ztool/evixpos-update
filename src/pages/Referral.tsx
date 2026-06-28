@@ -231,13 +231,13 @@ const Referral = () => {
                 <Gift className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Referral Dashboard</h1>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-none">Referral Dashboard</h1>
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5 h-6">
+                    <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5 h-6 inline-flex items-center">
                       <Sparkles className="h-3 w-3" /> EARN {settings?.commission_rate || 20}%
                     </Badge>
-                    <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 h-6`}>
+                    <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 h-6 inline-flex items-center`}>
                       <span>{currentTier.icon}</span> {currentTier.name} Tier
                     </Badge>
                   </div>
@@ -350,20 +350,20 @@ const Referral = () => {
             { label: "Premium", value: premiumUsers, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", trend: `${premiumConversion}%` },
             { label: "Earnings", value: fmtCurrency(settings?.total_earnings || 0), icon: DollarSign, color: "text-violet-500", bg: "bg-violet-500/10", trend: null },
           ].map((stat) => (
-            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-xl h-full">
-              <CardContent className="p-3.5 h-full">
+            <Card key={stat.label} className="border-border/50 hover:shadow-md transition-all rounded-2xl h-full">
+              <CardContent className="p-4 h-full">
                 <div className="flex items-center gap-3 h-full">
                   <div className={`h-10 w-10 shrink-0 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
                     <stat.icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight truncate">{stat.label}</p>
                       {stat.trend && (
-                        <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold shrink-0 border-border/60">{stat.trend}</Badge>
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-semibold shrink-0 border-border/60">{stat.trend}</Badge>
                       )}
                     </div>
-                    <p className="text-base font-bold tabular-nums leading-tight truncate mt-1">{stat.value}</p>
+                    <p className="text-base sm:text-lg font-bold tabular-nums leading-tight truncate mt-0.5">{stat.value}</p>
                   </div>
                 </div>
               </CardContent>
