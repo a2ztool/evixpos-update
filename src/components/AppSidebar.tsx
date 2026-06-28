@@ -33,11 +33,15 @@ const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const { t } = useLanguage();
   const { isStaff, staffInfo, hasPermission } = useStaff();
   const { activeStore } = useStore();
   const { plan, hasFeature, displayPlan, isUnlimited } = useStorePlan();
+  const handleNavigate = (path: string) => {
+    if (isMobile) setOpenMobile(false);
+    navigate(path);
+  };
   const { unreadCount: msgUnread } = useMessageUnread();
   const collapsed = state === "collapsed";
   const isOffline = activeStore?.store_mode === "offline";
@@ -124,7 +128,7 @@ const AppSidebar = () => {
 
     const button = (
       <SidebarMenuButton
-        onClick={() => navigate(item.path)}
+        onClick={() => handleNavigate(item.path)}
         onMouseEnter={() => prefetchRoute(item.path)}
         onFocus={() => prefetchRoute(item.path)}
         isActive={active}
@@ -177,7 +181,7 @@ const AppSidebar = () => {
       return (
         <SidebarMenuItem key={label}>
           <SidebarMenuButton
-            onClick={() => navigate(items[0].path)}
+            onClick={() => handleNavigate(items[0].path)}
             isActive={isActive}
             tooltip={label}
             className={`rounded-lg transition-all duration-200 ${
@@ -235,7 +239,7 @@ const AppSidebar = () => {
     const active = fullPath === "/staff-inbox";
     const button = (
       <SidebarMenuButton
-        onClick={() => navigate("/staff-inbox")}
+        onClick={() => handleNavigate("/staff-inbox")}
         onMouseEnter={() => prefetchRoute("/staff-inbox")}
         isActive={active}
         tooltip={`Messages${msgUnread > 0 ? ` (${msgUnread})` : ""}`}
@@ -382,7 +386,7 @@ const AppSidebar = () => {
                   variant="ghost"
                   size="icon"
                   className="w-full h-9 text-primary hover:bg-primary/10"
-                  onClick={() => navigate("/my-plan")}
+                  onClick={() => handleNavigate("/my-plan")}
                   aria-label="Upgrade plan"
                 >
                   <Zap className="h-4 w-4" />
