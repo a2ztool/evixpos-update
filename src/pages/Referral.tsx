@@ -233,12 +233,14 @@ const Referral = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Referral Dashboard</h1>
-                  <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5">
-                    <Sparkles className="h-3 w-3" /> EARN {settings?.commission_rate || 20}%
-                  </Badge>
-                  <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30`}>
-                    <span>{currentTier.icon}</span> {currentTier.name} Tier
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5 h-6">
+                      <Sparkles className="h-3 w-3" /> EARN {settings?.commission_rate || 20}%
+                    </Badge>
+                    <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 h-6`}>
+                      <span>{currentTier.icon}</span> {currentTier.name} Tier
+                    </Badge>
+                  </div>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                   Refer & earn <strong className="text-foreground">{settings?.commission_rate || 20}%</strong> commission on every premium signup
