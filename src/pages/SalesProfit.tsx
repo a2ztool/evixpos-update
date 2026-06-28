@@ -564,45 +564,52 @@ const SalesProfit = () => {
         ))}
       </div>
 
-      {/* Smart Insights */}
-      {!loading && (
-        <Card className="mb-5 rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 via-card to-violet-500/5">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-sm font-bold">Smart Insights</h3>
-              <Badge variant="outline" className="text-[10px] ml-auto">AI Powered</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {insights.map((ins, i) => {
-                const cfg = ins.type === "good"
-                  ? { Icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10" }
-                  : ins.type === "warn"
-                  ? { Icon: AlertTriangle, cls: "text-amber-500 bg-amber-500/10" }
-                  : { Icon: Info, cls: "text-blue-500 bg-blue-500/10" };
-                return (
-                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-card border border-border/40">
-                    <div className={`h-7 w-7 rounded-lg ${cfg.cls} flex items-center justify-center shrink-0`}>
-                      <cfg.Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <p className="text-xs leading-relaxed">{ins.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex rounded-xl">
-          <TabsTrigger value="overview" className="gap-1.5 rounded-lg"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
-          <TabsTrigger value="trends" className="gap-1.5 rounded-lg"><LineChartIcon className="h-3.5 w-3.5" /><span className="hidden sm:inline">Trends</span></TabsTrigger>
-          <TabsTrigger value="products" className="gap-1.5 rounded-lg"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex rounded-xl">
+            <TabsTrigger value="overview" className="gap-1.5 rounded-lg"><BarChart3 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
+            <TabsTrigger value="trends" className="gap-1.5 rounded-lg"><LineChartIcon className="h-3.5 w-3.5" /><span className="hidden sm:inline">Trends</span></TabsTrigger>
+            <TabsTrigger value="products" className="gap-1.5 rounded-lg"><Package className="h-3.5 w-3.5" /><span className="hidden sm:inline">Products</span></TabsTrigger>
+          </TabsList>
+          {activeTab === "products" && (
+            <div className="relative flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={productSearch}
+                onChange={(e) => { setProductSearch(e.target.value); setSelectedProductId(null); }}
+                placeholder="Search products in this store..."
+                className="pl-9 pr-9 h-9 rounded-xl"
+              />
+              {productSearch && (
+                <button
+                  type="button"
+                  onClick={() => { setProductSearch(""); setSelectedProductId(null); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md hover:bg-muted flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
+              {productSearch && !selectedProductId && (
+                <div className="absolute z-30 mt-1 w-full max-h-72 overflow-auto rounded-xl border border-border bg-popover shadow-lg">
+                  {filteredProductSearch.length === 0 ? (
+                    <div className="p-3 text-xs text-muted-foreground text-center">No matching products</div>
+                  ) : filteredProductSearch.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => { setSelectedProductId(p.id); setProductSearch(p.name); }}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b border-border/40 last:border-0"
+                    >
+                      <p className="text-xs font-medium truncate">{p.name}</p>
+                      <p className="text-[10px] text-muted-foreground tabular-nums">৳{Number(p.price).toLocaleString()} • Stock: {p.stock}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <TabsContent value="overview" className="space-y-5 mt-0">
           {/* Main Charts */}
