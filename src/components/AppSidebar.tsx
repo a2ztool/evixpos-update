@@ -272,34 +272,34 @@ const AppSidebar = () => {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar h-full flex flex-col overflow-hidden">
-      <SidebarContent className="flex-1 overflow-y-auto min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
-        {/* Brand */}
-        <div className={`flex items-center ${collapsed ? "justify-center px-0" : "px-4"} py-4 border-b border-sidebar-border/70`}>
-          {collapsed ? (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigate("/dashboard")}
-                    className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
-                    aria-label="Dashboard"
-                  >
-                    <img src={brandIcon} alt="EvixPOS" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" className="h-full w-full object-cover" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">EvixPOS · {displayPlan}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 group min-w-0">
-              <img src={brandLogo} alt="EvixPOS" width={120} height={28} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-auto transition-transform group-hover:scale-105" />
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide ring-1 ${isUnlimited ? "bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 ring-emerald-500/30 text-emerald-600" : "bg-gradient-to-r from-primary/15 to-primary/5 ring-primary/20 text-primary"}`}>
-                {isUnlimited ? "Unlimited" : plan}
-              </span>
-            </button>
-          )}
-        </div>
+      {/* Brand — fixed at top of sidebar */}
+      <div className={`shrink-0 bg-sidebar z-10 ${collapsed ? "flex justify-center px-0" : "px-4"} py-4 border-b border-sidebar-border/70`}>
+        {collapsed ? (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md shadow-primary/20 transition-transform hover:scale-105"
+                  aria-label="Dashboard"
+                >
+                  <img src={brandIcon} alt="EvixPOS" width={32} height={32} loading="eager" decoding="async" fetchPriority="high" className="h-full w-full object-cover" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">EvixPOS · {displayPlan}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 group min-w-0">
+            <img src={brandLogo} alt="EvixPOS" width={120} height={28} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-auto transition-transform group-hover:scale-105" />
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide ring-1 ${isUnlimited ? "bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 ring-emerald-500/30 text-emerald-600" : "bg-gradient-to-r from-primary/15 to-primary/5 ring-primary/20 text-primary"}`}>
+              {isUnlimited ? "Unlimited" : plan}
+            </span>
+          </button>
+        )}
+      </div>
 
+      <SidebarContent className="flex-1 overflow-y-auto min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
         {/* Sections */}
         {filteredOverview.length > 0 && renderGroup(t.overview, filteredOverview)}
 
@@ -377,7 +377,7 @@ const AppSidebar = () => {
         )}
       </SidebarContent>
 
-      <SidebarFooter className={`border-t border-border/40 ${collapsed ? "p-1.5" : "p-3"}`}>
+      <SidebarFooter className={`shrink-0 border-t border-border/40 bg-sidebar ${collapsed ? "p-1.5" : "p-3"}`}>
         {collapsed ? (
           <TooltipProvider delayDuration={0}>
             <Tooltip>
