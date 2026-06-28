@@ -302,7 +302,7 @@ const SettingsPage = () => {
   const [gatewayRegion, setGatewayRegion] = useState<"all" | "bd" | "in" | "intl">("all");
   const [configDialog, setConfigDialog] = useState<string | null>(null);
   const [configTemp, setConfigTemp] = useState<Record<string, string>>({});
-  const [newStaff, setNewStaff] = useState({ name: "", email: "", phone: "", password: "", role: "staff", permissions: ROLE_PRESETS["staff"] as string[] });
+  const [newStaff, setNewStaff] = useState({ name: "", email: "", phone: "", password: "", role: "staff", permissions: ROLE_PRESETS["staff"] as string[], store_ids: [] as string[] });
   const [staffCreating, setStaffCreating] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [newStore, setNewStore] = useState({ name: "", address: "", phone: "" });
