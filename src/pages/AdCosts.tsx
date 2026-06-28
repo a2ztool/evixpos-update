@@ -322,13 +322,13 @@ const AdCosts = () => {
         <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center shadow-lg shrink-0">
-              <Megaphone className="h-5 w-5 text-white" />
+            <div className="h-11 w-11 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25 shrink-0">
+              <Megaphone className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Ad Cost Manager</h1>
-                <Badge className="bg-gradient-to-r from-orange-500 to-violet-500 text-white border-0 text-[10px] gap-1">
+                <Badge className="bg-primary text-primary-foreground border-0 text-[10px] gap-1 hover:bg-primary">
                   <Sparkles className="h-2.5 w-2.5" /> PRO
                 </Badge>
               </div>
@@ -353,7 +353,7 @@ const AdCosts = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" onClick={openAdd} className="gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-violet-500 hover:opacity-90 text-white border-0">
+            <Button size="sm" onClick={openAdd} className="gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-0">
               <Plus className="h-4 w-4" /> Add Ad
             </Button>
           </div>
