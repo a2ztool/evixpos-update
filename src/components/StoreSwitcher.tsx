@@ -25,8 +25,8 @@ const StoreSwitcher = () => {
   const [creating, setCreating] = useState(false);
   const [newStoreMode, setNewStoreMode] = useState<StoreMode>("online");
 
-  // Staff users: show store name only, no switching
-  if (isStaffStore) {
+  // Staff with only one assigned store: show name only, no switching
+  if (isStaffStore && stores.length <= 1) {
     return (
       <Button variant="ghost" size="sm" className="h-8 gap-2 px-2.5 text-muted-foreground max-w-[180px] cursor-default pointer-events-none">
         <Store className="h-3.5 w-3.5 shrink-0 text-primary" />
