@@ -188,23 +188,16 @@ const Auth = () => {
       }
     }
 
-    // Send a 6-digit OTP to the email. Account creation happens after verification.
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        data: { name, referral_code: referralCode.trim().toUpperCase() || null },
-      },
+    // Send a custom 6-digit OTP via our SMTP. Account is created only after verification.
+    const { data, error } = await supabase.functions.invoke("send-email-otp", {
+      body: { email: email.trim().toLowerCase(), purpose: "signup" },
     });
-
-    if (error) {
-      if (error.status === 429) toast.error("Too many attempts. Please wait a moment.");
-      else if (error.message?.toLowerCase().includes("already")) {
+    const errMsg = (data as any)?.error || error?.message;
+    if (errMsg) {
+      if (/already/i.test(errMsg)) {
         signupForm.setFieldError("email", "Email already registered. Please sign in.");
-        toast.error("Email already registered. Please sign in.");
-      } else {
-        toast.error(error.message || "Could not send verification code.");
       }
+      toast.error(errMsg);
       setLoading(false);
       return;
     }
