@@ -448,37 +448,6 @@ const AdCosts = () => {
         ))}
       </div>
 
-      {/* Smart Insights */}
-      {!loading && (
-        <Card className="mb-5 rounded-2xl border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-card to-violet-500/5">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-violet-500 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-sm font-bold">Smart Insights</h3>
-              <Badge variant="outline" className="text-[10px] ml-auto">AI Powered</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {insights.map((ins, i) => {
-                const cfg = ins.type === "good"
-                  ? { Icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10" }
-                  : ins.type === "warn"
-                  ? { Icon: AlertTriangle, cls: "text-amber-500 bg-amber-500/10" }
-                  : { Icon: Info, cls: "text-blue-500 bg-blue-500/10" };
-                return (
-                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-card border border-border/40">
-                    <div className={`h-7 w-7 rounded-lg ${cfg.cls} flex items-center justify-center shrink-0`}>
-                      <cfg.Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <p className="text-xs leading-relaxed">{ins.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 mb-5">
