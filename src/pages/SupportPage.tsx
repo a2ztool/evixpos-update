@@ -114,7 +114,7 @@ const SupportPage = () => {
   const { user } = useAuth();
   const { activeStore } = useStore();
   const { effectiveUserId } = useStaff();
-  const [lang, setLang] = useState<Lang>("bn");
+  const [lang, setLang] = useState<Lang>("en");
   const [activeTab, setActiveTab] = useState("tickets");
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
