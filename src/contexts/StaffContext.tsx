@@ -9,6 +9,7 @@ interface StaffInfo {
   role: string;
   permissions: string[];
   store_id: string | null;
+  store_ids: string[];
   owner_id: string; // the user_id of the store owner
   is_active: boolean;
 }
@@ -56,6 +57,11 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (data && !error) {
+        const ids = ((data as any).store_ids as string[] | null) ?? [];
+        const merged = Array.from(new Set([
+          ...ids,
+          ...((data as any).store_id ? [(data as any).store_id as string] : []),
+        ]));
         setStaffInfo({
           id: data.id,
           name: data.name,
@@ -63,6 +69,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
           role: data.role,
           permissions: (data.permissions as string[]) ?? [],
           store_id: (data as any).store_id ?? null,
+          store_ids: merged,
           owner_id: data.user_id,
           is_active: data.is_active,
         });
@@ -86,6 +93,11 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
       }, (payload) => {
         const d = payload.new as any;
         if (d.is_active) {
+          const ids = (d.store_ids as string[] | null) ?? [];
+          const merged = Array.from(new Set([
+            ...ids,
+            ...(d.store_id ? [d.store_id as string] : []),
+          ]));
           setStaffInfo({
             id: d.id,
             name: d.name,
@@ -93,6 +105,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
             role: d.role,
             permissions: (d.permissions as string[]) ?? [],
             store_id: d.store_id ?? null,
+            store_ids: merged,
             owner_id: d.user_id,
             is_active: d.is_active,
           });
