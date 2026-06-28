@@ -250,7 +250,6 @@ const DueBook = () => {
       const { data } = await supabase
         .from("business_settings")
         .select("payment_methods")
-        .eq("user_id", effectiveUserId)
         .eq("store_id", activeStore.id)
         .maybeSingle();
       if (cancelled) return;
