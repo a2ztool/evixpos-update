@@ -327,14 +327,17 @@ const SettingsPage = () => {
 
   useEffect(() => {
     if (!user || !activeStore) return;
+    // Reset to blank so the previous store's data never shows during load
+    setSettings({ ...defaultSettings });
     const load = async () => {
       const uid = effectiveUserId || user.id;
-      // Try by user_id + store_id first, then user_id only (unique constraint is on user_id)
-      let { data: s } = await supabase.from("business_settings").select("*").eq("user_id", uid).eq("store_id", activeStore.id).maybeSingle();
-      if (!s) {
-        const { data: fallback } = await supabase.from("business_settings").select("*").eq("user_id", uid).maybeSingle();
-        s = fallback;
-      }
+      // Strictly per-store: never fall back to another store's settings
+      const { data: s } = await supabase
+        .from("business_settings")
+        .select("*")
+        .eq("user_id", uid)
+        .eq("store_id", activeStore.id)
+        .maybeSingle();
       if (s) {
         setSettings({
           id: s.id, business_name: s.business_name, business_email: s.business_email,
@@ -349,7 +352,40 @@ const SettingsPage = () => {
           setLang(s.app_language as Lang);
         }
       } else {
-        setSettings(defaultSettings);
+        // No settings row yet for this store — auto-create a blank one,
+        // pre-filled with only the new store's name and slug.
+        const slug = (activeStore.name || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+        const blank = {
+          user_id: uid,
+          store_id: activeStore.id,
+          business_name: activeStore.name || "",
+          business_email: "",
+          store_slug: slug,
+          shop_url: "",
+          business_phone: "",
+          logo_url: "",
+          show_payment_in_pos: true,
+          default_currency: defaultSettings.default_currency,
+          timezone: defaultSettings.timezone,
+          tax_rate: 0,
+          app_language: defaultSettings.app_language,
+          payment_methods: [] as any,
+          currencies: defaultSettings.currencies as any,
+        };
+        const { data: created } = await supabase
+          .from("business_settings")
+          .insert(blank)
+          .select()
+          .single();
+        setSettings({
+          ...defaultSettings,
+          id: created?.id,
+          business_name: blank.business_name,
+          store_slug: blank.store_slug,
+        });
       }
       const { data: staffData } = await supabase.from("staff_members").select("*").eq("user_id", user.id).order("created_at");
       if (staffData) setStaff(staffData.map(st => ({ ...st, permissions: (st.permissions as string[]) ?? [] })));
@@ -359,7 +395,7 @@ const SettingsPage = () => {
       if (profile) setProfileForm(prev => ({ ...prev, name: profile.name, email: profile.email }));
     };
     load();
-  }, [user, activeStore]);
+  }, [user, activeStore?.id]);
 
   const saveSettings = async () => {
     if (!user || !activeStore) return;
@@ -377,25 +413,21 @@ const SettingsPage = () => {
       const { error } = await supabase.from("business_settings").update(payload).eq("id", settings.id);
       if (error) { toast.error(error.message); setLoading(false); return; }
     } else {
-      // Check if a record already exists for this user (unique constraint on user_id)
-      const { data: existing } = await supabase.from("business_settings").select("id").eq("user_id", uid).maybeSingle();
-      if (!existing) {
-        // Also check by store_id
-        const { data: storeExisting } = await supabase.from("business_settings").select("id").eq("store_id", activeStore.id).maybeSingle();
-        if (storeExisting) {
-          const { error } = await supabase.from("business_settings").update(payload).eq("id", storeExisting.id);
-          if (error) { toast.error(error.message); setLoading(false); return; }
-          setSettings(prev => ({ ...prev, id: storeExisting.id }));
-        } else {
-          const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
-          if (error) { toast.error(error.message); setLoading(false); return; }
-          if (data) setSettings(prev => ({ ...prev, id: data.id }));
-        }
-      } else {
-        // Update the existing record with the new store_id and settings
-        const { error } = await supabase.from("business_settings").update(payload).eq("id", existing.id);
+      // Strictly per-store upsert — never touch another store's row
+      const { data: storeExisting } = await supabase
+        .from("business_settings")
+        .select("id")
+        .eq("user_id", uid)
+        .eq("store_id", activeStore.id)
+        .maybeSingle();
+      if (storeExisting) {
+        const { error } = await supabase.from("business_settings").update(payload).eq("id", storeExisting.id);
         if (error) { toast.error(error.message); setLoading(false); return; }
-        setSettings(prev => ({ ...prev, id: existing.id }));
+        setSettings(prev => ({ ...prev, id: storeExisting.id }));
+      } else {
+        const { data, error } = await supabase.from("business_settings").insert(payload).select().single();
+        if (error) { toast.error(error.message); setLoading(false); return; }
+        if (data) setSettings(prev => ({ ...prev, id: data.id }));
       }
     }
     setLoading(false);

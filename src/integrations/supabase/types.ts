@@ -479,7 +479,7 @@ export type Database = {
           payment_methods: Json
           shop_url: string
           show_payment_in_pos: boolean
-          store_id: string | null
+          store_id: string
           store_slug: string
           tax_rate: number
           timezone: string
@@ -500,7 +500,7 @@ export type Database = {
           payment_methods?: Json
           shop_url?: string
           show_payment_in_pos?: boolean
-          store_id?: string | null
+          store_id: string
           store_slug?: string
           tax_rate?: number
           timezone?: string
@@ -521,7 +521,7 @@ export type Database = {
           payment_methods?: Json
           shop_url?: string
           show_payment_in_pos?: boolean
-          store_id?: string | null
+          store_id?: string
           store_slug?: string
           tax_rate?: number
           timezone?: string
