@@ -12,13 +12,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, DollarSign, ShoppingCart, BarChart3,
   Download, FileText, Calendar, Percent, Package, ArrowUpRight,
   ArrowDownRight, Target, Zap, PiggyBank, Sparkles, BookOpen,
-  ChevronDown, ChevronUp, Lightbulb, Activity, Award, AlertTriangle,
-  CheckCircle2, Info, Wallet, LineChart as LineChartIcon
+  ChevronDown, ChevronUp, Lightbulb, Activity, Award,
+  Wallet, LineChart as LineChartIcon, Search, X, Boxes
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -30,6 +31,7 @@ import {
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, differenceInDays } from "date-fns";
 
 interface Order {
+  id: string;
   total_amount: number;
   cost_price: number;
   discount: number;
@@ -70,18 +72,35 @@ const SalesProfit = () => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [showGuide, setShowGuide] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!activeStore) return;
     setLoading(true);
-    const [ordersRes, productsRes, itemsRes] = await Promise.all([
-      supabase.from("orders").select("total_amount, cost_price, discount, status, created_at, payment_method, source").eq("store_id", activeStore.id),
+    const [ordersRes, productsRes] = await Promise.all([
+      supabase.from("orders").select("id, total_amount, cost_price, discount, status, created_at, payment_method, source").eq("store_id", activeStore.id),
       supabase.from("products").select("id, name, price, stock, base_cost").eq("store_id", activeStore.id),
-      supabase.from("order_items").select("product_id, quantity, price, order_id")
     ]);
-    if (ordersRes.data) setOrders(ordersRes.data as Order[]);
+    const ordersData = (ordersRes.data ?? []) as Order[];
+    setOrders(ordersData);
     if (productsRes.data) setProducts(productsRes.data as Product[]);
-    if (itemsRes.data) setOrderItems(itemsRes.data as OrderItem[]);
+
+    // Scope order_items to this store by joining against fetched order ids (in chunks to stay within URL limits)
+    const orderIds = ordersData.map((o) => o.id);
+    if (orderIds.length === 0) {
+      setOrderItems([]);
+    } else {
+      const CHUNK = 200;
+      const chunks: string[][] = [];
+      for (let i = 0; i < orderIds.length; i += CHUNK) chunks.push(orderIds.slice(i, i + CHUNK));
+      const results = await Promise.all(
+        chunks.map((c) => supabase.from("order_items").select("product_id, quantity, price, order_id").in("order_id", c))
+      );
+      const items: OrderItem[] = [];
+      results.forEach((r) => { if (r.data) items.push(...(r.data as OrderItem[])); });
+      setOrderItems(items);
+    }
     setLoading(false);
   }, [activeStore]);
 
@@ -230,10 +249,24 @@ const SalesProfit = () => {
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [completedOrders]);
 
+  // Build a lookup of orders that are completed AND inside the active date range
+  const completedOrderMap = useMemo(() => {
+    const m = new Map<string, Order>();
+    completedOrders.forEach((o) => m.set(o.id, o));
+    return m;
+  }, [completedOrders]);
+
+  const filteredOrderMap = useMemo(() => {
+    const m = new Map<string, Order>();
+    allFilteredOrders.forEach((o) => m.set(o.id, o));
+    return m;
+  }, [allFilteredOrders]);
+
   const topProducts = useMemo(() => {
     const productSales: Record<string, { name: string; qty: number; revenue: number; profit: number }> = {};
     orderItems.forEach((item) => {
       if (!item.product_id) return;
+      if (!completedOrderMap.has(item.order_id)) return;
       const product = products.find((p) => p.id === item.product_id);
       if (!product) return;
       if (!productSales[item.product_id]) {
@@ -244,7 +277,78 @@ const SalesProfit = () => {
       productSales[item.product_id].profit += (Number(item.price) - product.base_cost) * item.quantity;
     });
     return Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  }, [orderItems, products]);
+  }, [orderItems, products, completedOrderMap]);
+
+  // ---------- Selected product report ----------
+  const filteredProductSearch = useMemo(() => {
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return [] as Product[];
+    return products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [productSearch, products]);
+
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === selectedProductId) || null,
+    [selectedProductId, products]
+  );
+
+  const productReport = useMemo(() => {
+    if (!selectedProduct) return null;
+    const pid = selectedProduct.id;
+    const cost = Number(selectedProduct.base_cost) || 0;
+    let qty = 0, revenue = 0, discount = 0;
+    let returnedQty = 0;
+    const orderIdsHit = new Set<string>();
+    const cancelledOrderIds = new Set<string>();
+    const daily: Record<string, { day: string; qty: number; revenue: number; profit: number }> = {};
+
+    orderItems.forEach((item) => {
+      if (item.product_id !== pid) return;
+      const order = filteredOrderMap.get(item.order_id);
+      if (!order) return;
+      const lineRevenue = Number(item.price) * item.quantity;
+
+      if (order.status === "completed") {
+        qty += item.quantity;
+        revenue += lineRevenue;
+        orderIdsHit.add(order.id);
+        const dayKey = format(new Date(order.created_at), "dd MMM");
+        if (!daily[dayKey]) daily[dayKey] = { day: dayKey, qty: 0, revenue: 0, profit: 0 };
+        daily[dayKey].qty += item.quantity;
+        daily[dayKey].revenue += lineRevenue;
+        daily[dayKey].profit += (Number(item.price) - cost) * item.quantity;
+      } else if (order.status === "cancelled") {
+        cancelledOrderIds.add(order.id);
+      } else if (order.status === "refunded" || order.status === "returned") {
+        returnedQty += item.quantity;
+      }
+    });
+
+    const totalCost = cost * qty;
+    const profit = revenue - totalCost;
+    const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+    const avgPrice = qty > 0 ? revenue / qty : 0;
+    // Discount allocation: portion of order discount weighted by this product's revenue share
+    orderIdsHit.forEach((oid) => {
+      const order = filteredOrderMap.get(oid);
+      if (!order || !order.total_amount) return;
+      const orderTotal = Number(order.total_amount);
+      const productInOrderRev = orderItems
+        .filter((i) => i.order_id === oid && i.product_id === pid)
+        .reduce((s, i) => s + Number(i.price) * i.quantity, 0);
+      const share = orderTotal > 0 ? productInOrderRev / orderTotal : 0;
+      discount += Number(order.discount || 0) * share;
+    });
+    const trend = Object.values(daily).reverse().slice(-30);
+    const bestDay = trend.length ? [...trend].sort((a, b) => b.revenue - a.revenue)[0] : null;
+    return {
+      qty, revenue, profit, totalCost, avgPrice, margin, discount,
+      orderCount: orderIdsHit.size,
+      returnedQty, cancelledOrders: cancelledOrderIds.size,
+      bestDay, trend,
+      stock: selectedProduct.stock,
+      inventoryValue: cost * Number(selectedProduct.stock || 0),
+    };
+  }, [selectedProduct, orderItems, filteredOrderMap]);
 
   // Best/worst day
   const bestWorstDay = useMemo(() => {
@@ -252,29 +356,6 @@ const SalesProfit = () => {
     const sorted = [...dailyTrend].sort((a, b) => b.revenue - a.revenue);
     return { best: sorted[0], worst: sorted[sorted.length - 1] };
   }, [dailyTrend]);
-
-  // Insights
-  const insights = useMemo(() => {
-    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
-    if (stats.margin >= 30) list.push({ type: "good", text: `Excellent profit margin of ${stats.margin.toFixed(1)}% — well above industry avg.` });
-    else if (stats.margin >= 15) list.push({ type: "info", text: `Healthy ${stats.margin.toFixed(1)}% margin. Try upselling to push past 30%.` });
-    else if (stats.revenue > 0) list.push({ type: "warn", text: `Low margin (${stats.margin.toFixed(1)}%). Review pricing or supplier costs.` });
-
-    if (deltas && deltas.revenue > 10) list.push({ type: "good", text: `Revenue up ${deltas.revenue.toFixed(0)}% vs previous period 🎉` });
-    else if (deltas && deltas.revenue < -10) list.push({ type: "warn", text: `Revenue dropped ${Math.abs(deltas.revenue).toFixed(0)}%. Check campaigns or stock.` });
-
-    if (stats.cancelledCount > stats.completedCount * 0.1 && stats.totalOrders > 5) {
-      list.push({ type: "warn", text: `${stats.cancelledCount} cancellations — investigate fulfilment or stock issues.` });
-    }
-    if (stats.discount > stats.revenue * 0.15 && stats.revenue > 0) {
-      list.push({ type: "info", text: `Discounts are ${((stats.discount / stats.revenue) * 100).toFixed(0)}% of revenue. Consider tightening promo rules.` });
-    }
-    if (bestWorstDay && bestWorstDay.best.revenue > 0) {
-      list.push({ type: "info", text: `Best day: ${bestWorstDay.best.day} (৳${bestWorstDay.best.revenue.toLocaleString()}). Replicate the strategy!` });
-    }
-    if (list.length === 0) list.push({ type: "info", text: "Start logging orders to unlock smart insights." });
-    return list.slice(0, 4);
-  }, [stats, deltas, bestWorstDay]);
 
   const exportCSV = () => {
     const headers = ["Date", "Revenue", "Cost", "Profit", "Discount", "Payment Method", "Source", "Status"];
