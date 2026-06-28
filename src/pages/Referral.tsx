@@ -231,13 +231,13 @@ const Referral = () => {
                 <Gift className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Referral Dashboard</h1>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-none">Referral Dashboard</h1>
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5 h-6">
+                    <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary/30 text-primary bg-primary/5 h-6 inline-flex items-center">
                       <Sparkles className="h-3 w-3" /> EARN {settings?.commission_rate || 20}%
                     </Badge>
-                    <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 h-6`}>
+                    <Badge variant="outline" className={`gap-1 text-[10px] font-bold border-amber-400/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 h-6 inline-flex items-center`}>
                       <span>{currentTier.icon}</span> {currentTier.name} Tier
                     </Badge>
                   </div>
