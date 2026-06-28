@@ -82,104 +82,70 @@ const VerifyOtp = () => {
     inputs.current[Math.min(text.length, 5)]?.focus();
   };
 
-  const finishSignup = useCallback(async () => {
-    if (!state) return;
-    // 1) Set password on the new account
-    if (state.password) {
-      const { error: pwErr } = await supabase.auth.updateUser({ password: state.password });
-      if (pwErr) {
-        // Non-fatal: continue, user can reset later. But surface a warning.
-        console.warn("Failed to set password after OTP:", pwErr.message);
-      }
-    }
-
-    // 2) Update profile name (in case trigger created it with empty name)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user && state.name) {
-      await supabase.from("profiles").update({ name: state.name }).eq("id", user.id);
-    }
-
-    // 3) Handle referral
-    if (user && state.referralCode) {
-      const code = state.referralCode.trim().toUpperCase();
-      const { data: refSettings } = await supabase
-        .from("referral_settings")
-        .select("user_id, id, total_clicks")
-        .eq("referral_code", code)
-        .maybeSingle();
-      if (refSettings) {
-        await supabase.from("referrals").insert({
-          referrer_id: refSettings.user_id,
-          referred_email: state.email,
-          referred_user_id: user.id,
-          status: "pending",
-          plan: "free",
-          commission_amount: 0,
-          is_paid: false,
-        });
-        await supabase
-          .from("referral_settings")
-          .update({ total_clicks: ((refSettings as any).total_clicks ?? 0) + 1 })
-          .eq("id", refSettings.id);
-      }
-    }
-  }, [state]);
-
   const handleVerify = async () => {
     if (!complete || !state) return;
     setError("");
     setLoading(true);
-    const { error: verErr } = await supabase.auth.verifyOtp({
-      email: state.email,
-      token: otp,
-      type: "email",
+
+    const { data, error: invErr } = await supabase.functions.invoke("verify-email-otp", {
+      body: {
+        email: state.email.trim().toLowerCase(),
+        code: otp,
+        purpose: state.mode === "signup" ? "signup" : "reset",
+        password: state.password,
+        name: state.name,
+        referralCode: state.referralCode,
+      },
     });
-    if (verErr) {
+    const errMsg = (data as any)?.error || invErr?.message;
+    if (errMsg) {
       setLoading(false);
-      setError(verErr.message?.includes("expired") || verErr.message?.includes("invalid")
-        ? "Invalid or expired code. Please try again."
-        : verErr.message || "Verification failed.");
+      setError(errMsg);
       setDigits(["", "", "", "", "", ""]);
       inputs.current[0]?.focus();
       return;
     }
 
-    try {
-      if (state.mode === "signup") {
-        await finishSignup();
+    if (state.mode === "signup") {
+      // Automatically sign the user in with their password
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: state.email,
+        password: state.password || "",
+      });
+      if (signInErr) {
+        setLoading(false);
+        setError("Verified, but auto sign-in failed. Please log in manually.");
+        setTimeout(() => navigate("/auth", { replace: true }), 1500);
+        return;
       }
-    } catch (e: any) {
-      console.error(e);
     }
 
     setSuccess(true);
     setLoading(false);
 
-    // Brief success animation, then route
     setTimeout(() => {
       if (state.mode === "signup") {
         navigate("/onboarding", { replace: true });
       } else {
-        // recovery flow → go set new password
         navigate("/reset-password-new", { replace: true, state: { email: state.email } });
       }
-    }, 900);
+    }, 800);
   };
 
   const handleResend = async () => {
     if (!state || seconds > 0) return;
     setResending(true);
     setError("");
-    const { error: resErr } = await supabase.auth.signInWithOtp({
-      email: state.email,
-      options: {
-        shouldCreateUser: state.mode === "signup",
-        data: state.mode === "signup" ? { name: state.name } : undefined,
+    const { data, error: resErr } = await supabase.functions.invoke("send-email-otp", {
+      body: {
+        email: state.email.trim().toLowerCase(),
+        purpose: state.mode === "signup" ? "signup" : "reset",
       },
     });
     setResending(false);
-    if (resErr) {
-      toast.error(resErr.message || "Could not resend code.");
+    const errMsg = (data as any)?.error || resErr?.message;
+    if (errMsg) {
+      toast.error(errMsg);
       return;
     }
     setSeconds(60);
