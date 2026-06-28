@@ -233,7 +233,8 @@ const POS = () => {
     } else {
       getCachedCustomers(activeStore.id).then(c => { if (c.length) setCustomers(c as Customer[]); });
     }
-    supabase.from("business_settings").select("payment_methods").eq("user_id", ownerId).eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
+    // Payment methods belong to the STORE — load by store_id only so staff see the same gateways as the owner.
+    supabase.from("business_settings").select("payment_methods").eq("store_id", activeStore.id).maybeSingle().then(({ data }) => {
       if (data?.payment_methods) {
         const methods = normalizePaymentMethods(data.payment_methods).filter(m => m.enabled);
         setPaymentMethods(methods.length > 0 ? methods : [{ id: "cash", name: "Cash", enabled: true, config: {} }]);
