@@ -87,20 +87,13 @@ const AccountBook = () => {
   // ─── Load accounts + mapping from business_settings ───
   const loadSettings = useCallback(async () => {
     if (!activeStore || !effectiveUserId) return;
-    let { data } = await supabase
+    // Strictly per-store: never fall back to another store's settings
+    const { data } = await supabase
       .from("business_settings")
       .select("payment_methods, notification_prefs")
       .eq("user_id", effectiveUserId)
       .eq("store_id", activeStore.id)
       .maybeSingle();
-    if (!data) {
-      const fb = await supabase
-        .from("business_settings")
-        .select("payment_methods, notification_prefs")
-        .eq("user_id", effectiveUserId)
-        .maybeSingle();
-      data = fb.data as any;
-    }
     const list = ((data?.payment_methods as any[]) || [])
       .filter((p) => p && p.enabled !== false)
       .map((p) => ({ id: String(p.id), name: p.name || p.id, enabled: !!p.enabled }));
