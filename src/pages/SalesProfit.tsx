@@ -821,6 +821,121 @@ const SalesProfit = () => {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-5 mt-0">
+          {selectedProduct && productReport && (
+            <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow">
+                      <Boxes className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">{selectedProduct.name}</CardTitle>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Real-time product report for selected date range</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => { setSelectedProductId(null); setProductSearch(""); }} className="gap-1.5 rounded-xl">
+                    <X className="h-3.5 w-3.5" /> Clear
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* KPI grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                  {[
+                    { label: "Qty Sold", value: productReport.qty.toLocaleString(), cls: "text-blue-600" },
+                    { label: "Revenue", value: `৳${productReport.revenue.toLocaleString()}`, cls: "" },
+                    { label: "Profit", value: `৳${productReport.profit.toLocaleString()}`, cls: productReport.profit >= 0 ? "text-emerald-600" : "text-destructive" },
+                    { label: "Total Cost", value: `৳${productReport.totalCost.toLocaleString()}`, cls: "text-red-500" },
+                    { label: "Avg Price", value: `৳${productReport.avgPrice.toFixed(0)}`, cls: "" },
+                    { label: "Orders", value: productReport.orderCount.toLocaleString(), cls: "" },
+                    { label: "Returned Qty", value: productReport.returnedQty.toLocaleString(), cls: "text-amber-600" },
+                    { label: "Cancelled", value: productReport.cancelledOrders.toLocaleString(), cls: "text-red-500" },
+                    { label: "Discount Given", value: `৳${productReport.discount.toFixed(0)}`, cls: "text-violet-500" },
+                    { label: "Margin", value: `${productReport.margin.toFixed(1)}%`, cls: productReport.margin >= 20 ? "text-emerald-600" : "text-amber-500" },
+                    { label: "Current Stock", value: productReport.stock.toLocaleString(), cls: "" },
+                    { label: "Inventory Value", value: `৳${productReport.inventoryValue.toLocaleString()}`, cls: "" },
+                  ].map((k) => (
+                    <div key={k.label} className="p-2.5 rounded-xl bg-card border border-border/40">
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">{k.label}</p>
+                      <p className={`text-sm font-bold tabular-nums mt-0.5 truncate ${k.cls}`}>{k.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {productReport.bestDay && (
+                  <div className="flex items-center gap-2 text-xs p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <Award className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span><b>Best Selling Day:</b> {productReport.bestDay.day} — ৳{productReport.bestDay.revenue.toLocaleString()} ({productReport.bestDay.qty} units)</span>
+                  </div>
+                )}
+
+                {/* Trend charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border/40 p-3">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5"><LineChartIcon className="h-3.5 w-3.5 text-primary" /> Sales (Quantity) Trend</p>
+                    {productReport.trend.length === 0 ? (
+                      <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">No sales in range</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={productReport.trend}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                          <XAxis dataKey="day" fontSize={10} tickLine={false} />
+                          <YAxis fontSize={10} tickLine={false} />
+                          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
+                          <Line type="monotone" dataKey="qty" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} name="Units" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-border/40 p-3">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5 text-primary" /> Revenue Trend</p>
+                    {productReport.trend.length === 0 ? (
+                      <div className="h-[180px] flex items-center justify-center text-xs text-muted-foreground">No revenue in range</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <AreaChart data={productReport.trend}>
+                          <defs>
+                            <linearGradient id="prodRevGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                          <XAxis dataKey="day" fontSize={10} tickLine={false} />
+                          <YAxis fontSize={10} tickLine={false} />
+                          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} formatter={(v: number) => [`৳${v.toLocaleString()}`, "Revenue"]} />
+                          <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#prodRevGrad)" strokeWidth={2} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Daily / Weekly / Monthly comparison */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {(() => {
+                    const len = productReport.trend.length || 1;
+                    const totalRev = productReport.trend.reduce((s, t) => s + t.revenue, 0);
+                    const avgDaily = totalRev / len;
+                    const avgWeekly = avgDaily * 7;
+                    const avgMonthly = avgDaily * 30;
+                    return [
+                      { label: "Avg / Day", value: avgDaily },
+                      { label: "Avg / Week", value: avgWeekly },
+                      { label: "Avg / Month", value: avgMonthly },
+                    ].map((x) => (
+                      <div key={x.label} className="p-3 rounded-xl bg-muted/40 border border-border/40 text-center">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{x.label}</p>
+                        <p className="text-base font-bold tabular-nums">৳{x.value.toFixed(0)}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="rounded-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
