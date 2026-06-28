@@ -33,11 +33,15 @@ const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const { t } = useLanguage();
   const { isStaff, staffInfo, hasPermission } = useStaff();
   const { activeStore } = useStore();
   const { plan, hasFeature, displayPlan, isUnlimited } = useStorePlan();
+  const handleNavigate = (path: string) => {
+    if (isMobile) setOpenMobile(false);
+    navigate(path);
+  };
   const { unreadCount: msgUnread } = useMessageUnread();
   const collapsed = state === "collapsed";
   const isOffline = activeStore?.store_mode === "offline";
