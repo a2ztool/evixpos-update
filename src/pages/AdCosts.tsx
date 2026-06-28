@@ -197,25 +197,6 @@ const AdCosts = () => {
     };
   }, [stats, prevPeriodStats]);
 
-  // Smart insights
-  const insights = useMemo(() => {
-    const list: { type: "good" | "warn" | "info"; text: string }[] = [];
-    if (stats.roas >= 3) list.push({ type: "good", text: `Outstanding ROAS of ${stats.roas.toFixed(2)}x — scale these campaigns!` });
-    else if (stats.roas >= 1.5) list.push({ type: "info", text: `Healthy ROAS (${stats.roas.toFixed(2)}x). Optimize creatives to push above 3x.` });
-    else if (stats.totalSpend > 0) list.push({ type: "warn", text: `Low ROAS (${stats.roas.toFixed(2)}x). Pause underperformers & test new audiences.` });
-
-    if (deltas && deltas.revenue > 15) list.push({ type: "good", text: `Revenue up ${deltas.revenue.toFixed(0)}% vs previous period 🚀` });
-    else if (deltas && deltas.revenue < -15) list.push({ type: "warn", text: `Revenue dropped ${Math.abs(deltas.revenue).toFixed(0)}%. Check ad fatigue.` });
-
-    if (stats.ctr > 0 && stats.ctr < 1) list.push({ type: "warn", text: `CTR ${stats.ctr.toFixed(2)}% is low — refresh ad creative & copy.` });
-    else if (stats.ctr >= 2) list.push({ type: "good", text: `Strong CTR of ${stats.ctr.toFixed(2)}% — great audience-creative fit.` });
-
-    if (stats.totalConversions > 0 && stats.cpa > 0 && stats.cpa > stats.totalRevenue / Math.max(1, stats.totalConversions)) {
-      list.push({ type: "warn", text: `CPA (৳${stats.cpa.toFixed(0)}) is higher than avg order value — unprofitable.` });
-    }
-    if (list.length === 0) list.push({ type: "info", text: "Add ad campaigns to unlock smart insights & ROI tracking." });
-    return list.slice(0, 4);
-  }, [stats, deltas]);
 
 
   const platformChart = useMemo(() => {
