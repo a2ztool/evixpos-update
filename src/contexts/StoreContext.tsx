@@ -127,20 +127,40 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       .eq("user_id", planUserId)
       .maybeSingle();
 
-    if (isStaff && staffInfo?.store_id) {
-      // Staff user: load only their assigned store
-      const [storeRes, planRes, ovRes] = await Promise.all([
-        supabase.from("stores").select("*").eq("id", staffInfo.store_id).single(),
+    if (isStaff && staffInfo) {
+      // Staff user: load every assigned store (store_ids[] + legacy store_id)
+      const assignedIds = Array.from(new Set([
+        ...(staffInfo.store_ids ?? []),
+        ...(staffInfo.store_id ? [staffInfo.store_id] : []),
+      ]));
+
+      if (assignedIds.length === 0) {
+        setStores([]);
+        setActiveStore(null);
+        setIsStaffStore(true);
+        setLoading(false);
+        return;
+      }
+
+      const [storesRes, planRes, ovRes] = await Promise.all([
+        supabase
+          .from("stores")
+          .select("*")
+          .in("id", assignedIds)
+          .order("created_at", { ascending: true }),
         planQuery,
         overrideQuery,
       ]);
 
-      if (storeRes.data) {
-        const store = storeRes.data as Store;
-        setStores([store]);
-        setActiveStore(store);
-        setIsStaffStore(true);
-      }
+      const list = ((storesRes.data ?? []) as Store[]);
+      setStores(list);
+      setIsStaffStore(true);
+
+      // Restore last active store (must still be in assigned list)
+      const savedStoreId = localStorage.getItem(`active_store_${user.id}`);
+      const saved = list.find(s => s.id === savedStoreId);
+      setActiveStore(saved || list[0] || null);
+
       setPlan(resolvePlan(planRes.data));
       setOverride((ovRes as any)?.data || null);
       setLoading(false);
@@ -221,10 +241,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchStores]);
 
   const switchStore = (storeId: string): boolean => {
-    if (isStaffStore) return false; // Staff can't switch stores
     const store = stores.find(s => s.id === storeId);
     if (!store || !user) return false;
-    if (lockedStoreIds.has(storeId)) {
+    if (!isStaffStore && lockedStoreIds.has(storeId)) {
       toast.error(
         `This store is locked on the ${plan ?? "free"} plan. Upgrade to access more than ${storeLimit} store(s).`
       );

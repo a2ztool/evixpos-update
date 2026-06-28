@@ -40,7 +40,12 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { name, email, password, phone, role, permissions, store_id } = body;
+    const { name, email, password, phone, role, permissions, store_id, store_ids } = body;
+    // Normalize: prefer store_ids[] but accept legacy store_id
+    const storeIdList: string[] = Array.isArray(store_ids) && store_ids.length > 0
+      ? store_ids.filter((s: unknown) => typeof s === "string")
+      : (store_id ? [store_id] : []);
+    const primaryStoreId: string | null = storeIdList[0] ?? null;
 
     if (!name || !email || !password) {
       return new Response(
@@ -62,21 +67,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify caller owns the store if store_id is provided
-    if (store_id) {
-      const { data: store } = await supabaseAdmin
+    // Verify caller owns every store in the assignment list
+    if (storeIdList.length > 0) {
+      const { data: ownedStores } = await supabaseAdmin
         .from("stores")
-        .select("user_id")
-        .eq("id", store_id)
-        .single();
-
-      if (!store || store.user_id !== caller.id) {
+        .select("id")
+        .eq("user_id", caller.id)
+        .in("id", storeIdList);
+      const ownedIds = new Set((ownedStores ?? []).map((s: any) => s.id));
+      const allOwned = storeIdList.every((id) => ownedIds.has(id));
+      if (!allOwned) {
         return new Response(
-          JSON.stringify({ error: "You don't own this store" }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "You don't own one or more of the selected stores" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
@@ -183,7 +186,8 @@ Deno.serve(async (req) => {
         phone: phone || "",
         role: role || "staff",
         permissions: permissions || [],
-        store_id: store_id || null,
+        store_id: primaryStoreId,
+        store_ids: storeIdList,
         is_active: true,
       })
       .select()

@@ -25,8 +25,8 @@ const StoreSwitcher = () => {
   const [creating, setCreating] = useState(false);
   const [newStoreMode, setNewStoreMode] = useState<StoreMode>("online");
 
-  // Staff users: show store name only, no switching
-  if (isStaffStore) {
+  // Staff with only one assigned store: show name only, no switching
+  if (isStaffStore && stores.length <= 1) {
     return (
       <Button variant="ghost" size="sm" className="h-8 gap-2 px-2.5 text-muted-foreground max-w-[180px] cursor-default pointer-events-none">
         <Store className="h-3.5 w-3.5 shrink-0 text-primary" />
@@ -86,14 +86,16 @@ const StoreSwitcher = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel className="text-xs">
-            Your Stores ({stores.length}/{isFinite(storeLimit) ? storeLimit : "∞"})
+            {isStaffStore
+              ? `Assigned Stores (${stores.length})`
+              : `Your Stores (${stores.length}/${isFinite(storeLimit) ? storeLimit : "∞"})`}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {stores.map(store => (
             <DropdownMenuItem
               key={store.id}
               onClick={(e) => {
-                if (lockedStoreIds.has(store.id)) {
+                if (!isStaffStore && lockedStoreIds.has(store.id)) {
                   e.preventDefault();
                   toast.error(`Locked on your current plan. Upgrade to access more stores.`);
                   navigate("/my-plan");
@@ -101,7 +103,7 @@ const StoreSwitcher = () => {
                 }
                 switchStore(store.id);
               }}
-              className={`gap-2 ${lockedStoreIds.has(store.id) ? "opacity-60" : ""}`}
+              className={`gap-2 ${!isStaffStore && lockedStoreIds.has(store.id) ? "opacity-60" : ""}`}
             >
               <Store className="h-3.5 w-3.5" />
               <span className="flex-1 truncate text-sm">{store.name}</span>
@@ -110,21 +112,25 @@ const StoreSwitcher = () => {
               ) : (
                 <Globe className="h-3 w-3 text-green-500" />
               )}
-              {lockedStoreIds.has(store.id) ? (
+              {!isStaffStore && lockedStoreIds.has(store.id) ? (
                 <Lock className="h-3 w-3 text-amber-500" />
               ) : store.id === activeStore?.id ? (
                 <Check className="h-3.5 w-3.5 text-primary" />
               ) : null}
             </DropdownMenuItem>
           ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleNewStore} className="gap-2">
-            {canCreateStore ? (
-              <><Plus className="h-3.5 w-3.5" /> Create New Store</>
-            ) : (
-              <><Crown className="h-3.5 w-3.5 text-warning" /> Upgrade for More</>
-            )}
-          </DropdownMenuItem>
+          {!isStaffStore && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleNewStore} className="gap-2">
+                {canCreateStore ? (
+                  <><Plus className="h-3.5 w-3.5" /> Create New Store</>
+                ) : (
+                  <><Crown className="h-3.5 w-3.5 text-warning" /> Upgrade for More</>
+                )}
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

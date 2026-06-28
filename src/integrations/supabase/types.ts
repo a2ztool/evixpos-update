@@ -2964,6 +2964,7 @@ export type Database = {
           phone: string
           role: string
           store_id: string | null
+          store_ids: string[]
           user_id: string
         }
         Insert: {
@@ -2977,6 +2978,7 @@ export type Database = {
           phone?: string
           role?: string
           store_id?: string | null
+          store_ids?: string[]
           user_id: string
         }
         Update: {
@@ -2990,6 +2992,7 @@ export type Database = {
           phone?: string
           role?: string
           store_id?: string | null
+          store_ids?: string[]
           user_id?: string
         }
         Relationships: [
