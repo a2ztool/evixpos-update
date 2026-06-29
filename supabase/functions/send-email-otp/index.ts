@@ -87,10 +87,10 @@ Deno.serve(async (req) => {
     const { email, purpose = "signup", payload } = await req.json();
     const cleanEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      return json({ error: "Invalid email address." }, 400);
+      return json({ error: "Invalid email address." });
     }
     if (!["signup", "reset"].includes(purpose)) {
-      return json({ error: "Invalid purpose." }, 400);
+      return json({ error: "Invalid purpose." });
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         .eq("email", cleanEmail)
         .maybeSingle();
       if (existing) {
-        return json({ error: "Email already registered. Please sign in." }, 409);
+        return json({ error: "Email already registered. Please sign in." });
       }
     }
 
@@ -119,10 +119,10 @@ Deno.serve(async (req) => {
       .gte("created_at", since)
       .order("created_at", { ascending: false });
     if (recent && recent.length >= 5) {
-      return json({ error: "Too many requests. Try again in an hour." }, 429);
+      return json({ error: "Too many requests. Try again in an hour." });
     }
     if (recent && recent[0] && Date.now() - new Date(recent[0].created_at).getTime() < 45_000) {
-      return json({ error: "Please wait a moment before requesting a new code." }, 429);
+      return json({ error: "Please wait a moment before requesting a new code." });
     }
 
     // Invalidate previous unconsumed codes for this email+purpose
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     });
     if (insErr) {
       console.error("OTP insert error", insErr);
-      return json({ error: "Failed to issue code." }, 500);
+      return json({ error: "Failed to issue code." });
     }
 
     // Load SMTP config (first available row)
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (cfgErr || !cfg || !cfg.smtp_host) {
       console.error("No SMTP config", cfgErr);
-      return json({ error: "Email service not configured. Contact support." }, 500);
+      return json({ error: "Email service not configured. Contact support." });
     }
 
     const brand = cfg.sender_name || "EvixPos";
@@ -189,13 +189,13 @@ Deno.serve(async (req) => {
     } catch (sendErr) {
       console.error("SMTP send failed", sendErr);
       try { await client.close(); } catch {}
-      return json({ error: "Failed to send code email. Please try again." }, 500);
+      return json({ error: "Failed to send code email. Please try again." });
     }
     try { await client.close(); } catch {}
 
     return json({ success: true, expires_at });
   } catch (e) {
     console.error("send-email-otp error", e);
-    return json({ error: (e as Error).message || "Unexpected error." }, 500);
+    return json({ error: (e as Error).message || "Unexpected error." });
   }
 });
