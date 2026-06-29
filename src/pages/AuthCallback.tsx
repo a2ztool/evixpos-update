@@ -14,8 +14,11 @@ const AuthCallback = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let routed = false;
 
     const route = async (uid: string) => {
+      if (routed) return;
+      routed = true;
       // Strip OAuth params before navigating away
       if (typeof window !== "undefined") {
         window.history.replaceState({}, document.title, "/auth/callback");
@@ -50,6 +53,7 @@ const AuthCallback = () => {
         .select("id", { count: "exact", head: true })
         .eq("user_id", uid);
       if (cancelled) return;
+      // New Google sign-ups (no stores yet) always go to onboarding first.
       navigate((count ?? 0) > 0 ? "/dashboard" : "/onboarding", { replace: true });
     };
 
