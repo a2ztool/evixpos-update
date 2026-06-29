@@ -23,11 +23,6 @@ function genCode() {
   return n.toString().padStart(6, "0");
 }
 
-function otpEmail(code: string, brand: string) {
-  const isReset = false; // set per-call below via wrapper
-  return buildEmail(code, brand, isReset);
-}
-
 function buildEmail(code: string, brand: string, isReset: boolean) {
   const teal = "#016a5e";
   const tealDark = "#014b43";
