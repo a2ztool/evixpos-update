@@ -24,6 +24,10 @@ export function TermsPrivacyDialog({
 }: TermsPrivacyDialogProps) {
   const [activeTab, setActiveTab] = useState<PolicyType>(defaultTab);
 
+  useEffect(() => {
+    if (open) setActiveTab(defaultTab);
+  }, [open, defaultTab]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] p-0 overflow-hidden bg-card border-border/60">
