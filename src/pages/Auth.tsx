@@ -579,6 +579,12 @@ const Auth = () => {
           </p>
         </div>
       </main>
+
+      <TermsPrivacyDialog
+        open={legalOpen}
+        defaultTab={legalTab}
+        onOpenChange={(open) => { setLegalOpen(open); if (!open) setLegalTab("terms"); }}
+      />
     </div>
   );
 };
