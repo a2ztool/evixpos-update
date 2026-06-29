@@ -23,13 +23,13 @@ const ForgotPassword = () => {
     }
     setEmailError("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: clean,
-      options: { shouldCreateUser: false },
+    const { data, error } = await supabase.functions.invoke("send-email-otp", {
+      body: { email: clean, purpose: "reset" },
     });
+    const errMsg = (data as any)?.error || error?.message;
     setLoading(false);
-    if (error) {
-      toast.error(error.message || "Could not send reset code.");
+    if (errMsg) {
+      toast.error(errMsg);
       return;
     }
     toast.success("Verification code sent to your email.");
