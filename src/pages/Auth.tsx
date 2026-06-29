@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { loginSchema, signupSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useAuth } from "@/contexts/AuthContext";
+import { TermsPrivacyDialog } from "@/components/TermsPrivacyDialog";
 import {
   Zap, Eye, EyeOff, ArrowRight, Gift, Check, Sparkles,
   ShieldCheck, Lock, Star, TrendingUp, Globe, Award,
@@ -28,6 +29,8 @@ const Auth = () => {
   const [pwStrength, setPwStrength] = useState(0);
   const [highlightIdx, setHighlightIdx] = useState(0);
   const [termsError, setTermsError] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const loginForm = useFormValidation(loginSchema);
   const signupForm = useFormValidation(signupSchema);
   const navigate = useNavigate();
@@ -515,7 +518,22 @@ const Auth = () => {
                           className={`mt-0.5 ${termsError ? "border-destructive" : ""}`}
                         />
                         <Label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer leading-relaxed select-none">
-                          I agree to the <a href="#" className="text-primary font-medium hover:underline">Terms</a> and <a href="#" className="text-primary font-medium hover:underline">Privacy Policy</a>
+                          I agree to the{" "}
+                          <button
+                            type="button"
+                            onClick={() => { setLegalTab("terms"); setLegalOpen(true); }}
+                            className="text-primary font-medium hover:underline inline"
+                          >
+                            Terms
+                          </button>{" "}
+                          and{" "}
+                          <button
+                            type="button"
+                            onClick={() => { setLegalTab("privacy"); setLegalOpen(true); }}
+                            className="text-primary font-medium hover:underline inline"
+                          >
+                            Privacy Policy
+                          </button>
                         </Label>
                       </div>
                       {termsError && (
@@ -561,6 +579,12 @@ const Auth = () => {
           </p>
         </div>
       </main>
+
+      <TermsPrivacyDialog
+        open={legalOpen}
+        defaultTab={legalTab}
+        onOpenChange={(open) => { setLegalOpen(open); if (!open) setLegalTab("terms"); }}
+      />
     </div>
   );
 };
