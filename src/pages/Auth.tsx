@@ -518,7 +518,22 @@ const Auth = () => {
                           className={`mt-0.5 ${termsError ? "border-destructive" : ""}`}
                         />
                         <Label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer leading-relaxed select-none">
-                          I agree to the <a href="#" className="text-primary font-medium hover:underline">Terms</a> and <a href="#" className="text-primary font-medium hover:underline">Privacy Policy</a>
+                          I agree to the{" "}
+                          <button
+                            type="button"
+                            onClick={() => { setLegalTab("terms"); setLegalOpen(true); }}
+                            className="text-primary font-medium hover:underline inline"
+                          >
+                            Terms
+                          </button>{" "}
+                          and{" "}
+                          <button
+                            type="button"
+                            onClick={() => { setLegalTab("privacy"); setLegalOpen(true); }}
+                            className="text-primary font-medium hover:underline inline"
+                          >
+                            Privacy Policy
+                          </button>
                         </Label>
                       </div>
                       {termsError && (
