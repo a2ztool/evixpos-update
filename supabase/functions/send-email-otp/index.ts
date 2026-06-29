@@ -23,21 +23,59 @@ function genCode() {
   return n.toString().padStart(6, "0");
 }
 
-function otpEmail(code: string, brand: string) {
+function buildEmail(code: string, brand: string, isReset: boolean) {
+  const teal = "#016a5e";
+  const tealDark = "#014b43";
+  const title = isReset ? "Reset your password" : "Verify your email";
+  const intro = isReset
+    ? "Use the 6-digit code below to reset your password. The code expires in 10 minutes."
+    : "Use the 6-digit code below to verify your email and finish setting up your account. The code expires in 10 minutes.";
+  const subjectLine = isReset
+    ? `Your ${brand} password reset code: ${code}`
+    : `Your ${brand} verification code: ${code}`;
   return {
-    subject: `Your ${brand} verification code: ${code}`,
-    text: `Your ${brand} verification code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
-    html: `<!doctype html><html><body style="margin:0;padding:0;background:#f6f8fb;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f172a">
-      <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
-        <table width="100%" style="max-width:480px;background:#ffffff;border:1px solid #e6eaf0;border-radius:16px;overflow:hidden">
-          <tr><td style="padding:28px 28px 8px"><div style="font-size:13px;font-weight:600;color:#0d9488;letter-spacing:.06em;text-transform:uppercase">${brand}</div>
-            <h1 style="margin:8px 0 0;font-size:22px;line-height:1.3">Verify your email</h1>
-            <p style="margin:8px 0 0;color:#475569;font-size:14px">Use the 6-digit code below to verify your email address. The code expires in 10 minutes.</p></td></tr>
-          <tr><td align="center" style="padding:18px 28px 8px"><div style="display:inline-block;font-size:32px;letter-spacing:14px;font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;padding:14px 22px;color:#0f172a">${code}</div></td></tr>
-          <tr><td style="padding:8px 28px 28px;color:#64748b;font-size:12px">If you didn't request this code, you can safely ignore this email.</td></tr>
-        </table>
-        <div style="color:#94a3b8;font-size:11px;margin-top:12px">&copy; ${new Date().getFullYear()} ${brand}</div>
-      </td></tr></table></body></html>`,
+    subject: subjectLine,
+    text: `Your ${brand} ${isReset ? "password reset" : "verification"} code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
+    html: `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">${title} — your ${brand} 6-digit code is ${code}.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(1,74,67,0.08);border:1px solid #e2e8f0">
+        <tr><td style="background:linear-gradient(135deg,${teal} 0%,${tealDark} 100%);padding:28px 32px;text-align:left">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:middle">
+              <div style="display:inline-block;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.18);text-align:center;line-height:40px;color:#ffffff;font-weight:800;font-size:18px;letter-spacing:-0.5px">E</div>
+            </td>
+            <td style="vertical-align:middle;padding-left:12px">
+              <div style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.2px">${brand}</div>
+              <div style="color:rgba(255,255,255,0.75);font-size:12px;margin-top:2px">Smart POS for modern stores</div>
+            </td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:36px 32px 8px">
+          <h1 style="margin:0;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;letter-spacing:-0.3px">${title}</h1>
+          <p style="margin:10px 0 0;color:#475569;font-size:14px;line-height:1.6">${intro}</p>
+        </td></tr>
+        <tr><td align="center" style="padding:24px 32px 8px">
+          <div style="display:inline-block;font-size:34px;letter-spacing:14px;font-weight:800;background:#f0fdfa;border:1px solid #99f6e4;border-radius:14px;padding:18px 26px;color:${tealDark};font-family:'SFMono-Regular',Menlo,Consolas,monospace">${code}</div>
+          <div style="margin-top:10px;color:#94a3b8;font-size:12px">Expires in 10 minutes</div>
+        </td></tr>
+        <tr><td style="padding:18px 32px 28px">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;color:#475569;font-size:12px;line-height:1.6">
+            🔒 For your security, never share this code with anyone. ${brand} staff will never ask for it.
+          </div>
+        </td></tr>
+        <tr><td style="padding:0 32px 28px;color:#94a3b8;font-size:12px;line-height:1.6">
+          Didn't request this? You can safely ignore this email — no changes will be made to your account.
+        </td></tr>
+        <tr><td style="background:#f8fafc;padding:18px 32px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px">
+          &copy; ${new Date().getFullYear()} ${brand}. All rights reserved.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
   };
 }
 
@@ -124,7 +162,7 @@ Deno.serve(async (req) => {
     }
 
     const brand = cfg.sender_name || "EvixPos";
-    const mail = otpEmail(code, brand);
+    const mail = buildEmail(code, brand, purpose === "reset");
 
     const port = cfg.smtp_port || 465;
     const useTLS = port === 465 || !!cfg.smtp_secure;

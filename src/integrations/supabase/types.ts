@@ -1282,6 +1282,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_otp: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          otp: string
+          purpose: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          otp: string
+          purpose: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          otp?: string
+          purpose?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       email_otps: {
         Row: {
           attempts: number

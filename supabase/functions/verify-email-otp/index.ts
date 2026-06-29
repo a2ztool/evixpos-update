@@ -124,8 +124,27 @@ Deno.serve(async (req) => {
       return json({ success: true, mode: "signup" });
     }
 
-    // reset purpose — issue a short-lived reset token (handled by another endpoint or client flow)
-    return json({ success: true, mode: "reset" });
+    // reset purpose — confirm the user exists, then issue a short-lived reset token
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (!profile) {
+      return json({ error: "No account found for this email." }, 404);
+    }
+    // Generate a random token, store its hash, return raw token to client
+    const tokenBytes = new Uint8Array(32);
+    crypto.getRandomValues(tokenBytes);
+    const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+    const token_hash = await sha256Hex(`${email}:${token}`);
+    await admin.from("email_otps").insert({
+      email,
+      code_hash: token_hash,
+      purpose: "reset_token",
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+    return json({ success: true, mode: "reset", resetToken: token });
   } catch (e) {
     console.error("verify-email-otp error", e);
     return json({ error: (e as Error).message || "Unexpected error." }, 500);

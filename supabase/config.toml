@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.verify-email-otp]
 verify_jwt = false
+
+[functions.set-new-password]
+verify_jwt = false

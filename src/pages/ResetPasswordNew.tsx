@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,24 +11,17 @@ import evixLogo from "@/assets/evixpos-logo.png";
 const ResetPasswordNew = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const stateEmail = (location.state as { email?: string } | null)?.email;
+  const stateEmail = (location.state as { email?: string; resetToken?: string } | null)?.email;
+  const resetToken = (location.state as { email?: string; resetToken?: string } | null)?.resetToken;
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
-  const [ready, setReady] = useState(false);
+  const ready = true;
 
-  useEffect(() => {
-    // Make sure we still have an authenticated session from the OTP verify step
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-      else navigate("/auth", { replace: true });
-    });
-  }, [navigate]);
-
-  if (!stateEmail) return <Navigate to="/auth" replace />;
+  if (!stateEmail || !resetToken) return <Navigate to="/auth" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,14 +32,16 @@ const ResetPasswordNew = () => {
     if (Object.keys(next).length) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
+    const { data, error } = await supabase.functions.invoke("set-new-password", {
+      body: { email: stateEmail, token: resetToken, password },
+    });
+    const errMsg = (data as any)?.error || error?.message;
+    if (errMsg) {
       setLoading(false);
-      toast.error(error.message || "Failed to update password.");
+      toast.error(errMsg);
       return;
     }
     toast.success("Password updated successfully!");
-    await supabase.auth.signOut();
     setLoading(false);
     setTimeout(() => navigate("/auth", { replace: true }), 600);
   };

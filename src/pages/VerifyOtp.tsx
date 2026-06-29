@@ -127,7 +127,10 @@ const VerifyOtp = () => {
       if (state.mode === "signup") {
         navigate("/onboarding", { replace: true });
       } else {
-        navigate("/reset-password-new", { replace: true, state: { email: state.email } });
+        navigate("/reset-password-new", {
+          replace: true,
+          state: { email: state.email, resetToken: (data as any)?.resetToken },
+        });
       }
     }, 800);
   };
