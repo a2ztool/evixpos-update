@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
     }
 
     const brand = cfg.sender_name || "EvixPos";
-    const mail = otpEmail(code, brand);
+    const mail = buildEmail(code, brand, purpose === "reset");
 
     const port = cfg.smtp_port || 465;
     const useTLS = port === 465 || !!cfg.smtp_secure;
