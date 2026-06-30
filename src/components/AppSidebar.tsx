@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useState } from "react";
 
-type NavItem = { title: string; icon: any; path: string; perm?: string; feature?: FeatureKey; onlineOnly?: boolean; offlineOnly?: boolean };
+type NavItem = { title: string; icon: any; path: string; perm?: string; menu?: string; feature?: FeatureKey; onlineOnly?: boolean; offlineOnly?: boolean };
 
 const AppSidebar = () => {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ const AppSidebar = () => {
   const { user } = useAuth();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { t } = useLanguage();
-  const { isStaff, staffInfo, hasPermission } = useStaff();
+  const { isStaff, staffInfo, hasPermission, hasMenu } = useStaff();
   const { activeStore } = useStore();
   const { plan, hasFeature, displayPlan, isUnlimited } = useStorePlan();
   const handleNavigate = (path: string) => {
@@ -56,47 +56,48 @@ const AppSidebar = () => {
     { title: t.pendingOrders, icon: Clock, path: "/orders/pending", perm: "orders.view" },
   ];
   const productSubItems: NavItem[] = [
-    { title: t.products, icon: Package, path: "/products", perm: "products.view" },
-    { title: "Inventory", icon: Truck, path: "/inventory", perm: "products.view", onlineOnly: true },
-    { title: t.orderForms, icon: FileText, path: "/order-forms", perm: "products.view", feature: "order_forms", onlineOnly: true },
-    { title: t.coupons, icon: Tag, path: "/coupons", perm: "products.edit", feature: "coupons" },
+    { title: t.products, icon: Package, path: "/products", menu: "products" },
+    { title: "Inventory", icon: Truck, path: "/inventory", menu: "inventory", onlineOnly: true },
+    { title: t.orderForms, icon: FileText, path: "/order-forms", menu: "order_forms", feature: "order_forms", onlineOnly: true },
+    { title: t.coupons, icon: Tag, path: "/coupons", menu: "coupons", feature: "coupons" },
   ];
   const crmItems: NavItem[] = [
-    { title: t.customers, icon: Users, path: "/customers", perm: "customers.view" },
-    { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", perm: "customers.view", feature: "subscriptions", onlineOnly: true },
-    { title: "Customer Credits", icon: Receipt, path: "/offline/customer-credits", perm: "customers.view", offlineOnly: true },
-    { title: "Due Customers", icon: AlertTriangle, path: "/offline/due-customers", perm: "customers.view", offlineOnly: true },
-    { title: "Loyalty Points", icon: Star, path: "/offline/loyalty", perm: "customers.view", offlineOnly: true },
+    { title: t.customers, icon: Users, path: "/customers", menu: "customers" },
+    { title: t.subscriptions, icon: RefreshCw, path: "/subscriptions", menu: "subscriptions", feature: "subscriptions", onlineOnly: true },
+    { title: "Customer Credits", icon: Receipt, path: "/offline/customer-credits", menu: "customer_credits", offlineOnly: true },
+    { title: "Due Customers", icon: AlertTriangle, path: "/offline/due-customers", menu: "due_customers", offlineOnly: true },
+    { title: "Loyalty Points", icon: Star, path: "/offline/loyalty", menu: "loyalty", offlineOnly: true },
   ];
   const offlineOpsItems: NavItem[] = [
-    { title: "Suppliers", icon: Truck, path: "/offline/suppliers", perm: "products.view", offlineOnly: true },
-    { title: "Purchases", icon: ShoppingBag, path: "/offline/purchases", perm: "products.edit", offlineOnly: true },
+    { title: "Suppliers", icon: Truck, path: "/offline/suppliers", menu: "suppliers", offlineOnly: true },
+    { title: "Purchases", icon: ShoppingBag, path: "/offline/purchases", menu: "purchases", offlineOnly: true },
     { title: "Cash Register", icon: Wallet, path: "/offline/cash-register", perm: "pos.access", offlineOnly: true },
-    { title: "Stock Alerts", icon: AlertTriangle, path: "/offline/stock-alerts", perm: "products.view", offlineOnly: true },
+    { title: "Stock Alerts", icon: AlertTriangle, path: "/offline/stock-alerts", menu: "stock_alerts", offlineOnly: true },
   ];
   const financeSubItems: NavItem[] = [
-    { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", perm: "reports.view", feature: "reports", onlineOnly: true },
-    { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", perm: "reports.view", feature: "reports" },
-    { title: "Account Book", icon: BookOpen, path: "/finance/account-book", perm: "reports.view", feature: "reports" },
-    { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", perm: "reports.view", feature: "due_book", onlineOnly: true },
-    { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
+    { title: t.salesProfit, icon: TrendingUp, path: "/finance/sales-profit", menu: "sales_profit", feature: "reports", onlineOnly: true },
+    { title: t.incomeExpense, icon: ArrowUpDown, path: "/finance/income-expense", menu: "income_expense", feature: "reports" },
+    { title: "Account Book", icon: BookOpen, path: "/finance/account-book", menu: "account_book", feature: "reports" },
+    { title: t.dueBook, icon: BookOpen, path: "/finance/due-book", menu: "due_book", feature: "due_book", onlineOnly: true },
+    { title: t.adCosts, icon: Megaphone, path: "/finance/ad-costs", menu: "ad_costs", feature: "ad_costs", onlineOnly: true },
     { title: t.taskMission, icon: ListTodo, path: "/finance/tasks", perm: "orders.view", feature: "task_mission", onlineOnly: true },
-    { title: "Daily Report", icon: CalendarDays, path: "/offline/daily-report", perm: "reports.view", offlineOnly: true },
-    { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", perm: "reports.view", offlineOnly: true },
-    { title: "Staff Performance", icon: Users, path: "/offline/staff-performance", perm: "reports.view", offlineOnly: true },
+    { title: "Daily Report", icon: CalendarDays, path: "/offline/daily-report", menu: "daily_report", offlineOnly: true },
+    { title: "Profit & Loss", icon: TrendingUp, path: "/offline/profit-loss", menu: "profit_loss", offlineOnly: true },
+    { title: "Staff Performance", icon: Users, path: "/offline/staff-performance", menu: "staff_performance", offlineOnly: true },
   ];
   const integrationSubItems: NavItem[] = [
     { title: t.notifications, icon: Bell, path: "/integrations/notifications" },
-    { title: t.woocommerce, icon: ShoppingBag, path: "/integrations/woocommerce", perm: "settings.edit", feature: "woocommerce", onlineOnly: true },
-    { title: t.botAutomation, icon: Bot, path: "/integrations/bot-automation", perm: "settings.edit", feature: "bot_automation", onlineOnly: true },
-    { title: t.whatsapp, icon: MessageCircle, path: "/integrations/whatsapp", perm: "settings.edit", feature: "whatsapp" },
-    { title: t.googleSheets, icon: Sheet, path: "/integrations/google-sheets", perm: "settings.edit", feature: "google_sheets" },
-    { title: "Facebook Ads", icon: Zap, path: "/integrations/facebook-ads", perm: "reports.view", feature: "ad_costs", onlineOnly: true },
+    { title: t.woocommerce, icon: ShoppingBag, path: "/integrations/woocommerce", menu: "woocommerce", feature: "woocommerce", onlineOnly: true },
+    { title: t.botAutomation, icon: Bot, path: "/integrations/bot-automation", menu: "bot_automation", feature: "bot_automation", onlineOnly: true },
+    { title: t.whatsapp, icon: MessageCircle, path: "/integrations/whatsapp", menu: "whatsapp", feature: "whatsapp" },
+    { title: t.googleSheets, icon: Sheet, path: "/integrations/google-sheets", menu: "google_sheets", feature: "google_sheets" },
+    { title: "Facebook Ads", icon: Zap, path: "/integrations/facebook-ads", menu: "facebook_ads", feature: "ad_costs", onlineOnly: true },
   ];
 
   const filterByPerm = (items: NavItem[]) =>
     items.filter(item => {
       if (item.perm && !hasPermission(item.perm)) return false;
+      if (item.menu && !hasMenu(item.menu, "view")) return false;
       if (item.onlineOnly && isOffline) return false;
       if (item.offlineOnly && !isOffline) return false;
       return true;
@@ -112,7 +113,7 @@ const AppSidebar = () => {
 
   const showReferral = !isStaff;
   const showMyPlan = !isStaff;
-  const showSettings = !isStaff || hasPermission("settings.view");
+  const showSettings = !isStaff || hasMenu("settings", "view");
 
   const [ordersOpen, setOrdersOpen] = useState(location.pathname.startsWith("/orders"));
   const [productsOpen, setProductsOpen] = useState(["/products", "/order-forms", "/coupons", "/inventory"].some(p => location.pathname.startsWith(p)));
@@ -321,7 +322,7 @@ const AppSidebar = () => {
 
         {filteredOfflineOps.length > 0 && renderGroup("Store Operations", filteredOfflineOps)}
 
-        {(filteredFinance.length > 0 || hasPermission("reports.view")) && (
+        {(filteredFinance.length > 0 || hasMenu("reports", "view")) && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70 px-3 mb-1">
               {t.performance}
@@ -329,7 +330,7 @@ const AppSidebar = () => {
             <SidebarGroupContent>
               <SidebarMenu className="px-2 space-y-0.5 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
                 {filteredFinance.length > 0 && renderCollapsible(t.finances, CreditCard, filteredFinance, financeOpen, setFinanceOpen, "/finance")}
-                {hasPermission("reports.view") && renderItem({ title: t.reports, icon: BarChart3, path: "/reports" })}
+                {hasMenu("reports", "view") && renderItem({ title: t.reports, icon: BarChart3, path: "/reports" })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
