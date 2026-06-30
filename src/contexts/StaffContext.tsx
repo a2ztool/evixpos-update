@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { hasMenuAccess, type MenuAction } from "@/lib/menuPermissions";
 
 interface StaffInfo {
   id: string;
@@ -20,6 +21,8 @@ interface StaffContextType {
   loading: boolean;
   hasPermission: (perm: string) => boolean;
   hasAnyPermission: (...perms: string[]) => boolean;
+  /** Granular per-menu permission check (view/create/edit/delete). */
+  hasMenu: (menuKey: string, action?: MenuAction) => boolean;
   /** Returns the store owner's user_id for staff, or the current user's id for owners */
   effectiveUserId: string | null;
 }
@@ -30,6 +33,7 @@ const StaffContext = createContext<StaffContextType>({
   loading: true,
   hasPermission: () => false,
   hasAnyPermission: () => false,
+  hasMenu: () => false,
   effectiveUserId: null,
 });
 
@@ -130,6 +134,12 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
     return perms.some(p => staffInfo.permissions.includes(p));
   };
 
+  const hasMenu = (menuKey: string, action: MenuAction = "view"): boolean => {
+    if (!staffInfo) return true; // owner
+    if (staffInfo.role === "admin") return true;
+    return hasMenuAccess(staffInfo.permissions, menuKey, action);
+  };
+
   const effectiveUserId = staffInfo ? staffInfo.owner_id : (user?.id ?? null);
 
   return (
@@ -139,6 +149,7 @@ export const StaffProvider = ({ children }: { children: ReactNode }) => {
       loading,
       hasPermission,
       hasAnyPermission,
+      hasMenu,
       effectiveUserId,
     }}>
       {children}
