@@ -497,9 +497,12 @@ const SettingsPage = () => {
   const activeStaffCount = staff.filter(s => s.is_active).length;
   const canAddStaff = activeStaffCount < staffLimit;
 
-  const applyRolePreset = (role: string, setter: (v: any) => void) => {
-    const presets = ROLE_PRESETS[role] ?? [];
-    setter((p: any) => ({ ...p, role, permissions: role === "custom" ? p.permissions : presets }));
+  const applyPreset = (presetKey: string, setter: (v: any) => void) => {
+    setter((p: any) => ({
+      ...p,
+      role: presetKey,
+      permissions: presetKey === "custom" ? p.permissions : getPresetPerms(presetKey),
+    }));
   };
 
   const addStaffMember = async () => {
