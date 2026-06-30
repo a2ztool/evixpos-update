@@ -124,6 +124,12 @@ export const getLegacyFallbacks = (
 /**
  * Returns true if `perms` grants the given menu action — either via the new
  * `m:<key>:<action>` key or any matching legacy perm.
+ *
+ * Once an owner has saved permissions in the new granular UI, the staff's
+ * `permissions` array will contain at least one `m:` prefixed key. From that
+ * point on legacy fallbacks are ignored — otherwise a staff who still has an
+ * old broad perm like `products.view` would keep seeing every sub-menu in
+ * the module even after the owner explicitly removed access.
  */
 export const hasMenuAccess = (
   perms: string[],
@@ -131,6 +137,9 @@ export const hasMenuAccess = (
   action: MenuAction = "view"
 ): boolean => {
   if (perms.includes(menuPerm(menuKey, action))) return true;
+  // If the owner has migrated this staff to the granular system, do NOT fall
+  // back to legacy perms — the new selection is the source of truth.
+  if (perms.some((p) => p.startsWith("m:"))) return false;
   const legacy = getLegacyFallbacks(menuKey, action);
   return legacy.some((p) => perms.includes(p));
 };
