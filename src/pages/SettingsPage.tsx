@@ -1201,7 +1201,13 @@ const SettingsPage = () => {
     );
   };
 
-  const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[]; store_ids?: string[]; store_id?: string | null }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => {
+  const renderStaffForm = (
+    data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[]; store_ids?: string[]; store_id?: string | null },
+    setter: (v: any) => void,
+    onSubmit: () => void,
+    submitLabel: string,
+    isNew = false,
+  ) => {
     const selectedStoreIds: string[] = Array.isArray(data.store_ids) && data.store_ids.length > 0
       ? data.store_ids
       : (data.store_id ? [data.store_id] : (isNew && activeStore ? [activeStore.id] : []));
@@ -1216,139 +1222,155 @@ const SettingsPage = () => {
         return { ...p, store_ids: next, store_id: next[0] ?? null };
       });
     };
+    // Derive current preset from saved permissions if `role` isn't a known preset
+    const knownPresets = ROLE_PRESETS.map(p => p.key);
+    const currentPreset = knownPresets.includes(data.role) ? data.role : detectPreset(data.permissions);
+
     return (
-    <div className="space-y-4 mt-2">
-      <div className="space-y-1.5"><Label>{t.name}</Label>
-        <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
-        {isNew && staffValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("name")}</p>}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5"><Label>{t.email}</Label>
-          <Input value={data.email} onChange={e => { setter((p: any) => ({ ...p, email: e.target.value })); if (isNew) staffValidation.clearField("email"); }} type="email" disabled={!isNew} error={isNew && !!staffValidation.getError("email")} />
-          {isNew && staffValidation.getError("email") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("email")}</p>}
-        </div>
-        <div className="space-y-1.5"><Label>{t.phone}</Label>
-          <Input value={data.phone} onChange={e => { setter((p: any) => ({ ...p, phone: e.target.value })); if (isNew) staffValidation.clearField("phone"); }} error={isNew && !!staffValidation.getError("phone")} />
-          {isNew && staffValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("phone")}</p>}
-        </div>
-      </div>
-      {isNew ? (
-        <div className="space-y-1.5">
-          <Label>{lang === "bn" ? "পাসওয়ার্ড" : "Password"}</Label>
-          <div className="relative">
-            <Input type={showPassword ? "text" : "password"} value={data.password || ""} onChange={e => { setter((p: any) => ({ ...p, password: e.target.value })); staffValidation.clearField("password"); }} placeholder={lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters"} error={!!staffValidation.getError("password")} />
-            <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+      <div className="space-y-3 mt-1">
+        {/* Row 1: Name + Phone */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">{lang === "bn" ? "পুরো নাম" : "Full Name"}</Label>
+            <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
+            {isNew && staffValidation.getError("name") && <p className="text-[11px] text-destructive">{staffValidation.getError("name")}</p>}
           </div>
-          {staffValidation.getError("password") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("password")}</p>}
-          <p className="text-xs text-muted-foreground">{lang === "bn" ? "স্টাফ এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করবে" : "Staff will use this email & password to login"}</p>
-        </div>
-      ) : (
-        <div className="space-y-1.5 p-3 rounded-lg border border-border bg-muted/30">
-          <Label className="flex items-center gap-2">
-            <KeyRound className="h-3.5 w-3.5 text-primary" />
-            {lang === "bn" ? "পাসওয়ার্ড রিসেট (ঐচ্ছিক)" : "Reset Password (Optional)"}
-          </Label>
-          <div className="relative">
-            <Input
-              type={showPassword ? "text" : "password"}
-              value={data.password || ""}
-              onChange={e => setter((p: any) => ({ ...p, password: e.target.value }))}
-              placeholder={lang === "bn" ? "নতুন পাসওয়ার্ড সেট করুন (কমপক্ষে ৬ অক্ষর)" : "Set new password (min 6 characters)"}
-            />
-            <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t.phone}</Label>
+            <Input value={data.phone} onChange={e => { setter((p: any) => ({ ...p, phone: e.target.value })); if (isNew) staffValidation.clearField("phone"); }} error={isNew && !!staffValidation.getError("phone")} />
+            {isNew && staffValidation.getError("phone") && <p className="text-[11px] text-destructive">{staffValidation.getError("phone")}</p>}
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {lang === "bn"
-              ? "নিরাপত্তার কারণে বর্তমান পাসওয়ার্ড দেখানো হয় না। নতুন পাসওয়ার্ড দিলে সেভ করার সাথে সাথেই আপডেট হবে।"
-              : "For security, the current password is hidden. Enter a new one to override it on save."}
-          </p>
         </div>
-      )}
-      <div className="space-y-1.5"><Label>Role</Label>
-        <Select value={data.role} onValueChange={v => applyRolePreset(v, setter)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Admin — Full access</SelectItem>
-            <SelectItem value="manager">Manager — Operations & reports</SelectItem>
-            <SelectItem value="staff">Staff — POS & basic access</SelectItem>
-            <SelectItem value="custom">Custom — Select manually</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {stores.length > 0 && (
-        <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Store className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium">
-                {lang === "bn" ? "স্টোর অ্যাক্সেস" : "Store Access"}
-              </span>
-              <Badge variant="outline" className="text-[10px]">{selectedStoreIds.length}/{stores.length}</Badge>
+
+        {/* Row 2: Email + Password / Reset Password */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t.email}</Label>
+            <Input value={data.email} onChange={e => { setter((p: any) => ({ ...p, email: e.target.value })); if (isNew) staffValidation.clearField("email"); }} type="email" disabled={!isNew} error={isNew && !!staffValidation.getError("email")} />
+            {isNew && staffValidation.getError("email") && <p className="text-[11px] text-destructive">{staffValidation.getError("email")}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1.5">
+              <KeyRound className="h-3 w-3 text-primary" />
+              {isNew
+                ? (lang === "bn" ? "পাসওয়ার্ড" : "Password")
+                : (lang === "bn" ? "রিসেট পাসওয়ার্ড (ঐচ্ছিক)" : "Reset Password (Optional)")}
+            </Label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={data.password || ""}
+                onChange={e => { setter((p: any) => ({ ...p, password: e.target.value })); if (isNew) staffValidation.clearField("password"); }}
+                placeholder={isNew
+                  ? (lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters")
+                  : (lang === "bn" ? "নতুন পাসওয়ার্ড" : "Set new password")}
+                error={isNew && !!staffValidation.getError("password")}
+              />
+              <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </Button>
             </div>
-            <button
-              type="button"
-              className="text-[11px] text-primary hover:underline"
-              onClick={() => {
-                const all = stores.map(s => s.id);
-                const allSelected = selectedStoreIds.length === all.length;
-                setter((p: any) => ({
-                  ...p,
-                  store_ids: allSelected ? [] : all,
-                  store_id: allSelected ? null : all[0],
-                }));
-              }}
-            >
-              {selectedStoreIds.length === stores.length
-                ? (lang === "bn" ? "সব বাদ দিন" : "Clear all")
-                : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
-            </button>
+            {isNew && staffValidation.getError("password") && <p className="text-[11px] text-destructive">{staffValidation.getError("password")}</p>}
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {lang === "bn"
-              ? "এই স্টাফ যেসব স্টোরে অ্যাক্সেস পাবে নির্বাচন করুন। প্রতিটি স্টোর সম্পূর্ণ আলাদা থাকবে।"
-              : "Select every store this staff should access. Each store stays fully isolated."}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto">
-            {stores.map(s => {
-              const checked = selectedStoreIds.includes(s.id);
-              return (
-                <label
-                  key={s.id}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors text-xs ${
-                    checked ? "bg-primary/10 border-primary/40" : "bg-background border-border hover:bg-muted/40"
-                  }`}
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={(v) => toggleStore(s.id, !!v)}
-                  />
-                  <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">{s.name}</span>
-                </label>
-              );
-            })}
+        </div>
+
+        {/* Row 3: Role (display label, follows preset) */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">{lang === "bn" ? "রোল" : "Role"}</Label>
+          <Input
+            value={data.role && !knownPresets.includes(data.role) ? data.role : (ROLE_PRESETS.find(p => p.key === currentPreset)?.label ?? "")}
+            onChange={e => setter((p: any) => ({ ...p, role: e.target.value }))}
+            placeholder={lang === "bn" ? "যেমন: ম্যানেজার, ক্যাশিয়ার" : "e.g. Manager, Cashier"}
+          />
+        </div>
+
+        {/* Row 4: Store Access */}
+        {stores.length > 0 && (
+          <div className="space-y-2 p-3 rounded-xl bg-muted/40 border border-border">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold">{lang === "bn" ? "স্টোর অ্যাক্সেস" : "Store Access"}</span>
+                <Badge variant="outline" className="text-[10px]">{selectedStoreIds.length}/{stores.length}</Badge>
+              </div>
+              <button
+                type="button"
+                className="text-[11px] text-primary hover:underline"
+                onClick={() => {
+                  const all = stores.map(s => s.id);
+                  const allSelected = selectedStoreIds.length === all.length;
+                  setter((p: any) => ({
+                    ...p,
+                    store_ids: allSelected ? [] : all,
+                    store_id: allSelected ? null : all[0],
+                  }));
+                }}
+              >
+                {selectedStoreIds.length === stores.length
+                  ? (lang === "bn" ? "সব বাদ" : "Clear all")
+                  : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {stores.map(s => {
+                const checked = selectedStoreIds.includes(s.id);
+                return (
+                  <label
+                    key={s.id}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors text-xs ${
+                      checked ? "bg-primary/10 border-primary/40" : "bg-background border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={(v) => toggleStore(s.id, !!v)} />
+                    <Store className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{s.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {selectedStoreIds.length === 0 && (
+              <p className="text-[11px] text-destructive">{lang === "bn" ? "কমপক্ষে একটি স্টোর নির্বাচন করুন" : "Select at least one store"}</p>
+            )}
           </div>
-          {selectedStoreIds.length === 0 && (
-            <p className="text-[11px] text-destructive">
-              {lang === "bn" ? "কমপক্ষে একটি স্টোর নির্বাচন করুন" : "Select at least one store"}
+        )}
+
+        {/* Row 5: Permission Preset */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">{lang === "bn" ? "পারমিশন প্রিসেট" : "Permission Preset"}</Label>
+          <Select value={currentPreset} onValueChange={v => applyPreset(v, setter)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROLE_PRESETS.map(p => (
+                <SelectItem key={p.key} value={p.key}>
+                  <span className="font-medium">{p.label}</span>
+                  <span className="text-muted-foreground"> — {p.description}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {currentPreset !== "custom" && (
+            <p className="text-[11px] text-muted-foreground">
+              {lang === "bn"
+                ? "প্রিসেট সিলেক্ট করলে অটো-মেনু পারমিশন বসে যাবে। কাস্টমাইজ করতে Custom বেছে নিন।"
+                : "Selecting a preset auto-applies its menus. Pick Custom to choose manually."}
             </p>
           )}
         </div>
-      )}
-      <div className="space-y-1.5">
-        <Label>{lang === "bn" ? "পারমিশন" : "Permissions"}</Label>
-        <div className="max-h-72 overflow-y-auto pr-1">
-          {renderPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
-        </div>
+
+        {/* Row 6: Menu Permissions (only when Custom) */}
+        {currentPreset === "custom" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">{lang === "bn" ? "মেনু পারমিশন" : "Menu Permissions"}</Label>
+            <div className="max-h-72 overflow-y-auto pr-1">
+              {renderMenuPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
+            </div>
+          </div>
+        )}
+
+        <Button onClick={onSubmit} className="w-full" disabled={staffCreating || selectedStoreIds.length === 0}>
+          {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
+        </Button>
       </div>
-      <Button onClick={onSubmit} className="w-full" disabled={staffCreating || selectedStoreIds.length === 0}>
-        {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
-      </Button>
-    </div>
     );
   };
 
