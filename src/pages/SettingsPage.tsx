@@ -38,7 +38,11 @@ import {
   ACTIONS,
   ALL_MENU_PERMS,
   menuPerm,
+  menuKeyPerm,
   type MenuAction,
+  ROLE_PRESETS,
+  getPresetPerms,
+  detectPreset,
 } from "@/lib/menuPermissions";
 
 // ─── Payment Gateway Catalog ───
@@ -227,50 +231,8 @@ const LANGUAGES_LIST = [
   { code: "hi" as Lang, label: "Hindi", native: "हिन्दी" },
 ];
 
-// IMPORTANT: only the perm keys listed here are actually enforced by the
-// sidebar (AppSidebar.tsx) and route guards (App.tsx). Each module's
-// `unlocks` describes every menu item that becomes visible when the perm
-// is granted, so owners can see exactly what they're enabling.
-const PERMISSION_MODULES: { module: string; perms: string[]; unlocks: string }[] = [
-  {
-    module: "POS Terminal",
-    perms: ["pos.access"],
-    unlocks: "POS Terminal, Cash Register (offline)",
-  },
-  {
-    module: "Orders",
-    perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"],
-    unlocks: "All Orders, Create Order, Pending Orders, Task & Mission",
-  },
-];
-
-const ALL_LEGACY_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
-const ALL_PERMISSIONS = [...ALL_LEGACY_PERMISSIONS, ...ALL_MENU_PERMS];
-
-const ROLE_PRESETS: Record<string, string[]> = {
-  admin: ALL_PERMISSIONS,
-  manager: [
-    "pos.access",
-    "orders.view", "orders.create", "orders.edit",
-    // Products & Inventory — view/create/edit on every sub-menu
-    ...MENU_MODULES.find(m => m.key === "products")!.subs.flatMap(s =>
-      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
-    ),
-    // Customers & CRM — view/create/edit
-    ...MENU_MODULES.find(m => m.key === "customers")!.subs.flatMap(s =>
-      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
-    ),
-    // Reports & Finance — view all
-    ...MENU_MODULES.find(m => m.key === "reports")!.subs.map(s => menuPerm(s.key, "view")),
-  ],
-  staff: [
-    "pos.access",
-    "orders.view", "orders.create",
-    menuPerm("products", "view"),
-    menuPerm("customers", "view"),
-  ],
-  custom: [],
-};
+// Permission model is menu-only — see src/lib/menuPermissions.ts.
+// `pos.access` and `orders.*` are extras included in role presets there.
 
 const defaultPaymentMethods: ActiveGateway[] = [];
 
@@ -535,9 +497,12 @@ const SettingsPage = () => {
   const activeStaffCount = staff.filter(s => s.is_active).length;
   const canAddStaff = activeStaffCount < staffLimit;
 
-  const applyRolePreset = (role: string, setter: (v: any) => void) => {
-    const presets = ROLE_PRESETS[role] ?? [];
-    setter((p: any) => ({ ...p, role, permissions: role === "custom" ? p.permissions : presets }));
+  const applyPreset = (presetKey: string, setter: (v: any) => void) => {
+    setter((p: any) => ({
+      ...p,
+      role: presetKey,
+      permissions: presetKey === "custom" ? p.permissions : getPresetPerms(presetKey),
+    }));
   };
 
   const addStaffMember = async () => {
@@ -1153,166 +1118,79 @@ const SettingsPage = () => {
     </div>
   );
 
-  const renderPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => {
-    const allChecked = ALL_PERMISSIONS.every(p => perms.includes(p));
+  // Simple menu-only permission grid. Each sub-menu is a single checkbox —
+  // enabling it grants full access to that menu, disabling hides it entirely.
+  const renderMenuPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => {
+    const allKeys = ALL_MENU_PERMS;
+    const allChecked = allKeys.every(k => perms.includes(k));
+    const togglePerm = (key: string) => {
+      onChange(perms.includes(key) ? perms.filter(p => p !== key) : [...perms, key]);
+    };
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 px-1">
-          <p className="text-xs text-muted-foreground">
-            {lang === "bn" ? "প্রতিটি মডিউলের জন্য অ্যাক্সেস নিয়ন্ত্রণ করুন" : "Toggle module-level access and granular permissions"}
+          <p className="text-[11px] text-muted-foreground">
+            {lang === "bn"
+              ? "যেসব মেনু এনাবল থাকবে, স্টাফ সেগুলোতে পূর্ণ অ্যাক্সেস পাবে।"
+              : "Enabled menus give the staff full access. Disabled menus stay hidden."}
           </p>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" className="h-7 text-xs"
-              onClick={() => onChange(allChecked ? [] : [...ALL_PERMISSIONS])}>
-              {allChecked
-                ? (lang === "bn" ? "রিসেট" : "Reset")
-                : (lang === "bn" ? "সব সিলেক্ট" : "Select All")}
-            </Button>
-          </div>
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs"
+            onClick={() => {
+              const others = perms.filter(p => !p.startsWith("m:"));
+              onChange(allChecked ? others : [...others, ...allKeys]);
+            }}>
+            {allChecked
+              ? (lang === "bn" ? "সব বাদ" : "Clear all")
+              : (lang === "bn" ? "সব সিলেক্ট" : "Select all")}
+          </Button>
         </div>
-        {PERMISSION_MODULES.map(mod => {
-          const moduleAllChecked = mod.perms.every(p => perms.includes(p));
-          const moduleSomeChecked = mod.perms.some(p => perms.includes(p));
-          return (
-            <div key={mod.module} className="rounded-lg border border-border bg-card overflow-hidden">
-              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-muted/40 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={moduleAllChecked}
-                    ref={el => { if (el) el.indeterminate = moduleSomeChecked && !moduleAllChecked; }}
-                    onChange={() => {
-                      if (moduleAllChecked) onChange(perms.filter(p => !mod.perms.includes(p)));
-                      else onChange([...perms, ...mod.perms.filter(p => !perms.includes(p))]);
-                    }} className="rounded accent-primary" />
-                  <span className="text-sm font-semibold">{mod.module}</span>
-                </div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  {mod.perms.filter(p => perms.includes(p)).length}/{mod.perms.length}
-                </span>
-              </label>
-              {mod.unlocks && (
-                <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
-                  <span className="font-semibold text-foreground/70">Unlocks: </span>{mod.unlocks}
-                </p>
-              )}
-              {mod.perms.length > 1 && (
-                <div className="grid grid-cols-2 gap-1 p-3">
-                  {mod.perms.map(perm => (
-                    <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer py-1 px-2 rounded hover:bg-muted/40">
-                      <input type="checkbox" checked={perms.includes(perm)}
-                        onChange={() => onChange(perms.includes(perm) ? perms.filter(pp => pp !== perm) : [...perms, perm])}
-                        className="rounded accent-primary" />
-                      <span className="capitalize">{perm.split(".")[1]}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
         {MENU_MODULES.map(mod => {
-          const allKeys = mod.subs.flatMap(s => (s.actions ?? ACTIONS).map(a => menuPerm(s.key, a)));
-          const moduleAllChecked = allKeys.every(k => perms.includes(k));
-          const checkedCount = allKeys.filter(k => perms.includes(k)).length;
-          const someChecked = checkedCount > 0;
-          const subsEnabled = mod.subs.filter(s => perms.includes(menuPerm(s.key, "view"))).length;
+          const modKeys = mod.subs.map(s => menuKeyPerm(s.key));
+          const modChecked = modKeys.filter(k => perms.includes(k)).length;
+          const modAll = modChecked === modKeys.length;
+          const modSome = modChecked > 0 && !modAll;
           const toggleModule = () => {
-            if (moduleAllChecked) {
-              onChange(perms.filter(p => !allKeys.includes(p)));
-            } else {
-              onChange(Array.from(new Set([...perms, ...allKeys])));
-            }
+            if (modAll) onChange(perms.filter(p => !modKeys.includes(p)));
+            else onChange(Array.from(new Set([...perms, ...modKeys])));
           };
           return (
-            <div key={`menu-${mod.key}`} className="rounded-lg border border-border bg-card overflow-hidden">
-              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-primary/5 border-b border-border">
-                <div className="flex items-center gap-2">
+            <div key={mod.key} className="rounded-xl border border-border bg-card overflow-hidden">
+              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-primary/5 border-b border-border/60">
+                <div className="flex items-center gap-2 min-w-0">
                   <input
                     type="checkbox"
-                    checked={moduleAllChecked}
-                    ref={el => { if (el) el.indeterminate = someChecked && !moduleAllChecked; }}
+                    checked={modAll}
+                    ref={el => { if (el) el.indeterminate = modSome; }}
                     onChange={toggleModule}
-                    className="rounded accent-primary"
+                    className="rounded accent-primary shrink-0"
                   />
-                  <span className="text-sm font-semibold">{mod.label}</span>
-                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                    {lang === "bn" ? "মেনু-ভিত্তিক" : "Per-menu"}
-                  </Badge>
+                  <span className="text-sm font-semibold truncate">{mod.label}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  {subsEnabled}/{mod.subs.length} {lang === "bn" ? "মেনু" : "menus"}
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide shrink-0">
+                  {modChecked}/{modKeys.length}
                 </span>
               </label>
-              <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
-                <span className="font-semibold text-foreground/70">
-                  {lang === "bn" ? "নির্দেশনা: " : "Hint: "}
-                </span>
-                {lang === "bn"
-                  ? "প্রতিটি মেনু আলাদা ভাবে সিলেক্ট করুন, এবং প্রতিটির জন্য view / create / edit / delete অনুমতি দিন।"
-                  : "Pick which menu items this staff can see, and tick what they may do on each (view / create / edit / delete)."}
-              </p>
-              <div className="divide-y divide-border/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
                 {mod.subs.map(sub => {
-                  const subActions = sub.actions ?? ACTIONS;
-                  const subKeys = subActions.map(a => menuPerm(sub.key, a));
-                  const subAllChecked = subKeys.every(k => perms.includes(k));
-                  const subSomeChecked = subKeys.some(k => perms.includes(k));
-                  const viewKey = menuPerm(sub.key, "view");
-                  const hasView = perms.includes(viewKey);
-                  const toggleSub = () => {
-                    if (subAllChecked) {
-                      onChange(perms.filter(p => !subKeys.includes(p)));
-                    } else {
-                      // enabling a row -> grant view by default plus any already-checked
-                      onChange(Array.from(new Set([...perms, viewKey])));
-                    }
-                  };
-                  const toggleAction = (action: MenuAction) => {
-                    const key = menuPerm(sub.key, action);
-                    if (perms.includes(key)) {
-                      onChange(perms.filter(p => p !== key));
-                    } else {
-                      // auto-grant view when ticking any other action
-                      const additions = action === "view" ? [key] : [key, viewKey];
-                      onChange(Array.from(new Set([...perms, ...additions])));
-                    }
-                  };
+                  const key = menuKeyPerm(sub.key);
+                  const checked = perms.includes(key);
                   return (
-                    <div key={sub.key} className="px-3 py-2 grid grid-cols-[1fr_auto] items-center gap-2">
-                      <label className="flex items-center gap-2 text-xs cursor-pointer min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={subAllChecked}
-                          ref={el => { if (el) el.indeterminate = subSomeChecked && !subAllChecked; }}
-                          onChange={toggleSub}
-                          className="rounded accent-primary shrink-0"
-                        />
-                        <span className={`font-medium truncate ${hasView ? "text-foreground" : "text-muted-foreground"}`}>{sub.label}</span>
-                      </label>
-                      <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                        {subActions.map(action => {
-                          const key = menuPerm(sub.key, action);
-                          const checked = perms.includes(key);
-                          return (
-                            <label
-                              key={action}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] cursor-pointer transition-colors ${
-                                checked
-                                  ? "bg-primary/10 border-primary/40 text-primary"
-                                  : "bg-background border-border text-muted-foreground hover:bg-muted/40"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleAction(action)}
-                                className="rounded accent-primary h-3 w-3"
-                              />
-                              <span className="capitalize">{action}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <label
+                      key={sub.key}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs cursor-pointer transition-colors ${
+                        checked
+                          ? "bg-primary/10 border-primary/40 text-foreground"
+                          : "bg-background border-border/60 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => togglePerm(key)}
+                        className="rounded accent-primary h-3.5 w-3.5"
+                      />
+                      <span className="font-medium truncate">{sub.label}</span>
+                    </label>
                   );
                 })}
               </div>
@@ -1323,7 +1201,13 @@ const SettingsPage = () => {
     );
   };
 
-  const renderStaffForm = (data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[]; store_ids?: string[]; store_id?: string | null }, setter: (v: any) => void, onSubmit: () => void, submitLabel: string, isNew = false) => {
+  const renderStaffForm = (
+    data: { name: string; email: string; phone: string; password?: string; role: string; permissions: string[]; store_ids?: string[]; store_id?: string | null },
+    setter: (v: any) => void,
+    onSubmit: () => void,
+    submitLabel: string,
+    isNew = false,
+  ) => {
     const selectedStoreIds: string[] = Array.isArray(data.store_ids) && data.store_ids.length > 0
       ? data.store_ids
       : (data.store_id ? [data.store_id] : (isNew && activeStore ? [activeStore.id] : []));
@@ -1338,139 +1222,155 @@ const SettingsPage = () => {
         return { ...p, store_ids: next, store_id: next[0] ?? null };
       });
     };
+    // Derive current preset from saved permissions if `role` isn't a known preset
+    const knownPresets = ROLE_PRESETS.map(p => p.key);
+    const currentPreset = knownPresets.includes(data.role) ? data.role : detectPreset(data.permissions);
+
     return (
-    <div className="space-y-4 mt-2">
-      <div className="space-y-1.5"><Label>{t.name}</Label>
-        <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
-        {isNew && staffValidation.getError("name") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("name")}</p>}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5"><Label>{t.email}</Label>
-          <Input value={data.email} onChange={e => { setter((p: any) => ({ ...p, email: e.target.value })); if (isNew) staffValidation.clearField("email"); }} type="email" disabled={!isNew} error={isNew && !!staffValidation.getError("email")} />
-          {isNew && staffValidation.getError("email") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("email")}</p>}
-        </div>
-        <div className="space-y-1.5"><Label>{t.phone}</Label>
-          <Input value={data.phone} onChange={e => { setter((p: any) => ({ ...p, phone: e.target.value })); if (isNew) staffValidation.clearField("phone"); }} error={isNew && !!staffValidation.getError("phone")} />
-          {isNew && staffValidation.getError("phone") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("phone")}</p>}
-        </div>
-      </div>
-      {isNew ? (
-        <div className="space-y-1.5">
-          <Label>{lang === "bn" ? "পাসওয়ার্ড" : "Password"}</Label>
-          <div className="relative">
-            <Input type={showPassword ? "text" : "password"} value={data.password || ""} onChange={e => { setter((p: any) => ({ ...p, password: e.target.value })); staffValidation.clearField("password"); }} placeholder={lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters"} error={!!staffValidation.getError("password")} />
-            <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+      <div className="space-y-3 mt-1">
+        {/* Row 1: Name + Phone */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">{lang === "bn" ? "পুরো নাম" : "Full Name"}</Label>
+            <Input value={data.name} onChange={e => { setter((p: any) => ({ ...p, name: e.target.value })); if (isNew) staffValidation.clearField("name"); }} error={isNew && !!staffValidation.getError("name")} />
+            {isNew && staffValidation.getError("name") && <p className="text-[11px] text-destructive">{staffValidation.getError("name")}</p>}
           </div>
-          {staffValidation.getError("password") && <p className="text-xs text-destructive animate-fade-in">{staffValidation.getError("password")}</p>}
-          <p className="text-xs text-muted-foreground">{lang === "bn" ? "স্টাফ এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করবে" : "Staff will use this email & password to login"}</p>
-        </div>
-      ) : (
-        <div className="space-y-1.5 p-3 rounded-lg border border-border bg-muted/30">
-          <Label className="flex items-center gap-2">
-            <KeyRound className="h-3.5 w-3.5 text-primary" />
-            {lang === "bn" ? "পাসওয়ার্ড রিসেট (ঐচ্ছিক)" : "Reset Password (Optional)"}
-          </Label>
-          <div className="relative">
-            <Input
-              type={showPassword ? "text" : "password"}
-              value={data.password || ""}
-              onChange={e => setter((p: any) => ({ ...p, password: e.target.value }))}
-              placeholder={lang === "bn" ? "নতুন পাসওয়ার্ড সেট করুন (কমপক্ষে ৬ অক্ষর)" : "Set new password (min 6 characters)"}
-            />
-            <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t.phone}</Label>
+            <Input value={data.phone} onChange={e => { setter((p: any) => ({ ...p, phone: e.target.value })); if (isNew) staffValidation.clearField("phone"); }} error={isNew && !!staffValidation.getError("phone")} />
+            {isNew && staffValidation.getError("phone") && <p className="text-[11px] text-destructive">{staffValidation.getError("phone")}</p>}
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {lang === "bn"
-              ? "নিরাপত্তার কারণে বর্তমান পাসওয়ার্ড দেখানো হয় না। নতুন পাসওয়ার্ড দিলে সেভ করার সাথে সাথেই আপডেট হবে।"
-              : "For security, the current password is hidden. Enter a new one to override it on save."}
-          </p>
         </div>
-      )}
-      <div className="space-y-1.5"><Label>Role</Label>
-        <Select value={data.role} onValueChange={v => applyRolePreset(v, setter)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="admin">Admin — Full access</SelectItem>
-            <SelectItem value="manager">Manager — Operations & reports</SelectItem>
-            <SelectItem value="staff">Staff — POS & basic access</SelectItem>
-            <SelectItem value="custom">Custom — Select manually</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {stores.length > 0 && (
-        <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Store className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium">
-                {lang === "bn" ? "স্টোর অ্যাক্সেস" : "Store Access"}
-              </span>
-              <Badge variant="outline" className="text-[10px]">{selectedStoreIds.length}/{stores.length}</Badge>
+
+        {/* Row 2: Email + Password / Reset Password */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t.email}</Label>
+            <Input value={data.email} onChange={e => { setter((p: any) => ({ ...p, email: e.target.value })); if (isNew) staffValidation.clearField("email"); }} type="email" disabled={!isNew} error={isNew && !!staffValidation.getError("email")} />
+            {isNew && staffValidation.getError("email") && <p className="text-[11px] text-destructive">{staffValidation.getError("email")}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1.5">
+              <KeyRound className="h-3 w-3 text-primary" />
+              {isNew
+                ? (lang === "bn" ? "পাসওয়ার্ড" : "Password")
+                : (lang === "bn" ? "রিসেট পাসওয়ার্ড (ঐচ্ছিক)" : "Reset Password (Optional)")}
+            </Label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={data.password || ""}
+                onChange={e => { setter((p: any) => ({ ...p, password: e.target.value })); if (isNew) staffValidation.clearField("password"); }}
+                placeholder={isNew
+                  ? (lang === "bn" ? "কমপক্ষে ৬ অক্ষর" : "Min 6 characters")
+                  : (lang === "bn" ? "নতুন পাসওয়ার্ড" : "Set new password")}
+                error={isNew && !!staffValidation.getError("password")}
+              />
+              <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" type="button" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </Button>
             </div>
-            <button
-              type="button"
-              className="text-[11px] text-primary hover:underline"
-              onClick={() => {
-                const all = stores.map(s => s.id);
-                const allSelected = selectedStoreIds.length === all.length;
-                setter((p: any) => ({
-                  ...p,
-                  store_ids: allSelected ? [] : all,
-                  store_id: allSelected ? null : all[0],
-                }));
-              }}
-            >
-              {selectedStoreIds.length === stores.length
-                ? (lang === "bn" ? "সব বাদ দিন" : "Clear all")
-                : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
-            </button>
+            {isNew && staffValidation.getError("password") && <p className="text-[11px] text-destructive">{staffValidation.getError("password")}</p>}
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {lang === "bn"
-              ? "এই স্টাফ যেসব স্টোরে অ্যাক্সেস পাবে নির্বাচন করুন। প্রতিটি স্টোর সম্পূর্ণ আলাদা থাকবে।"
-              : "Select every store this staff should access. Each store stays fully isolated."}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto">
-            {stores.map(s => {
-              const checked = selectedStoreIds.includes(s.id);
-              return (
-                <label
-                  key={s.id}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors text-xs ${
-                    checked ? "bg-primary/10 border-primary/40" : "bg-background border-border hover:bg-muted/40"
-                  }`}
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={(v) => toggleStore(s.id, !!v)}
-                  />
-                  <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">{s.name}</span>
-                </label>
-              );
-            })}
+        </div>
+
+        {/* Row 3: Role (display label, follows preset) */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">{lang === "bn" ? "রোল" : "Role"}</Label>
+          <Input
+            value={data.role && !knownPresets.includes(data.role) ? data.role : (ROLE_PRESETS.find(p => p.key === currentPreset)?.label ?? "")}
+            onChange={e => setter((p: any) => ({ ...p, role: e.target.value }))}
+            placeholder={lang === "bn" ? "যেমন: ম্যানেজার, ক্যাশিয়ার" : "e.g. Manager, Cashier"}
+          />
+        </div>
+
+        {/* Row 4: Store Access */}
+        {stores.length > 0 && (
+          <div className="space-y-2 p-3 rounded-xl bg-muted/40 border border-border">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold">{lang === "bn" ? "স্টোর অ্যাক্সেস" : "Store Access"}</span>
+                <Badge variant="outline" className="text-[10px]">{selectedStoreIds.length}/{stores.length}</Badge>
+              </div>
+              <button
+                type="button"
+                className="text-[11px] text-primary hover:underline"
+                onClick={() => {
+                  const all = stores.map(s => s.id);
+                  const allSelected = selectedStoreIds.length === all.length;
+                  setter((p: any) => ({
+                    ...p,
+                    store_ids: allSelected ? [] : all,
+                    store_id: allSelected ? null : all[0],
+                  }));
+                }}
+              >
+                {selectedStoreIds.length === stores.length
+                  ? (lang === "bn" ? "সব বাদ" : "Clear all")
+                  : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {stores.map(s => {
+                const checked = selectedStoreIds.includes(s.id);
+                return (
+                  <label
+                    key={s.id}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors text-xs ${
+                      checked ? "bg-primary/10 border-primary/40" : "bg-background border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={(v) => toggleStore(s.id, !!v)} />
+                    <Store className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{s.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {selectedStoreIds.length === 0 && (
+              <p className="text-[11px] text-destructive">{lang === "bn" ? "কমপক্ষে একটি স্টোর নির্বাচন করুন" : "Select at least one store"}</p>
+            )}
           </div>
-          {selectedStoreIds.length === 0 && (
-            <p className="text-[11px] text-destructive">
-              {lang === "bn" ? "কমপক্ষে একটি স্টোর নির্বাচন করুন" : "Select at least one store"}
+        )}
+
+        {/* Row 5: Permission Preset */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">{lang === "bn" ? "পারমিশন প্রিসেট" : "Permission Preset"}</Label>
+          <Select value={currentPreset} onValueChange={v => applyPreset(v, setter)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROLE_PRESETS.map(p => (
+                <SelectItem key={p.key} value={p.key}>
+                  <span className="font-medium">{p.label}</span>
+                  <span className="text-muted-foreground"> — {p.description}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {currentPreset !== "custom" && (
+            <p className="text-[11px] text-muted-foreground">
+              {lang === "bn"
+                ? "প্রিসেট সিলেক্ট করলে অটো-মেনু পারমিশন বসে যাবে। কাস্টমাইজ করতে Custom বেছে নিন।"
+                : "Selecting a preset auto-applies its menus. Pick Custom to choose manually."}
             </p>
           )}
         </div>
-      )}
-      <div className="space-y-1.5">
-        <Label>{lang === "bn" ? "পারমিশন" : "Permissions"}</Label>
-        <div className="max-h-72 overflow-y-auto pr-1">
-          {renderPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
-        </div>
+
+        {/* Row 6: Menu Permissions (only when Custom) */}
+        {currentPreset === "custom" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">{lang === "bn" ? "মেনু পারমিশন" : "Menu Permissions"}</Label>
+            <div className="max-h-72 overflow-y-auto pr-1">
+              {renderMenuPermissionsGrid(data.permissions, (newPerms) => setter((p: any) => ({ ...p, permissions: newPerms })))}
+            </div>
+          </div>
+        )}
+
+        <Button onClick={onSubmit} className="w-full" disabled={staffCreating || selectedStoreIds.length === 0}>
+          {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
+        </Button>
       </div>
-      <Button onClick={onSubmit} className="w-full" disabled={staffCreating || selectedStoreIds.length === 0}>
-        {staffCreating ? (lang === "bn" ? "সেভ হচ্ছে..." : "Saving...") : submitLabel}
-      </Button>
-    </div>
     );
   };
 
