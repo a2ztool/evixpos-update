@@ -154,8 +154,8 @@ onlineManager.setEventListener((setOnline) => {
 /** Helper: PermissionGuard + optional FeatureGate. ProtectedRoute + persistent
  *  layout are applied once at the parent route, so navigating between pages
  *  doesn't remount the sidebar/header. */
-const P = ({ children, perm, ownerOnly, feature }: { children: React.ReactNode; perm?: string | string[]; ownerOnly?: boolean; feature?: FeatureKey }) => (
-  <PermissionGuard requiredPermission={perm} ownerOnly={ownerOnly}>
+const P = ({ children, perm, menu, ownerOnly, feature }: { children: React.ReactNode; perm?: string | string[]; menu?: { key: string; action?: "view" | "create" | "edit" | "delete" }; ownerOnly?: boolean; feature?: FeatureKey }) => (
+  <PermissionGuard requiredPermission={perm} menu={menu} ownerOnly={ownerOnly}>
     {feature ? <FeatureGate feature={feature}>{children}</FeatureGate> : children}
   </PermissionGuard>
 );
@@ -206,50 +206,50 @@ const App = () => {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<DashboardShell />}>
               <Route path="/dashboard" element={<P><Dashboard /></P>} />
-              <Route path="/products" element={<P perm="products.view"><Products /></P>} />
-              <Route path="/order-forms" element={<P perm="products.view" feature="order_forms"><OrderForms /></P>} />
-              <Route path="/coupons" element={<P perm="products.edit" feature="coupons"><Coupons /></P>} />
-              <Route path="/customers" element={<P perm="customers.view"><Customers /></P>} />
+              <Route path="/products" element={<P menu={{ key: "products" }}><Products /></P>} />
+              <Route path="/order-forms" element={<P menu={{ key: "order_forms" }} feature="order_forms"><OrderForms /></P>} />
+              <Route path="/coupons" element={<P menu={{ key: "coupons" }} feature="coupons"><Coupons /></P>} />
+              <Route path="/customers" element={<P menu={{ key: "customers" }}><Customers /></P>} />
               <Route path="/orders" element={<P perm={["orders.view", "orders.create"]}><Orders /></P>} />
               <Route path="/orders/pending" element={<P perm="orders.view"><PendingOrders /></P>} />
-              <Route path="/transactions" element={<P perm="reports.view"><Transactions /></P>} />
-              <Route path="/subscriptions" element={<P perm="customers.view" feature="subscriptions"><Subscriptions /></P>} />
+              <Route path="/transactions" element={<P menu={{ key: "transactions" }}><Transactions /></P>} />
+              <Route path="/subscriptions" element={<P menu={{ key: "subscriptions" }} feature="subscriptions"><Subscriptions /></P>} />
               <Route path="/integrations" element={<Navigate to="/integrations/notifications" replace />} />
               <Route path="/integrations/notifications" element={<P><NotificationsPage /></P>} />
-              <Route path="/integrations/woocommerce" element={<P perm="settings.edit" feature="woocommerce"><WooCommercePage /></P>} />
-              <Route path="/integrations/bot-automation" element={<P perm="settings.edit" feature="bot_automation"><BotAutomation /></P>} />
-              <Route path="/integrations/whatsapp" element={<P perm="settings.edit" feature="whatsapp"><WhatsAppPage /></P>} />
-              <Route path="/integrations/google-sheets" element={<P perm="settings.edit" feature="google_sheets"><GoogleSheetsPage /></P>} />
+              <Route path="/integrations/woocommerce" element={<P menu={{ key: "woocommerce" }} feature="woocommerce"><WooCommercePage /></P>} />
+              <Route path="/integrations/bot-automation" element={<P menu={{ key: "bot_automation" }} feature="bot_automation"><BotAutomation /></P>} />
+              <Route path="/integrations/whatsapp" element={<P menu={{ key: "whatsapp" }} feature="whatsapp"><WhatsAppPage /></P>} />
+              <Route path="/integrations/google-sheets" element={<P menu={{ key: "google_sheets" }} feature="google_sheets"><GoogleSheetsPage /></P>} />
               <Route path="/pos" element={<P perm="pos.access"><POS /></P>} />
-              <Route path="/finance/sales-profit" element={<P perm="reports.view" feature="reports"><SalesProfit /></P>} />
-              <Route path="/finance/income-expense" element={<P perm="reports.view" feature="reports"><IncomeExpense /></P>} />
-              <Route path="/finance/account-book" element={<P perm="reports.view" feature="reports"><AccountBook /></P>} />
-              <Route path="/finance/due-book" element={<P perm="reports.view" feature="due_book"><DueBook /></P>} />
-              <Route path="/finance/ad-costs" element={<P perm="reports.view" feature="ad_costs"><AdCosts /></P>} />
+              <Route path="/finance/sales-profit" element={<P menu={{ key: "sales_profit" }} feature="reports"><SalesProfit /></P>} />
+              <Route path="/finance/income-expense" element={<P menu={{ key: "income_expense" }} feature="reports"><IncomeExpense /></P>} />
+              <Route path="/finance/account-book" element={<P menu={{ key: "account_book" }} feature="reports"><AccountBook /></P>} />
+              <Route path="/finance/due-book" element={<P menu={{ key: "due_book" }} feature="due_book"><DueBook /></P>} />
+              <Route path="/finance/ad-costs" element={<P menu={{ key: "ad_costs" }} feature="ad_costs"><AdCosts /></P>} />
               <Route path="/finance/facebook-ads" element={<Navigate to="/integrations/facebook-ads" replace />} />
-              <Route path="/integrations/facebook-ads" element={<P perm="reports.view" feature="ad_costs"><FacebookAds /></P>} />
+              <Route path="/integrations/facebook-ads" element={<P menu={{ key: "facebook_ads" }} feature="ad_costs"><FacebookAds /></P>} />
               <Route path="/finance/tasks" element={<P perm="orders.view" feature="task_mission"><TaskMission /></P>} />
-              <Route path="/reports" element={<P perm="reports.view" feature="reports"><Reports /></P>} />
+              <Route path="/reports" element={<P menu={{ key: "reports" }} feature="reports"><Reports /></P>} />
               <Route path="/referral" element={<P ownerOnly feature="referral"><Referral /></P>} />
               <Route path="/my-plan" element={<P ownerOnly><MyPlan /></P>} />
               <Route path="/payment/zinipay/success" element={<P ownerOnly><ZinipaySuccess /></P>} />
               <Route path="/payment/zinipay/cancel" element={<P ownerOnly><ZinipayCancel /></P>} />
               <Route path="/support" element={<P><SupportPage /></P>} />
               <Route path="/staff-inbox" element={<P><StaffInbox /></P>} />
-              <Route path="/settings" element={<P perm={["settings.view", "settings.edit"]}><SettingsPage /></P>} />
+              <Route path="/settings" element={<P menu={{ key: "settings" }}><SettingsPage /></P>} />
               <Route path="/notification-center" element={<P><NotificationCenter /></P>} />
-              <Route path="/inventory" element={<P perm="products.view"><Inventory /></P>} />
+              <Route path="/inventory" element={<P menu={{ key: "inventory" }}><Inventory /></P>} />
               <Route path="/online/suppliers-purchases" element={<Navigate to="/inventory" replace />} />
-              <Route path="/offline/suppliers" element={<P perm="products.view"><Suppliers /></P>} />
-              <Route path="/offline/purchases" element={<P perm="products.edit"><Purchases /></P>} />
+              <Route path="/offline/suppliers" element={<P menu={{ key: "suppliers" }}><Suppliers /></P>} />
+              <Route path="/offline/purchases" element={<P menu={{ key: "purchases" }}><Purchases /></P>} />
               <Route path="/offline/cash-register" element={<P perm="pos.access"><CashRegister /></P>} />
-              <Route path="/offline/customer-credits" element={<P perm="customers.view"><CustomerCredits /></P>} />
-              <Route path="/offline/loyalty" element={<P perm="customers.view"><LoyaltyPoints /></P>} />
-              <Route path="/offline/due-customers" element={<P perm="customers.view"><DueCustomers /></P>} />
-              <Route path="/offline/stock-alerts" element={<P perm="products.view"><StockAlerts /></P>} />
-              <Route path="/offline/daily-report" element={<P perm="reports.view"><DailySalesReport /></P>} />
-              <Route path="/offline/profit-loss" element={<P perm="reports.view"><OfflineProfitLoss /></P>} />
-              <Route path="/offline/staff-performance" element={<P perm="reports.view"><StaffPerformance /></P>} />
+              <Route path="/offline/customer-credits" element={<P menu={{ key: "customer_credits" }}><CustomerCredits /></P>} />
+              <Route path="/offline/loyalty" element={<P menu={{ key: "loyalty" }}><LoyaltyPoints /></P>} />
+              <Route path="/offline/due-customers" element={<P menu={{ key: "due_customers" }}><DueCustomers /></P>} />
+              <Route path="/offline/stock-alerts" element={<P menu={{ key: "stock_alerts" }}><StockAlerts /></P>} />
+              <Route path="/offline/daily-report" element={<P menu={{ key: "daily_report" }}><DailySalesReport /></P>} />
+              <Route path="/offline/profit-loss" element={<P menu={{ key: "profit_loss" }}><OfflineProfitLoss /></P>} />
+              <Route path="/offline/staff-performance" element={<P menu={{ key: "staff_performance" }}><StaffPerformance /></P>} />
             </Route>
 
             {/* Admin login at /sanjoy */}
