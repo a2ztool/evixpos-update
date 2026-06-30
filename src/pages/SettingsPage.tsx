@@ -33,6 +33,13 @@ import { getGatewayIcon, getGatewayColor } from "@/lib/gatewayBrands";
 import { toast } from "sonner";
 import { businessSettingsSchema, storeAddSchema, staffMemberSchema, profileUpdateSchema } from "@/lib/validations";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import {
+  MENU_MODULES,
+  ACTIONS,
+  ALL_MENU_PERMS,
+  menuPerm,
+  type MenuAction,
+} from "@/lib/menuPermissions";
 
 // ─── Payment Gateway Catalog ───
 interface GatewayDef {
@@ -235,40 +242,33 @@ const PERMISSION_MODULES: { module: string; perms: string[]; unlocks: string }[]
     perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"],
     unlocks: "All Orders, Create Order, Pending Orders, Task & Mission",
   },
-  {
-    module: "Products & Inventory",
-    perms: ["products.view", "products.create", "products.edit", "products.delete"],
-    unlocks: "Products, Inventory, Order Forms, Coupons, Suppliers, Purchases, Stock Alerts",
-  },
-  {
-    module: "Customers & CRM",
-    perms: ["customers.view", "customers.create", "customers.edit", "customers.delete"],
-    unlocks: "Customers, Subscriptions, Customer Credits, Due Customers, Loyalty Points",
-  },
-  {
-    module: "Reports & Finances",
-    perms: ["reports.view"],
-    unlocks: "Reports, Sales & Profit, Income/Expense, Account Book, Due Book, Ad Costs, Facebook Ads, Transactions, Daily Report, Profit & Loss, Staff Performance",
-  },
-  {
-    module: "Settings & Integrations",
-    perms: ["settings.view", "settings.edit"],
-    unlocks: "Settings (view/edit), WooCommerce, Bot Automation, WhatsApp, Google Sheets",
-  },
 ];
 
-const ALL_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
+const ALL_LEGACY_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
+const ALL_PERMISSIONS = [...ALL_LEGACY_PERMISSIONS, ...ALL_MENU_PERMS];
 
 const ROLE_PRESETS: Record<string, string[]> = {
   admin: ALL_PERMISSIONS,
   manager: [
     "pos.access",
     "orders.view", "orders.create", "orders.edit",
-    "products.view", "products.create", "products.edit",
-    "customers.view", "customers.create", "customers.edit",
-    "reports.view",
+    // Products & Inventory — view/create/edit on every sub-menu
+    ...MENU_MODULES.find(m => m.key === "products")!.subs.flatMap(s =>
+      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
+    ),
+    // Customers & CRM — view/create/edit
+    ...MENU_MODULES.find(m => m.key === "customers")!.subs.flatMap(s =>
+      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
+    ),
+    // Reports & Finance — view all
+    ...MENU_MODULES.find(m => m.key === "reports")!.subs.map(s => menuPerm(s.key, "view")),
   ],
-  staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view", "due.view"],
+  staff: [
+    "pos.access",
+    "orders.view", "orders.create",
+    menuPerm("products", "view"),
+    menuPerm("customers", "view"),
+  ],
   custom: [],
 };
 
