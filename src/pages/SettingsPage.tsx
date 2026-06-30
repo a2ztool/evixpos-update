@@ -1209,6 +1209,116 @@ const SettingsPage = () => {
             </div>
           );
         })}
+        {MENU_MODULES.map(mod => {
+          const allKeys = mod.subs.flatMap(s => (s.actions ?? ACTIONS).map(a => menuPerm(s.key, a)));
+          const moduleAllChecked = allKeys.every(k => perms.includes(k));
+          const checkedCount = allKeys.filter(k => perms.includes(k)).length;
+          const someChecked = checkedCount > 0;
+          const subsEnabled = mod.subs.filter(s => perms.includes(menuPerm(s.key, "view"))).length;
+          const toggleModule = () => {
+            if (moduleAllChecked) {
+              onChange(perms.filter(p => !allKeys.includes(p)));
+            } else {
+              onChange(Array.from(new Set([...perms, ...allKeys])));
+            }
+          };
+          return (
+            <div key={`menu-${mod.key}`} className="rounded-lg border border-border bg-card overflow-hidden">
+              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-primary/5 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={moduleAllChecked}
+                    ref={el => { if (el) el.indeterminate = someChecked && !moduleAllChecked; }}
+                    onChange={toggleModule}
+                    className="rounded accent-primary"
+                  />
+                  <span className="text-sm font-semibold">{mod.label}</span>
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                    {lang === "bn" ? "মেনু-ভিত্তিক" : "Per-menu"}
+                  </Badge>
+                </div>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {subsEnabled}/{mod.subs.length} {lang === "bn" ? "মেনু" : "menus"}
+                </span>
+              </label>
+              <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
+                <span className="font-semibold text-foreground/70">
+                  {lang === "bn" ? "নির্দেশনা: " : "Hint: "}
+                </span>
+                {lang === "bn"
+                  ? "প্রতিটি মেনু আলাদা ভাবে সিলেক্ট করুন, এবং প্রতিটির জন্য view / create / edit / delete অনুমতি দিন।"
+                  : "Pick which menu items this staff can see, and tick what they may do on each (view / create / edit / delete)."}
+              </p>
+              <div className="divide-y divide-border/60">
+                {mod.subs.map(sub => {
+                  const subActions = sub.actions ?? ACTIONS;
+                  const subKeys = subActions.map(a => menuPerm(sub.key, a));
+                  const subAllChecked = subKeys.every(k => perms.includes(k));
+                  const subSomeChecked = subKeys.some(k => perms.includes(k));
+                  const viewKey = menuPerm(sub.key, "view");
+                  const hasView = perms.includes(viewKey);
+                  const toggleSub = () => {
+                    if (subAllChecked) {
+                      onChange(perms.filter(p => !subKeys.includes(p)));
+                    } else {
+                      // enabling a row -> grant view by default plus any already-checked
+                      onChange(Array.from(new Set([...perms, viewKey])));
+                    }
+                  };
+                  const toggleAction = (action: MenuAction) => {
+                    const key = menuPerm(sub.key, action);
+                    if (perms.includes(key)) {
+                      onChange(perms.filter(p => p !== key));
+                    } else {
+                      // auto-grant view when ticking any other action
+                      const additions = action === "view" ? [key] : [key, viewKey];
+                      onChange(Array.from(new Set([...perms, ...additions])));
+                    }
+                  };
+                  return (
+                    <div key={sub.key} className="px-3 py-2 grid grid-cols-[1fr_auto] items-center gap-2">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={subAllChecked}
+                          ref={el => { if (el) el.indeterminate = subSomeChecked && !subAllChecked; }}
+                          onChange={toggleSub}
+                          className="rounded accent-primary shrink-0"
+                        />
+                        <span className={`font-medium truncate ${hasView ? "text-foreground" : "text-muted-foreground"}`}>{sub.label}</span>
+                      </label>
+                      <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                        {subActions.map(action => {
+                          const key = menuPerm(sub.key, action);
+                          const checked = perms.includes(key);
+                          return (
+                            <label
+                              key={action}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] cursor-pointer transition-colors ${
+                                checked
+                                  ? "bg-primary/10 border-primary/40 text-primary"
+                                  : "bg-background border-border text-muted-foreground hover:bg-muted/40"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleAction(action)}
+                                className="rounded accent-primary h-3 w-3"
+                              />
+                              <span className="capitalize">{action}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
