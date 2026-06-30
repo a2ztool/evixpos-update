@@ -231,50 +231,8 @@ const LANGUAGES_LIST = [
   { code: "hi" as Lang, label: "Hindi", native: "हिन्दी" },
 ];
 
-// IMPORTANT: only the perm keys listed here are actually enforced by the
-// sidebar (AppSidebar.tsx) and route guards (App.tsx). Each module's
-// `unlocks` describes every menu item that becomes visible when the perm
-// is granted, so owners can see exactly what they're enabling.
-const PERMISSION_MODULES: { module: string; perms: string[]; unlocks: string }[] = [
-  {
-    module: "POS Terminal",
-    perms: ["pos.access"],
-    unlocks: "POS Terminal, Cash Register (offline)",
-  },
-  {
-    module: "Orders",
-    perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"],
-    unlocks: "All Orders, Create Order, Pending Orders, Task & Mission",
-  },
-];
-
-const ALL_LEGACY_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
-const ALL_PERMISSIONS = [...ALL_LEGACY_PERMISSIONS, ...ALL_MENU_PERMS];
-
-const ROLE_PRESETS: Record<string, string[]> = {
-  admin: ALL_PERMISSIONS,
-  manager: [
-    "pos.access",
-    "orders.view", "orders.create", "orders.edit",
-    // Products & Inventory — view/create/edit on every sub-menu
-    ...MENU_MODULES.find(m => m.key === "products")!.subs.flatMap(s =>
-      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
-    ),
-    // Customers & CRM — view/create/edit
-    ...MENU_MODULES.find(m => m.key === "customers")!.subs.flatMap(s =>
-      (["view", "create", "edit"] as MenuAction[]).map(a => menuPerm(s.key, a))
-    ),
-    // Reports & Finance — view all
-    ...MENU_MODULES.find(m => m.key === "reports")!.subs.map(s => menuPerm(s.key, "view")),
-  ],
-  staff: [
-    "pos.access",
-    "orders.view", "orders.create",
-    menuPerm("products", "view"),
-    menuPerm("customers", "view"),
-  ],
-  custom: [],
-};
+// Permission model is menu-only — see src/lib/menuPermissions.ts.
+// `pos.access` and `orders.*` are extras included in role presets there.
 
 const defaultPaymentMethods: ActiveGateway[] = [];
 
