@@ -220,18 +220,41 @@ const LANGUAGES_LIST = [
   { code: "hi" as Lang, label: "Hindi", native: "हिन्दी" },
 ];
 
-const PERMISSION_MODULES: { module: string; perms: string[] }[] = [
-  { module: "POS", perms: ["pos.access"] },
-  { module: "Orders", perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"] },
-  { module: "Products", perms: ["products.view", "products.create", "products.edit", "products.delete"] },
-  { module: "Customers", perms: ["customers.view", "customers.create", "customers.edit", "customers.delete"] },
-  { module: "Subscriptions", perms: ["subscriptions.view", "subscriptions.create", "subscriptions.edit", "subscriptions.delete"] },
-  { module: "Due Book", perms: ["due.view", "due.create", "due.edit", "due.delete"] },
-  { module: "Reports & Analytics", perms: ["reports.view"] },
-  { module: "Finances", perms: ["finances.view", "finances.edit"] },
-  { module: "Integrations", perms: ["integrations.view", "integrations.edit"] },
-  { module: "Suppliers & Purchases", perms: ["suppliers.view", "suppliers.create", "suppliers.edit", "suppliers.delete", "purchases.view", "purchases.create", "purchases.edit", "purchases.delete"] },
-  { module: "Settings", perms: ["settings.view", "settings.edit"] },
+// IMPORTANT: only the perm keys listed here are actually enforced by the
+// sidebar (AppSidebar.tsx) and route guards (App.tsx). Each module's
+// `unlocks` describes every menu item that becomes visible when the perm
+// is granted, so owners can see exactly what they're enabling.
+const PERMISSION_MODULES: { module: string; perms: string[]; unlocks: string }[] = [
+  {
+    module: "POS Terminal",
+    perms: ["pos.access"],
+    unlocks: "POS Terminal, Cash Register (offline)",
+  },
+  {
+    module: "Orders",
+    perms: ["orders.view", "orders.create", "orders.edit", "orders.delete"],
+    unlocks: "All Orders, Create Order, Pending Orders, Task & Mission",
+  },
+  {
+    module: "Products & Inventory",
+    perms: ["products.view", "products.create", "products.edit", "products.delete"],
+    unlocks: "Products, Inventory, Order Forms, Coupons, Suppliers, Purchases, Stock Alerts",
+  },
+  {
+    module: "Customers & CRM",
+    perms: ["customers.view", "customers.create", "customers.edit", "customers.delete"],
+    unlocks: "Customers, Subscriptions, Customer Credits, Due Customers, Loyalty Points",
+  },
+  {
+    module: "Reports & Finances",
+    perms: ["reports.view"],
+    unlocks: "Reports, Sales & Profit, Income/Expense, Account Book, Due Book, Ad Costs, Facebook Ads, Transactions, Daily Report, Profit & Loss, Staff Performance",
+  },
+  {
+    module: "Settings & Integrations",
+    perms: ["settings.view", "settings.edit"],
+    unlocks: "Settings (view/edit), WooCommerce, Bot Automation, WhatsApp, Google Sheets",
+  },
 ];
 
 const ALL_PERMISSIONS = PERMISSION_MODULES.flatMap(m => m.perms);
@@ -243,11 +266,7 @@ const ROLE_PRESETS: Record<string, string[]> = {
     "orders.view", "orders.create", "orders.edit",
     "products.view", "products.create", "products.edit",
     "customers.view", "customers.create", "customers.edit",
-    "subscriptions.view", "subscriptions.create", "subscriptions.edit",
-    "due.view", "due.create", "due.edit",
     "reports.view",
-    "suppliers.view", "suppliers.create", "suppliers.edit",
-    "purchases.view", "purchases.create", "purchases.edit",
   ],
   staff: ["pos.access", "orders.view", "orders.create", "products.view", "customers.view", "due.view"],
   custom: [],
@@ -1170,6 +1189,11 @@ const SettingsPage = () => {
                   {mod.perms.filter(p => perms.includes(p)).length}/{mod.perms.length}
                 </span>
               </label>
+              {mod.unlocks && (
+                <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
+                  <span className="font-semibold text-foreground/70">Unlocks: </span>{mod.unlocks}
+                </p>
+              )}
               {mod.perms.length > 1 && (
                 <div className="grid grid-cols-2 gap-1 p-3">
                   {mod.perms.map(perm => (
