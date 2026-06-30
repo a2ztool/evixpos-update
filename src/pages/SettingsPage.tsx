@@ -1118,166 +1118,79 @@ const SettingsPage = () => {
     </div>
   );
 
-  const renderPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => {
-    const allChecked = ALL_PERMISSIONS.every(p => perms.includes(p));
+  // Simple menu-only permission grid. Each sub-menu is a single checkbox —
+  // enabling it grants full access to that menu, disabling hides it entirely.
+  const renderMenuPermissionsGrid = (perms: string[], onChange: (perms: string[]) => void) => {
+    const allKeys = ALL_MENU_PERMS;
+    const allChecked = allKeys.every(k => perms.includes(k));
+    const togglePerm = (key: string) => {
+      onChange(perms.includes(key) ? perms.filter(p => p !== key) : [...perms, key]);
+    };
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 px-1">
-          <p className="text-xs text-muted-foreground">
-            {lang === "bn" ? "প্রতিটি মডিউলের জন্য অ্যাক্সেস নিয়ন্ত্রণ করুন" : "Toggle module-level access and granular permissions"}
+          <p className="text-[11px] text-muted-foreground">
+            {lang === "bn"
+              ? "যেসব মেনু এনাবল থাকবে, স্টাফ সেগুলোতে পূর্ণ অ্যাক্সেস পাবে।"
+              : "Enabled menus give the staff full access. Disabled menus stay hidden."}
           </p>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" className="h-7 text-xs"
-              onClick={() => onChange(allChecked ? [] : [...ALL_PERMISSIONS])}>
-              {allChecked
-                ? (lang === "bn" ? "রিসেট" : "Reset")
-                : (lang === "bn" ? "সব সিলেক্ট" : "Select All")}
-            </Button>
-          </div>
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs"
+            onClick={() => {
+              const others = perms.filter(p => !p.startsWith("m:"));
+              onChange(allChecked ? others : [...others, ...allKeys]);
+            }}>
+            {allChecked
+              ? (lang === "bn" ? "সব বাদ" : "Clear all")
+              : (lang === "bn" ? "সব সিলেক্ট" : "Select all")}
+          </Button>
         </div>
-        {PERMISSION_MODULES.map(mod => {
-          const moduleAllChecked = mod.perms.every(p => perms.includes(p));
-          const moduleSomeChecked = mod.perms.some(p => perms.includes(p));
-          return (
-            <div key={mod.module} className="rounded-lg border border-border bg-card overflow-hidden">
-              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-muted/40 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={moduleAllChecked}
-                    ref={el => { if (el) el.indeterminate = moduleSomeChecked && !moduleAllChecked; }}
-                    onChange={() => {
-                      if (moduleAllChecked) onChange(perms.filter(p => !mod.perms.includes(p)));
-                      else onChange([...perms, ...mod.perms.filter(p => !perms.includes(p))]);
-                    }} className="rounded accent-primary" />
-                  <span className="text-sm font-semibold">{mod.module}</span>
-                </div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  {mod.perms.filter(p => perms.includes(p)).length}/{mod.perms.length}
-                </span>
-              </label>
-              {mod.unlocks && (
-                <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
-                  <span className="font-semibold text-foreground/70">Unlocks: </span>{mod.unlocks}
-                </p>
-              )}
-              {mod.perms.length > 1 && (
-                <div className="grid grid-cols-2 gap-1 p-3">
-                  {mod.perms.map(perm => (
-                    <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer py-1 px-2 rounded hover:bg-muted/40">
-                      <input type="checkbox" checked={perms.includes(perm)}
-                        onChange={() => onChange(perms.includes(perm) ? perms.filter(pp => pp !== perm) : [...perms, perm])}
-                        className="rounded accent-primary" />
-                      <span className="capitalize">{perm.split(".")[1]}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
         {MENU_MODULES.map(mod => {
-          const allKeys = mod.subs.flatMap(s => (s.actions ?? ACTIONS).map(a => menuPerm(s.key, a)));
-          const moduleAllChecked = allKeys.every(k => perms.includes(k));
-          const checkedCount = allKeys.filter(k => perms.includes(k)).length;
-          const someChecked = checkedCount > 0;
-          const subsEnabled = mod.subs.filter(s => perms.includes(menuPerm(s.key, "view"))).length;
+          const modKeys = mod.subs.map(s => menuKeyPerm(s.key));
+          const modChecked = modKeys.filter(k => perms.includes(k)).length;
+          const modAll = modChecked === modKeys.length;
+          const modSome = modChecked > 0 && !modAll;
           const toggleModule = () => {
-            if (moduleAllChecked) {
-              onChange(perms.filter(p => !allKeys.includes(p)));
-            } else {
-              onChange(Array.from(new Set([...perms, ...allKeys])));
-            }
+            if (modAll) onChange(perms.filter(p => !modKeys.includes(p)));
+            else onChange(Array.from(new Set([...perms, ...modKeys])));
           };
           return (
-            <div key={`menu-${mod.key}`} className="rounded-lg border border-border bg-card overflow-hidden">
-              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-primary/5 border-b border-border">
-                <div className="flex items-center gap-2">
+            <div key={mod.key} className="rounded-xl border border-border bg-card overflow-hidden">
+              <label className="flex items-center justify-between gap-2 cursor-pointer px-3 py-2 bg-primary/5 border-b border-border/60">
+                <div className="flex items-center gap-2 min-w-0">
                   <input
                     type="checkbox"
-                    checked={moduleAllChecked}
-                    ref={el => { if (el) el.indeterminate = someChecked && !moduleAllChecked; }}
+                    checked={modAll}
+                    ref={el => { if (el) el.indeterminate = modSome; }}
                     onChange={toggleModule}
-                    className="rounded accent-primary"
+                    className="rounded accent-primary shrink-0"
                   />
-                  <span className="text-sm font-semibold">{mod.label}</span>
-                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                    {lang === "bn" ? "মেনু-ভিত্তিক" : "Per-menu"}
-                  </Badge>
+                  <span className="text-sm font-semibold truncate">{mod.label}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  {subsEnabled}/{mod.subs.length} {lang === "bn" ? "মেনু" : "menus"}
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide shrink-0">
+                  {modChecked}/{modKeys.length}
                 </span>
               </label>
-              <p className="text-[10px] text-muted-foreground/90 px-3 pt-2 pb-1 leading-relaxed">
-                <span className="font-semibold text-foreground/70">
-                  {lang === "bn" ? "নির্দেশনা: " : "Hint: "}
-                </span>
-                {lang === "bn"
-                  ? "প্রতিটি মেনু আলাদা ভাবে সিলেক্ট করুন, এবং প্রতিটির জন্য view / create / edit / delete অনুমতি দিন।"
-                  : "Pick which menu items this staff can see, and tick what they may do on each (view / create / edit / delete)."}
-              </p>
-              <div className="divide-y divide-border/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
                 {mod.subs.map(sub => {
-                  const subActions = sub.actions ?? ACTIONS;
-                  const subKeys = subActions.map(a => menuPerm(sub.key, a));
-                  const subAllChecked = subKeys.every(k => perms.includes(k));
-                  const subSomeChecked = subKeys.some(k => perms.includes(k));
-                  const viewKey = menuPerm(sub.key, "view");
-                  const hasView = perms.includes(viewKey);
-                  const toggleSub = () => {
-                    if (subAllChecked) {
-                      onChange(perms.filter(p => !subKeys.includes(p)));
-                    } else {
-                      // enabling a row -> grant view by default plus any already-checked
-                      onChange(Array.from(new Set([...perms, viewKey])));
-                    }
-                  };
-                  const toggleAction = (action: MenuAction) => {
-                    const key = menuPerm(sub.key, action);
-                    if (perms.includes(key)) {
-                      onChange(perms.filter(p => p !== key));
-                    } else {
-                      // auto-grant view when ticking any other action
-                      const additions = action === "view" ? [key] : [key, viewKey];
-                      onChange(Array.from(new Set([...perms, ...additions])));
-                    }
-                  };
+                  const key = menuKeyPerm(sub.key);
+                  const checked = perms.includes(key);
                   return (
-                    <div key={sub.key} className="px-3 py-2 grid grid-cols-[1fr_auto] items-center gap-2">
-                      <label className="flex items-center gap-2 text-xs cursor-pointer min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={subAllChecked}
-                          ref={el => { if (el) el.indeterminate = subSomeChecked && !subAllChecked; }}
-                          onChange={toggleSub}
-                          className="rounded accent-primary shrink-0"
-                        />
-                        <span className={`font-medium truncate ${hasView ? "text-foreground" : "text-muted-foreground"}`}>{sub.label}</span>
-                      </label>
-                      <div className="flex flex-wrap items-center gap-1.5 justify-end">
-                        {subActions.map(action => {
-                          const key = menuPerm(sub.key, action);
-                          const checked = perms.includes(key);
-                          return (
-                            <label
-                              key={action}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] cursor-pointer transition-colors ${
-                                checked
-                                  ? "bg-primary/10 border-primary/40 text-primary"
-                                  : "bg-background border-border text-muted-foreground hover:bg-muted/40"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleAction(action)}
-                                className="rounded accent-primary h-3 w-3"
-                              />
-                              <span className="capitalize">{action}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <label
+                      key={sub.key}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs cursor-pointer transition-colors ${
+                        checked
+                          ? "bg-primary/10 border-primary/40 text-foreground"
+                          : "bg-background border-border/60 text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => togglePerm(key)}
+                        className="rounded accent-primary h-3.5 w-3.5"
+                      />
+                      <span className="font-medium truncate">{sub.label}</span>
+                    </label>
                   );
                 })}
               </div>
